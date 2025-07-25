@@ -1,0 +1,5 @@
+# Files to ignore
+.env
+
+# Ignore python environment
+backend/venv/
