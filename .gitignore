@@ -3,3 +3,10 @@
 
 # Ignore python environment
 backend/venv/
+
+# Ignore some frontend files
+frontend/node_modules/
+frontend/package-lock.json
+
+# debug
+npm-debug.log*
