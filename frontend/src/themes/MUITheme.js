@@ -58,7 +58,7 @@ let theme = createTheme({
       "sans-serif",
     ].join(","),
     h1: {
-      fontSize: "2.8rem",
+      fontSize: "4.8rem",
       "@media (max-width:600px)": { fontSize: "2.5rem" },
     },
     h2: {

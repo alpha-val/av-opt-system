@@ -4,25 +4,7 @@ body {
   line-height: 1.6;
   margin: 0;
   padding: 0;
-  /* background: linear-gradient(120deg, #fffbe6 0%, #b6e7c9 40%, #a9c5e5 100%); */
-  /* background-repeat: no-repeat; */
-  /* background-attachment: fixed; */
   color: #222;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-.calendar-event {
-  background-color: lightgoldenrodyellow;
-  border-radius: 4px;
-  /* border-radius: 50%; */
-}
-
-.calendar-today-highlight {
-  background-color: #ccddee;
-  color: inherit;
-}
-.react-calendar {
-  border: none !important;
-  width: 100% !important;
 }

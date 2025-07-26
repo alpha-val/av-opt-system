@@ -2,6 +2,7 @@
 .env
 
 # Ignore python environment
+backend/.env
 backend/venv/
 
 # Ignore some frontend files

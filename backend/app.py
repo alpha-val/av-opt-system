@@ -7,7 +7,6 @@ import os
 # Create the Flask app instance using the factory function
 app = create_app()
 CORS(app, supports_credentials=True)
-app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret")
 
 if __name__ == '__main__':
     app.run(debug=True)

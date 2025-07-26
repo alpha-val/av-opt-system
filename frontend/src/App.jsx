@@ -4,6 +4,9 @@ import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import ThemeProvider from "./themes/ThemeProvider";
+const Test = () => {
+  return <div>Test Component</div>;
+};
 const AppContent = () => {
   const { user } = useSelector((state) => state.users || {});
   return (
@@ -69,7 +72,7 @@ const AppBackground = ({ children }) => (
     style={{
       minHeight: "100vh",
       width: "100vw",
-      background: "linear-gradient(135deg, #f6fafd 0%, #e6f0fa 50%,rgb(155, 192, 245) 100%)",
+      background: "linear-gradient(135deg, #f6fafd 0%, #faf8e6ff 50%,rgba(245, 224, 155, 1) 100%)",
       fontFamily: "Inter, Roboto, Helvetica Neue, Arial, sans-serif",
     }}
   >

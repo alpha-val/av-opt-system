@@ -11,12 +11,12 @@ import "./styles.css";
 const root = createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <ThemeProvider theme={MUITheme}>
+    {/* <ThemeProvider theme={MUITheme}> */}
     <Provider store={store}>
-      <CssBaseline />
+      {/* <CssBaseline /> */}
       <App />
     </Provider>
-    </ThemeProvider>
+    {/* </ThemeProvider> */}
   </React.StrictMode>
 );
 
