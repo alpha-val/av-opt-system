@@ -1,0 +1,15 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Copy only necessary files — all code from backend dir
+COPY . .
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Set env variable so your imports work like `from app.services...`
+ENV PYTHONPATH=/app
+
+# Run the RQ worker (queue = default)
+CMD ["rq", "worker", "default"]

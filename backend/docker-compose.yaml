@@ -1,6 +1,18 @@
+
 services:
   redis:
     image: redis:7
     ports:
       - "6379:6379"
-    restart: unless-stopped
+
+  rq-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.rq
+    volumes:
+      - .:/app         # 🔁 Mounts your backend source code into the container
+    env_file:
+      - .env
+    environment:
+      REDIS_URL: redis://redis:6379
+    command: rq worker default
