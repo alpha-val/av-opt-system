@@ -2,6 +2,7 @@ from langchain_community.document_loaders import PyMuPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_experimental.graph_transformers import LLMGraphTransformer
 from langchain_community.graphs import Neo4jGraph
+# from langchain_neo4j import Neo4jGraph # causes an import error
 from langchain_openai import ChatOpenAI
 from langchain.schema import Document
 from ..config import (
@@ -66,6 +67,10 @@ def ingest_doc_graph_transform(input_bytes_or_str, full_wipe=False):
                 for gd in graph_docs_raw
                 if getattr(gd, "score", 1.0) >= 0.80  # or gd.metadata["score"]
             ]
+            print("[DEBUG] Node IDs")
+            for node in graph_docs.nodes:
+                # Print node ID and node name
+                print("Node: ", node["id"], node["properties"]["id"])
 
             # —————————————— Update nodes to ensure IDs are lowercase, spaces replaced with underscores, and "name" is set —————————————— #
             for gd in graph_docs:

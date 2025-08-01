@@ -13,13 +13,13 @@ NEO4J_CONFIG = {
 SCHEMA_VERSION = "0.1.0"
 
 NODE_TYPES = [
-    "CostRule"
     "Equipment",
     "Material",
     "Process",
     "Provenance",
     "Scenario",
     "Workspace",
+    "CostEstimate",
 ]
 
 EDGE_TYPES = [
@@ -32,11 +32,6 @@ EDGE_TYPES = [
     "PRODUCES_MATERIAL",  # Process    → Material (output)
     # costing
     "HAS_COST",  # * → CostEstimate
-    "GOVERNED_BY_COSTRULE",  # * → CostRule (method applies)
-    # spatial
-    "LOCATED_IN",  # * → Location
-    # flow connectivity
-    "FEEDS_INTO",  # Material   → Process (downstream)
     # data‑cleaning
     "SIMILAR_TO",  # low‑confidence duplicate link
     # provenance
