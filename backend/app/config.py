@@ -13,22 +13,16 @@ NEO4J_CONFIG = {
 SCHEMA_VERSION = "0.1.0"
 
 NODE_TYPES = [
-    "Workspace",
-    "Scenario",
-    "Process",
+    "CostRule"
     "Equipment",
     "Material",
-    "Location",
+    "Process",
     "Provenance",
+    "Scenario",
+    "Workspace",
 ]
 
 EDGE_TYPES = [
-    # "HAS_SCENARIO",
-    # "INCLUDES_PROCESS",
-    # "USES_EQUIPMENT",
-    # "CONSUMES_MATERIAL",
-    # "HAS_COST",
-    
     # hierarchy
     "HAS_SCENARIO",  # Workspace  → Scenario
     "INCLUDES_PROCESS",  # Scenario   → Process
@@ -37,20 +31,23 @@ EDGE_TYPES = [
     "CONSUMES_MATERIAL",  # Process    → Material (input)
     "PRODUCES_MATERIAL",  # Process    → Material (output)
     # costing
-    # "HAS_COST",  # * → CostEstimate
-    "GOVERNED_BY",  # * → CostRule (method applies)
+    "HAS_COST",  # * → CostEstimate
+    "GOVERNED_BY_COSTRULE",  # * → CostRule (method applies)
     # spatial
     "LOCATED_IN",  # * → Location
     # flow connectivity
-    "FEEDS",  # Material   → Process (downstream)
+    "FEEDS_INTO",  # Material   → Process (downstream)
     # data‑cleaning
-    "EQUIVALENT_TO",  # low‑confidence duplicate link
+    "SIMILAR_TO",  # low‑confidence duplicate link
     # provenance
     "HAS_PROVENANCE",  # * → Provenance
 ]
 
 
 NODE_PROPERTIES = [
+    # Identiy
+    "name",
+    "short_description",
     # Workspace
     "location",
     "climate",
@@ -101,7 +98,7 @@ NODE_PROPERTIES = [
     "source_doc",  # name or path to the source document
     "extracted_from",  # text fragment or section
     "rationale",  # optional explanation (e.g., from chain-of-thought)
-    "date",  # timestamp when relationship was extracted
+    "date_created",  # timestamp when relationship was extracted
     "extraction_method",  # "LLM", "regex", "manual", etc.
 ]
 
@@ -110,6 +107,6 @@ EDGE_PROPERTIES = [
     "source_doc",  # name or path to the source document
     "extracted_from",  # text fragment or section
     "rationale",  # optional explanation (e.g., from chain-of-thought)
-    "date",  # timestamp when relationship was extracted
+    "date_created",  # timestamp when relationship was extracted
     "extraction_method",  # "LLM", "regex", "manual", etc.
 ]

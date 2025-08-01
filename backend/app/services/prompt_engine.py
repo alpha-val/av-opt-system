@@ -7,7 +7,7 @@ def _bulleted(items: List[str]) -> str:
     return "\n".join(f"- {x}" for x in items)
 
 
-def build_extraction_prompt_v0() -> str:
+def build_extraction_prompt() -> str:
     has_costrule = "CostRule" in NODE_TYPES
 
     costrule_block = (
@@ -234,7 +234,7 @@ Return nodes with extract_nodes(nodes=[...]) and edges with extract_edges(edges=
 """
 
 
-def build_extraction_prompt() -> str:
+def build_extraction_prompt_v1() -> str:
     costrule = "CostRule" in NODE_TYPES
     cost_section = (
         """

@@ -4,6 +4,7 @@ from redis import Redis
 from redis.exceptions import RedisError
 from .services.ingest_graph_transform import ingest_doc_graph_transform
 from .services.ingest_func_call import ingest_doc_func_call
+from .services.ingest_func_call_2 import ingest_doc_func_call_2
 from .services.query import nodes, edges
 
 bp = Blueprint("api", __name__)
@@ -24,7 +25,7 @@ def ingest():
             return jsonify({"error": "No input provided"}), 400
 
         try:
-            job = q.enqueue(ingest_doc_graph_transform, uploaded.read() if uploaded else text, doc_name="doc_name", full_wipe=True)
+            job = q.enqueue(ingest_doc_graph_transform, uploaded.read() if uploaded else text, full_wipe=True)
         except RedisError as e:
             return jsonify({"error": f"Failed to enqueue job: {e}"}), 500
         
@@ -43,7 +44,7 @@ def ingest_func_call():
             return jsonify({"error": "No input provided"}), 400
 
         try:
-            job = q.enqueue(ingest_doc_func_call, uploaded.read() if uploaded else text, full_wipe=True)
+            job = q.enqueue(ingest_doc_func_call_2, uploaded.read() if uploaded else text, full_wipe=True)
         except RedisError as e:
             return jsonify({"error": f"Failed to enqueue job: {e}"}), 500
 
