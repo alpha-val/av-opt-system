@@ -4,6 +4,10 @@ from langchain_experimental.graph_transformers import LLMGraphTransformer
 from langchain_community.graphs import Neo4jGraph
 # from langchain_neo4j import Neo4jGraph # causes an import error
 from langchain_openai import ChatOpenAI
+from langchain_community.graphs.graph_document import (
+    Node,
+    Relationship,
+)
 from langchain.schema import Document
 from ..config import (
     NODE_TYPES,
@@ -18,10 +22,8 @@ import pprint
 pp = pprint.PrettyPrinter(indent=1)
 
 
-# Convenience slug for canonical keys
-def slug(text: str) -> str:
-    return slugify(text, lowercase=True, separator="-")
-
+def normalize_id(text: str) -> str:
+    return text.strip().lower().replace(" ", "_")
 
 def ingest_doc_graph_transform(input_bytes_or_str, full_wipe=False):
     print("\n\n= = = = = = = = = = = = = = = = = = =")
@@ -68,20 +70,52 @@ def ingest_doc_graph_transform(input_bytes_or_str, full_wipe=False):
                 if getattr(gd, "score", 1.0) >= 0.80  # or gd.metadata["score"]
             ]
             print("[DEBUG] Node IDs")
-            for node in graph_docs.nodes:
-                # Print node ID and node name
-                print("Node: ", node["id"], node["properties"]["id"])
-
+            
+            
+            
             # —————————————— Update nodes to ensure IDs are lowercase, spaces replaced with underscores, and "name" is set —————————————— #
             for gd in graph_docs:
                 for node in gd.nodes:
-                    # node.properties["name"] = (
-                    #     node.id.lower().replace(" ", "_")
-                    # )  # Set "name" property to the original ID
-                    node.id = node.id.lower().replace(
-                        " ", "_"
-                    )  # Convert ID to lowercase and replace spaces with underscores
+                    node.id = normalize_id(node.id)
+                    print(f" Node Id: ", node.id, "[", node.type, "]") #, 
+                for rel in gd.relationships:
+                    rel.source.id = normalize_id(rel.source.id)
+                    rel.target.id = normalize_id(rel.target.id)
+                    print(f"Rel: src[", rel.source.id, "] -> [", rel.target.id, "]")
 
+
+            print("-------")
+
+            # Create a SourceDocument node (or retrieve its ID if it's already defined elsewhere)
+            source_doc_node = Node(
+                id="source_doc_1",
+                type="SourceDocument",
+                properties={"name": "source_doc_1", "_confidence": 1.0},
+            )
+            
+            # Track extra relationships
+            extra_rels = []
+
+            # Loop through all graph documents and attach 'Document' nodes to the SourceDocument
+            for gd in graph_docs:
+                for node in gd.nodes:
+                    if node.type == "Document":
+                        rel = Relationship(
+                            source=source_doc_node,
+                            target=node,
+                            type="CONTAINS",
+                            properties={"_confidence": 1.0}
+                        )
+                        extra_rels.append(rel)
+
+            # Append SourceDocument node and new relationships
+            for gd in graph_docs:
+                # Make sure the source document node is included in the graph
+                if not any(n.id == source_doc_node.id for n in gd.nodes):
+                    gd.nodes.append(source_doc_node)
+
+                # Add the new CONTAINS relationships
+                gd.relationships.extend(extra_rels)
             # # Print nodes after normalization
             # print("\n=== Nodes After Normalization ===")
             # for gd in graph_docs:
@@ -93,27 +127,27 @@ def ingest_doc_graph_transform(input_bytes_or_str, full_wipe=False):
             # ————————————————————————————————————————————— #
 
             # —————————————— De-dupe the nodes —————————————— #
-            from collections import defaultdict
+            # from collections import defaultdict
 
-            deduped_nodes_map = {}  # id → node
-            merged_properties = defaultdict(dict)
+            # deduped_nodes_map = {}  # id → node
+            # merged_properties = defaultdict(dict)
 
-            for gd in graph_docs:
-                unique_nodes = []
-                for node in gd.nodes:
-                    if node.id in deduped_nodes_map:
-                        # print("-- dupe found: ", node.id)
-                        # Merge properties: update existing with new ones (new values overwrite)
-                        merged_properties[node.id].update(node.properties)
-                    else:
-                        deduped_nodes_map[node.id] = node
-                        merged_properties[node.id] = node.properties
-                        unique_nodes.append(node)
-                gd.nodes = unique_nodes  # update with deduped nodes
+            # for gd in graph_docs:
+            #     unique_nodes = []
+            #     for node in gd.nodes:
+            #         if node.id in deduped_nodes_map:
+            #             # print("-- dupe found: ", node.id)
+            #             # Merge properties: update existing with new ones (new values overwrite)
+            #             merged_properties[node.id].update(node.properties)
+            #         else:
+            #             deduped_nodes_map[node.id] = node
+            #             merged_properties[node.id] = node.properties
+            #             unique_nodes.append(node)
+            #     gd.nodes = unique_nodes  # update with deduped nodes
 
-            # Apply merged properties back to the deduped nodes
-            for node_id, props in merged_properties.items():
-                deduped_nodes_map[node_id].properties = props
+            # # Apply merged properties back to the deduped nodes
+            # for node_id, props in merged_properties.items():
+            #     deduped_nodes_map[node_id].properties = props
 
             # print("\n ! ! ! ! ! !")
             # # Print nodes after de-duping
@@ -153,6 +187,7 @@ def ingest_doc_graph_transform(input_bytes_or_str, full_wipe=False):
             )
             neo_graph.query("MATCH (n) DETACH DELETE n")
 
+        # Write to Neo4J database
         neo_graph.add_graph_documents(graph_docs, include_source=True)
         print(f"[DEBUG]: Successfully wrote {len(graph_docs[0].nodes)} nodes and {len(graph_docs[0].relationships)} relationships to Neo4j AuraDB.")
         print("= = = = = = = = = = = = = = = = = = =\n\n")

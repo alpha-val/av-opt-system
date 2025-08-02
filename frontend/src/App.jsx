@@ -4,6 +4,8 @@ import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import ThemeProvider from "./themes/ThemeProvider";
+import Footer from "./widgets/Footer";
+import Demo_v0 from "./pages/Demo-0"; // Adjust path if needed
 const Test = () => {
   return <div>Test Component</div>;
 };
@@ -54,6 +56,7 @@ const AppContent = () => {
       {/* Define Routes */}
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/demo" element={<Demo_v0 />} />
         {/* <Route path="/signup" element={<SignupWithOnboarding />} /> */}
         {/* <Route path="/signup_coach" element={<CoachSignup />} />
         <Route path="/signup" element={<UserSignup />} />

@@ -19,7 +19,7 @@ NODE_TYPES = [
     "Provenance",
     "Scenario",
     "Workspace",
-    "CostEstimate",
+    # "Cost",
 ]
 
 EDGE_TYPES = [
@@ -31,7 +31,7 @@ EDGE_TYPES = [
     "CONSUMES_MATERIAL",  # Process    → Material (input)
     "PRODUCES_MATERIAL",  # Process    → Material (output)
     # costing
-    "HAS_COST",  # * → CostEstimate
+    # "HAS_COST",  # * → CostEstimate
     # data‑cleaning
     "SIMILAR_TO",  # low‑confidence duplicate link
     # provenance
@@ -44,14 +44,13 @@ NODE_PROPERTIES = [
     "name",
     "short_description",
     # Workspace
-    "location",
     "climate",
-    "zoning",
     "electrical_spec",
     "floor_type",
-    "water_source",
     "has_drainage",
+    "location",
     "sq_ft",
+    "zoning",
     # Scenario
     "shelf_life_days",
     "cold_chain_required",
@@ -61,40 +60,70 @@ NODE_PROPERTIES = [
     # Process
     "capacity_unit",
     "capacity_value",
-    "shift_pattern",
     "labor_required",
     "batch_size",
-    "throughput_bottles_hr",
+    "throughput",
     # Equipment
-    "model",
+    "annual_op_cost",
     "capacity",
+    "height",
+    "installation_year",
+    "life_expectancy_years",
+    "model",
+    "model_brand",
+    "model_year",
     "power_rating",
     "requires_utilities",
-    "annual_op_cost",
-    "life_expectancy_years",
     "supplier",
+    "weight",
+    "width",
+    # Requirements
+    "capital_requirement",
+    "labor_requirement",
+    "permit_requirements",
+    "power_requirement",
+    "water_requirement",
     # Material
     "form",
-    "unit",
-    "quantity",
-    "source",
-    "shelf_life_days",
+    "hazard_class",
     "packaging_type",
+    "quantity",
     "recyclable",
+    "shelf_life_days",
+    "source",
+    "transportation_mode",
+    "unit",
+    # Logistics
+    "transport_distance_km",
+    "transport_mode",
+    "handling_requirements",
+    "logistics_risk",
     # CostEstimate
+    "cost_basis",
+    "cost_type",
     "cost_value",
     "currency",
-    "cost_type",
-    "cost_basis",
     "effective_life",
     "source",
+    "update_frequency",  # monthly, quarterly, annual
+    # Environmental / Regulatory
+    "carbon_tax_applicability",
+    "compliance_level",
+    "emissions_intensity",
+    "permitting_status",
+    "reclamation_cost",
+    "tailings_volume",
+    "waste_volume",
     # Provenance
-    "confidence",  # score from LLM extraction
-    "source_doc",  # name or path to the source document
-    "extracted_from",  # text fragment or section
-    "rationale",  # optional explanation (e.g., from chain-of-thought)
-    "date_created",  # timestamp when relationship was extracted
-    "extraction_method",  # "LLM", "regex", "manual", etc.
+    "confidence",
+    "date_created",
+    "created_by",
+    "extracted_from",
+    "extraction_method",
+    "rationale",
+    "review_status",  # reviewed, pending, rejected
+    "reviewer_name",
+    "source_doc",
 ]
 
 EDGE_PROPERTIES = [

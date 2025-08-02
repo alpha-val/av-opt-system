@@ -57,9 +57,11 @@ def ingest_func_call():
 @bp.route("/nodes", methods=["GET"])
 def get_nodes():
     try:
+        print("[DEBUG] Fetching nodes with parameters:", request.args)
         node_type = request.args.get("type")
         limit = int(request.args.get("limit", 100))
         records = nodes(node_type=node_type, limit=limit)
+        # print("[DEBUG] Fetched nodes:", records)
         return jsonify(records)
     except ValueError as e:
         return jsonify({"error": f"Invalid input: {e}"}), 400
