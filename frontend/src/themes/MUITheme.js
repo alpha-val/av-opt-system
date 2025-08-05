@@ -58,7 +58,7 @@ let theme = createTheme({
       "sans-serif",
     ].join(","),
     h1: {
-      fontSize: "4.8rem",
+      fontSize: "2.25rem",
       "@media (max-width:600px)": { fontSize: "2.5rem" },
     },
     h2: {
@@ -82,8 +82,8 @@ let theme = createTheme({
       "@media (max-width:600px)": { fontSize: "0.9rem" },
     },
     body1: {
-      fontSize: "1rem",
-      "@media (max-width:600px)": { fontSize: "0.92rem" },
+      fontSize: "0.9rem",
+      "@media (max-width:600px)": { fontSize: "0.8rem" },
     },
     body2: {
       fontSize: "0.825rem",

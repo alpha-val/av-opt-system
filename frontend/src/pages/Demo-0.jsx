@@ -1,15 +1,13 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Box, Typography, TextField, Checkbox, FormGroup, FormControlLabel, Button, Paper, Radio } from "@mui/material";
-import Nav from "../widgets/Nav";
-import Footer from "../widgets/Footer";
 import EntityCard from "../components/EntityCard";
+import FileUpload from "../components/FileUpload";
 import { fetchNodes } from "../redux/nodeSlice"; // Import the thunk action
 import { memoizedNodesSelector } from "../redux/nodeSlice"; // Import the memoized selector
 
 const Demo_v0 = () => {
     const [selectedNodeTypes, setSelectedNodeTypes] = useState([]);
-    const [selectedParameters, setSelectedParameters] = useState([]);
     const [question, setQuestion] = useState("");
     const nodes = useSelector(memoizedNodesSelector); // Use the memoized selector to get nodes
     const dispatch = useDispatch(); // Initialize the dispatch hook
@@ -21,6 +19,13 @@ const Demo_v0 = () => {
         );
     };
 
+    const [file, setFile] = useState(null);
+    const handleFileUpload = (uploadedFile) => {
+        setFile(uploadedFile);
+        console.log("File uploaded:", uploadedFile, " type of: ,", typeof uploadedFile);
+    };
+
+    const [selectedParameters, setSelectedParameters] = useState([]);
     const handleParameterChange = (event) => {
         const { checked, value } = event.target;
         setSelectedParameters((prev) =>
@@ -35,10 +40,25 @@ const Demo_v0 = () => {
     };
 
     return (
-        <Box sx={{ height: "100vh", bgcolor: "#f5f5f5", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            <Nav />
-            <Box sx={{ display: "flex", flex: 1, bgcolor: "#f5f5f5", p: 2, overflow: "hidden" }}>
-                {/* Left Panel: Form */}
+        <Box
+            sx={{
+                bgcolor: "background.default",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+            }}
+        >
+            <Box
+                sx={{
+                    display: "flex",
+                    flex: 1,
+                    minHeight: 0,
+                    bgcolor: "background.default",
+                    p: 2,
+                    overflow: "hidden",
+                }}
+            >                {/* Left Panel: Form */}
                 <Box
                     sx={{
                         width: "25%",
@@ -49,6 +69,8 @@ const Demo_v0 = () => {
                         overflowY: "auto", // Enable scrolling for the form if content exceeds height
                     }}
                 >
+                    <FileUpload onFileUpload={handleFileUpload} />
+
                     <Typography gutterBottom>
                         Type your question, followed by optional selections
                     </Typography>
@@ -138,7 +160,6 @@ const Demo_v0 = () => {
                     </Paper>
                 </Box>
             </Box>
-            <Footer />
         </Box>
     );
 };

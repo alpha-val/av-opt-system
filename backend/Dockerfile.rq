@@ -12,4 +12,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 ENV PYTHONPATH=/app
 
 # Run the RQ worker (queue = default)
-CMD ["rq", "worker", "default"]
+# CMD ["rq", "worker", "default"]
+CMD ["rq", "worker", "default", "--url", "redis://redis:6379", "--timeout", "1200"]

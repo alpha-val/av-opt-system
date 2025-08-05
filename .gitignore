@@ -4,6 +4,7 @@
 # Ignore python environment
 backend/.env
 backend/venv/
+backend/old_venv/
 
 __pycache__/
 

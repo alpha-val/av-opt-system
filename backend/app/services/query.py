@@ -52,3 +52,4 @@ def edges(edge_type=None, limit=100):
     except Exception as e:
         print(f"Unexpected error in edges query: {e}")
         return []
+

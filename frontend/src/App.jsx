@@ -4,8 +4,10 @@ import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import ThemeProvider from "./themes/ThemeProvider";
+import Nav from "./widgets/Nav";
 import Footer from "./widgets/Footer";
 import Demo_v0 from "./pages/Demo-0"; // Adjust path if needed
+import { Box } from "@mui/material";
 const Test = () => {
   return <div>Test Component</div>;
 };
@@ -15,54 +17,10 @@ const AppContent = () => {
     <div style={{
       width: "100vw",
     }}>
-      {/* Theme Toggle Widget */}
-      {/* <div
-        style={{
-          position: "absolute",
-          top: "10px",
-          right: "30px",
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          cursor: "pointer",
-        }}
-        onClick={toggleTheme}
-      >
-        <span>{theme === "light" ? "🌞" : "🌙"}</span>
-        <div
-          style={{
-            width: "40px",
-            height: "15px",
-            backgroundColor: theme === "light" ? "#ccc" : "#333",
-            borderRadius: "10px",
-            position: "relative",
-            transition: "background-color 0.3s ease",
-          }}
-        >
-          <div
-            style={{
-              width: "13px",
-              height: "13px",
-              backgroundColor: "#fff",
-              borderRadius: "50%",
-              position: "absolute",
-              top: "1px",
-              left: theme === "light" ? "2px" : "25px",
-              transition: "left 0.3s ease",
-            }}
-          ></div>
-        </div>
-      </div> */}
       {/* Define Routes */}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/demo" element={<Demo_v0 />} />
-        {/* <Route path="/signup" element={<SignupWithOnboarding />} /> */}
-        {/* <Route path="/signup_coach" element={<CoachSignup />} />
-        <Route path="/signup" element={<UserSignup />} />
-        <Route path="/onboard" element={<ProtectedRoute>
-          <Onboarding />
-        </ProtectedRoute>} /> */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
@@ -73,9 +31,7 @@ const AppContent = () => {
 const AppBackground = ({ children }) => (
   <div
     style={{
-      minHeight: "100vh",
-      width: "100vw",
-      background: "linear-gradient(135deg, #f6fafd 0%, #faf8e6ff 50%,rgba(245, 224, 155, 1) 100%)",
+      // background: "linear-gradient(135deg, #e0e7ff 0%, #60a5fa 50%, #5f91fdff 100%)",
       fontFamily: "Inter, Roboto, Helvetica Neue, Arial, sans-serif",
     }}
   >
@@ -88,8 +44,13 @@ const App = () => {
     <AppBackground>
       <ThemeProvider>
         <Router>
-          {/* <Nav /> */}
-          <AppContent />
+          <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", overflow: "scroll"}}>
+            <Nav />
+            <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+              <AppContent />
+            </Box>
+            <Footer />
+          </Box>
         </Router>
       </ThemeProvider>
     </AppBackground>

@@ -1,8 +1,9 @@
 import React from "react";
 import { Box, Button, Typography, Grid, Card, CardContent, Container, Stack } from "@mui/material";
 import { PrecisionManufacturing, Timeline, Security, Engineering, TrendingUp, People } from "@mui/icons-material";
-import CustomAppBar from "../widgets/Nav";
-import Footer from "../widgets/Footer";
+// Import your background image (adjust the filename as needed)
+import heroBg from "../media/images/hero-bg-earth-mover.png"; // Adjust the path as needed
+
 const features = [
     {
         icon: <Timeline color="primary" sx={{ fontSize: 40 }} />,
@@ -54,21 +55,39 @@ const personas = [
 const LandingPage = () => {
     return (
         <>
-            <CustomAppBar position="static" />
             {/* Hero Section */}
             <Box
                 sx={{
-                    bgcolor: "#e3f2fd",
+                    position: "relative",
                     py: 8,
                     textAlign: "center",
                     background: "linear-gradient(90deg, #e3f2fd 60%, #f5f5f5 100%)",
+                    overflow: "hidden",
                 }}
             >
-                <Container maxWidth="md">
-                    <Typography variant="h3" fontWeight={700} color="primary.main" gutterBottom>
+                {/* Background graphic */}
+                <Box
+                    component="img"
+                    src={heroBg}
+                    alt=""
+                    aria-hidden="true"
+                    sx={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        opacity: 0.25,
+                        zIndex: 0,
+                        pointerEvents: "none",
+                    }}
+                />
+                <Container maxWidth="md" sx={{ position: "relative", zIndex: 1 }}>
+                    <Typography variant="h1" fontWeight={700} color="primary.main" gutterBottom>
                         Unlock Mining’s Future with AI-Driven Optionality
                     </Typography>
-                    <Typography variant="h6" color="text.secondary" mb={4}>
+                    <Typography variant="h6" color="text" mb={4}>
                         Smarter scenario analysis and mine planning for resilient, sustainable, and profitable operations.
                     </Typography>
                     <Button
@@ -82,10 +101,9 @@ const LandingPage = () => {
                     </Button>
                 </Container>
             </Box>
-
             {/* Features Section */}
-            <Container maxWidth="lg" sx={{ py: 8 }}>
-                <Typography variant="h4" align="center" fontWeight={600} color="primary.main" gutterBottom>
+            <Container maxWidth="lg" sx={{ py: 4 }}>
+                <Typography variant="h3" align="center" fontWeight={600} color="primary.main" gutterBottom sx={{ mb: 4 }}>
                     Key Features
                 </Typography>
                 <Grid
@@ -94,7 +112,7 @@ const LandingPage = () => {
                     justifyContent="center"
                     alignItems="stretch"
                     sx={{
-                        flexWrap: { xs: "wrap", md: "nowrap" }, // Prevent wrapping on md+ screens
+                        flexWrap: { xs: "wrap", md: "nowrap" },
                     }}
                 >
                     {features.map((f, i) => (
@@ -121,10 +139,13 @@ const LandingPage = () => {
                         </Grid>
                     ))}
                 </Grid>
-            </Container>            {/* Benefits for Personas Section */}
-            <Box sx={{ bgcolor: "#f5f5f5", py: 8 }}>
+            </Container>
+            {/* Benefits for Personas Section */}
+            <Box sx={{
+                bgcolor: "#f5f5f5", py: 4, background: "linear-gradient(135deg, #e3f2fd 60%, #959fe6ff 100%)",
+            }}>
                 <Container maxWidth="lg">
-                    <Typography variant="h4" align="center" fontWeight={600} color="primary.main" gutterBottom>
+                    <Typography variant="h3" align="center" fontWeight={600} color="primary.main" gutterBottom sx={{ mb: 4 }}>
                         Benefits for Every Role
                     </Typography>
                     <Grid container spacing={4} justifyContent="center">
@@ -150,7 +171,6 @@ const LandingPage = () => {
                     </Grid>
                 </Container>
             </Box>
-            <Footer />
         </>
     );
 };
