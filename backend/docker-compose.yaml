@@ -15,4 +15,5 @@ services:
       - .env
     environment:
       REDIS_URL: redis://redis:6379
+      PYTHONPATH: /app
     command: rq worker default

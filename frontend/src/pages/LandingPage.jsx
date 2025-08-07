@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Button, Typography, Grid, Card, CardContent, Container, Stack } from "@mui/material";
-import { PrecisionManufacturing, Timeline, Security, Engineering, TrendingUp, People } from "@mui/icons-material";
+import { Security, Engineering, PrecisionManufacturing, Speed, Timeline, TrendingUp, People } from "@mui/icons-material";
 // Import your background image (adjust the filename as needed)
 import heroBg from "../media/images/hero-bg-earth-mover.png"; // Adjust the path as needed
 
@@ -14,6 +14,16 @@ const features = [
         icon: <PrecisionManufacturing color="primary" sx={{ fontSize: 40 }} />,
         title: "Optimized Mine Planning",
         desc: "Automate complex mine design, scheduling, and resource modeling to maximize efficiency and profitability.",
+    },
+    {
+        icon: <PrecisionManufacturing color="primary" sx={{ fontSize: 40 }} />,
+        title: "Instant 'What-If' Modeling",
+        desc: "Change feed, product, or throughput and instantly see new equipment lists and capital costs.",
+    },
+    {
+        icon: <Speed color="primary" sx={{ fontSize: 40 }} />,
+        title: "Rapid Design Optimization",
+        desc: "Iterate through design cases in minutes, not months, to find the most profitable solution.",
     },
     {
         icon: <Security color="primary" sx={{ fontSize: 40 }} />,
@@ -83,7 +93,7 @@ const LandingPage = () => {
                         pointerEvents: "none",
                     }}
                 />
-                <Container maxWidth="md" sx={{ position: "relative", zIndex: 1 }}>
+                <Container maxWidth="md" sx={{ position: "relative", zIndex: 1, backgroundColor: "white", p: 2, borderRadius: 4, opacity: 0.8 }}>
                     <Typography variant="h1" fontWeight={700} color="primary.main" gutterBottom>
                         Unlock Mining’s Future with AI-Driven Optionality
                     </Typography>
@@ -102,44 +112,31 @@ const LandingPage = () => {
                 </Container>
             </Box>
             {/* Features Section */}
-            <Container maxWidth="lg" sx={{ py: 4 }}>
-                <Typography variant="h3" align="center" fontWeight={600} color="primary.main" gutterBottom sx={{ mb: 4 }}>
-                    Key Features
-                </Typography>
-                <Grid
-                    container
-                    spacing={4}
-                    justifyContent="center"
-                    alignItems="stretch"
-                    sx={{
-                        flexWrap: { xs: "wrap", md: "nowrap" },
-                    }}
-                >
-                    {features.map((f, i) => (
-                        <Grid
-                            item
-                            xs={12}
-                            sm={6}
-                            md={4}
-                            key={i}
-                            sx={{
-                                display: "flex",
-                                flexDirection: "column",
-                            }}
-                        >
-                            <Card elevation={4} sx={{ borderRadius: 3, height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                                <CardContent sx={{ textAlign: "center", p: 4 }}>
-                                    {f.icon}
-                                    <Typography variant="h6" fontWeight={600} mt={2} mb={1}>
-                                        {f.title}
-                                    </Typography>
-                                    <Typography color="text.secondary">{f.desc}</Typography>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                    ))}
-                </Grid>
-            </Container>
+            <Box sx={{
+                bgcolor: "#f5f5f5", py: 4,
+            }}>
+                <Container maxWidth="lg">
+                    <Typography variant="h3" align="center" fontWeight={600} color="primary.main" gutterBottom sx={{ mb: 4 }}>
+                        Features
+                    </Typography>
+                    <Grid container spacing={4} justifyContent="center">
+                        {features.map((feature, i) => (
+                            <Grid item xs={12} md={4} key={i}>
+                                <Card elevation={2} sx={{ height: "300px", maxWidth: "350px", p: 4, textAlign: "center", borderRadius: 3, bgcolor: "#fff" }}>
+                                    <CardContent>
+                                        {feature.icon}
+                                        <Typography variant="h6" fontWeight={600} mt={2} mb={1}>
+                                            {feature.title}
+                                        </Typography>
+                                        <Typography color="text.secondary">{feature.desc}</Typography>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </Container>
+            </Box>
+
             {/* Benefits for Personas Section */}
             <Box sx={{
                 bgcolor: "#f5f5f5", py: 4, background: "linear-gradient(135deg, #e3f2fd 60%, #959fe6ff 100%)",

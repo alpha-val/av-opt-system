@@ -19,7 +19,7 @@ NODE_TYPES = [
     "Provenance",
     "Scenario",
     "Workspace",
-    # "Cost",
+    "Costrule",
 ]
 
 EDGE_TYPES = [

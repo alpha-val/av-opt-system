@@ -1,12 +1,15 @@
-FROM python:3.9-slim
+FROM python:3.13.5
 
-WORKDIR /app
+RUN echo "Building RQ Worker Docker Image"
+
+
+WORKDIR .
 
 # Copy only necessary files — all code from backend dir
 COPY . .
 
 # Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 
 # Set env variable so your imports work like `from app.services...`
 ENV PYTHONPATH=/app

@@ -1,6 +1,6 @@
 from neo4j import GraphDatabase
 from neo4j.exceptions import ServiceUnavailable, Neo4jError
-from ..config import NEO4J_CONFIG
+from .config import NEO4J_CONFIG
 
 uri = NEO4J_CONFIG["uri"]
 username = NEO4J_CONFIG["auth"][0]
@@ -52,4 +52,3 @@ def edges(edge_type=None, limit=100):
     except Exception as e:
         print(f"Unexpected error in edges query: {e}")
         return []
-

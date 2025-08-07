@@ -2,13 +2,11 @@ from flask import Blueprint, request, jsonify
 from rq import Queue
 from redis import Redis
 from redis.exceptions import RedisError
-from .services.ingest_graph_transform import ingest_doc_graph_transform
-from .services.ingest_func_call import ingest_doc_func_call
-from .services.ingest_func_call_2 import ingest_doc_func_call_2
-from .services.query import nodes, edges
-from .services.file_handler import extract_text_from_pdf
-
+from .data_service.pipeline import make_graph
+from .data_service.query import nodes, edges
+# from .data_service.ingest_langex import build_graph as just_do_it
 bp = Blueprint("api", __name__)
+
 q = Queue(
     connection=Redis.from_url("redis://localhost:6379")
 )  # Update Redis URL if needed
@@ -26,62 +24,24 @@ rq-worker-1  | 13:07:14 default: Job OK (cc864214-dc48-4e8c-9a6d-af30e5210505)
 rq-worker-1  | 13:07:14 Result is kept for 500 seconds
 """
 
-
-def run_ingestion(text: str, full_wipe: bool = False):
+@bp.route("/pipeline", methods=["POST"])
+def ingest_document():
     try:
-        job = q.enqueue(
-            ingest_doc_graph_transform, text, full_wipe=full_wipe, job_timeout=1200
-        )
-        print(f"[DEBUG]: Enqueued job with ID {job.get_id()} for ingestion.")
-        return jsonify({"job_id": job.get_id()}), 202
-    except RedisError as e:
-        print(f"[ERROR]: Failed to enqueue job: {e}")
-        raise RuntimeError(f"Failed to enqueue job: {e}")
+        data = request.json
 
-
-@bp.route("/ingest", methods=["POST"])
-def ingest():
-    try:
-        uploaded = request.files.get("file")
-        text = request.json.get("text") if request.is_json else None
-        if not uploaded and not text:
-            return jsonify({"error": "No input provided"}), 400
-        return run_ingestion(text, full_wipe=True)
-        # try:
-        #     job = q.enqueue(
-        #         ingest_doc_graph_transform,
-        #         uploaded.read() if uploaded else text,
-        #         full_wipe=True,
-        #     )
-        # except RedisError as e:
-        #     return jsonify({"error": f"Failed to enqueue job: {e}"}), 500
-
-        # print(f"[DEBUG]: Enqueued job with ID {job.get_id()} for ingestion.")
-        # return jsonify({"job_id": job.get_id()}), 202
-    except Exception as e:
-        return jsonify({"error": f"Unexpected error in /api/ingest: {e}"}), 500
-
-
-@bp.route("/ingest_func_call", methods=["POST"])
-def ingest_func_call():
-    try:
-        uploaded = request.files.get("file")
-        text = request.json.get("text") if request.is_json else None
-        if not uploaded and not text:
-            return jsonify({"error": "No input provided"}), 400
 
         try:
             job = q.enqueue(
-                ingest_doc_func_call_2,
-                uploaded.read() if uploaded else text,
-                full_wipe=True,
+                make_graph,
+                data,
+                full_wipe=False,  # Set to True for initial ingestion
             )
         except RedisError as e:
             return jsonify({"error": f"Failed to enqueue job: {e}"}), 500
-
+        print("\n[DEBUG] S U C C E S S\n")
         return jsonify({"job_id": job.get_id()}), 202
     except Exception as e:
-        return jsonify({"error": f"Unexpected error in /api/ingest: {e}"}), 500
+        return jsonify({"error": f"Unexpected error in /api/ingest_doc: {e}"}), 500
 
 
 @bp.route("/nodes", methods=["GET"])
@@ -91,7 +51,7 @@ def get_nodes():
         node_type = request.args.get("type")
         limit = int(request.args.get("limit", 100))
         records = nodes(node_type=node_type, limit=limit)
-        # print("[DEBUG] Fetched nodes:", records)
+        print("[DEBUG] Fetched nodes:", records)
         return jsonify(records)
     except ValueError as e:
         return jsonify({"error": f"Invalid input: {e}"}), 400
@@ -149,3 +109,5 @@ def query_gen():
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": f"Unexpected error in /api/query_gen: {e}"}), 500
+
+

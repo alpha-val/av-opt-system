@@ -1,10 +1,8 @@
 from flask import Flask, send_from_directory, request, jsonify
-
 import os
 from dotenv import load_dotenv
-
 from .api import bp as api_bp
-
+from . import data_service
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
