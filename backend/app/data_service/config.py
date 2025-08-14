@@ -31,7 +31,7 @@ EDGE_TYPES = [
     "CONSUMES_MATERIAL",  # Process    → Material (input)
     "PRODUCES_MATERIAL",  # Process    → Material (output)
     # costing
-    # "HAS_COST",  # * → CostEstimate
+    "HAS_COST",  # * → CostEstimate
     # data‑cleaning
     "SIMILAR_TO",  # low‑confidence duplicate link
     # provenance
@@ -134,3 +134,100 @@ EDGE_PROPERTIES = [
     "date_created",  # timestamp when relationship was extracted
     "extraction_method",  # "LLM", "regex", "manual", etc.
 ]
+
+# EXAMPLES
+NODE_PROP_EXAMPLES = {
+    # Identity
+    "name": "Jaw Crusher Installation",
+    "short_description": "Primary crushing unit installation for processing plant",
+    # Workspace
+    "climate": "temperate",
+    "electrical_spec": "480V / 60Hz / 3-phase",
+    "floor_type": "reinforced_concrete",
+    "has_drainage": True,
+    "location": "Plant Site - Building A",
+    "sq_ft": 1250,
+    "zoning": "industrial",
+    # Scenario
+    "shelf_life_days": 365,
+    "cold_chain_required": False,
+    "sanitation_risk": "low",
+    "sensitivity_factor": 0.25,
+    "regulatory_zone": "Zone 3",
+    # Process
+    "capacity_unit": "TPH",
+    "capacity_value": 500,
+    "labor_required": 4,
+    "batch_size": 50,
+    "throughput": 480,
+    # Equipment
+    "annual_op_cost": 125000,
+    "capacity": "500 TPH",
+    "height": 4.5,
+    "installation_year": 2022,
+    "life_expectancy_years": 15,
+    "model": "JC-500",
+    "model_brand": "MineTech",
+    "model_year": 2021,
+    "power_rating": "250 kW",
+    "requires_utilities": True,
+    "supplier": "Global Mining Supply Co.",
+    "weight": 3500,
+    "width": 2.1,
+    # Requirements
+    "capital_requirement": 750000,
+    "labor_requirement": 3,
+    "permit_requirements": ["Environmental Clearance", "Construction Permit"],
+    "power_requirement": "250 kW",
+    "water_requirement": "50 m³/day",
+    # Material
+    "form": "crushed_rock",
+    "hazard_class": "non-hazardous",
+    "packaging_type": "bulk",
+    "quantity": 5000,
+    "recyclable": True,
+    "shelf_life_days": 365,
+    "source": "Local Quarry",
+    "transportation_mode": "truck",
+    "unit": "ton",
+    # Logistics
+    "transport_distance_km": 45,
+    "transport_mode": "road",
+    "handling_requirements": "standard",
+    "logistics_risk": "low",
+    # CostEstimate
+    "cost_basis": "vendor_quote",
+    "cost_type": "capital",
+    "cost_value": 750000,
+    "currency": "USD",
+    "effective_life": 15,
+    "source": "Internal Estimate",
+    "update_frequency": "annual",
+    # Environmental / Regulatory
+    "carbon_tax_applicability": True,
+    "compliance_level": "ISO 14001",
+    "emissions_intensity": 0.12,
+    "permitting_status": "approved",
+    "reclamation_cost": 50000,
+    "tailings_volume": 0,
+    "waste_volume": 200,
+    # Provenance
+    "confidence": 0.9,
+    "date_created": "2025-08-08",
+    "created_by": "system_admin",
+    "extracted_from": "technical_specifications.pdf",
+    "extraction_method": "NLP_extraction_v2",
+    "rationale": "Vendor supplied technical data",
+    "review_status": "reviewed",
+    "reviewer_name": "John Doe",
+    "source_doc": "document_1kdl10",
+}
+
+EDGE_PROP_EXAMPLES = {
+    "confidence": 0.92,  # extraction confidence score from 0 to 1
+    "source_doc": "document_1kdl10",
+    "extracted_from": "Section 3.2 - Process Description",
+    "rationale": "Relation inferred from process inclusion statement in feasibility report",
+    "date_created": "2025-08-08T10:15:00Z",  # ISO 8601 timestamp
+    "extraction_method": "LLM_v2",  # could be LLM, regex, manual, etc.
+}

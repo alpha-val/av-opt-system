@@ -67,6 +67,7 @@ const FileUpload = () => {
                 color="secondary"
                 onClick={handleUploadClick}
                 disabled={!selectedFile || status === "loading"}
+                sx={{ fontSize: "0.75rem" }}
                 size="small"
             >
                 Upload

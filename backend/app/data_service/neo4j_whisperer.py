@@ -48,7 +48,7 @@ def langextract_to_neo4j_format(extractions):
                 else getattr(ex, "extraction_class", None) or "Unknown"
             )
             node_type = to_camel_case(raw_label)
-
+            # pp.pprint(f"node properties: {properties}")
             if not node_id or node_id in node_ids:
                 continue
             node_ids.add(node_id)
@@ -57,7 +57,7 @@ def langextract_to_neo4j_format(extractions):
                     "id": node_id,
                     "type": node_type,
                     "labels": [node_type],
-                    "properties": {k: v for k, v in properties.items() if v is not None}, # Exclude None values
+                    "properties": {k: v for k, v in properties.items() if v is not 'null'}, # Exclude None values
                 }
             )
 
@@ -157,7 +157,7 @@ def save_to_neo4j(graph_doc, full_wipe: bool = False):
 
         print("[DEBUG] Adding graph document to Neo4j...")
         # Add the graph document to the Neo4j database
-        neo_graph.add_graph_documents([graph_doc], include_source=True)
+        neo_graph.add_graph_documents([graph_doc], include_source=False)
     except Exception as e:
         print(f"[ERROR] Failed to connect to Neo4j or write data: {e}")
         return f"Failed to connect to Neo4j or write data: {e}"

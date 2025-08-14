@@ -1,0 +1,9 @@
+flask==3.0.3
+python-dotenv==1.0.1
+PyMuPDF==1.24.10
+sentence-transformers==3.0.1
+scikit-learn==1.5.1
+pinecone-client==5.0.1
+neo4j==5.23.1
+tqdm==4.66.4
+joblib==1.4.2

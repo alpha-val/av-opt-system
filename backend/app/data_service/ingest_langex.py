@@ -4,13 +4,13 @@ from flask import jsonify
 import os
 import pprint
 from .build_prompt import gen_prompt
-from .config import NEO4J_CONFIG
+from .config import NEO4J_CONFIG, NODE_PROP_EXAMPLES, EDGE_PROP_EXAMPLES
 from .neo4j_whisperer import langextract_to_neo4j_format, build_neo4j_graph, save_to_neo4j
 
 # Initialize pretty printer for debugging
 pp = pprint.PrettyPrinter(indent=2)
 
-def build_graph(input_data, full_wipe: bool = False):
+def build_graph(input_data, full_wipe: bool = False, save_to_neo4j: bool = True):
     # Implement your document processing logic here
 
     # Define the prompt and extraction rules
@@ -38,62 +38,67 @@ def build_graph(input_data, full_wipe: bool = False):
                 lx.data.Extraction(
                     extraction_class="NODE",
                     extraction_text="jaw_crusher_installation",
+                    # attributes={
+                    #     "label": "PROJECT",
+                    #     "cost": "$1,800,000",
+                    #     "name": "Jaw Crusher Installation",
+                    #     "category": "base_case",
+                    # },
                     attributes={
                         "label": "PROJECT",
-                        "category": "base_case",
-                    },
+                        **NODE_PROP_EXAMPLES,
+                    }
                 ),
-                lx.data.Extraction(
-                    extraction_class="NODE",
-                    extraction_text="jaw_crusher | crusher",
-                    attributes={
-                        "label": "EQUIPMENT",
-                        "cost": "$1000",
-                        "name": "Jaw Crusher",
-                        "category": "machine",
-                    },
-                ),
-                lx.data.Extraction(
-                    extraction_class="NODE",
-                    extraction_text="portable_screening_plant | screening_plant",
-                    attributes={
-                        "label": "EQUIPMENT",
-                        "cost": "$1503",
-                        "name": "Portable Screening Plant",
-                        "category": "machine",
-                    },
-                ),
-                lx.data.Extraction(
-                    extraction_class="NODE",
-                    extraction_text="gold_ore | ore",
-                    attributes={
-                        "label": "MATERIAL",
-                        "cost": "$500",
-                        "name": "Gold Ore",
-                        "tph": "1000",
-                        "moisture_content": "3%",
-                        "category": "material",
-                    },
-                ),
-                lx.data.Extraction(
-                    extraction_class="NODE",
-                    extraction_text="total_installed_cost",
-                    attributes={
-                        "label": "COST_RULE",
-                        "cost": "$1,800,000",
-                        "name": "Total Installed Cost",
-                        "category": "machine",
-                    },
-                ),
-                lx.data.Extraction(
-                    extraction_class="NODE",
-                    extraction_text="gold_ore | ore",
-                    attributes={
-                        "label": "PROCESS",
-                        "name": "Ore Processing",
-                        "category": "process",
-                    },
-                ),
+                # lx.data.Extraction(
+                #     extraction_class="NODE",
+                #     extraction_text="jaw_crusher | crusher",
+                #     attributes={
+                #         "label": "EQUIPMENT",
+                #         "cost": "$1000",
+                #         "name": "Jaw Crusher",
+                #         "category": "machine",
+                #     },
+                # ),
+                # lx.data.Extraction(
+                #     extraction_class="NODE",
+                #     extraction_text="portable_screening_plant | screening_plant",
+                #     attributes={
+                #         "label": "EQUIPMENT",
+                #         "cost": "$1503",
+                #         "name": "Portable Screening Plant",
+                #         "category": "machine",
+                #     },
+                # ),
+                # lx.data.Extraction(
+                #     extraction_class="NODE",
+                #     extraction_text="gold_ore | ore",
+                #     attributes={
+                #         "label": "MATERIAL",
+                #         "cost": "$500",
+                #         "name": "Gold Ore",
+                #         "category": "material",
+                #     },
+                # ),
+                # lx.data.Extraction(
+                #     extraction_class="NODE",
+                #     extraction_text="total_installed_cost",
+                #     attributes={
+                #         "label": "COST_RULE",
+                #         "cost": "$1,800,000",
+                #         "name": "Total Installed Cost",
+                #         "category": "machine",
+                #     },
+                # ),
+                # lx.data.Extraction(
+                #     extraction_class="NODE",
+                #     extraction_text="gold_ore | ore",
+                #     attributes={
+                #         "label": "PROCESS",
+                #         "cost": "$500",
+                #         "name": "Ore Processing",
+                #         "category": "process",
+                #     },
+                # ),
                 lx.data.Extraction(
                     extraction_class="RELATIONSHIP",
                     extraction_text="<link_id_1>",
@@ -102,23 +107,24 @@ def build_graph(input_data, full_wipe: bool = False):
                         "source": "jaw_crusher",
                         "target": "rock",
                         "directionality": "one-way",
-                        "count": 1,
                     },
                 ),
-                lx.data.Extraction(
-                    extraction_class="RELATIONSHIP",
-                    extraction_text="<link_id_2>",
-                    attributes={
-                        "label": "located",
-                        "source": "project",
-                        "target": "Carson City",
-                        "directionality": "one-way",
-                        "count": 1,
-                    },
-                ),
+                # lx.data.Extraction(
+                #     extraction_class="RELATIONSHIP",
+                #     extraction_text="<link_id_2>",
+                #     attributes={
+                #         "label": "located",
+                #         "source": "project",
+                #         "target": "Carson City",
+                #         "directionality": "one-way",
+                #     },
+                # ),
             ],
         )
     ]
+
+    if input_data is None or "text" not in input_data:
+        return {"error": "Missing 'text' field in input data"}, 400
 
     # The input text to be processed
     try:
@@ -132,12 +138,23 @@ def build_graph(input_data, full_wipe: bool = False):
         text_or_documents=input_text,
         prompt_description=prompt,
         examples=examples,
-        model_id="gemini-2.5-flash",  # Use a specific model ID
+
+        # # OpenAI model configuration
+        # language_model_type=lx.inference.OpenAILanguageModel,
+        # model_id="gpt-4o-mini",  # Use a specific model ID
+        # api_key=os.environ.get('OPENAI_API_KEY'),
+        
+        # Gemini model configuration
+        model_id="gemini-2.5-pro",  # Use a specific model ID
         api_key=os.getenv("GEMINI_API_KEY"),  # Ensure you set this environment variable
+
+
         extraction_passes=1,  # Multiple passes for improved recall
-        batch_length=25,    # Chunks processed per batch
+        batch_length=50,    # Chunks processed per batch
+        
         # max_char_buffer=10000,  # Max characters per chunk (let the model handle this)
-        max_workers=20,  # Parallel processing for speed (batch_length must be > max_workers)
+        
+        max_workers=30,  # Parallel processing for speed (batch_length must be > max_workers)
         temperature=0.0,  # Lower temperature for deterministic output
     )
 
@@ -160,9 +177,12 @@ def build_graph(input_data, full_wipe: bool = False):
     # Convert to Neo4j format
     graph_doc = build_neo4j_graph(raw_nodes, raw_edges, input_text)
 
-    print("[DEBUG] Saving to Neo4j database...")
-    # Save to Neo4j
-    save_result = save_to_neo4j(graph_doc, full_wipe=full_wipe)
+    if save_to_neo4j:
+        print("[DEBUG] Saving to Neo4j database...")
+        # Save to Neo4j
+        save_result = save_to_neo4j(graph_doc, full_wipe=full_wipe)
 
-    print(f"[DEBUG] Result: {save_result}")
-    return save_result 
+        print(f"[DEBUG] Result: {save_result}")
+        return save_result 
+    else:
+        return graph_doc
