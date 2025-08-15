@@ -1,5 +1,0 @@
-Crushing and Grinding
-
-The primary crushing stage uses a Jaw Crusher sized to handle approximately 37,500 tpd.
-Downstream, grinding is performed by a SAG mill followed by a ball mill.
-The design targets a P80 suitable for the flotation circuit.

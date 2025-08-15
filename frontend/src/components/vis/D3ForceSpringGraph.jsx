@@ -268,7 +268,7 @@ export default function D3ForceSpringGraph({
         const hideTooltip = () => d3.select(tooltipRef.current).classed("hidden", true);
 
         const nodeHTML = (d) => {
-            const header = `<div class='font-semibold mb-1' style="background-color: lightblue; padding: 6px; border-radius: 5px; font-weight: 500">${nodeLabel(d)}</div>`;
+            const header = `<div class='font-semibold mb-1' style="background-color: lightblue; padding: 6px; border-radius: 5px; border: 1px solid red; font-weight: 500">Label: ${nodeLabel(d)}</div>`;
             const labels = d.labels?.length ? `<div class='mb-1 opacity-80' style="color: navy; padding: 6px; border-radius: 5px; border: 1px solid navy; font-weight: 600;">${d.labels.join(", ")}</div>` : "";
             const props = d.properties ?
                 `<div class='grid grid-cols-[auto_1fr] gap-x-2 gap-y-1'>${Object.entries(d.properties)

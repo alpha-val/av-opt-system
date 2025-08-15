@@ -23,7 +23,7 @@ const FileUpload = () => {
     const handleUploadClick = async () => {
         if (selectedFile) {
             const formData = new FormData();
-            formData.append("file", selectedFile); // Add the file to FormData
+            formData.append("files", selectedFile); // Add the file to FormData
 
             try {
                 const result = await dispatch(uploadFileAndParseText(formData)); // Dispatch the thunk action and await the result

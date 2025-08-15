@@ -1,24 +1,28 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const API_BASE_URL = "http://127.0.0.1:5000/api/v1";
+const API_BASE_URL = "http://127.0.0.1:5000/costing/v1";
 
 // Async thunk for uploading a file and receiving parsed text
 export const uploadFileAndParseText = createAsyncThunk(
   "data/uploadFileAndParseText",
   async (formData, { rejectWithValue }) => {
     try {
+      // Send the file to the API endpoint
       const response = await axios.post(
-        `${API_BASE_URL}/file_upload`,
+        `${API_BASE_URL}/ingest`, // API endpoint for file ingestion
         formData,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "multipart/form-data", // Required for file uploads
           },
         }
       );
-      return response.data; // Assuming the backend returns the parsed text
+
+      // Return the parsed text or response data
+      return response.data; // Assuming the backend returns parsed text or a summary
     } catch (error) {
+      // Handle errors and return a meaningful message
       return rejectWithValue(
         error.response?.data || "Failed to upload file and parse text"
       );
@@ -117,7 +121,8 @@ const dataSlice = createSlice({
       })
       .addCase(userQuery.rejected, (state, action) => {
         state.queryStatus = "failed";
-        state.queryError = action.payload || action.error?.message || "Unknown error";
+        state.queryError =
+          action.payload || action.error?.message || "Unknown error";
       });
   },
 });
