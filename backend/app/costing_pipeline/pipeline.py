@@ -41,14 +41,11 @@ from .storage import make_namespace_from_filename, make_safe_ascii
 # --- Try to use user's OpenAI extractor if present ---
 # The user uploaded /mnt/data/extract_with_openai.py with openai_extract(chunks)-> Graph-like dict
 try:
-    from .kg.extract_with_openai import openai_extract_nodes_rels as user_openai_extract
-
-    print("[DEBUG] Successfully imported openai_extract_nodes_rels.")
-
+    from .kg.extract_with_openai import openai_extract_nodes_rels
 except Exception:
-    user_openai_extract = None
+    openai_extract_nodes_rels = None
     print(
-        f"[ ! ERROR ! ] User OpenAI extractor found: {user_openai_extract is not None}"
+        f"[ ! ERROR ! ] User OpenAI extractor found: {openai_extract_nodes_rels is not None}"
     )
 # --- Load ontology (NODE_TYPES, EDGE_TYPES) if available ---
 try:
@@ -93,8 +90,8 @@ def call_openai_extract(
           edges: { "source","target","type","properties":{...} }
     """
 
-    if user_openai_extract is not None:
-        return user_openai_extract(chunks)
+    if openai_extract_nodes_rels is not None:
+        return openai_extract_nodes_rels(chunks)
     log.info("[ERROR] User-defined OpenAI extractor not found; using fallback.")
     return _fallback_openai_extract(chunks)
 
@@ -174,7 +171,8 @@ def _embed_and_upsert_to_pinecone(file_id: str, chunks):
     store = PineconeStore(index_name=PINECONE_INDEX)
 
     # Build a safe namespace from the original filename (or file_id)
-    safe_ns = make_namespace_from_filename(file_id)
+    # safe_ns = make_namespace_from_filename(file_id)
+    safe_ns = "default"
 
     upserted = store.upsert_chunks(
         chunk_texts=chunk_texts,

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Box, Typography, TextField, Checkbox, FormGroup, FormControlLabel, Button, Paper, Radio, Select, MenuItem, InputLabel, FormControl } from "@mui/material";
 import EntityCard from "../components/EntityCard";
@@ -11,7 +11,8 @@ import { fetchFullGraph, userQuery } from "../redux/dataSlice";
 const Demo_v0 = () => {
     const [selectedNodeTypes, setSelectedNodeTypes] = React.useState([]);
     const [question, setQuestion] = React.useState("");
-    const nodes = useSelector(memoizedNodesSelector);
+    // const nodes = useSelector(memoizedNodesSelector);
+    const [nodes, setNodes] = useState([]);
     const dispatch = useDispatch();
     const graph = useSelector((state) => state.data.graph); // Always use Redux state for graph
     const graphStatus = useSelector((state) => state.data.graphStatus);
@@ -21,12 +22,18 @@ const Demo_v0 = () => {
     }, [dispatch]);
 
     const entityLabels = React.useMemo(() => {
-        if (graphStatus !== "succeeded" || !graph?.graph?.nodes) return [];
+        // if (graphStatus !== "succeeded" || !graph?.graph?.nodes) return [];
         const labelsSet = new Set();
-        graph.graph.nodes.forEach((node) => {
-            const label = node?.properties?.label;
-            if (label) labelsSet.add(label);
-        });
+        if (graph.graph) {
+            if (graph.graph.nodes) {
+                graph.graph.nodes.forEach((node) => {
+                    if (node.labels && Array.isArray(node.labels) && node.labels.length === 1) {
+                        var label = node.labels[0];
+                        labelsSet.add(label);
+                    }
+                });
+            }
+        }
         return Array.from(labelsSet);
     }, [graph]);
 
@@ -154,7 +161,7 @@ const Demo_v0 = () => {
                     </Paper>
                     <Paper elevation={0} sx={{ p: 1 }}>
                         <Typography variant="subtitle1" gutterBottom>
-                            View Entities ({nodes.length} found)
+                            View Entities ({Array.isArray(nodes) ? nodes.length : 0} found)
                         </Typography>
                         <FormControl fullWidth sx={{ mb: 2 }}>
                             <InputLabel id="entity-select-label">Select Entity Type</InputLabel>
@@ -164,7 +171,14 @@ const Demo_v0 = () => {
                                 onChange={(event) => {
                                     const selectedType = event.target.value;
                                     setSelectedNodeTypes([selectedType]);
-                                    dispatch(fetchNodes(selectedType)); // Dispatch fetchNodes with the selected type
+                                    dispatch(fetchNodes(selectedType))
+                                        .then((data) => {
+                                            setNodes(data.payload);
+                                        })
+                                        .catch((error) => {
+                                            console.error(error);
+                                            setNodes([]);
+                                        });
                                 }}
                                 label="Select Entity Type"
                             >
@@ -175,8 +189,8 @@ const Demo_v0 = () => {
                                 ))}
                             </Select>
                         </FormControl>
-                        <Box sx={{ bgcolor: "#f5f5f5", borderRadius: 1, overflow: "wrap", p: 2 }}>
-                            {nodes.length > 0 ? (
+                        <Box sx={{ bgcolor: "#f5f5f5", borderRadius: 1, overflow: "wrap", p: 1 }}>
+                            {Array.isArray(nodes) && nodes.length > 0 ? (
                                 nodes.map((node, index) => (
                                     <EntityCard key={index} entity={node} />
                                 ))

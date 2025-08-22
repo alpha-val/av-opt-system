@@ -14,7 +14,7 @@ uri = SETTINGS.neo4j_uri
 username = SETTINGS.neo4j_user
 password = SETTINGS.neo4j_password
 driver = GraphDatabase.driver(uri, auth=(username, password))
-
+print(f"Driver : {driver}")
 
 def _int(v, default):
     try:
@@ -150,6 +150,7 @@ def api_graph_d3():
       Edges: type (edge), from_type, to_type, edge_limit
     """
     data = request.get_json(silent=True) or {}
+    print("[DEBUG] /graph request")
     # node slice
     node_type = _clean_label(data.get("type") or request.args.get("type"))
     q = (data.get("q") or request.args.get("q") or "").strip().lower()

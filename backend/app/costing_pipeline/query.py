@@ -269,6 +269,7 @@ def query():
     3) Retrieve Neo4j subgraph around best-matching concepts
     4) Run cost estimator on the returned subgraph (optional params)
     """
+    print("[DEBUG : QUERY] running costing query")
     # Accept JSON body (POST) or query string (GET)
     data = request.get_json(silent=True) or {}
     query_text = (data.get("query") or request.args.get("query") or "").strip()
@@ -280,7 +281,7 @@ def query():
     namespace = data.get("namespace", request.args.get("namespace"))
     graph_nodes = int(data.get("graph_nodes", request.args.get("graph_nodes", 25)))
     graph_hops = int(data.get("graph_hops", request.args.get("graph_hops", 1)))
-    raw_ns = data.get("namespace", request.args.get("namespace"))
+    raw_ns = data.get("namespace", request.args.get("namespace") or "default")
     namespace = make_safe_ascii(raw_ns) if raw_ns else None
 
     # Costing knobs (all optional)
@@ -306,6 +307,7 @@ def query():
 
     try:
         # 1) Vector search (Pinecone)
+        print(f"[DEBUG : QUERY] running Pinecone query with params: {query_text}, {top_k}, {namespace}")
         matches = pinecone_query(query_text, top_k=top_k, namespace=namespace)
 
         # 2) Graph retrieval (Neo4j)
@@ -371,7 +373,7 @@ def get_entities_by_type():
 
     if not entity_type:
         return jsonify({"error": "Missing 'type' parameter"}), 400
-
+    print(f"[DEBUG : QUERY] fetching entities of type: {entity_type}")
     try:
         if GraphDatabase is None:
             raise RuntimeError("Neo4j driver not initialized.")
@@ -379,12 +381,13 @@ def get_entities_by_type():
         driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
         
         with driver.session() as session:
+
             query = f"""
             MATCH (n:`{entity_type}`)
             RETURN DISTINCT n
             """
             results = session.run(query)
-
+            
             nodes = []
             for record in results:
                 node = record["n"]  # Neo4j Node object
@@ -395,8 +398,7 @@ def get_entities_by_type():
                         "properties": dict(node),
                     }
                 )
-
-        return jsonify({"ok": True, "type": entity_type, "nodes": nodes})
+        return jsonify({"nodes": nodes}), 200
 
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500

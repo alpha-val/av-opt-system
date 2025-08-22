@@ -48,10 +48,10 @@ export const userQuery = createAsyncThunk(
   "data/userQuery",
   async (question, { rejectWithValue }) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/user_query`, {
+      const res = await fetch(`${API_BASE_URL}/query`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({"query": question }),
       });
       if (!res.ok) {
         const text = await res.text();

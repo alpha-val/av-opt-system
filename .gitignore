@@ -5,7 +5,7 @@
 backend/.env
 backend/venv/
 backend/old_venv/
-backend/venv_3_12/
+backend/venv_3.12/
 __pycache__/
 
 # Ignore some frontend files

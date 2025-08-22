@@ -2,20 +2,27 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { createSelector } from 'reselect';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://127.0.0.1:5000/api/v1';
+const API_BASE_URL = 'http://127.0.0.1:5000/costing/v1';
 
 // Async thunk to fetch nodes from the backend
 export const fetchNodes = createAsyncThunk(
     'nodes/fetchNodes',
     async (type, { rejectWithValue }) => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/nodes`, { params: { type } });
-            return response.data; // Assuming the backend returns the nodes in the response
+            const response = await fetch(`${API_BASE_URL}/entities`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ "type": type }),
+            });
+            const data = await response.json();
+            console.log("[DEBUG : nodeSlice > ", data);
+            return data.nodes || []; // Extract nodes array from backend response
         } catch (error) {
-            return rejectWithValue(error.response?.data || 'Failed to fetch nodes');
+            return rejectWithValue(error.message || 'Failed to fetch nodes');
         }
     }
 );
+
 
 const nodeSlice = createSlice({
     name: 'nodes',

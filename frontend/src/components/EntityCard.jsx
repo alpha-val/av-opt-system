@@ -5,7 +5,7 @@ const EntityCard = ({ entity }) => {
     const { labels, properties } = entity;
 
     return (
-        <Card elevation={3} sx={{ borderRadius: 2, mb: 2, maxWidth: 275, p: 1}}>
+        <Card elevation={3} sx={{ borderRadius: 2, mb: 2, p: 1}}>
             <CardContent>
                 {/* Entity Labels */}
                 <Box sx={{ mb: 2 }}>

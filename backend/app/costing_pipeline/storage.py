@@ -52,7 +52,6 @@ except Exception:
 # --- OpenAI embeddings client (v1 API)
 try:
     from openai import OpenAI
-
     _openai_client = OpenAI(api_key=OPENAI_API_KEY)
 except Exception:
     _openai_client = None
@@ -60,7 +59,6 @@ except Exception:
 # --- Pinecone v3
 try:
     from pinecone import Pinecone, ServerlessSpec
-
     _pc = Pinecone(api_key=PINECONE_API_KEY) if PINECONE_API_KEY else None
 except Exception:
     _pc = None
@@ -267,6 +265,7 @@ class PineconeStore:
         """
         vectors = []
         namespace = make_safe_ascii(namespace)
+        print(f"[DEBUG : PINECONE] namespace: {namespace}")
         for i, (dv, sv, md) in enumerate(zip(dense_vecs, sparse_vecs, metas)):
             vectors.append(
                 {
@@ -349,7 +348,7 @@ class Neo4jWriter:
                 print(f"Merging node {n.id} of type {n.type}: node: {n}")
                 s.run(
                     f"""
-                    MERGE (x:__Entity {{id: $id}})
+                    MERGE (x:`{n.type}` {{id: $id}})
                     SET x += $props
                     SET x:`{n.type}`
                     """,
@@ -360,8 +359,8 @@ class Neo4jWriter:
             for r in gdoc.relationships:
                 rprops = self._clean_props(r.properties)
                 cypher = f"""
-                MERGE (s:__Entity {{id: $sid}}) SET s:`{r.source.type}`
-                MERGE (t:__Entity {{id: $tid}}) SET t:`{r.target.type}`
+                MERGE (s:`{r.source.type}` {{id: $sid}})
+                MERGE (t:`{r.target.type}` {{id: $tid}})
                 MERGE (s)-[rel:`{r.type}`]->(t)
                 SET rel += $rprops
                 """
