@@ -119,6 +119,13 @@ def _dedupe_graph_payload(graph: dict) -> dict:
 
 # ---------- Pinecone retrieval ----------
 def pinecone_query(query_text: str, top_k: int = 8, namespace: Optional[str] = None):
+    """
+    Returns:
+      {
+        "matches": [ {id, score, metadata}, ... ],
+        "chunk_ids": ["<chunk_id_1>", "<chunk_id_2>", ...]   # from match.metadata.chunk_id
+      }
+    """
     if _pc is None:
         raise RuntimeError("Pinecone client not initialized.")
 
@@ -134,19 +141,28 @@ def pinecone_query(query_text: str, top_k: int = 8, namespace: Optional[str] = N
         sparse_vector=q_sparse,
         top_k=top_k,
         include_metadata=True,
-        namespace=namespace or "",  # empty string → search default namespace
+        namespace=namespace or "",  # empty string → default namespace
     )
+
     # Normalize hits
     matches = []
+    chunk_ids, seen = [], set()
     for m in resp.matches or []:
+        md = dict(m.metadata) if m.metadata else {}
         matches.append(
             {
                 "id": m.id,
                 "score": float(m.score) if hasattr(m, "score") else None,
-                "metadata": dict(m.metadata) if m.metadata else {},
+                "metadata": md,
             }
         )
-    return matches
+        # Prefer explicit metadata.chunk_id; tolerate a few common variants
+        cid = md.get("chunk_id") or md.get("chunkId") or md.get("chunkID")
+        if cid and cid not in seen:
+            seen.add(cid)
+            chunk_ids.append(cid)
+
+    return {"matches": matches, "chunk_ids": chunk_ids}
 
 
 # ---------- Neo4j retrieval ----------
@@ -251,14 +267,157 @@ def neo4j_fetch_graph(
             return {"nodes": out["Ns"], "relationships": out["Rs"]}
         return {"nodes": [], "relationships": []}
 
-
-# ---------- Routew ----------
+# Add near the top of your file, after imports
+def neo4j_read(cypher: str, params: dict) -> list:
+    driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+    with driver.session() as session:
+        print(f"[QUERY ] Running neo4j_read..")
+        result = session.run(cypher, **params)
+        print(f"[QUERY ] Finished neo4j_read: {result}")
+        return result.data()
+# ---------- Route ----------
 
 
 @costing_query_pipeline_bp.route("/query_health", methods=["GET"])
 def query_health():
     return jsonify({"ok": True, "service": "costing_query_pipeline"}), 200
 
+
+# --- Configure which domain edges to traverse for costing ---------------
+REL_WHITELIST = [
+    "USES_EQUIPMENT",
+    "INCLUDES_PROCESS",
+    "HAS_SCENARIO",
+    "FEEDS",
+    "OUTPUTS",
+    "PART_OF",
+    "LOCATED_IN",
+    "REQUIRES",
+    "POWERED_BY",
+    "HAS_MATERIAL",
+    "HAS_EQUIPMENT",
+    "NEXT",
+    "PRECEDES",
+    # add/remove to taste
+]
+
+
+def _dedupe_preserve_order(xs):
+    seen = set()
+    out = []
+    for x in xs:
+        if x in seen:
+            continue
+        seen.add(x)
+        out.append(x)
+    return out
+
+
+def extract_chunk_ids_from_matches(matches) -> list:
+    """
+    Accepts your Pinecone `matches` payload (either a list of matches or
+    {"matches": [...]}). Returns a de-duped list of chunk_ids in ranking order.
+    """
+    if isinstance(matches, dict):
+        matches_list = matches.get("matches", [])
+    else:
+        matches_list = matches or []
+
+    chunk_ids = []
+    for m in matches_list:
+        md = (m.get("metadata") or {}) if isinstance(m, dict) else {}
+        cid = md.get("chunk_id")
+        if cid:
+            chunk_ids.append(cid)
+    return _dedupe_preserve_order(chunk_ids)
+
+
+def neo4j_fetch_graph_around_chunks(
+    chunk_ids: list,
+    *,
+    graph_hops: int = 2,
+    graph_nodes: int = 50,
+    rel_whitelist: list | None = None,
+):
+    """
+    Build a compact subgraph for costing starting from retrieved Chunk nodes:
+      Chunk --MENTIONS--> Entity --[REL_WHITELIST]*..hops-- Neighbor
+
+    Returns { "nodes": [...], "edges": [...] } with ids projected from node props:
+      id = coalesce(n.id, n.chunk_id, n.doc_id)
+    Includes the MENTIONS edges for provenance.
+    Uses your existing `neo4j_read(cypher, params)` helper.
+    """
+    if not chunk_ids:
+        return {"nodes": [], "edges": []}
+
+    rels = rel_whitelist or REL_WHITELIST
+    # Build a typed variable-length pattern (no APOC needed)
+    rel_pattern = "|".join(f"`{r}`" for r in rels)
+    hops = max(1, int(graph_hops))  # ensure valid pattern
+    print(f"[DEBUG : QUERY] hops: {hops}")
+    cypher = f"""
+    UNWIND $chunk_ids AS cid
+    MATCH (c:Chunk {{chunk_id: cid}})-[:MENTIONS]->(e)
+    WITH collect(DISTINCT c) AS chunks, collect(DISTINCT e) AS ents
+
+    // Expand out from the mentioned entities up to N hops across your domain rels
+    UNWIND ents AS s
+    OPTIONAL MATCH p = (s)-[r:{rel_pattern}*..{hops}]-(n)
+    UNWIND r AS rel
+    WITH collect(DISTINCT s) AS ents,
+        collect(DISTINCT n) AS others,
+        collect(DISTINCT rel) AS rels,
+        chunks
+     
+    // Also bring back provenance edges (Chunk)-[:MENTIONS]->(Entity)
+    UNWIND chunks AS c2
+    UNWIND ents   AS e2
+    OPTIONAL MATCH (c2)-[rm:MENTIONS]->(e2)
+    WITH chunks, ents, others, rels, collect(DISTINCT rm) AS mention_rels
+    WITH chunks, ents, others, rels + mention_rels AS rels
+
+    // Node budget
+    WITH chunks + ents + others AS nlist, rels
+    UNWIND nlist AS n
+    WITH collect(DISTINCT n)[0..$graph_nodes] AS keep_nodes, rels
+
+    // Keep only relationships whose endpoints are in-graph
+    //@ WITH keep_nodes,
+    //@     [r IN rels WHERE startNode(r) IN keep_nodes AND endNode(r) IN keep_nodes] AS keep_rels
+    WITH keep_nodes,
+        [r IN rels WHERE r IS NOT NULL AND type(r) IS NOT NULL AND startNode(r) IN keep_nodes AND endNode(r) IN keep_nodes] AS keep_rels
+    RETURN
+      [n IN keep_nodes |
+        {{
+          id: coalesce(n.id, n.chunk_id, n.doc_id),
+          label: head(labels(n)),
+          properties: properties(n)
+        }}] AS nodes,
+      [r IN keep_rels |
+        {{
+          source: coalesce(startNode(r).id, startNode(r).chunk_id, startNode(r).doc_id),
+          target: coalesce(endNode(r).id,   endNode(r).chunk_id,   endNode(r).doc_id),
+          type: type(r),
+          properties: properties(r)
+        }}] AS edges
+    """
+
+    nodes = []
+    edges = []
+    try:
+        # Uses your project's Neo4j read helper (same one your old fetch function uses)
+        recs = neo4j_read(cypher, {"chunk_ids": chunk_ids, "graph_nodes": int(graph_nodes)})
+        if not recs:
+            print("[QUERY] Neo4j returned ZERO records.")
+            return {"nodes": [], "edges": []}
+        row = recs[0]
+        print(f"[QUERY] row: {row}")
+        nodes = row.get("nodes", [])
+        edges = row.get("edges", [])
+    except Exception as e:
+        print(f"[QUERY : ERROR] Error occurred: {e}")
+    return {"nodes": nodes, "edges": edges}
 
 @costing_query_pipeline_bp.route("/query", methods=["GET", "POST"])
 def query():
@@ -307,14 +466,44 @@ def query():
 
     try:
         # 1) Vector search (Pinecone)
-        print(f"[DEBUG : QUERY] running Pinecone query with params: {query_text}, {top_k}, {namespace}")
+        print(
+            f"[DEBUG : QUERY] running Pinecone query with params: {query_text}, {top_k}, {namespace}"
+        )
         matches = pinecone_query(query_text, top_k=top_k, namespace=namespace)
 
-        # 2) Graph retrieval (Neo4j)
-        graph = neo4j_fetch_graph(
-            query_text, graph_nodes=graph_nodes, graph_hops=graph_hops
-        )
+        # helper: pull chunk_ids out of Pinecone matches (handles both list and {"matches":[...]})
+        def _extract_chunk_ids(m):
+            items = m.get("matches") if isinstance(m, dict) else (m or [])
+            ids, seen = [], set()
+            for it in items:
+                md = (it.get("metadata") or {}) if isinstance(it, dict) else {}
+                cid = md.get("chunk_id")
+                if cid and cid not in seen:
+                    seen.add(cid)
+                    ids.append(cid)
+            return ids
 
+        chunk_ids = _extract_chunk_ids(matches)
+        print(f"[DEBUG : QUERY] retrieved {len(chunk_ids)} chunk_ids from Pinecone")
+
+        # 2) Graph retrieval (Neo4j) — prefer Chunk → MENTIONS → domain graph
+        if chunk_ids:
+            # >>> This is the new, chunk-anchored retrieval <<<
+            print(f"[QUERY] running Neo4j query around chunks: {chunk_ids}")
+            graph = neo4j_fetch_graph_around_chunks(
+                chunk_ids=chunk_ids,
+                graph_nodes=graph_nodes,
+                graph_hops=graph_hops,
+                # rel_whitelist can be omitted to use defaults inside the helper
+            )
+            print(f"Graph FOUND> {graph}")
+        else:
+            # Fallback to your existing text-anchored graph fetch
+            print(f"[QUERY] running Neo4j query around text (no chunk_ids): {query_text}")
+            graph = neo4j_fetch_graph(
+                query_text, graph_nodes=graph_nodes, graph_hops=graph_hops
+            )
+        print("[DEBUG] Neo4j graph retrieval complete")
         # de-dupe any fan-outs from Cypher or client merges
         graph = _dedupe_graph_payload(graph)
 
@@ -327,6 +516,7 @@ def query():
                     "ok": True,
                     "query": query_text,
                     "matches": matches,
+                    "chunk_ids": chunk_ids,  # helpful for debugging / provenance
                     "graph": graph,
                     "costing": costing,
                 }
@@ -379,7 +569,7 @@ def get_entities_by_type():
             raise RuntimeError("Neo4j driver not initialized.")
 
         driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
-        
+
         with driver.session() as session:
 
             query = f"""
@@ -387,7 +577,7 @@ def get_entities_by_type():
             RETURN DISTINCT n
             """
             results = session.run(query)
-            
+
             nodes = []
             for record in results:
                 node = record["n"]  # Neo4j Node object

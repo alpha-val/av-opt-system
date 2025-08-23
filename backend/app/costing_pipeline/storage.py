@@ -214,11 +214,13 @@ def build_sparse_hybrid_vectors(
 
 
 def embed_texts_dense(texts: List[str], model: str = None) -> List[List[float]]:
+    print(f"[PINECONE] embedding {len(texts)} texts via OpenAI...")
     if _openai_client is None:
         raise RuntimeError(
             "OpenAI client not available. Set OPENAI_API_KEY and install `openai` >= 1.0."
         )
     use_model = model or EMBED_MODEL
+    print(f"[PINECONE] using dense embedding model: {use_model}")
     resp = _openai_client.embeddings.create(model=use_model, input=texts)
     return [d.embedding for d in resp.data]
 
@@ -233,6 +235,7 @@ class PineconeStore:
                 "Pinecone client not available. Install `pinecone-client` (v3 package `pinecone`)."
             )
         self.index_name = index_name or PINECONE_INDEX
+        print(f"[PINECONE STORE] index name: {self.index_name}")
         self._ensure_index()
 
     def _ensure_index(self):
@@ -265,23 +268,34 @@ class PineconeStore:
         """
         vectors = []
         namespace = make_safe_ascii(namespace)
-        print(f"[DEBUG : PINECONE] namespace: {namespace}")
+        print(f"[PINECONE] namespace: {namespace}")
         for i, (dv, sv, md) in enumerate(zip(dense_vecs, sparse_vecs, metas)):
+            metadata = md or {}
+            metadata["text"] = chunk_texts[i][:5000]  # limit text size in metadata
+            chunk_id = make_safe_id(id_prefix, i)
             vectors.append(
                 {
-                    "id": make_safe_id(id_prefix, i),
+                    "id": chunk_id,
                     "values": dv,
                     "sparse_values": sv,
-                    "metadata": md or {},
+                    "metadata": metadata,
+                    # For chunks+mentions linking
+                    # "chunk_id": chunk_id,      # stable UUID you assign
+                    # "seq": i,            # 0-based order
+                    # "text": metadata["text"],          # raw / cleaned text
+                    # "page": metadata.get("page") or 0,          # original page (if known)
+                    # "pinecone_id": metadata.get("pinecone_id") or chunk_id, # optional, if you use it
+                    # "namespace": namespace       # same ns you use in Pinecone
                 }
             )
 
         try:
             self.index.upsert(vectors=vectors, namespace=namespace)
-        except Exception:
+        except Exception as e:
             # Last-resort fallback — keeps ingestion running
             self.index.upsert(vectors=vectors, namespace="default")
-        
+            print(f"[PINECONE : ERROR] Pinecone upsert failed: {e}")
+        print(f"[PINECONE] upserted {len(vectors)} vectors")
         return len(vectors)
 
 
@@ -343,27 +357,39 @@ class Neo4jWriter:
                 pass
 
             # --- Nodes ---
-            for n in gdoc.nodes:
-                props = self._clean_props(n.properties)
-                print(f"Merging node {n.id} of type {n.type}: node: {n}")
-                s.run(
-                    f"""
-                    MERGE (x:`{n.type}` {{id: $id}})
-                    SET x += $props
-                    SET x:`{n.type}`
-                    """,
-                    id=n.id, props=props
-                )
+            try:
+                for n in gdoc.nodes:
+                    props = self._clean_props(n.properties)
+                    # print(f"Merging node {n.id} of type {n.type}: node: {n}")
+                    s.run(
+                        f"""
+                        MERGE (x:`{n.type}` {{id: $id}})
+                        SET x += $props
+                        SET x:`{n.type}`
+                        """,
+                        id=n.id, props=props
+                    )
+            except Exception as e:
+                print(f"[GRAPH] - Neo4j node merge failed: {e}")
 
             # --- Relationships ---
-            for r in gdoc.relationships:
-                rprops = self._clean_props(r.properties)
-                cypher = f"""
-                MERGE (s:`{r.source.type}` {{id: $sid}})
-                MERGE (t:`{r.target.type}` {{id: $tid}})
-                MERGE (s)-[rel:`{r.type}`]->(t)
-                SET rel += $rprops
-                """
-                s.run(cypher, sid=r.source.id, tid=r.target.id, rprops=rprops)
-
+            try:
+                for r in gdoc.relationships:
+                    source_type = r.source.type if r.source.type else "Entity"
+                    target_type = r.target.type if r.target.type else "Entity"
+                    # Ensure neither type is empty or None
+                    if not source_type.strip() or not target_type.strip():
+                        print(f"[GRAPH] - Skipping relationship with missing type: {r}")
+                        continue
+                    rprops = self._clean_props(r.properties)
+                    # print(f"Merging relationship {r.source.id} -[{r.type}]-> {r.target.id}")
+                    cypher = f"""
+                    MERGE (s:`{source_type}` {{id: $sid}})
+                    MERGE (t:`{target_type}` {{id: $tid}})
+                    MERGE (s)-[rel:`{r.type}`]->(t)
+                    SET rel += $rprops
+                    """
+                    s.run(cypher, sid=r.source.id, tid=r.target.id, rprops=rprops)
+            except Exception as e:
+                print(f"[GRAPH] - Neo4j relationship merge failed: {e}")
         return {"nodes_written": len(gdoc.nodes), "rels_written": len(gdoc.relationships)}

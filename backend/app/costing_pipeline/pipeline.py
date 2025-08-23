@@ -37,7 +37,6 @@ from .storage import (
 )
 from .storage import make_namespace_from_filename, make_safe_ascii
 
-
 # --- Try to use user's OpenAI extractor if present ---
 # The user uploaded /mnt/data/extract_with_openai.py with openai_extract(chunks)-> Graph-like dict
 try:
@@ -46,6 +45,24 @@ except Exception:
     openai_extract_nodes_rels = None
     print(
         f"[ ! ERROR ! ] User OpenAI extractor found: {openai_extract_nodes_rels is not None}"
+    )
+
+try:
+    from .kg.extract_with_openai import openai_extract_nodes_rels_mentions
+except Exception:
+    openai_extract_nodes_rels_mentions = None
+    print(
+        f"[ ! ERROR ! ] User OpenAI extractor found: {openai_extract_nodes_rels_mentions is not None}"
+    )
+
+try:
+    from .kg.extract_with_openai_with_mentions import (
+        openai_extract_nodes_rels_and_ingest_mentions,
+    )
+except Exception:
+    openai_extract_nodes_rels_and_ingest_mentions = None
+    print(
+        f"[ ! ERROR ! ] User OpenAI extractor found: {openai_extract_nodes_rels_and_ingest_mentions is not None}"
     )
 # --- Load ontology (NODE_TYPES, EDGE_TYPES) if available ---
 try:
@@ -90,10 +107,14 @@ def call_openai_extract(
           edges: { "source","target","type","properties":{...} }
     """
 
-    if openai_extract_nodes_rels is not None:
-        return openai_extract_nodes_rels(chunks)
-    log.info("[ERROR] User-defined OpenAI extractor not found; using fallback.")
-    return _fallback_openai_extract(chunks)
+    # return openai_extract_nodes_rels(chunks=chunks)
+    return openai_extract_nodes_rels_mentions(chunks=chunks)
+    # #     return openai_extract_nodes_rels(chunks)
+    # if openai_extract_nodes_rels_mentions is not None:
+    #     print("[DEBUG] using openai_extract_nodes_rels_mentions")
+    #     return openai_extract_nodes_rels_mentions(chunks=chunks, use_next_links=False)
+    # print("[ERROR] User-defined OpenAI extractor not found; using fallback.")
+    # return _fallback_openai_extract(chunks)
 
 
 # ---------------------- Helpers ----------------------------------------------------
@@ -216,22 +237,22 @@ def run_ingestion_for_pdf_stream(stream) -> Dict[str, Any]:
 
     # 3) Embed + upsert to Pinecone
     pinecone_stats = _embed_and_upsert_to_pinecone(file_id, chunks)
-    log.info(
+    print(
         f"[INGEST:PINECONE] upserted {pinecone_stats['pinecone_upserted']} chunks to Pinecone"
     )
 
     # 4) Extract KG with OpenAI function-calls
-
+    print("[INGEST] - Extracting knowledge graph...")
     gdoc = _extract_graph_from_chunks(chunks)
-    log.info(
-        f"[INGEST:GRAPH] extracted {len(gdoc.nodes)} nodes and {len(gdoc.relationships)} relationships"
-    )
+    print(f"[INGEST] - Done extracting knowledge graph with: {len(gdoc.nodes)} nodes and {len(gdoc.relationships)} relationships")
+    # print(f"GDoc: {gdoc}")
 
     # 5) Save to Neo4j
     writer = Neo4jWriter()
     neo_stats = writer.save(gdoc, full_wipe=True)
     writer.close()
 
+    print("[DEBUG] - - - - - - - - - - - - - - - - - - - - - - - - ")
     return {
         "file": filename,
         "num_chunks": len(chunks),

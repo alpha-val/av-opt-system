@@ -14,7 +14,6 @@ uri = SETTINGS.neo4j_uri
 username = SETTINGS.neo4j_user
 password = SETTINGS.neo4j_password
 driver = GraphDatabase.driver(uri, auth=(username, password))
-print(f"Driver : {driver}")
 
 def _int(v, default):
     try:

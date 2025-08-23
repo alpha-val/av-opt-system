@@ -13,7 +13,7 @@ load_dotenv(override=True)
 @dataclass(frozen=True)
 class Settings:
     pinecone_api_key: str = os.getenv("PINECONE_API_KEY", "")
-    pinecone_index_name: str = os.getenv("PINECONE_INDEX_NAME", "av-opt-idx")
+    pinecone_index_name: str = os.getenv("PINECONE_INDEX_NAME", "optpro-index")
     pinecone_cloud: str = os.getenv("PINECONE_CLOUD", "aws")
     pinecone_region: str = os.getenv("PINECONE_REGION", "us-east-1")
     pinecone_namespace: str = os.getenv("PINECONE_NAMESPACE", "default")
