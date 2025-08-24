@@ -194,7 +194,7 @@ def _embed_and_upsert_to_pinecone(file_id: str, chunks):
     # Build a safe namespace from the original filename (or file_id)
     # safe_ns = make_namespace_from_filename(file_id)
     safe_ns = "default"
-
+    print(f"[PINECONE] upserting to Pinecone... ns: {safe_ns}")
     upserted = store.upsert_chunks(
         chunk_texts=chunk_texts,
         dense_vecs=dense,
@@ -237,14 +237,13 @@ def run_ingestion_for_pdf_stream(stream) -> Dict[str, Any]:
 
     # 3) Embed + upsert to Pinecone
     pinecone_stats = _embed_and_upsert_to_pinecone(file_id, chunks)
-    print(
-        f"[INGEST:PINECONE] upserted {pinecone_stats['pinecone_upserted']} chunks to Pinecone"
-    )
 
     # 4) Extract KG with OpenAI function-calls
     print("[INGEST] - Extracting knowledge graph...")
     gdoc = _extract_graph_from_chunks(chunks)
-    print(f"[INGEST] - Done extracting knowledge graph with: {len(gdoc.nodes)} nodes and {len(gdoc.relationships)} relationships")
+    print(
+        f"[INGEST] - Done extracting knowledge graph with: {len(gdoc.nodes)} nodes and {len(gdoc.relationships)} relationships"
+    )
     # print(f"GDoc: {gdoc}")
 
     # 5) Save to Neo4j

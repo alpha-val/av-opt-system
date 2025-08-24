@@ -268,7 +268,7 @@ class PineconeStore:
         """
         vectors = []
         namespace = make_safe_ascii(namespace)
-        print(f"[PINECONE] namespace: {namespace}")
+
         for i, (dv, sv, md) in enumerate(zip(dense_vecs, sparse_vecs, metas)):
             metadata = md or {}
             metadata["text"] = chunk_texts[i][:5000]  # limit text size in metadata
@@ -279,13 +279,6 @@ class PineconeStore:
                     "values": dv,
                     "sparse_values": sv,
                     "metadata": metadata,
-                    # For chunks+mentions linking
-                    # "chunk_id": chunk_id,      # stable UUID you assign
-                    # "seq": i,            # 0-based order
-                    # "text": metadata["text"],          # raw / cleaned text
-                    # "page": metadata.get("page") or 0,          # original page (if known)
-                    # "pinecone_id": metadata.get("pinecone_id") or chunk_id, # optional, if you use it
-                    # "namespace": namespace       # same ns you use in Pinecone
                 }
             )
 
