@@ -10,13 +10,8 @@ from werkzeug.datastructures import FileStorage
 from typing import List, Dict, Any, Tuple, Optional
 import io
 import os
-from .storage import (
-    Neo4jWriter,
-    PineconeStore,
-)
 from .pipeline import run_ingestion_for_pdf_stream, run_ingestion_for_pdf_path
-from .ingest_with_mentions_pipeline import ingest_pdf_with_mentions
-from .config_adapter import SETTINGS
+
 
 # Set up logger
 from .utils.logging import get_logger
@@ -51,28 +46,7 @@ def ingest():
             stream.name = getattr(f, "filename", "uploaded.pdf")
             try:
                 summary = run_ingestion_for_pdf_stream(stream)
-
-            #     try:
-            #         pine_store = PineconeStore(SETTINGS.pinecone_index_name)
-            #         print(f"[INGEST] PineconeStore initialized ! ! !")
-            #         # _pc = (
-            #         #     Pinecone(api_key=SETTINGS.pinecone_api_key)
-            #         #     if SETTINGS.pinecone_api_key
-            #         #     else None
-            #         # )
-            #     except Exception:
-            #         pine_store = None
-            #         raise RuntimeError("Pinecone import or initialization failed.")
-            #     summary = ingest_pdf_with_mentions(
-            #         stream=stream,
-            #         writer=Neo4jWriter(
-            #             SETTINGS.neo4j_uri, SETTINGS.neo4j_user, SETTINGS.neo4j_password
-            #         ),
-            #         chunk_size=1200,
-            #         chunk_overlap=200,
-            #         filename=stream.name,
-            #     )
-            #     results.append(summary)
+                results.append(summary)
             except Exception as ex:
                 results.append({"file": stream.name, "error": str(ex)})
 

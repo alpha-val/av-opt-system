@@ -1,6 +1,8 @@
 # Files to ignore
 .env
 
+.DS_Store
+
 # Ignore python environment
 backend/.env
 backend/venv/

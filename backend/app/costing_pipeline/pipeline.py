@@ -9,11 +9,13 @@ End-to-end pipeline plumbing:
 """
 
 from __future__ import annotations
+from flask import jsonify
 from typing import List, Dict, Any, Optional, Tuple
 import os
 import sys
 import json
 from .utils.logging import get_logger
+from uuid import uuid5
 
 log = get_logger(__name__)
 
@@ -21,11 +23,15 @@ log = get_logger(__name__)
 if "/mnt/data" not in sys.path:
     sys.path.append("/mnt/data")
 
-from .textio import extract_text_from_pdf_stream, extract_text_from_pdf_path, chunk_text
+from .textio import (
+    extract_text_from_pdf_stream,
+    extract_text_from_pdf_path,
+    chunk_text,
+    normalize_chunks_for_ingest,
+    clean_extracted_text,
+)
 from .storage import (
-    PineconeStore,
-    embed_texts_dense,
-    build_sparse_hybrid_vectors,
+    embed_and_upsert_to_pinecone,
     Neo4jWriter,
     GNode,
     GRel,
@@ -34,6 +40,7 @@ from .storage import (
     deterministic_uuid5,
     EMBED_MODEL,
     PINECONE_INDEX,
+    # PINECONE_NAMESPACE,
 )
 from .storage import make_namespace_from_filename, make_safe_ascii
 
@@ -86,39 +93,6 @@ except Exception:
 
 
 # ---------------------- Fallback extractor (if user module unavailable) ------------
-def _fallback_openai_extract(
-    chunks: List[Dict[str, Any]],
-) -> Dict[str, List[Dict[str, Any]]]:
-    """
-    Minimal stub if the user's `extract_with_openai.openai_extract` isn't found.
-    Returns an empty extraction but keeps the pipeline running.
-    """
-    return {"nodes": [], "edges": []}
-
-
-def call_openai_extract(
-    chunks: List[Dict[str, Any]],
-) -> Dict[str, List[Dict[str, Any]]]:
-    """
-    Delegate to user's extractor if available; otherwise stub.
-    Your uploaded `extract_with_openai.py` should implement:
-        openai_extract(chunks) -> {"nodes":[...], "edges":[...]}
-    where nodes: { "id","type","properties":{...} }
-          edges: { "source","target","type","properties":{...} }
-    """
-
-    # return openai_extract_nodes_rels(chunks=chunks)
-    return openai_extract_nodes_rels_mentions(chunks=chunks)
-    # #     return openai_extract_nodes_rels(chunks)
-    # if openai_extract_nodes_rels_mentions is not None:
-    #     print("[DEBUG] using openai_extract_nodes_rels_mentions")
-    #     return openai_extract_nodes_rels_mentions(chunks=chunks, use_next_links=False)
-    # print("[ERROR] User-defined OpenAI extractor not found; using fallback.")
-    # return _fallback_openai_extract(chunks)
-
-
-# ---------------------- Helpers ----------------------------------------------------
-
 
 def _ensure_ontology_label(lbl: str) -> str:
     """Return lbl if it's in ontology; else return 'Unknown' to avoid bad labels."""
@@ -142,15 +116,31 @@ def _normalize_nodes_edges(
     - Ensure labels/edge types align to ontology
     """
     # 1) assign deterministic IDs
+    # Trust extractor IDs; only backfill if missing.
     id_map = {}
     for n in nodes:
-        key = canonical_key(n)
-        new_id = deterministic_uuid5(key)
-        id_map[n["id"]] = new_id
-        n["id"] = new_id
-        n.setdefault("properties", {})["canonical_key"] = key
+        old_id = n.get("id")  # may be None if extractor forgot it
+
+        # Ensure canonical_key exists (use existing if already set)
+        props = n.setdefault("properties", {})
+        key = props.get("canonical_key") or canonical_key(n)
+        props["canonical_key"] = key
+
+        # Only create a UUID5 if the node has no id yet
+        if not old_id:
+            new_id = deterministic_uuid5(key)
+            n["id"] = new_id
+            print(f"[W A R N I N G] Backfilled missing node ID: {new_id} for key: {key}")
+        else:
+            new_id = old_id
+
+        # Normalize/validate label
         n["type"] = _ensure_ontology_label(n.get("type") or "Unknown")
 
+        # Critical: make id_map a pass-through so edge remap works for both cases.
+        # If old_id is None (we backfilled), map new_id->new_id to be safe.
+        id_map[old_id if old_id is not None else new_id] = new_id
+        
     # 2) convert to GNodes
     gnodes = [
         GNode(id=n["id"], type=n["type"], properties=n.get("properties", {}))
@@ -163,8 +153,8 @@ def _normalize_nodes_edges(
     # 4) fix edges using id_map, drop invalid
     grels: List[GRel] = []
     for e in edges:
-        src = id_map.get(e.get("source"))
-        tgt = id_map.get(e.get("target"))
+        src = id_map.get(e.get("source"), e.get("source"))
+        tgt = id_map.get(e.get("target"), e.get("target"))
         if not src or not tgt or src == tgt:
             continue
         s = id2node.get(src)
@@ -172,9 +162,7 @@ def _normalize_nodes_edges(
         if not s or not t:
             continue
         rtype = _ensure_edge_type(e.get("type") or "RELATED_TO")
-        grels.append(
-            GRel(source=s, target=t, type=rtype, properties=e.get("properties", {}))
-        )
+        grels.append(GRel(source=s, target=t, type=rtype, properties=e.get("properties", {})))
 
     return GDoc(nodes=gnodes, relationships=grels, source=None)
 
@@ -182,40 +170,11 @@ def _normalize_nodes_edges(
 # ---------------------- Public runners -------------------------------------------
 
 
-def _embed_and_upsert_to_pinecone(file_id: str, chunks):
-    chunk_texts = [c["text"] for c in chunks]
-    metas = [{"file_id": file_id, **(c.get("meta") or {})} for c in chunks]
-
-    dense = embed_texts_dense(chunk_texts)
-    sparse = build_sparse_hybrid_vectors(chunk_texts)
-
-    store = PineconeStore(index_name=PINECONE_INDEX)
-
-    # Build a safe namespace from the original filename (or file_id)
-    # safe_ns = make_namespace_from_filename(file_id)
-    safe_ns = "default"
-    print(f"[PINECONE] upserting to Pinecone... ns: {safe_ns}")
-    upserted = store.upsert_chunks(
-        chunk_texts=chunk_texts,
-        dense_vecs=dense,
-        sparse_vecs=sparse,
-        metas=metas,
-        namespace=safe_ns,  # <-- sanitized
-        id_prefix=f"{make_safe_ascii(file_id)}_",  # <-- sanitized
-    )
-    return {
-        "chunks": len(chunks),
-        "pinecone_upserted": upserted,
-        "embed_model": EMBED_MODEL,
-        "namespace": safe_ns,
-    }
-
-
 def _extract_graph_from_chunks(chunks: List[Dict[str, Any]]) -> GDoc:
     """
     Calls OpenAI function-calling extractor (user's module) and normalizes the result.
     """
-    result = call_openai_extract(chunks)  # {"nodes":[...], "edges":[...]}
+    result = openai_extract_nodes_rels_mentions(chunks=chunks)
     nodes = result.get("nodes", [])
     edges = result.get("edges", [])
     return _normalize_nodes_edges(nodes, edges)
@@ -231,14 +190,27 @@ def run_ingestion_for_pdf_stream(stream) -> Dict[str, Any]:
 
     # 1) Extract text
     text = extract_text_from_pdf_stream(stream)
+    print(f"[INGEST 1] - Extracted {len(text)} characters of text from PDF.")
 
-    # 2) Chunk
-    chunks = chunk_text(text, chunk_size=1200, chunk_overlap=200)
+    # 2) Clean text
+    text = clean_extracted_text(text)
 
-    # 3) Embed + upsert to Pinecone
-    pinecone_stats = _embed_and_upsert_to_pinecone(file_id, chunks)
+    # 3) Chunk
+    raw_chunks = chunk_text(text, chunk_size=1200, chunk_overlap=200)
+    print(f"[INGEST 2] - Chunked PDF into {len(raw_chunks)} chunks.")
 
-    # 4) Extract KG with OpenAI function-calls
+    print(f"[INGEST 3] - setting doc_id to {filename}")
+    doc_id = f"doc|{filename}"
+
+    chunks = normalize_chunks_for_ingest(raw_chunks, doc_id=doc_id, namespace="default")
+    # print(f"[INGEST 4.A] - Extracted chunks: {chunks}")
+    print(f"[INGEST 4] - Extracted chunks: {len(chunks)}")
+
+    # 4) Embed + upsert to Pinecone
+    pinecone_stats = embed_and_upsert_to_pinecone(file_id, chunks)
+    print(f"[DEBUG] stats: {pinecone_stats}")
+    
+    # 5) Extract KG with OpenAI function-calls
     print("[INGEST] - Extracting knowledge graph...")
     gdoc = _extract_graph_from_chunks(chunks)
     print(
@@ -246,12 +218,20 @@ def run_ingestion_for_pdf_stream(stream) -> Dict[str, Any]:
     )
     # print(f"GDoc: {gdoc}")
 
-    # 5) Save to Neo4j
+    # 6) Save to Neo4j
     writer = Neo4jWriter()
     neo_stats = writer.save(gdoc, full_wipe=True)
     writer.close()
 
-    print("[DEBUG] - - - - - - - - - - - - - - - - - - - - - - - - ")
+    print("[DEBUG] - - - DONE - - -")
+    # return {
+    #     "file": filename,
+    #     "num_chunks": len(chunks),
+    #     "pinecone": pinecone_stats,
+    #     "neo4j": neo_stats,
+    #     "nodes": len(gdoc.nodes),
+    #     "edges": len(gdoc.relationships),
+    # }
     return {
         "file": filename,
         "num_chunks": len(chunks),
@@ -273,7 +253,7 @@ def run_ingestion_for_pdf_path(path: str) -> Dict[str, Any]:
     text = extract_text_from_pdf_path(path)
     chunks = chunk_text(text, chunk_size=1200, chunk_overlap=200)
 
-    pinecone_stats = _embed_and_upsert_to_pinecone(file_id, chunks)
+    pinecone_stats = embed_and_upsert_to_pinecone(file_id, chunks)
     gdoc = _extract_graph_from_chunks(chunks)
 
     writer = Neo4jWriter()

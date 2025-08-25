@@ -16,6 +16,7 @@ import re
 import unicodedata
 import hashlib
 from collections import Counter, defaultdict
+import traceback
 
 # --- Load config from user's adapter (supports both 'SETTINGS' object or flat constants)
 # Add /mnt/data on sys.path for the uploaded config_adapter.py / ontology.py if needed
@@ -23,35 +24,28 @@ if "/mnt/data" not in sys.path:
     sys.path.append("/mnt/data")
 
 try:
-    import config_adapter  # user-supplied
+    from .config_adapter import SETTINGS
 
-    SETTINGS = getattr(config_adapter, "SETTINGS", config_adapter)
     OPENAI_API_KEY = getattr(SETTINGS, "openai_api_key", os.getenv("OPENAI_API_KEY"))
     PINECONE_API_KEY = getattr(
         SETTINGS, "pinecone_api_key", os.getenv("PINECONE_API_KEY")
     )
     PINECONE_INDEX = getattr(SETTINGS, "pinecone_index", "optpro-chunks")
+    PINECONE_NAMESPACE = getattr(SETTINGS, "pinecone_namespace", "default")
     PINECONE_CLOUD = getattr(SETTINGS, "pinecone_cloud", "aws")
     PINECONE_REGION = getattr(SETTINGS, "pinecone_region", "us-east-1")
+    PINECONE_EMBED_MODEL = getattr(SETTINGS, "embedding_model", "text-embedding-3-small")
     NEO4J_URI = getattr(SETTINGS, "neo4j_uri", os.getenv("NEO4J_URI"))
     NEO4J_USER = getattr(SETTINGS, "neo4j_user", os.getenv("NEO4J_USER"))
     NEO4J_PASSWORD = getattr(SETTINGS, "neo4j_password", os.getenv("NEO4J_PASSWORD"))
     EMBED_MODEL = getattr(SETTINGS, "embed_model", "text-embedding-3-small")
-except Exception:
-    # fallback to env-only
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-    PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-    PINECONE_INDEX = os.getenv("PINECONE_INDEX", "optpro-chunks")
-    PINECONE_CLOUD = os.getenv("PINECONE_CLOUD", "aws")
-    PINECONE_REGION = os.getenv("PINECONE_REGION", "us-east-1")
-    NEO4J_URI = os.getenv("NEO4J_URI")
-    NEO4J_USER = os.getenv("NEO4J_USER")
-    NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
-    EMBED_MODEL = os.getenv("EMBED_MODEL", "text-embedding-3-small")
+except Exception as e:
+    print(f"[CONFIG] Error loading settings: {e}")
 
 # --- OpenAI embeddings client (v1 API)
 try:
     from openai import OpenAI
+
     _openai_client = OpenAI(api_key=OPENAI_API_KEY)
 except Exception:
     _openai_client = None
@@ -59,6 +53,7 @@ except Exception:
 # --- Pinecone v3
 try:
     from pinecone import Pinecone, ServerlessSpec
+
     _pc = Pinecone(api_key=PINECONE_API_KEY) if PINECONE_API_KEY else None
 except Exception:
     _pc = None
@@ -225,6 +220,44 @@ def embed_texts_dense(texts: List[str], model: str = None) -> List[List[float]]:
     return [d.embedding for d in resp.data]
 
 
+def embed_and_upsert_to_pinecone(file_id: str, chunks):
+    chunk_texts = [c["text"] for c in chunks]
+    metas = [{"file_id": file_id, **(c.get("meta") or {})} for c in chunks]
+
+    dense = embed_texts_dense(chunk_texts)
+    sparse = build_sparse_hybrid_vectors(chunk_texts)
+
+    store = PineconeStore(index_name=PINECONE_INDEX)
+
+    # Build a safe namespace from the original filename (or file_id)
+    # safe_ns = make_namespace_from_filename(file_id)
+    try:
+        safe_ns = PINECONE_NAMESPACE
+        print(f"[PINECONE] upserting to Pinecone namespace: {safe_ns}")
+    except Exception as e:
+        print(f"[PINECONE] Error setting namespace: {e}")
+
+    try:
+        upserted = store.upsert_chunks(
+            chunks=chunks,
+            chunk_texts=chunk_texts,
+            dense_vecs=dense,
+            sparse_vecs=sparse,
+            metas=metas,
+            namespace=safe_ns,  # <-- sanitized
+            id_prefix=f"{make_safe_ascii(file_id)}_",  # <-- sanitized
+        )
+        print(f"[PINECONE] upserted > {upserted}")
+    except Exception as e:
+        print(f"[PINECONE] Error upserting to Pinecone: {e}")
+    return {
+        "chunks": len(chunks),
+        "pinecone_upserted": upserted,
+        "embed_model": PINECONE_EMBED_MODEL,
+        "namespace": safe_ns,
+    }
+
+
 # ----------------------- Pinecone index helpers -----------------------
 
 
@@ -256,6 +289,7 @@ class PineconeStore:
 
     def upsert_chunks(
         self,
+        chunks: List[Dict[str, Any]],
         chunk_texts: List[str],
         dense_vecs: List[List[float]],
         sparse_vecs: List[Dict[str, List[float]]],
@@ -268,27 +302,45 @@ class PineconeStore:
         """
         vectors = []
         namespace = make_safe_ascii(namespace)
+        print(f"[PINECONE] getting ready to upsert.. {len(chunks)}")
 
-        for i, (dv, sv, md) in enumerate(zip(dense_vecs, sparse_vecs, metas)):
-            metadata = md or {}
-            metadata["text"] = chunk_texts[i][:5000]  # limit text size in metadata
-            chunk_id = make_safe_id(id_prefix, i)
-            vectors.append(
-                {
-                    "id": chunk_id,
-                    "values": dv,
-                    "sparse_values": sv,
-                    "metadata": metadata,
-                }
-            )
+        def clean_metadata(md):
+            return {k: (v if v is not None else "") for k, v in md.items()}
 
         try:
-            self.index.upsert(vectors=vectors, namespace=namespace)
+            for i, (dv, sv, md, ch) in enumerate(
+                zip(dense_vecs, sparse_vecs, metas, chunks)
+            ):
+                md = clean_metadata(
+                    {
+                        "chunk_id": ch["chunk_id"],
+                        "doc_id": ch["doc_id"],
+                        "chunk_idx": ch["seq"],
+                        "page": ch.get("page"),
+                        "text": ch["text"][:4000],
+                    }
+                )
+
+                vectors.append(
+                    {
+                        "id": ch["chunk_id"],  # <<< make vector id the chunk_id
+                        "values": dv,
+                        "sparse_values": sv,
+                        "metadata": md,
+                    }
+                )
+
         except Exception as e:
-            # Last-resort fallback — keeps ingestion running
-            self.index.upsert(vectors=vectors, namespace="default")
-            print(f"[PINECONE : ERROR] Pinecone upsert failed: {e}")
-        print(f"[PINECONE] upserted {len(vectors)} vectors")
+            print(f"[PINECONE : ERROR] Failed to upsert vectors: {e}")
+            traceback.print_exc()
+            return 0  # Optionally, return early if vector prep fails
+        print("[PINECONE] actually upserting vectors...")
+        try:
+            self.index.upsert(vectors=vectors, namespace=namespace or "default")
+        except Exception as e:
+            print(f"[PINECONE : ERROR] Failed to upsert vectors: {e}")
+            traceback.print_exc()
+            return 0  # Optionally, return early if vector prep fails
         return len(vectors)
 
 
@@ -323,7 +375,8 @@ class Neo4jWriter:
 
     def _merge_legacy_node_twins(self, session):
         # Merge any pairs that share the same id but different labels (e.g., :Node vs :__Entity:Equipment)
-        session.run("""
+        session.run(
+            """
         CALL {
         MATCH (n) WHERE exists(n.id)
         WITH n.id AS id, collect(n) AS ns
@@ -332,8 +385,9 @@ class Neo4jWriter:
         YIELD node
         RETURN count(*) AS merged
         }
-        """)
-    
+        """
+        )
+
     def save(self, gdoc: GDoc, full_wipe: bool = False) -> dict:
         self._ensure_constraint()
         with self._driver.session() as s:
@@ -360,7 +414,8 @@ class Neo4jWriter:
                         SET x += $props
                         SET x:`{n.type}`
                         """,
-                        id=n.id, props=props
+                        id=n.id,
+                        props=props,
                     )
             except Exception as e:
                 print(f"[GRAPH] - Neo4j node merge failed: {e}")
@@ -385,4 +440,7 @@ class Neo4jWriter:
                     s.run(cypher, sid=r.source.id, tid=r.target.id, rprops=rprops)
             except Exception as e:
                 print(f"[GRAPH] - Neo4j relationship merge failed: {e}")
-        return {"nodes_written": len(gdoc.nodes), "rels_written": len(gdoc.relationships)}
+        return {
+            "nodes_written": len(gdoc.nodes),
+            "rels_written": len(gdoc.relationships),
+        }

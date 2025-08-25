@@ -5,10 +5,15 @@ App configuration: loads from .env and exposes simple constants.
 from __future__ import annotations
 import os
 from dataclasses import dataclass
+from uuid import uuid5
+from uuid import UUID
+
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
+# define once in a shared module and import here:
+NAMESPACE = uuid5(UUID("1d19a1b8-2b1b-4c3d-9f0a-2f6b3b5f8abc"), "default")
 
 @dataclass(frozen=True)
 class Settings:
@@ -25,6 +30,9 @@ class Settings:
 
     embedding_model: str = os.getenv("EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
     enable_sparse: bool = os.environ.get("ENABLE_SPARSE", "0") == "1"
+    
+    graph_extraction_model: str = os.getenv("GRAPH_EXTRACTION_MODEL", "gpt-4o")
+    graph_extraction_model_temp: float = float(os.getenv("GRAPH_EXTRACTION_MODEL_TEMP", "0.0"))
     
     enable_logs: bool = os.environ.get("ENABLE_LOGS", "1") == "1"
     enable_kg: bool = os.environ.get("ENABLE_KG", "1") == "1"

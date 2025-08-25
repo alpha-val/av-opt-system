@@ -12,12 +12,22 @@ DEFAULT_ONTOLOGY: Dict[str, Any] = {
         "Project",
     ],
     "EDGE_TYPES": [
-        "HAS_SCENARIO",  # Project  → Scenario
-        "INCLUDES_PROCESS",  # Scenario   → Process
-        "USES_EQUIPMENT",  # Process    → Equipment
-        "CONSUMES_MATERIAL",  # Process    → Material (input)
-        "PRODUCES_MATERIAL",  # Process    → Material (output)
+        "CONSUMES_MATERIAL",
+        "FEEDS",
+        "HAS_EQUIPMENT",
+        "HAS_MATERIAL",
+        "HAS_SCENARIO",
+        "INCLUDES_PROCESS",
+        "LOCATED_IN",
+        "NEXT",
+        "OUTPUTS",
+        "PART_OF",
+        "POWERED_BY",
+        "PRECEDES",
+        "PRODUCES_MATERIAL",
         "RELATES_TO",
+        "REQUIRES",
+        "USES_EQUIPMENT",
     ],
     "NODE_PROPERTIES": [
         # Identiy
