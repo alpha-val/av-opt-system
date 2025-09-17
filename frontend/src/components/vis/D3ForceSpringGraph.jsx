@@ -77,9 +77,9 @@ export default function D3ForceSpringGraph({
     data,
     height,
     width,
-    charge = -150,
-    linkDistance = 120,
-    collideRadius = 30,
+    charge = -550,
+    linkDistance = 350,
+    collideRadius = 50,
     onNodeClick,
     onLinkClick,
     nodeLabel = defaultNodeLabel,
@@ -355,7 +355,7 @@ export default function D3ForceSpringGraph({
             .force("charge", d3.forceManyBody().strength(charge))
             .force("center", d3.forceCenter(width / 2, height / 2))
             .force("collide", d3.forceCollide(collideRadius))
-            .alpha(0.75)
+            .alpha(2.75)
             .alphaDecay(0.025)
             .on("tick", ticked);
 

@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from .costing_pipeline import costing_pipeline_bp
 from .costing_pipeline.query import costing_query_pipeline_bp
 from .costing_pipeline.kg.fetch_graph import graph_query_bp
+from .costing_pipeline.structured_data import structured_bp
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
@@ -21,6 +22,7 @@ def create_app():
     app.register_blueprint(costing_pipeline_bp, url_prefix="/costing/v1")
     app.register_blueprint(costing_query_pipeline_bp, url_prefix="/costing/v1")
     app.register_blueprint(graph_query_bp, url_prefix="/costing/v1")
+    app.register_blueprint(structured_bp, url_prefix="/costing/v1")
 
     @app.errorhandler(404)
     def not_found(e):

@@ -1,0 +1,10 @@
+{
+  // Force VS Code + debugpy to use your venv interpreter
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/venv_3.12/bin/python",
+
+  // Activate the venv in terminals VS Code creates
+  "python.terminal.activateEnvironment": true,
+
+  // Help analysis resolve site-packages inside your venv
+  "python.analysis.extraPaths": ["${workspaceFolder}/backend"]
+}

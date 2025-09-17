@@ -1,0 +1,24 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flask: Debug (venv_3.12)",
+      "type": "python",
+      "request": "launch",
+      "module": "flask",
+      "jinja": true,
+      "env": {
+        "FLASK_APP": "app:create_app()", // factory pattern
+        "FLASK_ENV": "development"
+      },
+      "args": [
+        "run",
+        "--no-debugger", // VS Code debugger will handle breakpoints
+        // "--no-reload" // avoid Flask’s auto-reloader
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "pythonPath": "${workspaceFolder}/backend/venv_3.12/bin/python3",
+      "justMyCode": true
+    }
+  ]
+}

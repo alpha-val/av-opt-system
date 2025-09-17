@@ -58,8 +58,9 @@ STOP = set(
     ]
 )
 
+
 # ---------- Pinecone retrieval ----------
-def pinecone_query(query_text: str, top_k: int = 8, namespace: Optional[str] = None):
+def pinecone_query(query_text: str, top_k: int = 8, namespace: Optional[str] = None, score_cutoff: float = 0.33) -> Dict[str, Any]:
     q_dense = embed_texts_dense([query_text])[0]
     q_sparse = build_sparse_hybrid_vectors([query_text])[0]
     print(f"[PINECONE] querying... for text {query_text}")
@@ -74,17 +75,20 @@ def pinecone_query(query_text: str, top_k: int = 8, namespace: Optional[str] = N
 
     matches = []
     chunk_ids, seen = [], set()
+    print(f"[PINECONE] received {len(resp.matches or [])} matches")
     for m in resp.matches or []:
         md = dict(m.metadata) if m.metadata else {}
-        matches.append(
-            {
-                "id": m.id,
-                "score": float(m.score) if hasattr(m, "score") else None,
-                "metadata": md,
-            }
-        )
-        cid = md.get("chunk_id") or md.get("chunkId") or md.get("chunkID")
-        print(f"[PINECONE] chunk_id: {cid}")
+        print(f"[PINECONE] match: {m.id} > score: {m.score}")
+        if m.score >= score_cutoff:
+            matches.append(
+                {
+                    "id": m.id,
+                    "score": float(m.score) if hasattr(m, "score") else None,
+                    "metadata": md,
+                }
+            )
+            cid = md.get("chunk_id") or md.get("chunkId") or md.get("chunkID")
+
         if cid and cid not in seen:
             seen.add(cid)
             chunk_ids.append(cid)
@@ -96,9 +100,7 @@ def pinecone_query(query_text: str, top_k: int = 8, namespace: Optional[str] = N
 def neo4j_read(cypher: str, params: dict) -> list:
     driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
     with driver.session() as session:
-        print(f"[QUERY ] Running neo4j_read..")
         result = session.run(cypher, **params)
-        print(f"[QUERY ] Finished neo4j_read: {result}")
         return result.data()
 
 
@@ -215,9 +217,7 @@ def neo4j_fetch_graph_around_chunks(
         return out
 
     chunk_ids = _extract_chunk_ids(chunk_matches)
-    print(
-        f"[QUERY] using {len(chunk_ids)} seed chunk_ids (min_score={min_score})"
-    )
+    print(f"[QUERY] using {len(chunk_ids)} seed chunk_ids (min_score={min_score})")
     if not chunk_ids:
         return {"nodes": [], "edges": []}
 
@@ -291,10 +291,179 @@ def neo4j_fetch_graph_around_chunks(
         nodes = row.get("nodes", []) or []
         edges = row.get("edges", []) or []
         print(f"[QUERY] fetched graph: nodes={len(nodes)}, edges={len(edges)}")
-    
+
     except Exception as e:
         print(f"[QUERY : ERROR] Error occurred: {e}")
 
+    print(f"[QUERY] SUCCESS: graph with {len(nodes)} nodes and {len(edges)} edges")
+    return {"nodes": nodes, "edges": edges}
+
+
+def neo4j_fetch_graph_around_chunks_with_filtering(
+    chunk_matches,
+    *,
+    graph_hops: int = 0,  # allow 0 to get only direct mentions
+    graph_nodes: int = 50,
+    rel_whitelist: list | None = None,
+    min_score: float = 0.0,
+    entity_names: list[str] | None = None,  # e.g., ["Jaw Crusher"]
+    entity_regex: list[str] | None = None,  # e.g., [".*\\bjaw\\s+crusher\\b.*"]
+):
+    """
+    From Pinecone *chunk matches*, extract seed IDs and build a compact subgraph.
+    If entity_names or entity_regex are provided, we only keep entities that match
+    those filters at the MENTIONS edge (exact-ish match via name/aliases/surface).
+    """
+    print("[NEO4j] - - - >")
+    def _coerce_matches(m):
+        if isinstance(m, dict):
+            if isinstance(m.get("matches"), dict):
+                inner = m["matches"]
+                return inner.get("chunk_ids") or [], inner.get("matches") or []
+            return m.get("chunk_ids") or [], m.get("matches") or []
+        return [], (m or [])
+
+    def _extract_chunk_ids(m) -> list[str]:
+        explicit_ids, match_list = _coerce_matches(m)
+        seen, out = set(), []
+
+        for cid in explicit_ids:
+            if cid and cid not in seen:
+                seen.add(cid)
+                out.append(cid)
+
+        for it in match_list:
+            if not isinstance(it, dict):
+                continue
+            score = it.get("score")
+            print(f"\t id: {it.get('id')} score: {score}")
+            if score is not None and float(score) < float(min_score):
+                print(f"  - \tSkipping {it.get('id')} (score: {score} - min_score: {min_score})")
+                continue
+            md = it.get("metadata") or {}
+            cid = (
+                it.get("id")
+                or md.get("chunk_id")
+                or md.get("chunkId")
+                or md.get("chunkID")
+            )
+            if cid and cid not in seen:
+                seen.add(cid)
+                out.append(cid)
+        return out
+
+    try:
+        chunk_ids = _extract_chunk_ids(chunk_matches)
+        print(f"[QUERY] using {len(chunk_ids)} seed chunk_ids (min_score={min_score}), > > > entity names: {entity_names}")
+    except Exception as e:
+        print(f"[QUERY] Error extracting chunk IDs: {e}")
+
+    if not chunk_ids:
+        return {"nodes": [], "edges": []}
+
+    rels = rel_whitelist or REL_WHITELIST
+    rel_pattern = "|".join(f"`{r}`" for r in rels)
+    hops = max(0, int(graph_hops))  # <-- allow zero-hop graphs
+
+    # Lowercase names client-side (for case-insensitive exact checks)
+    lowered_names = [s.strip().lower() for s in (entity_names or []) if s and s.strip()]
+    regex_list = entity_regex or []
+
+    cypher = f"""
+    UNWIND $chunk_ids AS cid
+    MATCH (c:Chunk)
+    WHERE c.chunk_id = cid
+       OR (c.canonical_key IS NOT NULL AND c.canonical_key ENDS WITH cid)
+
+    // Filter MENTIONS to only entities matching provided names/regex (if any)
+    OPTIONAL MATCH (c)-[m:MENTIONS]->(e)
+    WHERE
+      (
+        // If no filters given, keep default behavior (everything mentioned)
+        ($names_is_empty AND $regex_is_empty)
+        // Otherwise require at least one match against names or regex
+        OR
+        (
+          // exact-ish: compare lowercase forms of e.name, any e.aliases, or m.surface
+          (size($names_lc) > 0 AND (
+             toLower(e.name) IN $names_lc
+             OR any(a IN coalesce(e.aliases, []) WHERE toLower(a) IN $names_lc)
+             OR (m.surface IS NOT NULL AND toLower(m.surface) IN $names_lc)
+          ))
+          OR
+          // regex option (server-side patterns). Use cautiously.
+          (size($regex_list) > 0 AND (
+             any(rx IN $regex_list WHERE e.name =~ rx)
+             OR any(rx IN $regex_list WHERE any(a IN coalesce(e.aliases, []) WHERE a =~ rx))
+             OR (m.surface IS NOT NULL AND any(rx IN $regex_list WHERE m.surface =~ rx))
+          ))
+        )
+      )
+    WITH collect(DISTINCT c) AS chunks,
+         [x IN collect(DISTINCT e) WHERE x IS NOT NULL] AS ents,
+         [x IN collect(DISTINCT m) WHERE x IS NOT NULL] AS mention_rels
+
+    // Optional domain expansion from the filtered entities
+    UNWIND ents AS s
+    OPTIONAL MATCH p = (s)-[r:{rel_pattern}*..{hops}]-(n)
+    UNWIND r AS rel
+    WITH
+        chunks,
+        ents,
+        mention_rels,
+        collect(DISTINCT n)   AS others,
+        collect(DISTINCT rel) AS rels1
+    WITH chunks, ents, others, (rels1 + mention_rels) AS rels
+
+    // Node budget
+    WITH chunks + ents + others AS nlist, rels
+    UNWIND nlist AS n
+    WITH [x IN collect(DISTINCT n)[0..$graph_nodes] WHERE x IS NOT NULL] AS keep_nodes, rels
+
+    // Keep only relationships whose endpoints are in-graph
+    WITH keep_nodes,
+         [r IN rels WHERE startNode(r) IN keep_nodes AND endNode(r) IN keep_nodes] AS keep_rels
+
+    RETURN
+      [n IN keep_nodes |
+        {{
+          id: coalesce(n.id, n.chunk_id, n.doc_id),
+          label: head(labels(n)),
+          properties: properties(n)
+        }}] AS nodes,
+      [r IN keep_rels |
+        {{
+          source: coalesce(startNode(r).id, startNode(r).chunk_id, startNode(r).doc_id),
+          target: coalesce(endNode(r).id,   endNode(r).chunk_id,   endNode(r).doc_id),
+          type: type(r),
+          properties: properties(r)
+        }}] AS edges
+    """
+
+    try:
+        recs = neo4j_read(
+            cypher,
+            {
+                "chunk_ids": chunk_ids,
+                "graph_nodes": int(graph_nodes),
+                "names_lc": lowered_names,
+                "regex_list": regex_list,
+                "names_is_empty": len(lowered_names) == 0,
+                "regex_is_empty": len(regex_list) == 0,
+            },
+        )
+    except Exception as e:
+        print(f"[QUERY : ERROR] Error occurred: {e}")
+        return {"nodes": [], "edges": []}
+    if not recs:
+        print("[NEO4j] Neo4j returned ZERO records.")
+        return {"nodes": [], "edges": []}
+    
+    row = recs[0]
+    nodes = row.get("nodes", []) or []
+    edges = row.get("edges", []) or []
+    print(f"[NEO4j] fetched graph: nodes={len(nodes)}, edges={len(edges)}")
+    print("[NEO4j] < - - -")
     return {"nodes": nodes, "edges": edges}
 
 
@@ -409,7 +578,7 @@ def query():
     3) Retrieve Neo4j subgraph around best-matching concepts
     4) Run cost estimator on the returned subgraph (optional params)
     """
-    print("[QUERY] running costing query")
+
     # Accept JSON body (POST) or query string (GET)
     data = request.get_json(silent=True) or {}
     query_text = (data.get("query") or request.args.get("query") or "").strip()
@@ -423,7 +592,8 @@ def query():
     graph_hops = int(data.get("graph_hops", request.args.get("graph_hops", 1)))
     raw_ns = data.get("namespace", request.args.get("namespace") or "default")
     namespace = make_safe_ascii(raw_ns) if raw_ns else None
-
+    entity_names = list(data.get("entity_names", request.args.getlist("entity_names", [])))
+    
     # Costing knobs (all optional)
     cost_params = {
         "throughput_tpd": float(
@@ -447,45 +617,27 @@ def query():
 
     try:
         # 1) Vector search (Pinecone)
-        print(
-            f"[QUERY] running Pinecone query with params: {query_text}, {top_k}, {namespace}"
-        )
-        matches = pinecone_query(query_text, top_k=top_k, namespace=namespace)
-        print(
-            f"[QUERY] retrieved {len(matches)} matches from Pinecone"
-        )
-
-        # helper: pull chunk_ids out of Pinecone matches (handles both list and {"matches":[...]})
-        def _extract_chunk_ids(m):
-            items = m.get("matches") if isinstance(m, dict) else (m or [])
-            ids, seen = [], set()
-            for it in items:
-                md = (it.get("metadata") or {}) if isinstance(it, dict) else {}
-                cid = md.get("chunk_id")
-                if cid and cid not in seen:
-                    seen.add(cid)
-                    ids.append(cid)
-            return ids
+        matches = pinecone_query(query_text, top_k=top_k, namespace=namespace, score_cutoff=0.33)
 
         # chunk_ids = _extract_chunk_ids(matches)
         chunk_ids = matches.get("chunk_ids", [])
-        print(f"[QUERY] retrieved {len(chunk_ids)} chunk_ids from Pinecone")
 
-        neo4j_print_basics(chunk_ids=chunk_ids, limit=5)
+        # neo4j_print_basics(chunk_ids=chunk_ids, limit=5)
 
         graph = {}
         costing = {}
+
         # ------------>
-        graph = neo4j_fetch_graph_around_chunks(
+        graph = neo4j_fetch_graph_around_chunks_with_filtering(
             chunk_matches=matches,  # <— pass the whole object
             graph_nodes=graph_nodes,
             graph_hops=graph_hops,
             min_score=0.25,  # optional score filter
+            entity_names=entity_names
         )
-        
+
         # normalize to {nodes, relationships} for consistency with docs/UI
         if "edges" in graph and "relationships" not in graph:
-            print("[QUERY] normalizing graph payload to relationships")
             graph = {
                 "nodes": graph.get("nodes", []),
                 "relationships": [
@@ -497,7 +649,7 @@ def query():
                     }
                     for e in graph.get("edges", [])
                 ],
-            }        
+            }
 
         # print("[DEBUG] Neo4j graph retrieval complete")
         # # de-dupe any fan-outs from Cypher or client merges
