@@ -10,7 +10,7 @@ from collections import OrderedDict
 from typing import Dict, List, Any, Union, Tuple
 from .build_prompt import gen_prompt
 from .ontology import load_ontology
-from ..config_adapter import SETTINGS
+from .config_adapter import SETTINGS
 from langchain_core.documents import Document
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -291,14 +291,6 @@ def openai_extract_nodes_rels_mentions(
 
     # ── helpers kept local to minimize file changes ─────────
     _ALLOWED_LABELS = ont.get("NODE_TYPES", [])
-    # {
-    #     "Equipment",
-    #     "Process",
-    #     "Material",
-    #     "Scenario",
-    #     "Project",
-    #     "Entity",
-    # }
 
     def _node_name(n: dict) -> str:
         props = n.get("properties", {}) or {}
@@ -451,6 +443,11 @@ def openai_extract_nodes_rels_mentions(
 
             elif name == "extract_edges":
                 all_edges.extend(payload.get("edges", []) or [])
+                
+        print(f"[DEBUG] Nodes: \n{pp.pformat(all_nodes)}")
+        print(f"[DEBUG] Edges: \n{pp.pformat(all_edges)}")
+        print(f"[DEBUG] Mentions so far: \n{pp.pformat(all_mentions_tmp)}")
+
     # --- 4. Normalize nodes, UUID5, de-dupe; build key->uuid map ----
     original_to_uuid = {}
     key_to_uuid = {}

@@ -13,12 +13,56 @@
       },
       "args": [
         "run",
-        "--no-debugger", // VS Code debugger will handle breakpoints
-        // "--no-reload" // avoid Flask’s auto-reloader
+        "--no-debugger" // VS Code debugger will handle breakpoints
+        // "--no-reload"
       ],
       "cwd": "${workspaceFolder}/backend",
       "pythonPath": "${workspaceFolder}/backend/venv_3.12/bin/python3",
       "justMyCode": true
+    },
+
+    // --- FastAPI / Uvicorn (no reload) — best for breakpoint debugging ---
+    {
+      "name": "FastAPI: Debug (venv_3.12)",
+      "type": "python",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "fa_app.app_fastapi:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/backend/.env",
+      "pythonPath": "${workspaceFolder}/backend/venv_3.12/bin/python3",
+      "justMyCode": true,
+      "console": "integratedTerminal"
+    },
+
+    // --- FastAPI / Uvicorn (with --reload) — convenient dev mode ---
+    {
+      "name": "FastAPI: Dev (Reload)",
+      "type": "python",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "fa_app.app_fastapi:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000",
+        "--reload",
+        "--reload-dir",
+        "fa_app"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/backend/.env",
+      "pythonPath": "${workspaceFolder}/backend/venv_3.12/bin/python3",
+      "justMyCode": true,
+      "subProcess": true, // uvicorn --reload spawns a subprocess
+      "console": "integratedTerminal"
     }
   ]
 }
