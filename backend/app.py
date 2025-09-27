@@ -1,7 +1,7 @@
 
 # app.py
 from flask_cors import CORS
-from app import create_app
+from _archived_app import create_app
 import os
 
 # Create the Flask app instance using the factory function

@@ -1,11 +1,15 @@
 import { configureStore } from '@reduxjs/toolkit';
-import dataReducer from './dataSlice.js';
-import nodeReducer from './nodeSlice.jsx';
+import projectsReducer from './projectSlice';
+import userReducer from './userSlice';
+import authReducer from './authSlice';
 
 export const store = configureStore({
   reducer: {
-    data: dataReducer,
-    nodes: nodeReducer,
+    projects: projectsReducer,
+    user: userReducer,
+    auth: authReducer,
   },
 });
+
+export default store;
 

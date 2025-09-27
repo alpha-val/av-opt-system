@@ -18,22 +18,31 @@ def db():
 
 def clear_all_collections():
     """
-    Clears all collections in the MongoDB database.
+    Clears all collections in the MongoDB database except users.
     WARNING: Use this only in development or testing environments.
     """
     D = db()  # Get the database instance
     try:
         collections = D.list_collection_names()
+        
+        # Collections to skip (preserve users)
+        skip_collections = ["users"]
+        
         for collection in collections:
-            D[collection].delete_many({})  # Clear all documents in the collection
-            print(f"[CLEAR] Cleared all documents from collection: {collection}")
-        return {"status": "success", "message": "All collections cleared."}
+            if collection not in skip_collections:
+                D[collection].delete_many({})  # Clear all documents in the collection
+                print(f"[CLEAR] Cleared all documents from collection: {collection}")
+            else:
+                print(f"[SKIP] Preserved collection: {collection}")
+        
+        return {"status": "success", "message": "All collections cleared except users."}
     except Exception as e:
         print(f"[CLEAR:ERROR] Failed to clear collections: {e}")
         return {"status": "error", "message": str(e)}
 
 
 def ensure_bronze_indexes():
+    print("[DEBUG] Ensuring indexes on Bronze collections...")
     _db.documents.create_index([("_id", ASCENDING)])
     _db.documents.create_index([("sha256", ASCENDING)])
 
@@ -61,6 +70,12 @@ def ensure_bronze_indexes():
     _db.mentions.create_index([("entity_id", ASCENDING)])
     _db.mentions.create_index([("chunk_id", ASCENDING)])
 
+    _db.projects.create_index([("_id", ASCENDING)])
+
+    _db.users.create_index([("_id", ASCENDING)])
+    _db.orgs.create_index([("_id", ASCENDING)])
+    
+    clear_all_collections()  # WARNING: Disable this line in production!
 
 def upsert_document(doc_id: str, payload: Dict[str, Any]):
     payload = dict(payload)

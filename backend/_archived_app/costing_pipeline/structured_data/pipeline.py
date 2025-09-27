@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Optional, Dict, Any
 import pandas as pd
 import os, io, hashlib
-from app.costing_pipeline.storage import (
+from _archived_app.costing_pipeline.storage import (
     GNode,
     GRel,
     GDoc,

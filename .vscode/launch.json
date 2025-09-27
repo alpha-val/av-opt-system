@@ -28,7 +28,7 @@
       "request": "launch",
       "module": "uvicorn",
       "args": [
-        "fa_app.app_fastapi:app",
+        "app.app_fastapi:app",
         "--host",
         "127.0.0.1",
         "--port",
@@ -48,14 +48,14 @@
       "request": "launch",
       "module": "uvicorn",
       "args": [
-        "fa_app.app_fastapi:app",
+        "app.app_fastapi:app",
         "--host",
         "127.0.0.1",
         "--port",
         "8000",
         "--reload",
         "--reload-dir",
-        "fa_app"
+        "app"
       ],
       "cwd": "${workspaceFolder}/backend",
       "envFile": "${workspaceFolder}/backend/.env",
