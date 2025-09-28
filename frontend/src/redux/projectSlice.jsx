@@ -1,55 +1,101 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-// API base URL - adjust as needed
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
-// Async thunks for CRUD operations
-export const fetchProjects = createAsyncThunk(
-    'projects/fetchProjects',
-    async (_, { rejectWithValue }) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/projects`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            return rejectWithValue(error.message);
-        }
-    }
-);
+// Helper function to get auth token
+const getAuthToken = () => {
+    return localStorage.getItem('access_token');
+};
 
-export const fetchProjectById = createAsyncThunk(
-    'projects/fetchProjectById',
-    async (projectId, { rejectWithValue }) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/projects/${projectId}`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            return rejectWithValue(error.message);
-        }
-    }
-);
+// Helper function to create auth headers
+const getAuthHeaders = () => {
+    const token = getAuthToken();
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+    };
+};
 
 export const createProject = createAsyncThunk(
     'projects/createProject',
     async (projectData, { rejectWithValue }) => {
         try {
+            const token = getAuthToken();
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
             const response = await fetch(`${API_BASE_URL}/projects`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: getAuthHeaders(),
                 body: JSON.stringify(projectData),
             });
+
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
             }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+export const fetchProjects = createAsyncThunk(
+    'projects/fetchProjects',
+    async ({ page = 1, limit = 10, status_filter, project_type, search } = {}, { rejectWithValue }) => {
+        try {
+            const token = getAuthToken();
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            // Build query parameters
+            const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
+            if (status_filter) params.append('status_filter', status_filter);
+            if (project_type) params.append('project_type', project_type);
+            if (search) params.append('search', search);
+
+            const response = await fetch(`${API_BASE_URL}/projects?${params}`, {
+                method: 'GET',
+                headers: getAuthHeaders(),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+export const fetchProject = createAsyncThunk(
+    'projects/fetchProject',
+    async (projectId, { rejectWithValue }) => {
+        try {
+            const token = getAuthToken();
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+                method: 'GET',
+                headers: getAuthHeaders(),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
             return data;
         } catch (error) {
@@ -62,16 +108,22 @@ export const updateProject = createAsyncThunk(
     'projects/updateProject',
     async ({ projectId, projectData }, { rejectWithValue }) => {
         try {
+            const token = getAuthToken();
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
             const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: getAuthHeaders(),
                 body: JSON.stringify(projectData),
             });
+
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
             }
+
             const data = await response.json();
             return data;
         } catch (error) {
@@ -82,15 +134,80 @@ export const updateProject = createAsyncThunk(
 
 export const deleteProject = createAsyncThunk(
     'projects/deleteProject',
+    async ({ projectId, hardDelete = false }, { rejectWithValue }) => {
+        try {
+            const token = getAuthToken();
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            const params = hardDelete ? '?hard_delete=true' : '';
+            const response = await fetch(`${API_BASE_URL}/projects/${projectId}${params}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders(),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return { ...data, projectId };
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+export const archiveProject = createAsyncThunk(
+    'projects/archiveProject',
     async (projectId, { rejectWithValue }) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
-                method: 'DELETE',
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            const token = getAuthToken();
+            if (!token) {
+                throw new Error('No authentication token found');
             }
-            return projectId; // Return the deleted project ID
+
+            const response = await fetch(`${API_BASE_URL}/projects/${projectId}/archive`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return { ...data, projectId };
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+export const getProjectStats = createAsyncThunk(
+    'projects/getProjectStats',
+    async (projectId, { rejectWithValue }) => {
+        try {
+            const token = getAuthToken();
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            const response = await fetch(`${API_BASE_URL}/projects/${projectId}/stats`, {
+                method: 'GET',
+                headers: getAuthHeaders(),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data;
         } catch (error) {
             return rejectWithValue(error.message);
         }
@@ -101,17 +218,24 @@ export const deleteProject = createAsyncThunk(
 const initialState = {
     projects: [],
     currentProject: null,
-    loading: false,
+    projectStats: null,
+    pagination: {
+        total: 0,
+        page: 1,
+        limit: 10,
+    },
+    loading: {
+        fetch: false,
+        create: false,
+        update: false,
+        delete: false,
+        stats: false,
+    },
     error: null,
-    // Loading states for individual operations
-    creating: false,
-    updating: false,
-    deleting: false,
-    fetchingById: false,
 };
 
 // Slice
-const projectsSlice = createSlice({
+const projectSlice = createSlice({
     name: 'projects',
     initialState,
     reducers: {
@@ -121,116 +245,136 @@ const projectsSlice = createSlice({
         clearCurrentProject: (state) => {
             state.currentProject = null;
         },
-        setCurrentProject: (state, action) => {
-            state.currentProject = action.payload;
+        clearProjectStats: (state) => {
+            state.projectStats = null;
         },
     },
     extraReducers: (builder) => {
         builder
-            // Fetch all projects
-            .addCase(fetchProjects.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(fetchProjects.fulfilled, (state, action) => {
-                state.loading = false;
-                state.projects = action.payload;
-                state.error = null;
-            })
-            .addCase(fetchProjects.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload;
-            })
-
-            // Fetch project by ID
-            .addCase(fetchProjectById.pending, (state) => {
-                state.fetchingById = true;
-                state.error = null;
-            })
-            .addCase(fetchProjectById.fulfilled, (state, action) => {
-                state.fetchingById = false;
-                state.currentProject = action.payload;
-                state.error = null;
-            })
-            .addCase(fetchProjectById.rejected, (state, action) => {
-                state.fetchingById = false;
-                state.error = action.payload;
-            })
-
             // Create project
             .addCase(createProject.pending, (state) => {
-                state.creating = true;
+                state.loading.create = true;
                 state.error = null;
             })
             .addCase(createProject.fulfilled, (state, action) => {
-                state.creating = false;
-                state.projects.push(action.payload);
+                state.loading.create = false;
+                state.projects.unshift(action.payload);
                 state.error = null;
             })
             .addCase(createProject.rejected, (state, action) => {
-                state.creating = false;
+                state.loading.create = false;
+                state.error = action.payload;
+            })
+
+            // Fetch projects
+            .addCase(fetchProjects.pending, (state) => {
+                state.loading.fetch = true;
+                state.error = null;
+            })
+            .addCase(fetchProjects.fulfilled, (state, action) => {
+                state.loading.fetch = false;
+                state.projects = action.payload.projects;
+                state.pagination = {
+                    total: action.payload.total,
+                    page: action.payload.page,
+                    limit: action.payload.limit,
+                };
+                state.error = null;
+            })
+            .addCase(fetchProjects.rejected, (state, action) => {
+                state.loading.fetch = false;
+                state.error = action.payload;
+            })
+
+            // Fetch single project
+            .addCase(fetchProject.pending, (state) => {
+                state.loading.fetch = true;
+                state.error = null;
+            })
+            .addCase(fetchProject.fulfilled, (state, action) => {
+                state.loading.fetch = false;
+                state.currentProject = action.payload;
+                state.error = null;
+            })
+            .addCase(fetchProject.rejected, (state, action) => {
+                state.loading.fetch = false;
                 state.error = action.payload;
             })
 
             // Update project
             .addCase(updateProject.pending, (state) => {
-                state.updating = true;
+                state.loading.update = true;
                 state.error = null;
             })
             .addCase(updateProject.fulfilled, (state, action) => {
-                state.updating = false;
-                const index = state.projects.findIndex(
-                    (project) => project.id === action.payload.id
-                );
+                state.loading.update = false;
+                const index = state.projects.findIndex(p => p.project_id === action.payload.project_id);
                 if (index !== -1) {
                     state.projects[index] = action.payload;
                 }
-                // Update current project if it's the same one
-                if (state.currentProject && state.currentProject.id === action.payload.id) {
+                if (state.currentProject?.project_id === action.payload.project_id) {
                     state.currentProject = action.payload;
                 }
                 state.error = null;
             })
             .addCase(updateProject.rejected, (state, action) => {
-                state.updating = false;
+                state.loading.update = false;
                 state.error = action.payload;
             })
 
             // Delete project
             .addCase(deleteProject.pending, (state) => {
-                state.deleting = true;
+                state.loading.delete = true;
                 state.error = null;
             })
             .addCase(deleteProject.fulfilled, (state, action) => {
-                state.deleting = false;
-                state.projects = state.projects.filter(
-                    (project) => project.id !== action.payload
-                );
-                // Clear current project if it was deleted
-                if (state.currentProject && state.currentProject.id === action.payload) {
+                state.loading.delete = false;
+                state.projects = state.projects.filter(p => p.project_id !== action.payload.projectId);
+                if (state.currentProject?.project_id === action.payload.projectId) {
                     state.currentProject = null;
                 }
                 state.error = null;
             })
             .addCase(deleteProject.rejected, (state, action) => {
-                state.deleting = false;
+                state.loading.delete = false;
+                state.error = action.payload;
+            })
+
+            // Archive project
+            .addCase(archiveProject.fulfilled, (state, action) => {
+                const index = state.projects.findIndex(p => p.project_id === action.payload.projectId);
+                if (index !== -1) {
+                    state.projects[index].status = 'archived';
+                }
+            })
+
+            // Get project stats
+            .addCase(getProjectStats.pending, (state) => {
+                state.loading.stats = true;
+                state.error = null;
+            })
+            .addCase(getProjectStats.fulfilled, (state, action) => {
+                state.loading.stats = false;
+                state.projectStats = action.payload;
+                state.error = null;
+            })
+            .addCase(getProjectStats.rejected, (state, action) => {
+                state.loading.stats = false;
                 state.error = action.payload;
             });
     },
 });
 
 // Export actions
-export const { clearError, clearCurrentProject, setCurrentProject } = projectsSlice.actions;
+export const { clearError, clearCurrentProject, clearProjectStats } = projectSlice.actions;
 
 // Selectors
 export const selectProjects = (state) => state.projects.projects;
 export const selectCurrentProject = (state) => state.projects.currentProject;
+export const selectProjectStats = (state) => state.projects.projectStats;
+export const selectProjectsPagination = (state) => state.projects.pagination;
 export const selectProjectsLoading = (state) => state.projects.loading;
 export const selectProjectsError = (state) => state.projects.error;
-export const selectProjectCreating = (state) => state.projects.creating;
-export const selectProjectUpdating = (state) => state.projects.updating;
-export const selectProjectDeleting = (state) => state.projects.deleting;
-export const selectProjectFetchingById = (state) => state.projects.fetchingById;
 
 // Export reducer
-export default projectsSlice.reducer;
+export default projectSlice.reducer;

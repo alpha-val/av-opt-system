@@ -37,26 +37,6 @@ const MainGrid = () => {
             >
                 {/* Content Container */}
                 <AppContent />
-                {/* <Box
-                    sx={{
-                        p: 3,
-                        height: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                    }}
-                >
-                    <Typography
-                        variant="h4"
-                        color="textSecondary"
-                        sx={{
-                            textAlign: 'center',
-                            fontWeight: 300,
-                        }}
-                    >
-                        <AppContent />
-                    </Typography>
-                </Box> */}
             </Box>
         </Box>
     );

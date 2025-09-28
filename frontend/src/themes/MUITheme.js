@@ -10,7 +10,7 @@ const createAppTheme = (mode = "light") => {
         // light: "#fbd064ff", // tint for hover or outlines (blue-400)
         // dark: "#d69316ff", // pressed/active (blue-800)
         // Alternative blue shades:
-        // main: "#2563eb", // vibrant blue (blue-600)
+        main: "#587fd1ff", // vibrant blue (blue-600)
         light: "#60a5fa", // tint for hover or outlines (blue-400)
         dark: "#1e40af", // pressed/active (blue-800)
         veryLight: mode === "light" ? "#E8F1FD" : "#1a2332", // subtle background blue
@@ -84,12 +84,12 @@ const createAppTheme = (mode = "light") => {
         "@media (max-width:600px)": { fontSize: "0.9rem" },
       },
       body1: {
-        fontSize: "0.9rem",
+        fontSize: "0.85rem",
         "@media (max-width:600px)": { fontSize: "0.8rem" },
       },
       body2: {
-        fontSize: "0.825rem",
-        "@media (max-width:600px)": { fontSize: "0.78rem" },
+        fontSize: "0.75rem",
+        "@media (max-width:600px)": { fontSize: "0.775rem" },
       },
     },
     spacing: 8,

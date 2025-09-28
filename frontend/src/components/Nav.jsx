@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom'; // Add these imports
 import {
     Drawer,
     List,
@@ -27,15 +28,17 @@ import {
     Brightness7,
 } from '@mui/icons-material';
 import { useThemeMode } from '../themes/ThemeContext';
-import logo from '../media/logo.png'; // Import the logo
-import logoLight from '../media/logo-light.png'; // Import the logo
-import logoDark from '../media/logo-dark.png'; // Import the logo
+import logo from '../media/logo.png';
+import logoLight from '../media/logo-light.png';
+import logoDark from '../media/logo-dark.png';
 import LogoutButton from './LogoutButton';
 
 const Nav = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const { mode, toggleColorMode } = useThemeMode();
+    const navigate = useNavigate(); // Add navigation hook
+    const location = useLocation(); // Add location hook for active state
 
     // State for mobile drawer
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -48,7 +51,7 @@ const Nav = () => {
 
     const menuItems = [
         { text: 'Home', icon: <HomeIcon />, path: '/' },
-        { text: 'Projects', icon: <ProjectsIcon />, path: '/projects' },
+        // { text: 'Projects', icon: <ProjectsIcon />, path: '/projects' },
         { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
     ];
 
@@ -58,6 +61,23 @@ const Nav = () => {
 
     const handleDesktopToggle = () => {
         setDesktopCollapsed(!desktopCollapsed);
+    };
+
+    // Add menu item click handler
+    const handleMenuItemClick = (path) => {
+        navigate(path);
+        // Close mobile drawer when item is clicked
+        if (isMobile) {
+            setMobileOpen(false);
+        }
+    };
+
+    // Check if menu item is active
+    const isActiveMenuItem = (path) => {
+        if (path === '/') {
+            return location.pathname === '/' || location.pathname === '/dashboard';
+        }
+        return location.pathname.startsWith(path);
     };
 
     const DrawerContent = ({ collapsed = true }) => (
@@ -108,16 +128,33 @@ const Nav = () => {
                 {menuItems.map((item) => (
                     <ListItem key={item.text} disablePadding>
                         <ListItemButton
+                            onClick={() => handleMenuItemClick(item.path)} // Add onClick handler
+                            selected={isActiveMenuItem(item.path)} // Add active state
                             sx={{
                                 justifyContent: collapsed ? 'center' : 'flex-start',
                                 px: 2.5,
                                 py: 1.5,
+                                borderRadius: 1,
+                                '&.Mui-selected': {
+                                    backgroundColor: 'primary.light',
+                                    color: 'primary.contrastText',
+                                    '&:hover': {
+                                        backgroundColor: 'primary.dark',
+                                    },
+                                    '& .MuiListItemIcon-root': {
+                                        color: 'primary.contrastText',
+                                    },
+                                },
+                                '&:hover': {
+                                    backgroundColor: collapsed ? 'action.hover' : 'action.hover',
+                                },
                             }}
                         >
                             <ListItemIcon
                                 sx={{
                                     minWidth: collapsed ? 0 : 56,
                                     justifyContent: 'center',
+                                    // color: 'inherit', // Inherit color from parent for active state
                                 }}
                             >
                                 {item.icon}

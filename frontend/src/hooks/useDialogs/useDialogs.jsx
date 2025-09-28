@@ -7,6 +7,8 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
 import useEventCallback from '@mui/utils/useEventCallback';
 import DialogsContext from './DialogsContext';
 
@@ -213,6 +215,172 @@ PromptDialog.propTypes = {
 
 export { PromptDialog };
 
+function ProjectPromptDialog({ open, payload, onClose }) {
+    const [projectName, setProjectName] = React.useState('');
+    const [description, setDescription] = React.useState('');
+    const [loading, setLoading] = React.useState(false);
+
+    const cancelButtonProps = useDialogLoadingButton(() => onClose(null));
+
+    const PROJECT_NAME_LIMIT = 40;
+    const DESCRIPTION_LIMIT = 80;
+
+    return (
+        <Dialog
+            maxWidth="sm"
+            fullWidth
+            open={open}
+            onClose={() => onClose(null)}
+            slotProps={{
+                paper: {
+                    component: 'form',
+                    onSubmit: async (event) => {
+                        event.preventDefault();
+                        try {
+                            setLoading(true);
+
+                            // Validate inputs
+                            if (!projectName.trim()) {
+                                return; // Form validation will handle this
+                            }
+
+                            const result = {
+                                name: projectName.trim(),
+                                description: description.trim() || undefined
+                            };
+
+                            await onClose(result);
+                        } finally {
+                            setLoading(false);
+                        }
+                    },
+                },
+            }}
+        >
+            <DialogTitle>{payload.title ?? 'Create New Project'}</DialogTitle>
+            <DialogContent>
+                <DialogContentText sx={{ mb: 2 }}>
+                    {payload.msg}
+                </DialogContentText>
+
+                {/* Project Name Field */}
+                <Box sx={{ mb: 3 }}>
+                    <TextField
+                        autoFocus
+                        required
+                        fullWidth
+                        id="project-name"
+                        label="Project Name"
+                        type="text"
+                        variant="outlined"
+                        value={projectName}
+                        onChange={(event) => {
+                            const value = event.target.value;
+                            if (value.length <= PROJECT_NAME_LIMIT) {
+                                setProjectName(value);
+                            }
+                        }}
+                        inputProps={{
+                            maxLength: PROJECT_NAME_LIMIT
+                        }}
+                        helperText={
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>Required field</span>
+                                <Typography
+                                    variant="caption"
+                                    color={projectName.length > PROJECT_NAME_LIMIT * 0.9 ? 'warning.main' : 'text.secondary'}
+                                >
+                                    {projectName.length}/{PROJECT_NAME_LIMIT}
+                                </Typography>
+                            </Box>
+                        }
+                    />
+                </Box>
+
+                {/* Description Field */}
+                <Box>
+                    <TextField
+                        fullWidth
+                        id="project-description"
+                        label="Description (Optional)"
+                        type="text"
+                        variant="outlined"
+                        multiline
+                        rows={3}
+                        value={description}
+                        onChange={(event) => {
+                            const value = event.target.value;
+                            if (value.length <= DESCRIPTION_LIMIT) {
+                                setDescription(value);
+                            }
+                        }}
+                        inputProps={{
+                            maxLength: DESCRIPTION_LIMIT
+                        }}
+                        helperText={
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>Brief description of your project</span>
+                                <Typography
+                                    variant="caption"
+                                    color={description.length > DESCRIPTION_LIMIT * 0.9 ? 'warning.main' : 'text.secondary'}
+                                >
+                                    {description.length}/{DESCRIPTION_LIMIT}
+                                </Typography>
+                            </Box>
+                        }
+                        placeholder="e.g., Gold mining feasibility study for Queensland region"
+                    />
+                </Box>
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2 }}>
+                <Button
+                    disabled={!open}
+                    variant="outlined"
+                    {...cancelButtonProps}
+                >
+                    {payload.cancelText ?? 'Cancel'}
+                </Button>
+                <Button
+                    disabled={!open || !projectName.trim()}
+                    variant="contained"
+                    loading={loading}
+                    type="submit"
+                >
+                    {payload.okText ?? 'Create Project'}
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
+}
+
+ProjectPromptDialog.propTypes = {
+    /**
+     * A function to call when the dialog should be closed. If the dialog has a return
+     * value, it should be passed as an argument to this function. You should use the promise
+     * that is returned to show a loading state while the dialog is performing async actions
+     * on close.
+     * @param result The result to return from the dialog.
+     * @returns A promise that resolves when the dialog can be fully closed.
+     */
+    onClose: PropTypes.func.isRequired,
+    /**
+     * Whether the dialog is open.
+     */
+    open: PropTypes.bool.isRequired,
+    /**
+     * The payload that was passed when the dialog was opened.
+     */
+    payload: PropTypes.shape({
+        cancelText: PropTypes.node,
+        msg: PropTypes.node,
+        okText: PropTypes.node,
+        onClose: PropTypes.func,
+        title: PropTypes.node,
+    }).isRequired,
+};
+
+export { ProjectPromptDialog };
+
 export function useDialogs() {
     const dialogsContext = React.useContext(DialogsContext);
     if (!dialogsContext) {
@@ -232,15 +400,21 @@ export function useDialogs() {
         open(PromptDialog, { ...options, msg }, { onClose }),
     );
 
+    // New project prompt with description support
+    const projectPrompt = useEventCallback((msg, { onClose, ...options } = {}) =>
+        open(ProjectPromptDialog, { ...options, msg }, { onClose }),
+    );
+
     return React.useMemo(
         () => ({
             alert,
             confirm,
             prompt,
+            projectPrompt, // New method
             open,
             close,
         }),
-        [alert, close, confirm, open, prompt],
+        [alert, close, confirm, open, prompt, projectPrompt],
     );
 }
 

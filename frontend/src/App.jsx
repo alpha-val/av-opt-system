@@ -4,6 +4,7 @@ import NotFound from "./views/NotFound";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import DialogsProvider from "./hooks/useDialogs/DialogsProvider";
 import MainGrid from "./views/MainGrid";
+import ProjectView from "./views/project/ProjectView"; // New component for project routes
 import AuthProvider from "./services/AuthProvider";
 import { useThemeMode } from "./themes/ThemeContext";
 
@@ -34,6 +35,7 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<MainGrid />} />
           <Route path="/dashboard" element={<MainGrid />} />
+          Í          <Route path="/projects/:projectId" element={<ProjectView />} /> {/* Separate route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
