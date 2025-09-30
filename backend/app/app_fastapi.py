@@ -12,21 +12,24 @@ from .pipeline_costing import router_costing
 from .pipeline_projects import router_projects
 from .pipeline_query import router_query_vault_data
 from .pipeline_users import router_auth
+from .pipeline_admin import router_admin
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     print("[STARTUP] Initializing database...")
     ensure_bronze_indexes()
-    
+
     # print("[STARTUP] Creating default user...")
     # result = create_default_user()
     # print(f"[STARTUP] Default user result: {result}")
-    
+
     yield
-    
+
     # Shutdown (if needed)
     print("[SHUTDOWN] Cleaning up...")
+
 
 app = FastAPI(title="Alpha-Val ETL (FastAPI)", version="0.1.0", lifespan=lifespan)
 
@@ -46,13 +49,17 @@ app.include_router(router_query_vault_data, prefix="/api/v1")
 app.include_router(router_costing, prefix="/api/v1")
 app.include_router(router_projects, prefix="/api/v1")
 app.include_router(router_auth, prefix="/api/v1")
+app.include_router(router_admin, prefix="/api/v1")
+
 
 # Health
 @app.get("/healthz")
 def healthz():
     return {"ok": True}
 
+
 # Local dev run: uvicorn package.app_fastapi:app --reload
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("app.app_fastapi:app", host="0.0.0.0", port=8000, reload=True)

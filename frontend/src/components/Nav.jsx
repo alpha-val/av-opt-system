@@ -51,7 +51,6 @@ const Nav = () => {
 
     const menuItems = [
         { text: 'Home', icon: <HomeIcon />, path: '/' },
-        // { text: 'Projects', icon: <ProjectsIcon />, path: '/projects' },
         { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
     ];
 
@@ -65,6 +64,7 @@ const Nav = () => {
 
     // Add menu item click handler
     const handleMenuItemClick = (path) => {
+        console.log("Path: ", path);
         navigate(path);
         // Close mobile drawer when item is clicked
         if (isMobile) {
@@ -93,7 +93,7 @@ const Nav = () => {
                 }}
             >
                 {/* Logo/Title at top */}
-                <Box sx={{ mb: collapsed ? 1 : 2, display: 'flex', alignItems: 'center', gap: collapsed ? 0 : 1 }}>
+                <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: collapsed ? 0 : 1 }}>
                     {collapsed ? (
                         <img
                             src={mode === 'dark' ? logoDark : logoLight}

@@ -19,7 +19,7 @@ import {
     ArrowBack as ArrowBackIcon,
     Folder as FolderIcon,
     Dashboard as DashboardIcon,
-    Assessment as ScenariosIcon,
+    DynamicFeed as ScenariosIcon,
     Analytics as AnalysisIcon,
     Info as InfoIcon,
 } from '@mui/icons-material';
@@ -29,6 +29,7 @@ import {
     selectProjectsLoading,
     selectProjectsError,
 } from '../../redux/projectSlice';
+import Sources from "./Sources";
 
 // Tab configuration
 const PROJECT_TABS = [
@@ -216,17 +217,6 @@ const ProjectDashboard = () => {
                         </Typography>
                     </Box>
                 </Box>
-
-                {/* Project Description (if available) */}
-                {/* {currentProject.description && (
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mt: 1, maxWidth: '600px' }}
-                    >
-                        {currentProject.description}
-                    </Typography>
-                )} */}
             </Box>
 
             {/* Main Content Area */}
@@ -297,38 +287,8 @@ const ProjectDashboard = () => {
                     backgroundColor: 'background.default'
                 }}>
                     {/* Tab Content Placeholder */}
-                    {activeTab === 'sources' && (
-                        <Box>
-                            <Typography variant="h5" gutterBottom fontWeight="bold">
-                                Sources
-                            </Typography>
-                            <Typography variant="body1" color="text.secondary" paragraph>
-                                Upload your mining reports and documents for AI-powered cost estimation and scenario analysis.
-                                Supported formats include PDF, CSV, XLSX, and TXT.
-                            </Typography>
-
-                            <Paper sx={{
-                                p: 4,
-                                textAlign: 'center',
-                                border: '2px dashed',
-                                borderColor: 'divider',
-                                backgroundColor: 'background.paper'
-                            }}>
-                                <FolderIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                                <Typography variant="h6" gutterBottom>
-                                    Upload your mining report and other documents
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 400, mx: 'auto' }}>
-                                    Upload your mining reports and documents for AI-powered cost estimation and scenario analysis.
-                                    Ensure data accuracy for optimal results, focusing on key metrics like ore grade, extraction rates, and operational costs.
-                                </Typography>
-                                {/* Placeholder for upload component */}
-                                <Typography variant="body2" color="primary" sx={{ fontStyle: 'italic' }}>
-                                    [File Upload Component - To be implemented]
-                                </Typography>
-                            </Paper>
-                        </Box>
-                    )}
+                    {/* {activeTab === 'sources' && <ProjectSources />} */}
+                    {activeTab === 'sources' && <Sources />}
 
                     {activeTab === 'base-case' && (
                         <Box>

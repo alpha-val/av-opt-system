@@ -2,7 +2,7 @@
 from __future__ import annotations
 from typing import List, Dict, Any
 import os
-from datetime import datetime
+from datetime import datetime, timezone  # Add timezone import
 from pymongo import MongoClient, UpdateOne, ASCENDING
 
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
@@ -24,17 +24,17 @@ def clear_all_collections():
     D = db()  # Get the database instance
     try:
         collections = D.list_collection_names()
-        
+
         # Collections to skip (preserve users)
-        skip_collections = ["users"]
-        
+        skip_collections = ["users", "projects", "orgs"]
+
         for collection in collections:
             if collection not in skip_collections:
                 D[collection].delete_many({})  # Clear all documents in the collection
                 print(f"[CLEAR] Cleared all documents from collection: {collection}")
             else:
                 print(f"[SKIP] Preserved collection: {collection}")
-        
+
         return {"status": "success", "message": "All collections cleared except users."}
     except Exception as e:
         print(f"[CLEAR:ERROR] Failed to clear collections: {e}")
@@ -74,14 +74,48 @@ def ensure_bronze_indexes():
 
     _db.users.create_index([("_id", ASCENDING)])
     _db.orgs.create_index([("_id", ASCENDING)])
-    
-    clear_all_collections()  # WARNING: Disable this line in production!
+
+    # clear_all_collections()  # WARNING: Disable this line in production!
+
 
 def upsert_document(doc_id: str, payload: Dict[str, Any]):
     payload = dict(payload)
     payload.setdefault("_id", doc_id)
-    payload.setdefault("ingested_at", datetime.utcnow().isoformat())
+    payload.setdefault("ingested_at", datetime.now(timezone.utc).isoformat())  # Fixed
     _db.documents.replace_one({"_id": doc_id}, payload, upsert=True)
+
+
+# In etl_base_case.py, add this after the ETL processing:
+def store_document_metadata(
+    doc_id, filename, project_id, user_id, artifact_type="project_description"
+):
+    """Store document metadata in the documents collection"""
+    try:
+        document_metadata = {
+            "doc_id": doc_id,
+            "project_id": project_id,
+            "user_id": user_id,
+            "fileName": filename,
+            "originalName": filename,
+            "fileType": "pdf",
+            "document_type": artifact_type,
+            "processing_status": "completed",
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+            "active": True,
+        }
+
+        # Insert or update document metadata
+        _db.documents.update_one(
+            {"doc_id": doc_id}, {"$set": document_metadata}, upsert=True
+        )
+
+        print(f"Stored document metadata: {document_metadata}")
+        return document_metadata
+
+    except Exception as e:
+        print(f"Error storing document metadata: {e}")
+        return None
 
 
 def bulk_upsert_chunks(chunks: List[Dict[str, Any]]):

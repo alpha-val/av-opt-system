@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { getCurrentUser } from '../redux/authSlice';
 import {
     Box,
     Grid,
@@ -12,6 +14,9 @@ import AppContent from './AppContent';
 const MainGrid = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    // Get if the user is_admin
+    const isAdmin = useSelector((state) => state.auth.isAdmin);
+    console.log("[DEBUG] is admin user? ", isAdmin);
 
     const drawerWidth = 240;
     const collapsedWidth = 72;

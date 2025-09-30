@@ -84,6 +84,7 @@ export const getCurrentUser = createAsyncThunk(
             }
 
             const data = await response.json();
+
             return data;
         } catch (error) {
             return rejectWithValue(error.message);
@@ -171,6 +172,7 @@ const authSlice = createSlice({
                     access_token: action.payload.access_token,
                     refresh_token: action.payload.refresh_token,
                 };
+                state.user = action.payload;
                 state.isAuthenticated = true;
                 state.error = null;
             })
@@ -223,6 +225,7 @@ export const selectUser = (state) => state.auth.user;
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
 export const selectAuthLoading = (state) => state.auth.loading;
 export const selectAuthError = (state) => state.auth.error;
+export const selectIsAdmin = (state) => state.auth.isAdmin;
 export const selectRegistering = (state) => state.auth.registering;
 export const selectLoggingIn = (state) => state.auth.loggingIn;
 export const selectFetchingUser = (state) => state.auth.fetchingUser;

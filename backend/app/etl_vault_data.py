@@ -8,6 +8,7 @@ from .text_clean import extract_and_clean, NAMESPACE
 from .bronze_store import (
     bulk_upsert_rows,
     ensure_bronze_indexes,
+    store_document_metadata,
     upsert_table,
 )
 
@@ -95,9 +96,22 @@ def make_row_id(table_id: str, row_idx: int) -> str:
 
 
 @router_vault_data.post("/etl_ingest_tables")
-def etl_ingest_tables(file: UploadFile = File(...), pages: Optional[str] = Form(None)):
+def etl_ingest_tables(
+    file: UploadFile = File(...),
+    user_id: str = Form(...),
+    project_id: str = Form(...),
+    pages: Optional[str] = Form(None),
+    description: Optional[str] = Form(None),
+    data_type: Optional[str] = Form(None),
+    sheet_name: Optional[str] = Form(None),
+):
     """Ingest tables from a PDF into Bronze: tables/rows only."""
     ensure_bronze_indexes()
+
+    print(
+        f"Processing vault data file for user_id: {user_id}, project_id: {project_id}"
+    )
+
     if file.content_type not in ("application/pdf", "application/octet-stream"):
         raise HTTPException(400, "Please upload a PDF file")
 
@@ -107,12 +121,23 @@ def etl_ingest_tables(file: UploadFile = File(...), pages: Optional[str] = Form(
     # 1) Light text extract to get doc_id
     doc_id, file_sha, pages_raw, pages_clean = extract_and_clean(pdf_bytes, filename)
 
-    # 2) Extract tables (your cascade → fallback Camelot-only)
+    # 2) Extract tables
     table_results = _extract_tables_cascade(pdf_bytes, pages)
     tables_written, rows_written = 0, 0
+
     for t in table_results:
         df: pd.DataFrame = t["df"]
         meta = t.get("meta", {})
+        meta.update(
+            {
+                "user_id": user_id,
+                "project_id": project_id,
+                "description": description,
+                "data_type": data_type,
+                "sheet_name": sheet_name,
+            }
+        )
+
         page = int(meta.get("page") or 1)
         index = int(meta.get("index") or 0)
         table_id = make_table_id(doc_id, page, index)
@@ -131,11 +156,10 @@ def etl_ingest_tables(file: UploadFile = File(...), pages: Optional[str] = Form(
             continue
         tables_written += 1
 
-        # Upsert rows (cells embedded in 'rows' for Bronze)
+        # Upsert rows
         row_docs: List[Dict[str, Any]] = []
         cols = [str(c) for c in df.columns]
         for i, row in df.iterrows():
-            # Some Camelot tables use string indexes; coerce if needed
             i_num = (
                 int(i)
                 if isinstance(i, (int, float)) or (isinstance(i, str) and i.isdigit())
@@ -154,10 +178,27 @@ def etl_ingest_tables(file: UploadFile = File(...), pages: Optional[str] = Form(
             bulk_upsert_rows(row_docs)
             rows_written += len(row_docs)
 
+    # Store document metadata with proper error handling
+    try:
+        doc_metadata = store_document_metadata(
+            doc_id=doc_id,
+            filename=filename,
+            project_id=project_id,
+            user_id=user_id,
+            artifact_type=data_type or "scenario",  # Fixed: use scenario for vault data
+        )
+        print(f"[ETL:BRONZE] - Stored document metadata: {doc_metadata}")
+    except Exception as e:
+        print(f"[ETL:BRONZE] - Failed to store document metadata: {e}")
+        doc_metadata = None
+
     return {
         "doc_id": doc_id,
         "filename": filename,
         "pages": len(pages_clean),
         "tables_written": tables_written,
         "rows_written": rows_written,
+        "user_id": user_id,
+        "project_id": project_id,
+        "document_metadata": doc_metadata,
     }

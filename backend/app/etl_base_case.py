@@ -12,6 +12,7 @@ from .bronze_store import (
     bulk_upsert_relations,
     clear_all_collections,
     ensure_bronze_indexes,
+    store_document_metadata,
     upsert_document,
 )
 
@@ -110,22 +111,20 @@ def etl_bronze(
         m["project_id"] = project_id
         m["user_id"] = user_id
 
-    # 4) Persist all Bronze artifacts
-    upsert_document(
-        doc_id,
-        {
-            "filename": filename,
-            "sha256": file_sha,
-            "mime": "application/pdf",
-            "pages": len(pages_clean),
-            "status": "bronze",
-            "properties": {
-                "artifact_type": "base_case",
-                "project_id": project_id,
-                "user_id": user_id,
-            },
-        },
-    )
+    # 4) Store document metadata in documents collection
+    try:
+        doc_metadata = store_document_metadata(
+            doc_id=doc_id,
+            filename=filename,
+            project_id=project_id,
+            user_id=user_id,
+            artifact_type="base_case",
+        )
+        print(f"[ETL:BRONZE] - Stored document metadata: {doc_metadata}")
+    except Exception as e:
+        print(f"[ETL:BRONZE] - Failed to store document metadata: {e}")
+        doc_metadata = None
+
     bulk_upsert_chunks(chunks)
     bulk_upsert_entities(nodes)
     bulk_upsert_relations(edges)
@@ -139,73 +138,7 @@ def etl_bronze(
         "entities_written": len(nodes),
         "relations_written": len(edges),
         "mentions_written": len(mentions),
+        "user_id": user_id,
+        "project_id": project_id,
+        "document_metadata": doc_metadata,
     }
-
-
-# @router_base_case.post("/etl_base_case")
-# def etl_bronze(file: UploadFile = File(...), pages: Optional[str] = Form(None)):
-#     """Ingest a PDF into Bronze: text chunks, tables/rows, entities/relations/mentions."""
-#     ensure_bronze_indexes()
-#     clear_all_collections()  # WARNING: Disable this line in production!
-#     if file.content_type not in ("application/pdf", "application/octet-stream"):
-#         raise HTTPException(400, "Please upload a PDF file")
-
-#     pdf_bytes = file.file.read()
-#     filename = file.filename or "uploaded.pdf"
-
-#     # 1) Text extract + clean
-#     doc_id, file_sha, pages_raw, pages_clean = extract_and_clean(pdf_bytes, filename)
-
-#     # 2) Build page chunks (Bronze)
-#     chunks = chunk_by_page(pages_clean, doc_id)
-#     raw_by_page = {p: t for p, t in pages_raw}
-#     for c in chunks:
-#         c["text_raw"] = raw_by_page.get(c["page"])
-
-#     # 3) Entities/relations/mentions from free text (Bronze)
-#     kg = _extract_entities_mentions(chunks)
-#     nodes = list(kg.get("nodes", []) or [])
-#     edges = list(kg.get("edges", []) or [])
-#     mentions = list(kg.get("mentions", []) or [])
-
-#     # Attach simple source back-pointer to each node; ensure deterministic mention IDs
-#     for n in nodes:
-#         srcs = n.get("sources") or []
-#         if not any(isinstance(s, dict) and s.get("doc_id") == doc_id for s in srcs):
-#             srcs.append({"doc_id": doc_id})
-#         n["sources"] = srcs
-
-#     for m in mentions:
-#         m["_id"] = _mention_id(
-#             chunk_id=m.get("chunk_id"),
-#             entity_id=m.get("entity_id"),
-#             span_start=m.get("span_start"),
-#             span_end=m.get("span_end"),
-#             surface=m.get("surface"),
-#         )
-
-#     # 4) Persist all Bronze artifacts
-#     upsert_document(
-#         doc_id,
-#         {
-#             "filename": filename,
-#             "sha256": file_sha,
-#             "mime": "application/pdf",
-#             "pages": len(pages_clean),
-#             "status": "bronze",
-#         },
-#     )
-#     bulk_upsert_chunks(chunks)
-#     bulk_upsert_entities(nodes)
-#     bulk_upsert_relations(edges)
-#     bulk_upsert_mentions(mentions)
-
-#     return {
-#         "doc_id": doc_id,
-#         "filename": filename,
-#         "pages": len(pages_clean),
-#         "chunks_written": len(chunks),
-#         "entities_written": len(nodes),
-#         "relations_written": len(edges),
-#         "mentions_written": len(mentions),
-#     }

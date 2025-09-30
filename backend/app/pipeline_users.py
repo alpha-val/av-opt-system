@@ -39,6 +39,8 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     expires_in: int
+    user_id: str
+    is_admin: bool  # Add this field
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
@@ -51,6 +53,7 @@ class UserProfile(BaseModel):
     org_id: str
     active: bool
     created_at: datetime.datetime
+    is_admin: bool
 
 # Helper functions
 def get_password_hash(password: str) -> str:
@@ -161,6 +164,7 @@ async def register(user_data: UserRegister):
             "created_at": datetime.datetime.utcnow(),
             "updated_at": datetime.datetime.utcnow(),
             "active": True,
+            "is_admin": False,
         }
         
         # Insert user into database
@@ -185,7 +189,9 @@ async def register(user_data: UserRegister):
         return TokenResponse(
             access_token=access_token,
             refresh_token=refresh_token,
-            expires_in=JWT_EXPIRY_MINUTES * 60  # Convert to seconds
+            expires_in=JWT_EXPIRY_MINUTES * 60,  # Convert to seconds
+            user_id=user_id,
+            is_admin=False  # Default to False for regular users
         )
         
     except HTTPException:
@@ -244,7 +250,9 @@ async def login(user_data: UserLogin):
         return TokenResponse(
             access_token=access_token,
             refresh_token=refresh_token,
-            expires_in=JWT_EXPIRY_MINUTES * 60  # Convert to seconds
+            expires_in=JWT_EXPIRY_MINUTES * 60,  # Convert to seconds
+            user_id=user["user_id"],
+            is_admin=user.get("is_admin", False)  # Include admin flag
         )
         
     except HTTPException:
@@ -302,7 +310,9 @@ async def refresh_token(refresh_data: RefreshTokenRequest):
         return TokenResponse(
             access_token=access_token,
             refresh_token=new_refresh_token,
-            expires_in=JWT_EXPIRY_MINUTES * 60
+            expires_in=JWT_EXPIRY_MINUTES * 60,
+            user_id=user["user_id"],
+            is_admin=user.get("is_admin", False)  # Include admin flag
         )
         
     except HTTPException:
@@ -320,7 +330,7 @@ async def get_current_user_profile(current_user: dict = Depends(get_current_user
     """
     # Convert ObjectId to string for JSON serialization
     current_user["_id"] = str(current_user["_id"])
-    
+
     return UserProfile(
         user_id=current_user["user_id"],
         name=current_user["name"],
@@ -328,7 +338,8 @@ async def get_current_user_profile(current_user: dict = Depends(get_current_user
         org_name=current_user["org_name"],
         org_id=current_user["org_id"],
         active=current_user["active"],
-        created_at=current_user["created_at"]
+        created_at=current_user["created_at"],
+        is_admin=current_user.get("is_admin", False)
     )
 
 @router_auth.post("/auth/logout")

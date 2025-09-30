@@ -122,7 +122,7 @@ def test_mongo_connection():
 def etl_bronze(file: UploadFile = File(...), pages: Optional[str] = Form(None)):
     """Ingest a PDF into Bronze: text chunks, tables/rows, entities/relations/mentions."""
     ensure_bronze_indexes()
-    clear_all_collections()  # WARNING: Disable this line in production!
+    # clear_all_collections()  # WARNING: Disable this line in production!
     if file.content_type not in ("application/pdf", "application/octet-stream"):
         raise HTTPException(400, "Please upload a PDF file")
 

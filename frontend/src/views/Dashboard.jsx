@@ -393,20 +393,22 @@ const Dashboard = ({ onOpenProject }) => {
                     <Typography variant="h5" fontWeight="bold">
                         Your Projects
                     </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Typography variant="body2" color="text.secondary">
-                            {projects.length} projects
-                        </Typography>
-                        <Button
-                            variant="contained"
-                            startIcon={loading.create ? <CircularProgress size={20} /> : <AddIcon />}
-                            sx={{ ml: 2 }}
-                            onClick={handleCreateProject}
-                            disabled={loading.create}
-                        >
-                            {loading.create ? 'Creating...' : 'New Project'}
-                        </Button>
-                    </Box>
+                    {projects.length > 0 ?
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                {projects.length} projects
+                            </Typography>
+                            <Button
+                                variant="contained"
+                                size='medium'
+                                startIcon={loading.create ? <CircularProgress size={20} /> : <AddIcon />}
+                                sx={{ ml: 2 }}
+                                onClick={handleCreateProject}
+                                disabled={loading.create}
+                            >
+                                {loading.create ? 'Creating...' : 'New Project'}
+                            </Button>
+                        </Box> : ""}
                 </Box>
 
                 {projectData.length > 0 ? (

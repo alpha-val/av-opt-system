@@ -284,16 +284,16 @@ function ProjectPromptDialog({ open, payload, onClose }) {
                             maxLength: PROJECT_NAME_LIMIT
                         }}
                         helperText={
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span>Required field</span>
-                                <Typography
-                                    variant="caption"
-                                    color={projectName.length > PROJECT_NAME_LIMIT * 0.9 ? 'warning.main' : 'text.secondary'}
-                                >
-                                    {projectName.length}/{PROJECT_NAME_LIMIT}
-                                </Typography>
-                            </Box>
+                            // Fix: Use a single string or span instead of Box with div
+                            `Required field • ${projectName.length}/${PROJECT_NAME_LIMIT}`
                         }
+                        FormHelperTextProps={{
+                            sx: {
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                color: projectName.length > PROJECT_NAME_LIMIT * 0.9 ? 'warning.main' : 'text.secondary'
+                            }
+                        }}
                     />
                 </Box>
 
@@ -318,16 +318,16 @@ function ProjectPromptDialog({ open, payload, onClose }) {
                             maxLength: DESCRIPTION_LIMIT
                         }}
                         helperText={
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span>Brief description of your project</span>
-                                <Typography
-                                    variant="caption"
-                                    color={description.length > DESCRIPTION_LIMIT * 0.9 ? 'warning.main' : 'text.secondary'}
-                                >
-                                    {description.length}/{DESCRIPTION_LIMIT}
-                                </Typography>
-                            </Box>
+                            // Fix: Use a single string instead of Box with div
+                            `Brief description of your project • ${description.length}/${DESCRIPTION_LIMIT}`
                         }
+                        FormHelperTextProps={{
+                            sx: {
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                color: description.length > DESCRIPTION_LIMIT * 0.9 ? 'warning.main' : 'text.secondary'
+                            }
+                        }}
                         placeholder="e.g., Gold mining feasibility study for Queensland region"
                     />
                 </Box>

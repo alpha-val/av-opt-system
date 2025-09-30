@@ -465,3 +465,365 @@ async def restore_project(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Internal server error: {str(e)}",
         )
+
+
+@router_projects.get("/projects/{project_id}/documents/debug")
+async def debug_project_documents(
+    project_id: str, current_user: dict = Depends(get_current_user)
+):
+    """Debug endpoint to see what's actually in the documents collection"""
+    try:
+        print(f"Debug - Looking for documents with:")
+        print(f"  project_id: {project_id}")
+        print(f"  user_id: {current_user['user_id']}")
+
+        # Check all collections that might contain documents
+        collections_info = {}
+
+        # Check documents collection
+        all_docs = list(db().documents.find({}, {"_id": 0}).limit(10))
+        user_project_docs = list(
+            db().documents.find(
+                {"project_id": project_id, "user_id": current_user["user_id"]},
+                {"_id": 0},
+            )
+        )
+        project_only_docs = list(
+            db().documents.find({"project_id": project_id}, {"_id": 0})
+        )
+
+        collections_info["documents"] = {
+            "total_count": db().documents.count_documents({}),
+            "sample_docs": all_docs,
+            "user_project_docs": user_project_docs,
+            "project_only_docs": project_only_docs,
+        }
+
+        # Check if documents might be in a different collection
+        # Common alternatives: files, uploads, doc_metadata, etc.
+        potential_collections = ["files", "uploads", "doc_metadata", "file_uploads"]
+        for coll_name in potential_collections:
+            try:
+                collection = getattr(db(), coll_name)
+                count = collection.count_documents({})
+                if count > 0:
+                    sample = list(collection.find({}, {"_id": 0}).limit(3))
+                    collections_info[coll_name] = {"count": count, "sample": sample}
+            except:
+                pass
+
+        # Also check what collections exist in the database
+        try:
+            db_instance = db()
+            all_collections = db_instance.list_collection_names()
+        except:
+            all_collections = ["Unable to list collections"]
+
+        return {
+            "debug_info": {
+                "project_id": project_id,
+                "user_id": current_user["user_id"],
+                "all_collections": all_collections,
+                "collections_data": collections_info,
+            }
+        }
+
+    except Exception as e:
+        return {"error": str(e), "traceback": str(e.__traceback__)}
+
+
+# Comprehensive debug function
+def debug_document_query(project_id):
+    try:
+        print(f"\n=== DEBUGGING DOCUMENT QUERY ===")
+        print(f"Looking for project_id: {repr(project_id)} (type: {type(project_id)})")
+
+        # Test database connection
+        db_instance = db()
+        print(f"Database: {db_instance.name}")
+
+        # Test collections
+        collections = db_instance.list_collection_names()
+        print(f"Collections: {collections}")
+
+        if "documents" not in collections:
+            print("ERROR: 'documents' collection does not exist!")
+            return None
+
+        # Count total documents
+        total_count = db().documents.count_documents({})
+        print(f"Total documents: {total_count}")
+
+        if total_count == 0:
+            print("ERROR: No documents in collection!")
+            return None
+
+        # Get sample document to check structure
+        sample = db().documents.find_one({})
+        print(f"Sample document keys: {list(sample.keys()) if sample else 'None'}")
+
+        # Try exact query
+        exact_result = db().documents.find_one({"project_id": project_id})
+        print(f"Exact query result: {exact_result}")
+
+        # Try case-insensitive query
+        regex_result = db().documents.find_one(
+            {"project_id": {"$regex": f"^{project_id}$", "$options": "i"}}
+        )
+        print(f"Case-insensitive result: {regex_result}")
+
+        # Count matches
+        match_count = db().documents.count_documents({"project_id": project_id})
+        print(f"Matching documents: {match_count}")
+
+        # List all unique project_ids to compare
+        unique_projects = db().documents.distinct("project_id")
+        print(
+            f"All project_ids in collection: {unique_projects[:5]}..."
+        )  # Show first 5
+
+        print(f"=== END DEBUG ===\n")
+        return exact_result
+
+    except Exception as e:
+        print(f"DEBUG ERROR: {e}")
+        return None
+
+
+@router_projects.get("/projects/{project_id}/documents")
+async def get_project_documents(
+    project_id: str,
+    document_type: Optional[str] = None,
+    status_filter: Optional[str] = None,
+    page: int = 1,
+    limit: int = 50,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Get all documents related to a specific project
+    Supports filtering by document type and status with pagination
+    """
+    try:
+        # First verify the project exists and belongs to the user
+        project = db().projects.find_one(
+            {
+                "project_id": project_id,
+                "user_id": current_user["user_id"],
+                "active": True,
+            }
+        )
+
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found or access denied",
+            )
+
+        # Build query filter for documents
+        query_filter = {
+            "project_id": project_id,
+            "user_id": current_user["user_id"],
+            "active": True,  # Only get active documents
+        }
+
+        # Add optional filters
+        if document_type:
+            query_filter["document_type"] = document_type
+
+        if status_filter:
+            query_filter["processing_status"] = status_filter
+
+        # Calculate pagination
+        skip = (page - 1) * limit
+
+        # Get total count
+        total_documents = db().documents.count_documents(query_filter)
+
+        # Get documents with pagination
+        documents_cursor = (
+            db()
+            .documents.find(query_filter, {"_id": 0})
+            .sort("created_at", -1)  # Most recent first
+            .skip(skip)
+            .limit(limit)
+        )
+
+        documents = list(documents_cursor)
+
+        print(f"[DEBUG] Retrieved {len(documents)} documents for project {project_id}")
+
+        # Add related data counts for each document
+        for doc in documents:
+            doc_id = doc.get("doc_id")
+            if doc_id:
+                # Count related tables and chunks
+                doc["tables_count"] = db().tables.count_documents({"doc_id": doc_id})
+                doc["chunks_count"] = db().chunks.count_documents({"doc_id": doc_id})
+
+        # Simplified response - just return documents array
+        return {
+            "project_id": project_id,
+            "documents": documents,
+            "total_documents": total_documents,
+            "page": page,
+            "limit": limit,
+            "total_pages": (total_documents + limit - 1) // limit,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}",
+        )
+
+
+@router_projects.get("/projects/{project_id}/documents/{doc_id}")
+async def get_project_document(
+    project_id: str, doc_id: str, current_user: dict = Depends(get_current_user)
+):
+    """
+    Get a specific document by doc_id within a project
+    """
+    try:
+        # Verify project ownership
+        project = db().projects.find_one(
+            {
+                "project_id": project_id,
+                "user_id": current_user["user_id"],
+                "active": True,
+            }
+        )
+
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found or access denied",
+            )
+
+        # Get the specific document
+        document = db().documents.find_one(
+            {
+                "doc_id": doc_id,
+                "project_id": project_id,
+                "user_id": current_user["user_id"],
+            },
+            {"_id": 0},
+        )
+
+        if not document:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found in this project",
+            )
+
+        # Get related tables
+        tables = list(db().tables.find({"doc_id": doc_id}, {"_id": 0}).sort("page", 1))
+
+        # Get related chunks
+        chunks = list(
+            db().chunks.find({"doc_id": doc_id}, {"_id": 0}).limit(100)
+        )  # Limit chunks to avoid too much data
+
+        # Add related data to document
+        document["tables"] = tables
+        document["chunks"] = chunks
+        document["tables_count"] = len(tables)
+        document["chunks_count"] = len(chunks)
+
+        return {"project_id": project_id, "document": document}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}",
+        )
+
+
+@router_projects.delete("/projects/{project_id}/documents/{doc_id}")
+async def delete_project_document(
+    project_id: str,
+    doc_id: str,
+    hard_delete: bool = False,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Delete a document and all its related data (tables, chunks)
+    """
+    try:
+        # Verify project ownership
+        project = db().projects.find_one(
+            {
+                "project_id": project_id,
+                "user_id": current_user["user_id"],
+                "active": True,
+            }
+        )
+
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found or access denied",
+            )
+
+        # Check if document exists
+        document = db().documents.find_one(
+            {
+                "doc_id": doc_id,
+                "project_id": project_id,
+                "user_id": current_user["user_id"],
+            }
+        )
+
+        if not document:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found in this project",
+            )
+
+        if hard_delete:
+            # Hard delete - remove document and all related data
+            db().documents.delete_one({"doc_id": doc_id})
+            tables_deleted = db().tables.delete_many({"doc_id": doc_id})
+            chunks_deleted = db().chunks.delete_many({"doc_id": doc_id})
+
+            message = "Document and all related data permanently deleted"
+        else:
+            # Soft delete - mark as inactive
+            db().documents.update_one(
+                {"doc_id": doc_id},
+                {
+                    "$set": {
+                        "active": False,
+                        "deleted_at": datetime.datetime.utcnow(),
+                        "updated_at": datetime.datetime.utcnow(),
+                    }
+                },
+            )
+            message = "Document marked as deleted (soft delete)"
+
+        return {
+            "message": message,
+            "project_id": project_id,
+            "doc_id": doc_id,
+            "deleted_at": datetime.datetime.utcnow().isoformat(),
+            **(
+                {
+                    "tables_deleted": tables_deleted.deleted_count,
+                    "chunks_deleted": chunks_deleted.deleted_count,
+                }
+                if hard_delete
+                else {}
+            ),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}",
+        )

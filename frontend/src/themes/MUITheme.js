@@ -134,6 +134,16 @@ const createAppTheme = (mode = "light") => {
               padding: "4px 10px",
             },
           },
+          sizeSmall: {
+            fontSize: "0.7rem",
+            padding: "3px 8px",
+            minHeight: "24px",
+          },
+          sizeMedium: {
+            fontSize: "0.8rem",
+            padding: "3px 8px",
+            minHeight: "30px",
+          },
         },
       },
       MuiCssBaseline: {
