@@ -49,12 +49,30 @@ class ProjectResponse(BaseModel):
     updated_at: datetime.datetime
     active: bool
 
+    # Add optional count fields
+    counts: Optional[Dict[str, Any]] = None
+    total_documents: Optional[int] = None
+    base_case_documents: Optional[int] = None
+    scenario_documents: Optional[int] = None
+    scenarios: Optional[int] = None
+    entities: Optional[int] = None
+    relations: Optional[int] = None
+    tables: Optional[int] = None
+    rows: Optional[int] = None
+    chunks: Optional[int] = None
+    has_data: Optional[bool] = None
+    has_base_case: Optional[bool] = None
+    has_scenarios: Optional[bool] = None
+    processing_progress: Optional[Dict[str, int]] = None
+
 
 class ProjectListResponse(BaseModel):
     projects: List[ProjectResponse]
     total: int
     page: int
     limit: int
+    total_pages: Optional[int] = None
+    includes_counts: Optional[bool] = None
 
 
 # CRUD Endpoints
@@ -116,6 +134,7 @@ async def get_projects(
     status_filter: Optional[str] = None,
     project_type: Optional[str] = None,
     search: Optional[str] = None,
+    include_counts: bool = True,
     current_user: dict = Depends(get_current_user),
 ):
     """
@@ -159,11 +178,60 @@ async def get_projects(
 
         projects = list(projects_cursor)
 
-        # Convert to response model
-        project_responses = [ProjectResponse(**project) for project in projects]
+        # Process projects with or without counts
+        processed_projects = []
 
+        for project in projects:
+            if include_counts:
+                # Get counts for this project
+                counts = await get_project_counts(
+                    project["project_id"], current_user["user_id"]
+                )
+                print(f"[DEBUG] Counts for project {project['project_id']}: {counts}")
+
+                # Add counts to the project data
+                project_with_counts = {
+                    **project,
+                    "counts": counts,
+                    "total_documents": counts["total_documents"],
+                    "base_case_documents": counts["base_case_documents"],
+                    "scenario_documents": counts["scenario_documents"],
+                    "scenarios": counts["scenarios"],
+                    "entities": counts["entities"],
+                    "relations": counts["relations"],
+                    "tables": counts["tables"],
+                    "rows": counts["rows"],
+                    "chunks": counts["chunks"],
+                    "has_data": counts["total_documents"] > 0,
+                    "has_base_case": counts["base_case_documents"] > 0,
+                    "has_scenarios": counts["scenario_documents"] > 0,
+                    "processing_progress": {
+                        "documents_uploaded": counts["total_documents"],
+                        "tables_extracted": counts["tables"],
+                        "entities_identified": counts["entities"],
+                        "relations_mapped": counts["relations"],
+                    },
+                }
+                processed_projects.append(project_with_counts)
+            else:
+                processed_projects.append(project)
+
+        # Convert to response models
+        project_responses = [
+            ProjectResponse(**project) for project in processed_projects
+        ]
+
+        # Calculate total pages
+        total_pages = (total + limit - 1) // limit
+
+        # Return consistent response structure
         return ProjectListResponse(
-            projects=project_responses, total=total, page=page, limit=limit
+            projects=project_responses,
+            total=total,
+            page=page,
+            limit=limit,
+            total_pages=total_pages,
+            includes_counts=include_counts,
         )
 
     except Exception as e:
@@ -336,12 +404,155 @@ async def delete_project(
 # Additional utility endpoints
 
 
+async def get_project_counts(project_id: str, user_id: str) -> Dict[str, int]:
+    """
+    Helper function to get comprehensive counts for a project
+
+    Args:
+        project_id: The project ID to get counts for
+        user_id: The user ID for access control
+
+    Returns:
+        Dictionary with counts for all project-related data
+    """
+    try:
+        # Base filter for project and user
+        base_filter = {"project_id": project_id, "user_id": user_id}
+
+        # Get document counts
+        documents_filter = {**base_filter, "active": True}
+        total_documents = db().documents.count_documents(documents_filter)
+
+        # Count base case documents
+        base_case_filter = {**documents_filter, "artifact_type": "base_case"}
+        base_case_documents = db().documents.count_documents(base_case_filter)
+
+        # Count scenario documents
+        scenario_filter = {**documents_filter, "artifact_type": "scenario"}
+        scenario_documents = db().documents.count_documents(scenario_filter)
+
+        # Get entities count
+        entities_count = db().entities.count_documents(base_filter)
+
+        # Get relations count
+        relations_count = db().relations.count_documents(base_filter)
+
+        # Get tables count
+        tables_count = db().tables.count_documents(base_filter)
+
+        # Get rows count
+        rows_count = db().rows.count_documents(base_filter)
+
+        # Get scenario count
+        scenario_count = db().scenarios.count_documents(base_filter)
+
+        # Get chunks count
+        chunks_count = db().chunks.count_documents(base_filter)
+
+        # Get document IDs for this project to count related data
+        project_docs = db().documents.find(documents_filter, {"doc_id": 1, "_id": 0})
+        doc_ids = [doc["doc_id"] for doc in project_docs]
+
+        # Count tables and rows by doc_id (alternative counting method)
+        tables_by_doc = 0
+        rows_by_doc = 0
+        chunks_by_doc = 0
+
+        if doc_ids:
+            tables_by_doc = db().tables.count_documents({"doc_id": {"$in": doc_ids}})
+            rows_by_doc = db().rows.count_documents({"doc_id": {"$in": doc_ids}})
+            chunks_by_doc = db().chunks.count_documents({"doc_id": {"$in": doc_ids}})
+
+        return {
+            "project_id": project_id,
+            "total_documents": total_documents,
+            "base_case_documents": base_case_documents,
+            "scenario_documents": scenario_documents,
+            "scenarios": scenario_count,
+            "entities": entities_count,
+            "relations": relations_count,
+            "tables": max(tables_count, tables_by_doc),  # Use higher count
+            "rows": max(rows_count, rows_by_doc),  # Use higher count
+            "chunks": max(chunks_count, chunks_by_doc),  # Use higher count
+            "document_ids": doc_ids,
+            "counts_by_project_filter": {
+                "tables": tables_count,
+                "rows": rows_count,
+                "chunks": chunks_count,
+            },
+            "counts_by_doc_ids": {
+                "tables": tables_by_doc,
+                "rows": rows_by_doc,
+                "chunks": chunks_by_doc,
+            },
+        }
+
+    except Exception as e:
+        print(f"Error getting project counts: {e}")
+        return {
+            "project_id": project_id,
+            "error": str(e),
+            "total_documents": 0,
+            "base_case_documents": 0,
+            "scenario_documents": 0,
+            "entities": 0,
+            "relations": 0,
+            "tables": 0,
+            "rows": 0,
+            "chunks": 0,
+        }
+
+
+@router_projects.get("/projects/{project_id}/counts")
+async def get_project_data_counts(
+    project_id: str, current_user: dict = Depends(get_current_user)
+):
+    """
+    Get comprehensive data counts for a project
+    """
+    try:
+        # Verify project ownership
+        project = db().projects.find_one(
+            {
+                "project_id": project_id,
+                "user_id": current_user["user_id"],
+                "active": True,
+            }
+        )
+
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found or access denied",
+            )
+
+        # Get all counts using the helper function
+        counts = await get_project_counts(project_id, current_user["user_id"])
+
+        # Add project metadata
+        counts["project_name"] = project["name"]
+        counts["project_status"] = project["status"]
+        counts["project_type"] = project["project_type"]
+        counts["created_at"] = project["created_at"]
+        counts["updated_at"] = project["updated_at"]
+
+        return counts
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}",
+        )
+
+
 @router_projects.get("/projects/{project_id}/stats")
 async def get_project_stats(
     project_id: str, current_user: dict = Depends(get_current_user)
 ):
     """
-    Get statistics for a specific project
+    Get statistics for a specific project (enhanced version)
     """
     try:
         # Verify project ownership
@@ -358,7 +569,10 @@ async def get_project_stats(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
             )
 
-        # Get project statistics (you can expand this based on your data model)
+        # Get comprehensive counts
+        counts = await get_project_counts(project_id, current_user["user_id"])
+
+        # Build enhanced stats
         stats = {
             "project_id": project_id,
             "project_name": project["name"],
@@ -368,9 +582,25 @@ async def get_project_stats(
             "status": project["status"],
             "project_type": project["project_type"],
             "tags_count": len(project.get("tags", [])),
-            # Add more stats based on related collections
-            # "documents_count": db().documents.count_documents({"project_id": project_id}),
-            # "chunks_count": db().chunks.count_documents({"project_id": project_id}),
+            # Data counts from helper function
+            **counts,
+            # Additional calculated stats
+            "data_completeness": {
+                "has_documents": counts["total_documents"] > 0,
+                "has_base_case": counts["base_case_documents"] > 0,
+                "has_scenarios": counts["scenario_documents"] > 0,
+                "has_entities": counts["entities"] > 0,
+                "has_relations": counts["relations"] > 0,
+                "has_structured_data": counts["tables"] > 0,
+            },
+            "processing_summary": {
+                "documents_processed": counts["total_documents"],
+                "tables_extracted": counts["tables"],
+                "data_rows": counts["rows"],
+                "text_chunks": counts["chunks"],
+                "entities_identified": counts["entities"],
+                "relationships_mapped": counts["relations"],
+            },
         }
 
         return stats
@@ -384,227 +614,21 @@ async def get_project_stats(
         )
 
 
-@router_projects.post("/projects/{project_id}/archive")
-async def archive_project(
-    project_id: str, current_user: dict = Depends(get_current_user)
-):
-    """
-    Archive a project (set status to 'archived')
-    """
-    try:
-        result = db().projects.update_one(
-            {
-                "project_id": project_id,
-                "user_id": current_user["user_id"],
-                "active": True,
-            },
-            {
-                "$set": {
-                    "status": "archived",
-                    "archived_at": datetime.datetime.utcnow(),
-                    "updated_at": datetime.datetime.utcnow(),
-                }
-            },
-        )
-
-        if result.modified_count == 0:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
-            )
-
-        return {
-            "message": "Project archived successfully",
-            "project_id": project_id,
-            "archived_at": datetime.datetime.utcnow().isoformat(),
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Internal server error: {str(e)}",
-        )
-
-
-@router_projects.post("/projects/{project_id}/restore")
-async def restore_project(
-    project_id: str, current_user: dict = Depends(get_current_user)
-):
-    """
-    Restore an archived or soft-deleted project
-    """
-    try:
-        result = db().projects.update_one(
-            {"project_id": project_id, "user_id": current_user["user_id"]},
-            {
-                "$set": {
-                    "status": "active",
-                    "active": True,
-                    "updated_at": datetime.datetime.utcnow(),
-                },
-                "$unset": {"archived_at": "", "deleted_at": ""},
-            },
-        )
-
-        if result.modified_count == 0:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
-            )
-
-        return {
-            "message": "Project restored successfully",
-            "project_id": project_id,
-            "restored_at": datetime.datetime.utcnow().isoformat(),
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Internal server error: {str(e)}",
-        )
-
-
-@router_projects.get("/projects/{project_id}/documents/debug")
-async def debug_project_documents(
-    project_id: str, current_user: dict = Depends(get_current_user)
-):
-    """Debug endpoint to see what's actually in the documents collection"""
-    try:
-        print(f"Debug - Looking for documents with:")
-        print(f"  project_id: {project_id}")
-        print(f"  user_id: {current_user['user_id']}")
-
-        # Check all collections that might contain documents
-        collections_info = {}
-
-        # Check documents collection
-        all_docs = list(db().documents.find({}, {"_id": 0}).limit(10))
-        user_project_docs = list(
-            db().documents.find(
-                {"project_id": project_id, "user_id": current_user["user_id"]},
-                {"_id": 0},
-            )
-        )
-        project_only_docs = list(
-            db().documents.find({"project_id": project_id}, {"_id": 0})
-        )
-
-        collections_info["documents"] = {
-            "total_count": db().documents.count_documents({}),
-            "sample_docs": all_docs,
-            "user_project_docs": user_project_docs,
-            "project_only_docs": project_only_docs,
-        }
-
-        # Check if documents might be in a different collection
-        # Common alternatives: files, uploads, doc_metadata, etc.
-        potential_collections = ["files", "uploads", "doc_metadata", "file_uploads"]
-        for coll_name in potential_collections:
-            try:
-                collection = getattr(db(), coll_name)
-                count = collection.count_documents({})
-                if count > 0:
-                    sample = list(collection.find({}, {"_id": 0}).limit(3))
-                    collections_info[coll_name] = {"count": count, "sample": sample}
-            except:
-                pass
-
-        # Also check what collections exist in the database
-        try:
-            db_instance = db()
-            all_collections = db_instance.list_collection_names()
-        except:
-            all_collections = ["Unable to list collections"]
-
-        return {
-            "debug_info": {
-                "project_id": project_id,
-                "user_id": current_user["user_id"],
-                "all_collections": all_collections,
-                "collections_data": collections_info,
-            }
-        }
-
-    except Exception as e:
-        return {"error": str(e), "traceback": str(e.__traceback__)}
-
-
-# Comprehensive debug function
-def debug_document_query(project_id):
-    try:
-        print(f"\n=== DEBUGGING DOCUMENT QUERY ===")
-        print(f"Looking for project_id: {repr(project_id)} (type: {type(project_id)})")
-
-        # Test database connection
-        db_instance = db()
-        print(f"Database: {db_instance.name}")
-
-        # Test collections
-        collections = db_instance.list_collection_names()
-        print(f"Collections: {collections}")
-
-        if "documents" not in collections:
-            print("ERROR: 'documents' collection does not exist!")
-            return None
-
-        # Count total documents
-        total_count = db().documents.count_documents({})
-        print(f"Total documents: {total_count}")
-
-        if total_count == 0:
-            print("ERROR: No documents in collection!")
-            return None
-
-        # Get sample document to check structure
-        sample = db().documents.find_one({})
-        print(f"Sample document keys: {list(sample.keys()) if sample else 'None'}")
-
-        # Try exact query
-        exact_result = db().documents.find_one({"project_id": project_id})
-        print(f"Exact query result: {exact_result}")
-
-        # Try case-insensitive query
-        regex_result = db().documents.find_one(
-            {"project_id": {"$regex": f"^{project_id}$", "$options": "i"}}
-        )
-        print(f"Case-insensitive result: {regex_result}")
-
-        # Count matches
-        match_count = db().documents.count_documents({"project_id": project_id})
-        print(f"Matching documents: {match_count}")
-
-        # List all unique project_ids to compare
-        unique_projects = db().documents.distinct("project_id")
-        print(
-            f"All project_ids in collection: {unique_projects[:5]}..."
-        )  # Show first 5
-
-        print(f"=== END DEBUG ===\n")
-        return exact_result
-
-    except Exception as e:
-        print(f"DEBUG ERROR: {e}")
-        return None
-
-
 @router_projects.get("/projects/{project_id}/documents")
-async def get_project_documents(
+async def get_project_documents_enhanced(
     project_id: str,
-    document_type: Optional[str] = None,
+    artifact_type: Optional[str] = None,
     status_filter: Optional[str] = None,
     page: int = 1,
     limit: int = 50,
+    include_counts: bool = False,  # Add option to include counts
     current_user: dict = Depends(get_current_user),
 ):
     """
-    Get all documents related to a specific project
-    Supports filtering by document type and status with pagination
+    Get all documents related to a specific project with optional counts
     """
     try:
-        # First verify the project exists and belongs to the user
+        # Get documents (existing code)
         project = db().projects.find_one(
             {
                 "project_id": project_id,
@@ -619,49 +643,33 @@ async def get_project_documents(
                 detail="Project not found or access denied",
             )
 
-        # Build query filter for documents
         query_filter = {
             "project_id": project_id,
             "user_id": current_user["user_id"],
-            "active": True,  # Only get active documents
+            "active": True,
         }
 
-        # Add optional filters
-        if document_type:
-            query_filter["document_type"] = document_type
+        if artifact_type:
+            query_filter["artifact_type"] = artifact_type
 
         if status_filter:
             query_filter["processing_status"] = status_filter
 
-        # Calculate pagination
         skip = (page - 1) * limit
-
-        # Get total count
         total_documents = db().documents.count_documents(query_filter)
 
-        # Get documents with pagination
         documents_cursor = (
             db()
             .documents.find(query_filter, {"_id": 0})
-            .sort("created_at", -1)  # Most recent first
+            .sort("created_at", -1)
             .skip(skip)
             .limit(limit)
         )
 
         documents = list(documents_cursor)
 
-        print(f"[DEBUG] Retrieved {len(documents)} documents for project {project_id}")
-
-        # Add related data counts for each document
-        for doc in documents:
-            doc_id = doc.get("doc_id")
-            if doc_id:
-                # Count related tables and chunks
-                doc["tables_count"] = db().tables.count_documents({"doc_id": doc_id})
-                doc["chunks_count"] = db().chunks.count_documents({"doc_id": doc_id})
-
-        # Simplified response - just return documents array
-        return {
+        # Build response
+        response = {
             "project_id": project_id,
             "documents": documents,
             "total_documents": total_documents,
@@ -669,6 +677,13 @@ async def get_project_documents(
             "limit": limit,
             "total_pages": (total_documents + limit - 1) // limit,
         }
+
+        # Optionally include comprehensive counts
+        if include_counts:
+            counts = await get_project_counts(project_id, current_user["user_id"])
+            response["project_counts"] = counts
+
+        return response
 
     except HTTPException:
         raise
@@ -787,8 +802,12 @@ async def delete_project_document(
         if hard_delete:
             # Hard delete - remove document and all related data
             db().documents.delete_one({"doc_id": doc_id})
-            tables_deleted = db().tables.delete_many({"doc_id": doc_id})
-            chunks_deleted = db().chunks.delete_many({"doc_id": doc_id})
+            tables_deleted = db().tables.delete_many({"properties.doc_id": doc_id})
+            chunks_deleted = db().chunks.delete_many({"properties.doc_id": doc_id})
+            entities_deleted = db().entities.delete_many({"properties.doc_id": doc_id})
+            relations_deleted = db().relations.delete_many({"properties.doc_id": doc_id})
+            # mentions_deleted = db().mentions.delete_many({"properties.doc_id": doc_id})
+            rows_deleted = db().rows.delete_many({"properties.doc_id": doc_id})
 
             message = "Document and all related data permanently deleted"
         else:
@@ -814,6 +833,10 @@ async def delete_project_document(
                 {
                     "tables_deleted": tables_deleted.deleted_count,
                     "chunks_deleted": chunks_deleted.deleted_count,
+                    "entities_deleted": entities_deleted.deleted_count,
+                    "relations_deleted": relations_deleted.deleted_count,
+                    # "mentions_deleted": mentions_deleted.deleted_count,
+                    "rows_deleted": rows_deleted.deleted_count,
                 }
                 if hard_delete
                 else {}

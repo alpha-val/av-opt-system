@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
@@ -70,6 +70,7 @@ export const fetchProjects = createAsyncThunk(
             }
 
             const data = await response.json();
+
             return data;
         } catch (error) {
             return rejectWithValue(error.message);
@@ -214,9 +215,37 @@ export const getProjectStats = createAsyncThunk(
     }
 );
 
+// Smart fetch project thunk
+export const fetchProjectSmart = createAsyncThunk(
+    'projects/fetchProjectSmart',
+    async ({ projectId, forceRefresh = false }, { getState, dispatch, rejectWithValue }) => {
+        try {
+            const state = getState();
+
+            const hasCached = selectHasCachedProject(state, projectId);
+            const isStale = selectIsProjectDataStale(state, projectId);
+            const cachedProject = selectCachedProject(state, projectId);
+
+            if (hasCached && !isStale && !forceRefresh && cachedProject) {
+                // console.log('Using cached project data for:', projectId);
+                return cachedProject;
+            }
+
+            // console.log('Fetching fresh project data for:', projectId);
+            const result = await dispatch(fetchProject(projectId)).unwrap();
+            return result;
+
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to fetch project');
+        }
+    }
+);
+
 // Initial state
 const initialState = {
     projects: [],
+    // Add a cache for individual projects by ID
+    projectsCache: {}, // Structure: { "project-123": { data: {...}, lastFetched: timestamp } }
     currentProject: null,
     projectStats: null,
     pagination: {
@@ -247,6 +276,15 @@ const projectSlice = createSlice({
         },
         clearProjectStats: (state) => {
             state.projectStats = null;
+        },
+        clearProjectCache: (state, action) => {
+            const projectId = action.payload;
+            if (projectId && state.projectsCache[projectId]) {
+                delete state.projectsCache[projectId];
+            }
+        },
+        clearAllProjectCache: (state) => {
+            state.projectsCache = {};
         },
     },
     extraReducers: (builder) => {
@@ -294,6 +332,13 @@ const projectSlice = createSlice({
             .addCase(fetchProject.fulfilled, (state, action) => {
                 state.loading.fetch = false;
                 state.currentProject = action.payload;
+
+                // Cache the project data with timestamp
+                state.projectsCache[action.payload.project_id] = {
+                    data: action.payload,
+                    lastFetched: Date.now()
+                };
+
                 state.error = null;
             })
             .addCase(fetchProject.rejected, (state, action) => {
@@ -315,6 +360,13 @@ const projectSlice = createSlice({
                 if (state.currentProject?.project_id === action.payload.project_id) {
                     state.currentProject = action.payload;
                 }
+
+                // Update cache
+                state.projectsCache[action.payload.project_id] = {
+                    data: action.payload,
+                    lastFetched: Date.now()
+                };
+
                 state.error = null;
             })
             .addCase(updateProject.rejected, (state, action) => {
@@ -361,12 +413,35 @@ const projectSlice = createSlice({
             .addCase(getProjectStats.rejected, (state, action) => {
                 state.loading.stats = false;
                 state.error = action.payload;
+            })
+
+            // Smart fetch project (with caching)
+            .addCase(fetchProjectSmart.pending, (state) => {
+                state.loading.fetch = true;
+                state.error = null;
+            })
+            .addCase(fetchProjectSmart.fulfilled, (state, action) => {
+                state.loading.fetch = false;
+                state.currentProject = action.payload;
+
+                if (action.payload && action.payload.project_id) {
+                    state.projectsCache[action.payload.project_id] = {
+                        data: action.payload,
+                        lastFetched: Date.now()
+                    };
+                }
+
+                state.error = null;
+            })
+            .addCase(fetchProjectSmart.rejected, (state, action) => {
+                state.loading.fetch = false;
+                state.error = action.payload;
             });
     },
 });
 
 // Export actions
-export const { clearError, clearCurrentProject, clearProjectStats } = projectSlice.actions;
+export const { clearError, clearCurrentProject, clearProjectStats, clearProjectCache, clearAllProjectCache } = projectSlice.actions;
 
 // Selectors
 export const selectProjects = (state) => state.projects.projects;
@@ -375,6 +450,45 @@ export const selectProjectStats = (state) => state.projects.projectStats;
 export const selectProjectsPagination = (state) => state.projects.pagination;
 export const selectProjectsLoading = (state) => state.projects.loading;
 export const selectProjectsError = (state) => state.projects.error;
+export const selectProjectsCache = (state) => state.projects.projectsCache;
+
+// Selector to get cached project by ID
+export const selectCachedProject = (state, projectId) => {
+    const cache = state.projects.projectsCache[projectId];
+    return cache ? cache.data : null;
+};
+
+// Selector to check if project data exists in cache
+export const selectHasCachedProject = (state, projectId) => {
+    return !!state.projects.projectsCache[projectId];
+};
+
+// Selector to check if cached data is stale (older than 5 minutes)
+export const selectIsProjectDataStale = (state, projectId, maxAgeMs = 5 * 60 * 1000) => {
+    const cache = state.projects.projectsCache[projectId];
+    if (!cache) return true;
+
+    return (Date.now() - cache.lastFetched) > maxAgeMs;
+};
+
+// Memoized selector using createSelector for better performance
+export const selectProjectById = createSelector(
+    [
+        selectProjectsCache,
+        selectCurrentProject,
+        (state, projectId) => projectId
+    ],
+    (projectsCache, currentProject, projectId) => {
+        // First check if current project matches
+        if (currentProject && currentProject.project_id === projectId) {
+            return currentProject;
+        }
+
+        // Then check cache
+        const cached = projectsCache[projectId];
+        return cached ? cached.data : null;
+    }
+);
 
 // Export reducer
 export default projectSlice.reducer;

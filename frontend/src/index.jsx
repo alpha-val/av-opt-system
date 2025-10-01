@@ -10,7 +10,7 @@ import { ThemeContextProvider } from "./themes/ThemeContext";
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
-  <React.StrictMode>
+  // <React.StrictMode>
     <Provider store={store}>
       <ThemeContextProvider>
         <Router>
@@ -19,7 +19,7 @@ root.render(
         </Router>
       </ThemeContextProvider>
     </Provider>
-  </React.StrictMode>
+  // </React.StrictMode>
 );
 
 

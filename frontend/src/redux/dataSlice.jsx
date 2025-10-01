@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createSelector, createAction } from '@reduxjs/toolkit';
 
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
@@ -59,7 +59,7 @@ export const uploadProjectDescription = createAsyncThunk(
             formData.append('file', file);
             formData.append('user_id', userId);
             formData.append('project_id', projectId);
-            formData.append('document_type', 'base_case'); // Set document type
+            formData.append('artifact_type', 'base_case'); // Set document type
 
             if (metadata.description) {
                 formData.append('description', metadata.description);
@@ -92,7 +92,7 @@ export const uploadProjectDescription = createAsyncThunk(
                 originalName: file.name,
                 fileSize: file.size,
                 fileType: 'pdf',
-                document_type: 'base_case',
+                artifact_type: 'base_case',
                 processing_status: 'completed',
                 project_id: projectId,
                 user_id: userId,
@@ -176,7 +176,7 @@ export const uploadStructuredData = createAsyncThunk(
                 fileSize: file.size,
                 fileType: file.name.toLowerCase().endsWith('.pdf') ? 'pdf' :
                     file.name.toLowerCase().includes('.xls') ? 'xls' : 'csv',
-                document_type: 'scenario',
+                artifact_type: 'scenario',
                 processing_status: 'completed',
                 project_id: projectId,
                 user_id: userId,
@@ -192,17 +192,15 @@ export const uploadStructuredData = createAsyncThunk(
 
 export const fetchProjectDocuments = createAsyncThunk(
     'data/fetchProjectDocuments',
-    async ({ projectId, document_type = null, page = 1, limit = 50 }, { rejectWithValue }) => {
+    async ({ projectId, artifact_type = null, page = 1, limit = 50 }, { rejectWithValue }) => {
         try {
-            console.log('Fetching documents for project:', projectId);
-
             const token = getAuthToken();
             if (!token) {
                 throw new Error('No authentication token found');
             }
 
             const params = new URLSearchParams();
-            if (document_type) params.append('document_type', document_type);
+            if (artifact_type) params.append('artifact_type', artifact_type);
             params.append('page', page.toString());
             params.append('limit', limit.toString());
 
@@ -267,15 +265,183 @@ export const deleteProjectDocument = createAsyncThunk(
     }
 );
 
+// Async thunk for fetching entities and relations
+export const fetchProjectEntitiesRelations = createAsyncThunk(
+    'data/fetchProjectEntitiesRelations',
+    async ({
+        projectId,
+        artifact_type = null,
+        entity_type = null,
+        relation_type = null,
+        include_metadata = true
+    }, { rejectWithValue }) => {
+        try {
+            const token = getAuthToken();
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            // Build query parameters
+            const params = new URLSearchParams();
+            if (artifact_type) params.append('artifact_type', artifact_type);
+            if (entity_type) params.append('entity_type', entity_type);
+            if (relation_type) params.append('relation_type', relation_type);
+            params.append('include_metadata', include_metadata.toString());
+
+            const url = `${API_BASE_URL}/projects/${projectId}/entities-relations${params.toString() ? '?' + params.toString() : ''}`;
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: getAuthHeaders(true),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Error response:', errorData);
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (!data) {
+                console.warn('Received null response from backend');
+                return {
+                    projectId,
+                    artifact_type,
+                    entities: [],
+                    relations: [],
+                    summary: {
+                        entity_count: 0,
+                        relation_count: 0,
+                        document_count: 0
+                    }
+                };
+            }
+
+            // console.log(`Fetched ${data.summary?.entity_count || 0} entities and ${data.summary?.relation_count || 0} relations`);
+
+            return {
+                projectId,
+                artifact_type,
+                entities: data.entities || [],
+                relations: data.relations || [],
+                summary: data.summary || {
+                    entity_count: 0,
+                    relation_count: 0,
+                    document_count: 0,
+                    entity_types: {},
+                    relation_types: {},
+                    document_ids: []
+                }
+            };
+
+        } catch (error) {
+            console.error('fetchProjectEntitiesRelations error:', error);
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+// Separate thunks for entities and relations only (optional, for when you need just one)
+export const fetchProjectEntities = createAsyncThunk(
+    'data/fetchProjectEntities',
+    async ({
+        projectId,
+        artifact_type = null,
+        entity_type = null,
+        limit = 100,
+        offset = 0
+    }, { rejectWithValue }) => {
+        try {
+            const token = getAuthToken();
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            const params = new URLSearchParams();
+            if (artifact_type) params.append('artifact_type', artifact_type);
+            if (entity_type) params.append('entity_type', entity_type);
+            params.append('limit', limit.toString());
+            params.append('offset', offset.toString());
+
+            const url = `${API_BASE_URL}/projects/${projectId}/entities?${params.toString()}`;
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: getAuthHeaders(true),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data;
+
+        } catch (error) {
+            console.error('fetchProjectEntities error:', error);
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+export const fetchProjectRelations = createAsyncThunk(
+    'data/fetchProjectRelations',
+    async ({
+        projectId,
+        artifact_type = null,
+        relation_type = null,
+        limit = 100,
+        offset = 0
+    }, { rejectWithValue }) => {
+        try {
+            const token = getAuthToken();
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            const params = new URLSearchParams();
+            if (artifact_type) params.append('artifact_type', artifact_type);
+            if (relation_type) params.append('relation_type', relation_type);
+            params.append('limit', limit.toString());
+            params.append('offset', offset.toString());
+
+            const url = `${API_BASE_URL}/projects/${projectId}/relations?${params.toString()}`;
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: getAuthHeaders(true),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data;
+
+        } catch (error) {
+            console.error('fetchProjectRelations error:', error);
+            return rejectWithValue(error.message);
+        }
+    }
+);
 // Simplified initial state
 const initialState = {
-    documents: [], // Single array for all documents
+    documents: [],
+    // Store entities and relations by project and artifact type
+    entitiesRelationsData: {}, // Structure: { "project-123": { "base_case": { entities: [], relations: [], summary: {} } } }
     currentProjectId: null,
     loading: {
         uploadBase: false,
         uploadTabularData: false,
         fetchDocuments: false,
         deleteDocument: false,
+        fetchEntitiesRelations: false,
+        fetchEntities: false,
+        fetchRelations: false,
     },
     progress: {
         upload: 0,
@@ -297,6 +463,23 @@ const dataSlice = createSlice({
         clearDocuments: (state) => {
             state.documents = [];
             state.currentProjectId = null;
+        },
+        // Add this action to dataSlice.jsx
+        clearProjectEntitiesRelations: (state, action) => {
+            const { projectId, artifactType } = action.payload || {};
+
+            if (projectId && artifactType) {
+                // Clear specific project and artifact type
+                if (state.entitiesRelationsData[projectId]) {
+                    delete state.entitiesRelationsData[projectId][artifactType];
+                }
+            } else if (projectId) {
+                // Clear all data for a project
+                delete state.entitiesRelationsData[projectId];
+            } else {
+                // Clear all cached data
+                state.entitiesRelationsData = {};
+            }
         },
     },
     extraReducers: (builder) => {
@@ -357,12 +540,72 @@ const dataSlice = createSlice({
             .addCase(deleteProjectDocument.fulfilled, (state, action) => {
                 const { docId } = action.payload;
                 state.documents = state.documents.filter(doc => doc.doc_id !== docId);
+            })
+
+            // Fetch entities and relations
+            .addCase(fetchProjectEntitiesRelations.pending, (state) => {
+                state.loading.fetchEntitiesRelations = true;
+                state.error = null;
+            })
+            .addCase(fetchProjectEntitiesRelations.fulfilled, (state, action) => {
+                state.loading.fetchEntitiesRelations = false;
+
+                const { projectId, artifact_type, entities, relations, summary } = action.payload;
+
+                // Initialize project data if it doesn't exist
+                if (!state.entitiesRelationsData[projectId]) {
+                    state.entitiesRelationsData[projectId] = {};
+                }
+
+                // Store data by project and artifact type
+                state.entitiesRelationsData[projectId][artifact_type || 'all'] = {
+                    entities,
+                    relations,
+                    summary,
+                    lastFetched: Date.now()
+                };
+
+                state.currentProjectId = projectId;
+                state.error = null;
+            })
+            .addCase(fetchProjectEntitiesRelations.rejected, (state, action) => {
+                state.loading.fetchEntitiesRelations = false;
+                state.error = action.payload;
+            })
+
+            // Optional: individual entities/relations fetching
+            .addCase(fetchProjectEntities.pending, (state) => {
+                state.loading.fetchEntities = true;
+                state.error = null;
+            })
+            .addCase(fetchProjectEntities.fulfilled, (state, action) => {
+                state.loading.fetchEntities = false;
+                state.entities = action.payload.entities;
+                state.error = null;
+            })
+            .addCase(fetchProjectEntities.rejected, (state, action) => {
+                state.loading.fetchEntities = false;
+                state.error = action.payload;
+            })
+
+            .addCase(fetchProjectRelations.pending, (state) => {
+                state.loading.fetchRelations = true;
+                state.error = null;
+            })
+            .addCase(fetchProjectRelations.fulfilled, (state, action) => {
+                state.loading.fetchRelations = false;
+                state.relations = action.payload.relations;
+                state.error = null;
+            })
+            .addCase(fetchProjectRelations.rejected, (state, action) => {
+                state.loading.fetchRelations = false;
+                state.error = action.payload;
             });
     },
 });
 
 // Export actions
-export const { clearError, setCurrentProject, clearDocuments } = dataSlice.actions;
+export const { clearError, setCurrentProject, clearDocuments, clearProjectEntitiesRelations } = dataSlice.actions;
 
 // Simplified selectors
 export const selectAllDocuments = (state) => state.data.documents;
@@ -371,20 +614,124 @@ export const selectDataLoading = (state) => state.data.loading;
 export const selectDataProgress = (state) => state.data.progress;
 export const selectDataError = (state) => state.data.error;
 
+// Add these selectors
+export const selectEntities = (state) => state.data.entities;
+export const selectRelations = (state) => state.data.relations;
+export const selectEntitiesRelationsSummary = (state) => state.data.entitiesRelationsSummary;
+
+// New selectors
+export const selectEntitiesRelationsData = (state) => state.data.entitiesRelationsData;
+
+// Memoized selector for entities by project and artifact type
+export const selectEntitiesByProjectAndType = createSelector(
+    [
+        selectEntitiesRelationsData,
+        (state, projectId) => projectId,
+        (state, projectId, artifactType) => artifactType
+    ],
+    (entitiesRelationsData, projectId, artifactType) => {
+        const projectData = entitiesRelationsData[projectId];
+        if (!projectData) return [];
+
+        const typeData = projectData[artifactType || 'all'];
+        return typeData?.entities || [];
+    }
+);
+
+// Memoized selector for relations by project and artifact type
+export const selectRelationsByProjectAndType = createSelector(
+    [
+        selectEntitiesRelationsData,
+        (state, projectId) => projectId,
+        (state, projectId, artifactType) => artifactType
+    ],
+    (entitiesRelationsData, projectId, artifactType) => {
+        const projectData = entitiesRelationsData[projectId];
+        if (!projectData) return [];
+
+        const typeData = projectData[artifactType || 'all'];
+        return typeData?.relations || [];
+    }
+);
+
+// Memoized selector for summary by project and artifact type
+export const selectSummaryByProjectAndType = createSelector(
+    [
+        selectEntitiesRelationsData,
+        (state, projectId) => projectId,
+        (state, projectId, artifactType) => artifactType
+    ],
+    (entitiesRelationsData, projectId, artifactType) => {
+        const projectData = entitiesRelationsData[projectId];
+        if (!projectData) return null;
+
+        const typeData = projectData[artifactType || 'all'];
+        return typeData?.summary || null;
+    }
+);
+
+// Selector to check if data exists for a project and artifact type
+export const selectHasEntitiesRelationsData = createSelector(
+    [
+        selectEntitiesRelationsData,
+        (state, projectId) => projectId,
+        (state, projectId, artifactType) => artifactType
+    ],
+    (entitiesRelationsData, projectId, artifactType) => {
+        const projectData = entitiesRelationsData[projectId];
+        if (!projectData) return false;
+
+        const typeData = projectData[artifactType || 'all'];
+        return !!typeData && typeData.lastFetched;
+    }
+);
+
+// Selector to check if data is stale (older than 5 minutes)
+export const selectIsDataStale = createSelector(
+    [
+        selectEntitiesRelationsData,
+        (state, projectId) => projectId,
+        (state, projectId, artifactType) => artifactType,
+        (state, projectId, artifactType, maxAgeMs) => maxAgeMs || 5 * 60 * 1000 // 5 minutes default
+    ],
+    (entitiesRelationsData, projectId, artifactType, maxAgeMs) => {
+        const projectData = entitiesRelationsData[projectId];
+        if (!projectData) return true;
+
+        const typeData = projectData[artifactType || 'all'];
+        if (!typeData || !typeData.lastFetched) return true;
+
+        return (Date.now() - typeData.lastFetched) > maxAgeMs;
+    }
+);
+
 // Memoized selectors that derive data
 export const selectBaseCaseDocuments = createSelector(
     [selectAllDocuments],
-    (documents) => documents.filter(doc => doc.document_type === 'base_case')
+    (documents) => documents.filter(doc => doc.artifact_type === 'base_case')
 );
 
 export const selectTabularDataDocuments = createSelector(
     [selectAllDocuments],
-    (documents) => documents.filter(doc => doc.document_type === 'scenario')
+    (documents) => documents.filter(doc => doc.artifact_type === 'scenario')
 );
 
 export const selectDocumentsByType = createSelector(
     [selectAllDocuments, (state, documentType) => documentType],
-    (documents, documentType) => documents.filter(doc => doc.document_type === documentType)
+    (documents, documentType) => documents.filter(doc => doc.artifact_type === documentType)
+);
+
+// Memoized selectors for filtering entities and relations
+export const selectEntitiesByType = createSelector(
+    [selectEntities, (state, entityType) => entityType],
+    (entities, entityType) => entities.filter(entity => entity.type === entityType)
+);
+
+export const selectRelationsByType = createSelector(
+    [selectRelations, (state, relationType) => relationType],
+    (relations, relationType) => relations.filter(relation =>
+        relation.relation_type === relationType || relation.type === relationType
+    )
 );
 
 // Additional memoized selectors for document counts
@@ -413,6 +760,31 @@ export const selectDocumentsByStatus = createSelector(
 export const selectCompletedDocuments = createSelector(
     [selectAllDocuments],
     (documents) => documents.filter(doc => doc.processing_status === 'completed')
+);
+
+// Selectors for entity and relation types
+export const selectEntityTypes = createSelector(
+    [selectEntities],
+    (entities) => {
+        const types = {};
+        entities.forEach(entity => {
+            const type = entity.type || 'unknown';
+            types[type] = (types[type] || 0) + 1;
+        });
+        return types;
+    }
+);
+
+export const selectRelationTypes = createSelector(
+    [selectRelations],
+    (relations) => {
+        const types = {};
+        relations.forEach(relation => {
+            const type = relation.relation_type || relation.type || 'unknown';
+            types[type] = (types[type] || 0) + 1;
+        });
+        return types;
+    }
 );
 
 export default dataSlice.reducer;

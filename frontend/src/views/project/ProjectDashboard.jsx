@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -13,6 +13,8 @@ import {
     Alert,
     IconButton,
     Tooltip,
+    Button,
+    Chip,
 } from '@mui/material';
 import {
     NavigateNext as NavigateNextIcon,
@@ -24,12 +26,16 @@ import {
     Info as InfoIcon,
 } from '@mui/icons-material';
 import {
-    fetchProject,
-    selectCurrentProject,
+    fetchProjectSmart, // Use the smart fetch instead
+    selectProjectById,
+    selectHasCachedProject,
+    selectIsProjectDataStale,
     selectProjectsLoading,
     selectProjectsError,
+    clearProjectCache,
 } from '../../redux/projectSlice';
 import Sources from "./Sources";
+import BaseCaseView from './BaseCaseView';
 
 // Tab configuration
 const PROJECT_TABS = [
@@ -64,36 +70,71 @@ const ProjectDashboard = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
-    // Redux state
-    const currentProject = useSelector(selectCurrentProject);
+    // Use memoized selectors
+    const currentProject = useSelector(state => selectProjectById(state, projectId));
+    const hasCachedData = useSelector(state => selectHasCachedProject(state, projectId));
+    const isDataStale = useSelector(state => selectIsProjectDataStale(state, projectId));
     const loading = useSelector(selectProjectsLoading);
     const error = useSelector(selectProjectsError);
 
     // Local state
     const [activeTab, setActiveTab] = useState('sources');
 
+    // Memoized function to load project data
+    const loadProjectData = useCallback(() => {
+        if (projectId) {
+            // console.log('Loading project data:', {
+            //     projectId,
+            //     hasCached: hasCachedData,
+            //     isStale: isDataStale
+            // });
+
+            dispatch(fetchProjectSmart({
+                projectId,
+                forceRefresh: false
+            }));
+        }
+    }, [dispatch, projectId, hasCachedData, isDataStale]);
+
     // Load project data when component mounts or projectId changes
     useEffect(() => {
+        loadProjectData();
+    }, [loadProjectData]);
+
+    // Force refresh function
+    const forceRefresh = useCallback(() => {
         if (projectId) {
-            dispatch(fetchProject(projectId));
+            console.log('Force refreshing project data');
+            dispatch(fetchProjectSmart({
+                projectId,
+                forceRefresh: true
+            }));
         }
     }, [dispatch, projectId]);
 
-    // Handle tab change
-    const handleTabChange = (event, newValue) => {
+    // Clear cache function
+    const clearCache = useCallback(() => {
+        if (projectId) {
+            dispatch(clearProjectCache(projectId));
+            dispatch(fetchProjectSmart({ projectId, forceRefresh: true }));
+        }
+    }, [dispatch, projectId]);
+
+    // Handle tab change with memoization
+    const handleTabChange = useCallback((event, newValue) => {
         setActiveTab(newValue);
-    };
+    }, []);
 
     // Handle breadcrumb navigation
-    const handleProjectsClick = (event) => {
+    const handleProjectsClick = useCallback((event) => {
         event.preventDefault();
         navigate('/');
-    };
+    }, [navigate]);
 
-    // Format date for display
-    const formatDate = (dateString) => {
-        if (!dateString) return '';
-        return new Date(dateString).toLocaleDateString('en-US', {
+    // Memoized date formatting
+    const formattedDate = useMemo(() => {
+        if (!currentProject?.updated_at) return '';
+        return new Date(currentProject.updated_at).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
             day: '2-digit',
@@ -101,10 +142,18 @@ const ProjectDashboard = () => {
             minute: '2-digit',
             timeZoneName: 'short'
         });
-    };
+    }, [currentProject?.updated_at]);
 
-    // Loading state
-    if (loading.fetch) {
+    // Show cache status for debugging
+    const cacheStatus = useMemo(() => {
+        if (!projectId) return 'No project ID';
+        if (!hasCachedData) return 'No cache';
+        if (isDataStale) return 'Cache stale';
+        return 'Cache fresh';
+    }, [projectId, hasCachedData, isDataStale]);
+
+    // Loading state - only show if we don't have any cached data
+    if (loading.fetch && !currentProject) {
         return (
             <Box sx={{
                 display: 'flex',
@@ -124,7 +173,11 @@ const ProjectDashboard = () => {
     if (error) {
         return (
             <Box sx={{ p: 3 }}>
-                <Alert severity="error">
+                <Alert severity="error" action={
+                    <Button color="inherit" size="small" onClick={forceRefresh}>
+                        Retry
+                    </Button>
+                }>
                     {error}
                 </Alert>
             </Box>
@@ -135,7 +188,11 @@ const ProjectDashboard = () => {
     if (!currentProject) {
         return (
             <Box sx={{ p: 3 }}>
-                <Alert severity="warning">
+                <Alert severity="warning" action={
+                    <Button color="inherit" size="small" onClick={forceRefresh}>
+                        Refresh
+                    </Button>
+                }>
                     Project not found
                 </Alert>
             </Box>
@@ -204,20 +261,66 @@ const ProjectDashboard = () => {
                                     />
                                 </Tooltip>
                             )}
+
+                            {/* Cache status indicator (for debugging - remove in production) */}
+                            {/* <Tooltip title={`Cache status: ${cacheStatus}`}>
+                                <Chip
+                                    size="small"
+                                    label={cacheStatus}
+                                    color={hasCachedData && !isDataStale ? 'success' : 'default'}
+                                    sx={{ ml: 1, fontSize: '0.7rem' }}
+                                />
+                            </Tooltip> */}
                         </Box>
                     </Breadcrumbs>
 
-                    {/* Last Updated */}
+                    {/* Last Updated and Cache Controls */}
                     <Box sx={{ textAlign: 'right', ml: 2 }}>
+                        {/* <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={forceRefresh}
+                                disabled={loading.fetch}
+                            >
+                                Refresh
+                            </Button>
+                            <Button
+                                size="small"
+                                variant="text"
+                                onClick={clearCache}
+                            >
+                                Clear Cache
+                            </Button>
+                        </Box> */}
                         <Typography variant="body2" color="text.secondary">
                             Last Updated
                         </Typography>
                         <Typography variant="body2" fontWeight="medium">
-                            {formatDate(currentProject.updated_at)}
+                            {formattedDate}
                         </Typography>
                     </Box>
                 </Box>
             </Box>
+
+            {/* Show loading indicator when refreshing but we have cached data */}
+            {loading.fetch && currentProject && (
+                <Box sx={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    zIndex: 1000,
+                    backgroundColor: 'primary.main',
+                    color: 'white',
+                    textAlign: 'center',
+                    py: 0.5
+                }}>
+                    <Typography variant="caption">
+                        Refreshing project data...
+                    </Typography>
+                </Box>
+            )}
 
             {/* Main Content Area */}
             <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
@@ -257,21 +360,21 @@ const ProjectDashboard = () => {
                                     </Box>
                                 }
                                 sx={{
-                                    minHeight: 64,
-                                    alignItems: 'center', // Changed from 'flex-start' to 'center'
+                                    minHeight: 50,
+                                    alignItems: 'center',
                                     justifyContent: 'flex-start',
                                     textAlign: 'left',
                                     px: 2,
                                     paddingLeft: 2,
                                     paddingRight: 0,
-                                    py: 1.5,
+                                    py: 2,
                                     '&.Mui-selected': {
                                         backgroundColor: 'action.selected',
                                     },
                                     '& .MuiTab-iconWrapper': {
                                         marginBottom: 0,
                                         marginRight: 1.5,
-                                        marginTop: 0, // Changed from 0.5 to 0 for perfect center alignment
+                                        marginTop: 0,
                                     }
                                 }}
                             />
@@ -286,8 +389,7 @@ const ProjectDashboard = () => {
                     overflow: 'auto',
                     backgroundColor: 'background.default'
                 }}>
-                    {/* Tab Content Placeholder */}
-                    {/* {activeTab === 'sources' && <ProjectSources />} */}
+                    {/* Tab Content */}
                     {activeTab === 'sources' && <Sources />}
 
                     {activeTab === 'base-case' && (
@@ -300,9 +402,7 @@ const ProjectDashboard = () => {
                                 This forms the foundation for your cost analysis and scenario modeling.
                             </Typography>
                             <Paper sx={{ p: 3 }}>
-                                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                                    [Base Case View - To be implemented]
-                                </Typography>
+                                <BaseCaseView />
                             </Paper>
                         </Box>
                     )}

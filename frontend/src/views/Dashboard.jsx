@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     Box,
@@ -70,14 +70,73 @@ const Dashboard = ({ onOpenProject }) => {
         timeZoneName: 'short'
     });
 
-    const userStats = {
-        lastModified: "Sep 07 2025\n03:30 PM EST",
-        storageUsed: "0.6%",
-        storageDetail: "(30 MB of 5 GB)",
-        documentsIngested: 25,
-        projectsCreated: projects.length || 7,
-        scenariosCreated: 18
-    };
+    // Replace the hardcoded userStats with dynamic calculation
+    const userStats = useMemo(() => {
+        // Calculate totals from all projects
+        const totals = projects.reduce((acc, project) => ({
+            documents: acc.documents + (project.total_documents || 0),
+            baseCaseDocuments: acc.baseCaseDocuments + (project.base_case_documents || 0),
+            scenarioDocuments: acc.scenarioDocuments + (project.scenario_documents || 0),
+            scenariosCreated: acc.scenariosCreated + (project.scenarios || 0),
+            entities: acc.entities + (project.entities || 0),
+            relations: acc.relations + (project.relations || 0),
+            tables: acc.tables + (project.tables || 0),
+            rows: acc.rows + (project.rows || 0),
+            chunks: acc.chunks + (project.chunks || 0),
+        }), {
+            documents: 0,
+            baseCaseDocuments: 0,
+            scenarioDocuments: 0,
+            entities: 0,
+            relations: 0,
+            tables: 0,
+            rows: 0,
+            chunks: 0,
+        });
+
+        // Find the most recently updated project
+        const lastModifiedProject = projects.reduce((latest, project) => {
+            const projectDate = new Date(project.updated_at);
+            const latestDate = latest ? new Date(latest.updated_at) : new Date(0);
+            return projectDate > latestDate ? project : latest;
+        }, null);
+
+        // Format last modified date
+        const lastModified = lastModifiedProject
+            ? new Date(lastModifiedProject.updated_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZoneName: 'short'
+            }).replace(',', '\n')
+            : "No projects yet";
+
+        // Calculate approximate storage (rough estimate based on document count)
+        const estimatedStorageMB = totals.documents * 2.5; // Assume ~2.5MB per document average
+        const storagePercentage = Math.min((estimatedStorageMB / 5120) * 100, 100); // Out of 5GB
+
+        return {
+            lastModified,
+            storageUsed: `${storagePercentage.toFixed(1)}%`,
+            storageDetail: `(${estimatedStorageMB.toFixed(0)} MB of 5 GB)`,
+            documentsIngested: totals.documents,
+            projectsCreated: projects.length,
+            scenariosCreated: totals.scenarioDocuments,
+            // Additional stats you can display
+            baseCaseDocuments: totals.baseCaseDocuments,
+            entitiesExtracted: totals.entities,
+            relationsFound: totals.relations,
+            tablesProcessed: totals.tables,
+            dataRowsProcessed: totals.rows,
+            textChunksCreated: totals.chunks,
+            activeProjects: projects.filter(p => p.status === 'active').length,
+            projectsWithData: projects.filter(p => p.has_data).length,
+            projectsWithBaseCase: projects.filter(p => p.has_base_case).length,
+            projectsWithScenarios: projects.filter(p => p.has_scenarios).length,
+        };
+    }, [projects]);
 
     // Updated headers format - array of objects with key and display_value
     const projectHeaders = [
@@ -326,7 +385,7 @@ const Dashboard = ({ onOpenProject }) => {
                 </Box>
             )}
 
-            {/* User Data Summary Section */}
+            {/* Enhanced User Data Summary Section */}
             <Box sx={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -345,6 +404,56 @@ const Dashboard = ({ onOpenProject }) => {
                         {userStats.lastModified}
                     </Typography>
                 </Box>
+
+                <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                        Projects Created
+                    </Typography>
+                    <Typography variant="h6" color="secondary">
+                        {userStats.projectsCreated}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        {userStats.activeProjects} active, {userStats.projectsWithData} with data
+                    </Typography>
+                </Box>
+
+                <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                        Documents Ingested
+                    </Typography>
+                    <Typography variant="h6" color="primary">
+                        {userStats.documentsIngested}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        {userStats.baseCaseDocuments} base case, {userStats.scenariosCreated} scenarios
+                    </Typography>
+                </Box>
+
+
+                <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                        Scenarios Created
+                    </Typography>
+                    <Typography variant="h6" color="success.main">
+                        {userStats.scenariosCreated}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        scenarios
+                    </Typography>
+                </Box>
+
+                {/* <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                        Entities Found
+                    </Typography>
+                    <Typography variant="h6" color="info.main">
+                        {userStats.entitiesExtracted}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        {userStats.relationsFound} relationships
+                    </Typography>
+                </Box> */}
+
                 <Box>
                     <Typography variant="subtitle2" color="text.secondary">
                         Storage Used
@@ -356,31 +465,9 @@ const Dashboard = ({ onOpenProject }) => {
                         {userStats.storageDetail}
                     </Typography>
                 </Box>
-                <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                        Documents Ingested
-                    </Typography>
-                    <Typography variant="h6" color="primary">
-                        {userStats.documentsIngested}
-                    </Typography>
-                </Box>
-                <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                        Projects Created
-                    </Typography>
-                    <Typography variant="h6" color="secondary">
-                        {userStats.projectsCreated}
-                    </Typography>
-                </Box>
-                <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                        Scenarios Created
-                    </Typography>
-                    <Typography variant="h6" color="success.main">
-                        {userStats.scenariosCreated}
-                    </Typography>
-                </Box>
             </Box>
+
+
 
             {/* Projects Section */}
             <Box>
@@ -420,11 +507,11 @@ const Dashboard = ({ onOpenProject }) => {
                             containerSx={{ borderRadius: 2 }}
                         />
 
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                        {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                             <Button variant="text" color="primary">
                                 View All
                             </Button>
-                        </Box>
+                        </Box> */}
                     </>
                 ) : (
                     <Box sx={{

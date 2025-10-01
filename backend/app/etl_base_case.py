@@ -49,6 +49,7 @@ def etl_bronze(
     pages: Optional[str] = Form(None),
     project_id: str = Form(...),
     user_id: str = Form(...),
+    artifact_type: str = Form("base_case"),
 ):
     """Ingest a PDF into Bronze: text chunks, tables/rows, entities/relations/mentions."""
     if file.content_type not in ("application/pdf", "application/octet-stream"):
@@ -68,15 +69,16 @@ def etl_bronze(
         # Add artifact_type, project_id, user_id to properties
         if "properties" not in c or not isinstance(c["properties"], dict):
             c["properties"] = {}
-        c["properties"]["artifact_type"] = "base_case"
+        c["properties"]["artifact_type"] = artifact_type
         c["properties"]["project_id"] = project_id
         c["properties"]["user_id"] = user_id
+        c["properties"]["doc_id"] = doc_id
 
     # 3) Entities/relations/mentions from free text (Bronze)
     kg = _extract_entities_mentions(chunks)
     nodes = list(kg.get("nodes", []) or [])
     edges = list(kg.get("edges", []) or [])
-    mentions = list(kg.get("mentions", []) or [])
+    # mentions = list(kg.get("mentions", []) or [])
 
     # Attach simple source back-pointer to each node; ensure deterministic mention IDs
     for n in nodes:
@@ -87,29 +89,31 @@ def etl_bronze(
         # Add artifact_type, project_id, user_id to properties
         if "properties" not in n or not isinstance(n["properties"], dict):
             n["properties"] = {}
-        n["properties"]["artifact_type"] = "base_case"
+        n["properties"]["artifact_type"] = artifact_type
         n["properties"]["project_id"] = project_id
         n["properties"]["user_id"] = user_id
+        n["properties"]["doc_id"] = doc_id
 
     for e in edges:
         # Add artifact_type, project_id, user_id to properties
         if "properties" not in e or not isinstance(e["properties"], dict):
             e["properties"] = {}
-        e["properties"]["artifact_type"] = "base_case"
+        e["properties"]["artifact_type"] = artifact_type
         e["properties"]["project_id"] = project_id
         e["properties"]["user_id"] = user_id
+        e["properties"]["doc_id"] = doc_id
 
-    for m in mentions:
-        m["_id"] = _mention_id(
-            chunk_id=m.get("chunk_id"),
-            entity_id=m.get("entity_id"),
-            span_start=m.get("span_start"),
-            span_end=m.get("span_end"),
-            surface=m.get("surface"),
-        )
-        # Add project_id, user_id to mentions
-        m["project_id"] = project_id
-        m["user_id"] = user_id
+    # for m in mentions:
+    #     m["_id"] = _mention_id(
+    #         chunk_id=m.get("chunk_id"),
+    #         entity_id=m.get("entity_id"),
+    #         span_start=m.get("span_start"),
+    #         span_end=m.get("span_end"),
+    #         surface=m.get("surface"),
+    #     )
+    #     # Add project_id, user_id to mentions
+    #     m["project_id"] = project_id
+    #     m["user_id"] = user_id
 
     # 4) Store document metadata in documents collection
     try:
@@ -118,7 +122,7 @@ def etl_bronze(
             filename=filename,
             project_id=project_id,
             user_id=user_id,
-            artifact_type="base_case",
+            artifact_type=artifact_type,
         )
         print(f"[ETL:BRONZE] - Stored document metadata: {doc_metadata}")
     except Exception as e:
@@ -128,7 +132,7 @@ def etl_bronze(
     bulk_upsert_chunks(chunks)
     bulk_upsert_entities(nodes)
     bulk_upsert_relations(edges)
-    bulk_upsert_mentions(mentions)
+    # bulk_upsert_mentions(mentions)
 
     return {
         "doc_id": doc_id,
@@ -137,7 +141,7 @@ def etl_bronze(
         "chunks_written": len(chunks),
         "entities_written": len(nodes),
         "relations_written": len(edges),
-        "mentions_written": len(mentions),
+        # "mentions_written": len(mentions),
         "user_id": user_id,
         "project_id": project_id,
         "document_metadata": doc_metadata,

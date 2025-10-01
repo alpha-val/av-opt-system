@@ -89,27 +89,27 @@ async def clear_all_data(current_user: dict = Depends(get_current_user)):
     collections_cleared = []
     
     # Clear chunks belonging to this user
-    chunks_result = db().chunks.delete_many({"user_id": user_id})
+    chunks_result = db().chunks.delete_many({"properties.user_id": user_id})
     collections_cleared.append(f"chunks: {chunks_result.deleted_count}")
     
     # Clear entities belonging to this user
-    entities_result = db().entities.delete_many({"user_id": user_id})
+    entities_result = db().entities.delete_many({"properties.user_id": user_id})
     collections_cleared.append(f"entities: {entities_result.deleted_count}")
     
     # Clear relations belonging to this user
-    relations_result = db().relations.delete_many({"user_id": user_id})
+    relations_result = db().relations.delete_many({"properties.user_id": user_id})
     collections_cleared.append(f"relations: {relations_result.deleted_count}")
     
-    # Clear mentions belonging to this user
-    mentions_result = db().mentions.delete_many({"user_id": user_id})
-    collections_cleared.append(f"mentions: {mentions_result.deleted_count}")
+    # # Clear mentions belonging to this user
+    # mentions_result = db().mentions.delete_many({"properties.user_id": user_id})
+    # collections_cleared.append(f"mentions: {mentions_result.deleted_count}")
     
     # Clear rows belonging to this user
-    rows_result = db().rows.delete_many({"user_id": user_id})
+    rows_result = db().rows.delete_many({"properties.user_id": user_id})
     collections_cleared.append(f"rows: {rows_result.deleted_count}")
     
     # Clear tables belonging to this user
-    tables_result = db().tables.delete_many({"user_id": user_id})
+    tables_result = db().tables.delete_many({"properties.user_id": user_id})
     collections_cleared.append(f"tables: {tables_result.deleted_count}")
     
     # Clear documents belonging to this user

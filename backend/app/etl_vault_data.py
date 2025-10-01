@@ -102,7 +102,7 @@ def etl_ingest_tables(
     project_id: str = Form(...),
     pages: Optional[str] = Form(None),
     description: Optional[str] = Form(None),
-    data_type: Optional[str] = Form(None),
+    artifact_type: Optional[str] = Form(None) or "tabular_data",
     sheet_name: Optional[str] = Form(None),
 ):
     """Ingest tables from a PDF into Bronze: tables/rows only."""
@@ -130,11 +130,15 @@ def etl_ingest_tables(
         meta = t.get("meta", {})
         meta.update(
             {
+                "doc_id": doc_id,
                 "user_id": user_id,
                 "project_id": project_id,
                 "description": description,
-                "data_type": data_type,
+                "data_type": "tabular",
                 "sheet_name": sheet_name,
+                "artifact_type": artifact_type,
+                "created_at": datetime.datetime.now(datetime.timezone.utc),
+                "updated_at": datetime.datetime.now(datetime.timezone.utc),
             }
         )
 
@@ -150,7 +154,7 @@ def etl_ingest_tables(
 
         # Upsert the table
         try:
-            upsert_table(doc_id, table_id, meta, preview, df.shape[1])
+            upsert_table(doc_id, table_id, meta, preview, df.shape[1], properties=meta)
         except Exception as e:
             print(f"[ETL:BRONZE] - Failed to upsert table {table_id}: {e}")
             continue
@@ -172,7 +176,7 @@ def etl_ingest_tables(
                 val = None if pd.isna(raw) else str(raw)
                 cells.append({"col": col, "raw": val, "text": val})
             row_docs.append(
-                {"_id": row_id, "table_id": table_id, "row_idx": i_num, "cells": cells}
+                {"_id": row_id, "table_id": table_id, "row_idx": i_num, "cells": cells, "properties": meta}
             )
         if row_docs:
             bulk_upsert_rows(row_docs)
@@ -185,7 +189,7 @@ def etl_ingest_tables(
             filename=filename,
             project_id=project_id,
             user_id=user_id,
-            artifact_type=data_type or "scenario",  # Fixed: use scenario for vault data
+            artifact_type="tabular_data",  # Fixed: use scenario for vault data
         )
         print(f"[ETL:BRONZE] - Stored document metadata: {doc_metadata}")
     except Exception as e:

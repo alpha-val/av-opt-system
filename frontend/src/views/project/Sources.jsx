@@ -188,12 +188,12 @@ const Sources = () => {
 
     // Memoize derived data
     const memoizedBaseCaseDocuments = useMemo(
-        () => allDocuments.filter(doc => doc.document_type === 'base_case'),
+        () => allDocuments.filter(doc => doc.artifact_type === 'base_case'),
         [allDocuments]
     );
 
     const memoizedTabularDataDocuments = useMemo(
-        () => allDocuments.filter(doc => doc.document_type === 'scenario'),
+        () => allDocuments.filter(doc => doc.artifact_type === 'scenario'),
         [allDocuments]
     );
 
@@ -212,8 +212,8 @@ const Sources = () => {
             <Typography variant="h5" gutterBottom fontWeight="bold">
                 Sources
             </Typography>
-            <Typography variant="body1" color="text.secondary" paragraph>
-                Upload your mining reports and documents for AI-powered cost estimation and scenario analysis.
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 0 }}>
+                Upload your mining reports, estimation documents, and data tables.
             </Typography>
 
             {/* Error Alert */}
@@ -223,67 +223,7 @@ const Sources = () => {
                 </Alert>
             )}
 
-            <Grid container spacing={3}>
-                {/* First Row - Two columns for uploads */}
-                <Box sx={{ maxWidth: 1200, mx: 'auto', mb: 3, justifyContent: 'flex-start' }}>
-                    <Grid container spacing={3} sx={{ justifyContent: 'flex-start' }}>
-                        <Grid item xs={12} md={6}>
-                            <Paper sx={{ p: 3, height: 'fit-content', }}>
-                                {/* <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <PdfIcon sx={{ color: '#d32f2f' }} />
-                                    Base Case ({memoizedBaseCaseCount})
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                    Upload PDF documents containing project descriptions, feasibility studies, and reports.
-                                </Typography> */}
-
-                                <FileUpload
-                                    title="Upload Base Case Documents"
-                                    description="Upload PDF Project descriptions, feasibility studies, and reports."
-                                    supportedTypes={["PDF"]}
-                                    multiple={true}
-                                    maxFiles={10}
-                                    maxSizeInMB={100}
-                                    onFilesSelected={handleBaseCaseUpload}
-                                    icon={<PdfIcon />}
-                                    iconColor="#d32f2f"
-                                    numberOfFiles={memoizedBaseCaseCount}
-                                    disabled={loading.uploadBase}
-                                    showProgress={loading.uploadBase}
-                                    progress={loading.uploadBase ? progress.upload : 0}
-                                />
-                            </Paper>
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                            <Paper sx={{ p: 3, height: 'fit-content', }}>
-                                {/* <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <XlsIcon sx={{ color: '#2e7d32' }} />
-                                    Tabular Data ({memoizedTabularDataCount})
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                    Upload files containing structured tabular data for cost analysis and modeling.
-                                </Typography> */}
-
-                                <FileUpload
-                                    title="Upload Tabular Data Files"
-                                    description="Upload PDF, Excel, or CSV files with structured data."
-                                    supportedTypes={["PDF", "XLS", "CSV"]}
-                                    multiple={true}
-                                    maxFiles={20}
-                                    maxSizeInMB={200}
-                                    onFilesSelected={handleTabularDataUpload}
-                                    icon={<XlsIcon />}
-                                    iconColor="#2e7d32"
-                                    numberOfFiles={memoizedTabularDataCount}
-                                    disabled={loading.uploadTabularData}
-                                    showProgress={loading.uploadTabularData}
-                                    progress={loading.uploadTabularData ? progress.upload : 0}
-                                />
-                            </Paper>
-                        </Grid>
-                    </Grid>
-                </Box>
-
+            <Grid container spacing={3} sx={{ justifyContent: 'flex-start', flexDirection: 'column' }}>
                 {/* Second Row - Full width table */}
                 <Grid item xs={12} sx={{ mt: 2, width: '100%' }}>
                     <Paper sx={{ p: 3 }}>
@@ -307,7 +247,7 @@ const Sources = () => {
                             <Box sx={{ textAlign: 'center', py: 4 }}>
                                 <UploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
                                 <Typography variant="body2" color="text.secondary">
-                                    No documents uploaded yet. Use the upload sections above to add your first files.
+                                    No documents uploaded yet. Use the upload sections to add your project files.
                                 </Typography>
                             </Box>
                         ) : (
@@ -347,9 +287,9 @@ const Sources = () => {
                                                 </TableCell>
                                                 <TableCell>
                                                     <Chip
-                                                        label={doc.document_type === 'base_case' ? 'Base Case' : 'Tabular Data'}
+                                                        label={doc.artifact_type === 'base_case' ? 'Base Case' : 'Tabular Data'}
                                                         size="small"
-                                                        color={doc.document_type === 'base_case' ? 'primary' : 'secondary'}
+                                                        color={doc.artifact_type === 'base_case' ? 'primary' : 'secondary'}
                                                     />
                                                 </TableCell>
                                                 <TableCell align="right">
@@ -380,6 +320,65 @@ const Sources = () => {
                         )}
                     </Paper>
                 </Grid>
+                {/* First Row - Two columns for uploads */}
+                <Box sx={{ maxWidth: 1200, mx: 'auto', mb: 1, justifyContent: 'flex-start' }}>
+                    <Grid container spacing={3} sx={{ justifyContent: 'flex-start' }}>
+                        <Grid item xs={12} md={6}>
+                            <Paper sx={{ p: 2, height: 'fit-content', }}>
+                                {/* <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <PdfIcon sx={{ color: '#d32f2f' }} />
+                                    Base Case ({memoizedBaseCaseCount})
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                    Upload PDF documents containing project descriptions, feasibility studies, and reports.
+                                </Typography> */}
+
+                                <FileUpload
+                                    title="Upload Base Case Documents"
+                                    description="Upload PDF Project descriptions, feasibility studies, and reports."
+                                    supportedTypes={["PDF"]}
+                                    multiple={true}
+                                    maxFiles={10}
+                                    maxSizeInMB={100}
+                                    onFilesSelected={handleBaseCaseUpload}
+                                    icon={<PdfIcon />}
+                                    iconColor="#d32f2f"
+                                    numberOfFiles={memoizedBaseCaseCount}
+                                    disabled={loading.uploadBase}
+                                    showProgress={loading.uploadBase}
+                                    progress={loading.uploadBase ? progress.upload : 0}
+                                />
+                            </Paper>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <Paper sx={{ p: 2, height: 'fit-content', }}>
+                                {/* <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <XlsIcon sx={{ color: '#2e7d32' }} />
+                                    Tabular Data ({memoizedTabularDataCount})
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                    Upload files containing structured tabular data for cost analysis and modeling.
+                                </Typography> */}
+
+                                <FileUpload
+                                    title="Upload Tabular Data Files"
+                                    description="Upload PDF, Excel, or CSV files with structured data."
+                                    supportedTypes={["PDF", "XLS", "CSV"]}
+                                    multiple={true}
+                                    maxFiles={20}
+                                    maxSizeInMB={200}
+                                    onFilesSelected={handleTabularDataUpload}
+                                    icon={<XlsIcon />}
+                                    iconColor="#2e7d32"
+                                    numberOfFiles={memoizedTabularDataCount}
+                                    disabled={loading.uploadTabularData}
+                                    showProgress={loading.uploadTabularData}
+                                    progress={loading.uploadTabularData ? progress.upload : 0}
+                                />
+                            </Paper>
+                        </Grid>
+                    </Grid>
+                </Box>
             </Grid >
 
             {/* Toast Notifications */}

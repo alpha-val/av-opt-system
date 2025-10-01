@@ -6,5 +6,8 @@
   "python.terminal.activateEnvironment": true,
 
   // Help analysis resolve site-packages inside your venv
-  "python.analysis.extraPaths": ["${workspaceFolder}/backend"]
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/backend"
+  ],
+  "postman.settings.dotenv-detection-notification-visibility": false
 }

@@ -66,9 +66,9 @@ def ensure_bronze_indexes():
         [("source", ASCENDING), ("target", ASCENDING), ("type", ASCENDING)]
     )
 
-    _db.mentions.create_index([("_id", ASCENDING)])
-    _db.mentions.create_index([("entity_id", ASCENDING)])
-    _db.mentions.create_index([("chunk_id", ASCENDING)])
+    # _db.mentions.create_index([("_id", ASCENDING)])
+    # _db.mentions.create_index([("entity_id", ASCENDING)])
+    # _db.mentions.create_index([("chunk_id", ASCENDING)])
 
     _db.projects.create_index([("_id", ASCENDING)])
 
@@ -98,7 +98,7 @@ def store_document_metadata(
             "fileName": filename,
             "originalName": filename,
             "fileType": "pdf",
-            "document_type": artifact_type,
+            "artifact_type": artifact_type,
             "processing_status": "completed",
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
@@ -125,7 +125,7 @@ def bulk_upsert_chunks(chunks: List[Dict[str, Any]]):
     for c in chunks:
         d = {
             "_id": c["chunk_id"],
-            "doc_id": c["doc_id"],
+            "properties": c["properties"],
             "seq": c["seq"],
             "page": c.get("page"),
             "text_raw": c.get("text_raw"),
@@ -142,6 +142,7 @@ def upsert_table(
     meta: Dict[str, Any],
     preview_rows: List[Dict[str, Any]],
     n_cols: int,
+    properties: Dict[str, Any] = None,
 ):
     rec = {
         "_id": table_id,
@@ -152,6 +153,7 @@ def upsert_table(
         "n_rows": len(preview_rows),
         "n_cols": n_cols,
         "preview": preview_rows[:5],
+        "properties": properties or {},
     }
     _db.tables.replace_one({"_id": table_id}, rec, upsert=True)
 
