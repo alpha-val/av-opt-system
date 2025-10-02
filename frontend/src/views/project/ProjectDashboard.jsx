@@ -20,7 +20,7 @@ import {
     NavigateNext as NavigateNextIcon,
     ArrowBack as ArrowBackIcon,
     Folder as FolderIcon,
-    Dashboard as DashboardIcon,
+    ViewInAr as DashboardIcon,
     DynamicFeed as ScenariosIcon,
     Analytics as AnalysisIcon,
     Info as InfoIcon,
@@ -35,7 +35,7 @@ import {
     clearProjectCache,
 } from '../../redux/projectSlice';
 import Sources from "./Sources";
-import BaseCaseView from './BaseCaseView';
+import InspectDataView from './InspectDataView';
 
 // Tab configuration
 const PROJECT_TABS = [
@@ -46,8 +46,8 @@ const PROJECT_TABS = [
         description: 'Project documents and data uploads'
     },
     {
-        id: 'base-case',
-        label: 'Base Case',
+        id: 'inspect-data',
+        label: 'Inspect Data',
         icon: <DashboardIcon />,
         description: 'Data gleaned from uploaded documents'
     },
@@ -392,17 +392,17 @@ const ProjectDashboard = () => {
                     {/* Tab Content */}
                     {activeTab === 'sources' && <Sources />}
 
-                    {activeTab === 'base-case' && (
+                    {activeTab === 'inspect-data' && (
                         <Box>
                             <Typography variant="h5" gutterBottom fontWeight="bold">
-                                Base Case
+                                Inspect Data
                             </Typography>
                             <Typography variant="body1" color="text.secondary" paragraph>
                                 Review and validate data extracted from your uploaded documents.
                                 This forms the foundation for your cost analysis and scenario modeling.
                             </Typography>
                             <Paper sx={{ p: 3 }}>
-                                <BaseCaseView />
+                                <InspectDataView />
                             </Paper>
                         </Box>
                     )}

@@ -166,13 +166,13 @@ const Sources = () => {
         // Invalidate entities/relations cache to force refresh
         dispatch(invalidateEntitiesRelationsCache({
             projectId,
-            artifactType: 'base_case'
+            // artifactType: 'base_case'
         }));
 
         // Also refresh documents
         dispatch(fetchProjectDocuments({
             projectId,
-            artifact_type: 'base_case'
+            // artifact_type: 'base_case'
         }));
 
         setToast({

@@ -158,11 +158,11 @@ def get_project_entities_relations(
 
         # Define fields to return
         if include_metadata:
-            entity_fields = {"_id": 0}  # Return all fields except MongoDB _id
+            entity_fields = None  # Return all fields except MongoDB _id
             relation_fields = {"_id": 0}
         else:
             entity_fields = {
-                "_id": 0,
+                "_id": 1,
                 "entity_id": 1,
                 "name": 1,
                 "type": 1,

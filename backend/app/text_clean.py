@@ -104,7 +104,8 @@ def extract_and_clean(pdf_bytes: bytes, filename: str):
       doc_id, file_sha256, pages_raw[(page, raw)], pages_clean[(page, clean)]
     """
     file_sha = sha256_bytes(pdf_bytes)
-    doc_id = make_doc_id(filename, file_sha)
+    # doc_id = make_doc_id(filename, file_sha)
+    doc_id = str(uuid.uuid4())  # Use random UUID for doc_id to allow re-ingest
     pages_raw = extract_text_per_page(pdf_bytes)
     pages_no_hf = _strip_repeating_header_footer(pages_raw)
     pages_clean = [(p, clean_text(t)) for p, t in pages_no_hf]
