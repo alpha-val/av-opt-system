@@ -6,7 +6,7 @@ const createAppTheme = (mode = "light") => {
     palette: {
       mode,
       primary: {
-        // main: "#e7b41cff", // vibrant blue (blue-600)
+        // main: "#DEB841", // vibrant blue (blue-600)
         // light: "#fbd064ff", // tint for hover or outlines (blue-400)
         // dark: "#d69316ff", // pressed/active (blue-800)
         // Alternative blue shades:

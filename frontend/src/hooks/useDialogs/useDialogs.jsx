@@ -11,6 +11,9 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import useEventCallback from '@mui/utils/useEventCallback';
 import DialogsContext from './DialogsContext';
+import DeleteSweep from '@mui/icons-material/DeleteSweep';
+import CircularProgress from '@mui/material/CircularProgress';
+import Warning from '@mui/icons-material/Warning';
 
 /**
  * The props that are passed to a dialog component.
@@ -381,6 +384,71 @@ ProjectPromptDialog.propTypes = {
 
 export { ProjectPromptDialog };
 
+
+function ClearDataDialog({ open, payload, onClose }) {
+    const cancelButtonProps = useDialogLoadingButton(() => onClose(false));
+    const confirmButtonProps = useDialogLoadingButton(() => onClose(true));
+
+    return (
+        <Dialog
+            open={open}
+            onClose={() => onClose(false)}
+            maxWidth="sm"
+            fullWidth
+        >
+            <DialogTitle sx={{ display: 'flex', alignItems: 'center' }}>
+                <Warning sx={{ mr: 1, color: 'error.main' }} />
+                {payload.title ?? 'Clear All Data'}
+            </DialogTitle>
+            <DialogContent>
+                <DialogContentText>
+                    <strong>Warning:</strong> {payload.warningMsg ?? 'This action will permanently delete ALL data associated with the document, including:'}
+                </DialogContentText>
+                {/* <Box component="ul" sx={{ mt: 2, mb: 2 }}>
+                    <li>All projects and documents</li>
+                    <li>All uploaded files and extracted data</li>
+                    <li>All user-generated content</li>
+                    <li>All processing history</li>
+                </Box> */}
+                <DialogContentText color="error">
+                    {payload.msg ?? 'This action cannot be undone. Are you absolutely sure?'}
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button
+                    disabled={!open}
+                    {...cancelButtonProps}
+                >
+                    {payload.cancelText ?? 'Cancel'}
+                </Button>
+                <Button
+                    color="error"
+                    variant="contained"
+                    disabled={!open}
+                    {...confirmButtonProps}
+                    startIcon={confirmButtonProps.loading ? <CircularProgress size={16} /> : <DeleteSweep />}
+                >
+                    {confirmButtonProps.loading ? 'Clearing...' : (payload.okText ?? 'Clear All Data')}
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
+}
+
+ClearDataDialog.propTypes = {
+    onClose: PropTypes.func.isRequired,
+    open: PropTypes.bool.isRequired,
+    payload: PropTypes.shape({
+        cancelText: PropTypes.node,
+        msg: PropTypes.node,
+        warningMsg: PropTypes.node,
+        okText: PropTypes.node,
+        title: PropTypes.node,
+    }).isRequired,
+};
+
+export { ClearDataDialog };
+
 export function useDialogs() {
     const dialogsContext = React.useContext(DialogsContext);
     if (!dialogsContext) {
@@ -400,6 +468,10 @@ export function useDialogs() {
         open(PromptDialog, { ...options, msg }, { onClose }),
     );
 
+    const clearData = useEventCallback((msg, { onClose, ...options } = {}) =>
+        open(ClearDataDialog, { ...options, msg }, { onClose }),
+    );
+
     // New project prompt with description support
     const projectPrompt = useEventCallback((msg, { onClose, ...options } = {}) =>
         open(ProjectPromptDialog, { ...options, msg }, { onClose }),
@@ -410,11 +482,12 @@ export function useDialogs() {
             alert,
             confirm,
             prompt,
-            projectPrompt, // New method
+            projectPrompt,
+            clearData,
             open,
             close,
         }),
-        [alert, close, confirm, open, prompt, projectPrompt],
+        [alert, close, confirm, open, prompt, projectPrompt, clearData],
     );
 }
 

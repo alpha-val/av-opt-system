@@ -800,6 +800,7 @@ async def delete_project_document(
             )
 
         if hard_delete:
+            print(f"[DEBUG] Performing hard delete for doc_id: {doc_id}")
             # Hard delete - remove document and all related data
             db().documents.delete_one({"doc_id": doc_id})
             tables_deleted = db().tables.delete_many({"properties.doc_id": doc_id})

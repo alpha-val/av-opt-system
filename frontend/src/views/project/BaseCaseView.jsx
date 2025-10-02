@@ -15,6 +15,7 @@ import {
 
 import {
     fetchProjectEntitiesRelations,
+    fetchProjectDocuments,
     selectEntitiesByProjectAndType,
     selectRelationsByProjectAndType,
     selectSummaryByProjectAndType,
@@ -22,25 +23,49 @@ import {
     selectIsDataStale,
     selectDataLoading,
     selectDataError,
+    selectBaseCaseDocuments,
 } from '../../redux/dataSlice';
+
+import EntityDetailsTable from '../../components/EntityDetailsTable';
 
 const BaseCaseView = () => {
     const { projectId } = useParams();
     const dispatch = useDispatch();
 
-    // Use memoized selectors
-    const entities = useSelector(state =>
+    // Get raw entities data
+    const rawEntities = useSelector(state =>
         selectEntitiesByProjectAndType(state, projectId, 'base_case')
-    );
+    ) || [];
+
+    // Sort entities by type, then by name
+    const entities = useMemo(() => {
+        return [...rawEntities].sort((a, b) => {
+            // First sort by type
+            const typeA = a.type || 'Unknown';
+            const typeB = b.type || 'Unknown';
+            
+            if (typeA !== typeB) {
+                return typeA.localeCompare(typeB);
+            }
+            
+            // If types are the same, sort by name
+            const nameA = a.properties?.name || a.name || 'Unnamed Entity';
+            const nameB = b.properties?.name || b.name || 'Unnamed Entity';
+            
+            return nameA.localeCompare(nameB);
+        });
+    }, [rawEntities]);
+
     const relations = useSelector(state =>
         selectRelationsByProjectAndType(state, projectId, 'base_case')
-    );
+    ) || [];
+
     const summary = useSelector(state =>
         selectSummaryByProjectAndType(state, projectId, 'base_case')
     );
-    console.log('Entities:', entities);
-    console.log('Relations:', relations);
-    console.log('Summary:', summary);
+
+    const baseCaseDocuments = useSelector(selectBaseCaseDocuments) || [];
+
     // Check if we have data and if it's stale
     const hasData = useSelector(state =>
         selectHasEntitiesRelationsData(state, projectId, 'base_case')
@@ -53,47 +78,63 @@ const BaseCaseView = () => {
     const error = useSelector(selectDataError);
 
     const [showSnackbar, setShowSnackbar] = useState(false);
+    const [lastDocumentCount, setLastDocumentCount] = useState(0); // ✅ Track document count
 
-    // Memoized function to load base case data
+    // Enhanced function to load base case data
     const loadBaseCaseData = useCallback(() => {
-        if (projectId && (!hasData || isDataStale)) {
+        if (projectId) {
+            // Load entities and relations if no data or data is stale
+            if (!hasData || isDataStale) {
+                console.log('Loading base case data for project:', projectId);
+                dispatch(fetchProjectEntitiesRelations({
+                    projectId,
+                    artifact_type: 'base_case',
+                    include_metadata: true
+                }));
+            }
+
+            // Load documents if not already loaded
+            if (baseCaseDocuments.length === 0) {
+                dispatch(fetchProjectDocuments({
+                    projectId,
+                    artifact_type: 'base_case'
+                }));
+            }
+        }
+    }, [dispatch, projectId, hasData, isDataStale, baseCaseDocuments.length]);
+
+    // ✅ Watch for document count changes (indicates deletion/addition)
+    useEffect(() => {
+        const currentDocumentCount = baseCaseDocuments.length;
+        
+        // If document count decreased (document was deleted)
+        if (lastDocumentCount > 0 && currentDocumentCount < lastDocumentCount) {
+            console.log(`Document deleted - count changed from ${lastDocumentCount} to ${currentDocumentCount}`);
+            
+            // Force refresh entities and relations data
             dispatch(fetchProjectEntitiesRelations({
                 projectId,
                 artifact_type: 'base_case',
                 include_metadata: true
             }));
-        } else {
-            // console.log('Using cached base case data for project:', projectId);
         }
-    }, [dispatch, projectId, hasData, isDataStale]);
+        
+        setLastDocumentCount(currentDocumentCount);
+    }, [baseCaseDocuments.length, lastDocumentCount, dispatch, projectId]);
 
-    // Load data only when needed
+    // ✅ Watch for cache invalidation by monitoring data staleness
+    useEffect(() => {
+        // If data becomes stale (cache was invalidated), reload it
+        if (hasData && isDataStale && !loading.fetchEntitiesRelations) {
+            console.log('Cache invalidated - reloading base case data');
+            loadBaseCaseData();
+        }
+    }, [hasData, isDataStale, loading.fetchEntitiesRelations, loadBaseCaseData]);
+
+    // Load data on mount
     useEffect(() => {
         loadBaseCaseData();
     }, [loadBaseCaseData]);
-
-    // Memoized function to load scenario data
-    const fetchScenarioData = useCallback(() => {
-        if (projectId) {
-            dispatch(fetchProjectEntitiesRelations({
-                projectId,
-                artifact_type: 'scenario',
-                include_metadata: true
-            }));
-        }
-    }, [dispatch, projectId]);
-
-    // Memoized function to load specific entity types
-    const fetchSpecificEntityType = useCallback((entityType) => {
-        if (projectId) {
-            dispatch(fetchProjectEntitiesRelations({
-                projectId,
-                artifact_type: 'base_case',
-                entity_type: entityType,
-                include_metadata: false
-            }));
-        }
-    }, [dispatch, projectId]);
 
     // Force refresh function
     const forceRefresh = useCallback(() => {
@@ -103,6 +144,10 @@ const BaseCaseView = () => {
                 projectId,
                 artifact_type: 'base_case',
                 include_metadata: true
+            }));
+            dispatch(fetchProjectDocuments({
+                projectId,
+                artifact_type: 'base_case'
             }));
         }
     }, [dispatch, projectId]);
@@ -139,6 +184,14 @@ const BaseCaseView = () => {
                 <Typography variant="h4" gutterBottom>
                     Base Case Analysis
                 </Typography>
+                {/* ✅ Add refresh button for manual cache refresh */}
+                <Button
+                    variant="outlined"
+                    onClick={forceRefresh}
+                    disabled={loading.fetchEntitiesRelations || loading.fetchDocuments}
+                >
+                    Refresh Data
+                </Button>
             </Box>
 
             {loading.fetchEntitiesRelations && (
@@ -148,6 +201,13 @@ const BaseCaseView = () => {
                         Loading entities and relations...
                     </Typography>
                 </Box>
+            )}
+
+            {/* ✅ Show notification when data is being refreshed after deletion */}
+            {lastDocumentCount > baseCaseDocuments.length && loading.fetchEntitiesRelations && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                    Document deleted - refreshing data...
+                </Alert>
             )}
 
             {summary && (
@@ -170,71 +230,20 @@ const BaseCaseView = () => {
                 </Paper>
             )}
 
-            <Box sx={{ mb: 3 }}>
-                <Button
-                    variant="contained"
-                    onClick={fetchScenarioData}
-                    sx={{ mr: 2 }}
-                >
-                    Load Scenario Data
-                </Button>
-
-                <Button
-                    variant="outlined"
-                    onClick={() => fetchSpecificEntityType('COMMODITY')}
-                >
-                    Load Commodities Only
-                </Button>
-            </Box>
-
             <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 2 }}>
-                        <Typography variant="h6" gutterBottom>
-                            Entities ({entities.length})
-                        </Typography>
-
-                        {/* Entity types summary*/}
-                        <Box sx={{ mb: 2 }}>
-                            {Object.entries(entityTypes).map(([type, count]) => (
-                                <Chip
-                                    key={`entity-type-${type}`}
-                                    label={`${type}: ${count}`}
-                                    size="small"
-                                    sx={{ mr: 1, mb: 1 }}Í
-                                />
-                            ))}
-                        </Box>
-
-                        <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
-                            {entities.map((entity, index) => (
-                                <Box 
-                                    key={entity.entity_id || `entity-${index}`}
-                                    sx={{
-                                        p: 1,
-                                        borderBottom: '1px solid',
-                                        borderColor: 'divider'
-                                    }}
-                                >
-                                    <Typography variant="body2" fontWeight="medium">
-                                        {entity.name || entity.entity_id}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        Type: {entity.type}
-                                    </Typography>
-                                </Box>
-                            ))}
-                        </Box>
-                    </Paper>
+                <Grid item xs={12}>
+                    <EntityDetailsTable 
+                        entities={entities} 
+                        title="Base Case Entities" 
+                    />
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12}>
                     <Paper sx={{ p: 2 }}>
                         <Typography variant="h6" gutterBottom>
                             Relations ({relations.length})
                         </Typography>
 
-                        {/* Relation types summary*/}
                         <Box sx={{ mb: 2 }}>
                             {Object.entries(relationTypes).map(([type, count]) => (
                                 <Chip
@@ -248,7 +257,7 @@ const BaseCaseView = () => {
 
                         <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
                             {relations.map((relation, index) => (
-                                <Box 
+                                <Box
                                     key={relation.relation_id || `relation-${index}`}
                                     sx={{
                                         p: 1,

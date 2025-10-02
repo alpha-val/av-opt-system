@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import {
@@ -25,9 +25,11 @@ import {
     Description as CsvIcon,
     Delete as DeleteIcon,
     CloudUpload as UploadIcon,
+    DeleteSweep as ClearAllIcon, // Add this icon
 } from '@mui/icons-material';
 
 import FileUpload from '../../components/FileUpload';
+import { useDialogs } from '../../hooks/useDialogs/useDialogs';
 import {
     fetchProjectDocuments,
     uploadProjectDescription,
@@ -44,11 +46,18 @@ import {
     selectDataLoading,
     selectDataError,
     selectDataProgress,
+    invalidateEntitiesRelationsCache,
 } from '../../redux/dataSlice';
 
 const Sources = () => {
     const { projectId } = useParams();
     const dispatch = useDispatch();
+
+    // Use the useDialogs hook
+    const { clearData } = useDialogs();
+
+    // Add state for clearing data
+    const [clearingData, setClearingData] = useState(false);
 
     // Use memoized selectors
     const allDocuments = useSelector(selectAllDocuments);
@@ -84,11 +93,7 @@ const Sources = () => {
                     }
                 })).unwrap();
 
-                setToast({
-                    open: true,
-                    message: `${fileObj.name} uploaded successfully`,
-                    severity: 'success'
-                });
+                handleUploadSuccess();
 
             } catch (error) {
                 setToast({
@@ -98,8 +103,6 @@ const Sources = () => {
                 });
             }
         }
-        // Refresh documents
-        dispatch(fetchProjectDocuments({ projectId }));
     };
 
     // Handle scenario data upload  
@@ -114,11 +117,8 @@ const Sources = () => {
                     }
                 })).unwrap();
 
-                setToast({
-                    open: true,
-                    message: `${fileObj.name} uploaded successfully`,
-                    severity: 'success'
-                });
+                handleUploadSuccess();
+
             } catch (error) {
                 setToast({
                     open: true,
@@ -127,28 +127,100 @@ const Sources = () => {
                 });
             }
         }
-        // Refresh documents
-        dispatch(fetchProjectDocuments({ projectId }));
     };
 
-    // Handle delete
+    // Handle delete - CORRECTED
     const handleDeleteFile = async (docId, fileName) => {
-        if (window.confirm(`Are you sure you want to delete "${fileName}"?`)) {
-            try {
-                await dispatch(deleteProjectDocument({ projectId, docId })).unwrap();
+        try {
+            // ✅ Use the confirm method correctly
+            const confirmed = await clearData(
+                `Are you sure you want to delete "${fileName}"?\nAll data items associated with this file will be deleted. This action cannot be undone.`,
+                {
+                    title: 'Delete Document',
+                    okText: 'Delete',
+                    cancelText: 'Cancel',
+                    severity: 'warning',
+                    warningMsg: `You are about to delete a document and all associated data.`,
+                }
+            );
+
+            if (confirmed) {
+                await dispatch(deleteProjectDocument({ projectId, docId, hard_delete: true })).unwrap();
                 setToast({
                     open: true,
                     message: `${fileName} deleted successfully`,
                     severity: 'success'
                 });
-            } catch (error) {
+            }
+        } catch (error) {
+            setToast({
+                open: true,
+                message: `Delete failed: ${error}`,
+                severity: 'error'
+            });
+        }
+    };
+
+    // Handle upload success
+    const handleUploadSuccess = useCallback(() => {
+        // Invalidate entities/relations cache to force refresh
+        dispatch(invalidateEntitiesRelationsCache({
+            projectId,
+            artifactType: 'base_case'
+        }));
+
+        // Also refresh documents
+        dispatch(fetchProjectDocuments({
+            projectId,
+            artifact_type: 'base_case'
+        }));
+
+        setToast({
+            open: true,
+            message: `Documents uploaded successfully`,
+            severity: 'success'
+        });
+    }, [dispatch, projectId]);
+
+    // Handle clear all data
+    const handleClearAllData = async () => {
+        try {
+            const confirmed = await clearData(
+                'This action cannot be undone. Are you absolutely sure?',
+                {
+                    title: 'Clear All Project Data',
+                    okText: 'Clear All Data',
+                    cancelText: 'Cancel'
+                }
+            );
+
+            if (confirmed) {
+                // Your clear data logic here
+                await dispatch(clearAllProjectData({ projectId })).unwrap();
+                
+                dispatch(fetchProjectDocuments({ projectId }));
+                
                 setToast({
                     open: true,
-                    message: `Delete failed: ${error}`,
-                    severity: 'error'
+                    message: 'All project data cleared successfully',
+                    severity: 'success'
                 });
             }
+        } catch (error) {
+            setToast({
+                open: true,
+                message: `Failed to clear data: ${error}`,
+                severity: 'error'
+            });
         }
+    };
+
+    // Show clear all data dialog
+    const showClearAllDataDialog = () => {
+        open('ClearDataDialog', {
+            loading: clearingData,
+            onConfirm: handleClearAllData,
+        });
     };
 
     // Get file icon based on type
@@ -231,16 +303,20 @@ const Sources = () => {
                             <Typography variant="h6">
                                 All Documents ({totalCount})
                             </Typography>
-                            {/* <Button
-                                startIcon={<UploadIcon />}
-                                variant="outlined"
-                                size="small"
-                                onClick={() => {
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                }}
-                            >
-                                Add More Files
-                            </Button> */}
+
+                            {/* Add Clear All Data Button */}
+                            {allDocuments.length > 0 && (
+                                <Button
+                                    variant="outlined"
+                                    color="error"
+                                    startIcon={<ClearAllIcon />}
+                                    onClick={showClearAllDataDialog}
+                                    disabled={clearingData || loading.deleteDocument}
+                                    size="small"
+                                >
+                                    Clear All Data
+                                </Button>
+                            )}
                         </Box>
 
                         {allDocuments.length === 0 ? (
@@ -310,29 +386,22 @@ const Sources = () => {
                         )}
 
                         {/* Global upload progress */}
-                        {(loading.uploadBase || loading.uploadTabularData) && (
+                        {(loading.uploadBase || loading.uploadTabularData || clearingData) && (
                             <Box sx={{ mt: 2 }}>
                                 <LinearProgress />
                                 <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                                    Uploading files and extracting data...
+                                    {clearingData ? 'Clearing all data...' : 'Uploading files and extracting data...'}
                                 </Typography>
                             </Box>
                         )}
                     </Paper>
                 </Grid>
+
                 {/* First Row - Two columns for uploads */}
                 <Box sx={{ maxWidth: 1200, mx: 'auto', mb: 1, justifyContent: 'flex-start' }}>
                     <Grid container spacing={3} sx={{ justifyContent: 'flex-start' }}>
                         <Grid item xs={12} md={6}>
                             <Paper sx={{ p: 2, height: 'fit-content', }}>
-                                {/* <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <PdfIcon sx={{ color: '#d32f2f' }} />
-                                    Base Case ({memoizedBaseCaseCount})
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                    Upload PDF documents containing project descriptions, feasibility studies, and reports.
-                                </Typography> */}
-
                                 <FileUpload
                                     title="Upload Base Case Documents"
                                     description="Upload PDF Project descriptions, feasibility studies, and reports."
@@ -352,14 +421,6 @@ const Sources = () => {
                         </Grid>
                         <Grid item xs={12} md={6}>
                             <Paper sx={{ p: 2, height: 'fit-content', }}>
-                                {/* <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <XlsIcon sx={{ color: '#2e7d32' }} />
-                                    Tabular Data ({memoizedTabularDataCount})
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                    Upload files containing structured tabular data for cost analysis and modeling.
-                                </Typography> */}
-
                                 <FileUpload
                                     title="Upload Tabular Data Files"
                                     description="Upload PDF, Excel, or CSV files with structured data."
@@ -379,10 +440,10 @@ const Sources = () => {
                         </Grid>
                     </Grid>
                 </Box>
-            </Grid >
+            </Grid>
 
             {/* Toast Notifications */}
-            < Snackbar
+            <Snackbar
                 open={toast.open}
                 autoHideDuration={4000}
                 onClose={() => setToast(prev => ({ ...prev, open: false }))}
@@ -395,8 +456,8 @@ const Sources = () => {
                 >
                     {toast.message}
                 </Alert>
-            </Snackbar >
-        </Box >
+            </Snackbar>
+        </Box>
     );
 };
 

@@ -241,14 +241,15 @@ export const fetchProjectDocuments = createAsyncThunk(
 
 export const deleteProjectDocument = createAsyncThunk(
     'data/deleteProjectDocument',
-    async ({ projectId, docId }, { rejectWithValue }) => {
+    async ({ projectId, docId, hard_delete = false }, { rejectWithValue, dispatch }) => {
         try {
             const token = getAuthToken();
             if (!token) {
                 throw new Error('No authentication token found');
             }
-
-            const response = await fetch(`${API_BASE_URL}/projects/${projectId}/documents/${docId}`, {
+            const params = new URLSearchParams();
+            if (hard_delete) params.append('hard_delete', 'true');
+            const response = await fetch(`${API_BASE_URL}/projects/${projectId}/documents/${docId}?${params.toString()}`, {
                 method: 'DELETE',
                 headers: getAuthHeaders(true),
             });
@@ -257,6 +258,9 @@ export const deleteProjectDocument = createAsyncThunk(
                 const errorData = await response.json();
                 throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
             }
+
+            // ✅ Automatically invalidate cache after successful deletion
+            dispatch(invalidateEntitiesRelationsCache({ projectId }));
 
             return { projectId, docId };
         } catch (error) {
@@ -449,6 +453,9 @@ const initialState = {
     error: null,
 };
 
+// Create the action OUTSIDE the slice, before the slice definition
+export const invalidateEntitiesRelationsCache = createAction('data/invalidateEntitiesRelationsCache');
+
 // Simplified slice
 const dataSlice = createSlice({
     name: 'data',
@@ -600,12 +607,27 @@ const dataSlice = createSlice({
             .addCase(fetchProjectRelations.rejected, (state, action) => {
                 state.loading.fetchRelations = false;
                 state.error = action.payload;
+            })
+            .addCase(invalidateEntitiesRelationsCache, (state, action) => {
+                const { projectId, artifactType } = action.payload || {};
+
+                if (projectId && artifactType) {
+                    // Clear specific project and artifact type cache
+                    if (state.entitiesRelationsData[projectId]) {
+                        delete state.entitiesRelationsData[projectId][artifactType];
+                    }
+                } else if (projectId) {
+                    // Clear all cached data for a project
+                    delete state.entitiesRelationsData[projectId];
+                }
             });
     },
 });
 
 // Export actions
 export const { clearError, setCurrentProject, clearDocuments, clearProjectEntitiesRelations } = dataSlice.actions;
+
+// The invalidateEntitiesRelationsCache is already exported above, so it will be available
 
 // Simplified selectors
 export const selectAllDocuments = (state) => state.data.documents;

@@ -1,6 +1,7 @@
 # prompt_rules.py
 from typing import List
 
+
 def _bulleted(items: List[str]) -> str:
     return "\n".join(f"- {x}" for x in items)
 
@@ -46,6 +47,7 @@ aligned **exactly** to the configured ontology.
 
 You MUST:
 - Extract only what is explicitly or strongly implied by the text.
+- Do not infer or assume information not present.
 - Emit only node/edge **types** that appear in the ontology.
 - Each nodes **must** have a type or property["label"] that maps to NODE_TYPES.
 - Use only node/edge **property names** that appear in the ontology metadata lists.
@@ -79,6 +81,7 @@ Node object (each item in extract_nodes.nodes) MUST have:
 - "type": one of NODE_TYPES; a Node object **must** have a type
 - "properties": object/dict containing:
     • follow the properties mentioned in NODE_PROPERTIES in the ontology
+    • prioritize finding cost associated with an entity (e.g., 'cost', 'price', 'cost_value', 'currency', 'basis_year', 'expenditure')
 - enforce a 'name' property for the node
 
 Edge object (each item in extract_edges.edges) MUST have:
@@ -116,7 +119,7 @@ Confidence scoring (guideline):
 - <0.50: prefer to omit unless essential for connectivity.
 
 Evidence:
-- Keep excerpts short (≤200 chars). Populate the appropriate meta fields strictly
+- Keep excerpts short (≤250 chars). Populate the appropriate meta fields strictly
   from NODE_PROPERTIES / EDGE_PROPERTIES (e.g., 'source_doc', 'extracted_from', etc.).
 
 
@@ -126,10 +129,15 @@ QUALITY GATE (pre-return)
 - Every node: non-empty, unique 'id' (uuid), valid 'type', and a 'properties' dict.
 - Every node has a 'name' property; populate it with the proper entity name.
 - Every node has a 'type' property that matches NODE_TYPES.
+- Every node property key matches NODE_PROPERTIES.
+- For nodes of type 'Equipment', 'Process', 'Material', 'Product', 'Waste', etc., acquire cost details if they appear in text.
+- For nodes of type 'CostRule', ensure compliance with COST & METHOD POLICY above.
+- For nodes of type 'CostEstimate' or similar, ensure costing details are present.
+- For node properties that are costs/prices, include currency and basis_year when available.
 - Every edge: valid 'source', 'target', 'type', and a 'properties' dict.
+- Every edge property key matches EDGE_PROPERTIES.
 - All nodes must be linked with type that matches EDGE_TYPES.
 - Only ontology-approved types and meta property keys are used.
-- Costs carry currency and basis_year when available.
 - Deduplication applied; aliases captured; evidence present; confidence sensible.
 - Confidence reflects evidence strength.
 
