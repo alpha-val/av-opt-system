@@ -297,7 +297,7 @@ const Sources = () => {
 
             <Grid container spacing={3} sx={{ justifyContent: 'flex-start', flexDirection: 'column' }}>
                 {/* Second Row - Full width table */}
-                <Grid item xs={12} sx={{ mt: 2, width: '100%' }}>
+                <Grid xs={12} sx={{ mt: 2, width: '100%' }}>
                     <Paper sx={{ p: 3 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                             <Typography variant="h6">
@@ -400,7 +400,7 @@ const Sources = () => {
                 {/* First Row - Two columns for uploads */}
                 <Box sx={{ maxWidth: 1200, mx: 'auto', mb: 1, justifyContent: 'flex-start' }}>
                     <Grid container spacing={3} sx={{ justifyContent: 'flex-start' }}>
-                        <Grid item xs={12} md={6}>
+                        <Grid xs={12} md={6}>
                             <Paper sx={{ p: 2, height: 'fit-content', }}>
                                 <FileUpload
                                     title="Upload Base Case Documents"
@@ -419,7 +419,7 @@ const Sources = () => {
                                 />
                             </Paper>
                         </Grid>
-                        <Grid item xs={12} md={6}>
+                        <Grid xs={12} md={6}>
                             <Paper sx={{ p: 2, height: 'fit-content', }}>
                                 <FileUpload
                                     title="Upload Tabular Data Files"

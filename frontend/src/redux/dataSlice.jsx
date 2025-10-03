@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk, createSelector, createAction } from '@reduxjs/toolkit';
 
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+import REACT_APP_CONFIG from "../AppConfig";
+
+const API_BASE_URL = REACT_APP_CONFIG.url.API_URL;
 
 // Helper functions (keep existing ones)
 const getAuthToken = () => {

@@ -4,7 +4,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 require("dotenv").config(); // ⬅️ Loads .env variables into process.env
 module.exports = {
   entry: "./src/index.jsx",
-  devtool: false,
+  devtool: "source-map", // or 'eval-source-map' for development
   output: {
     path: path.resolve(__dirname, "build"),
     filename: "bundle.js",
@@ -52,4 +52,10 @@ module.exports = {
     open: true,
   },
   mode: "development",
+  ignoreWarnings: [
+    {
+      module: /node_modules/,
+      message: /Failed to parse source map/,
+    },
+  ],
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   Box,
   Button,
@@ -12,7 +12,8 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  Dialog,
+  Breadcrumbs,
+  Link,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -20,27 +21,35 @@ import {
   TrendingUp,
   AttachMoney,
   Speed,
+  NavigateNext as NavigateNextIcon,
 } from "@mui/icons-material";
 import CreateScenarioDialog from "./CreateScenarioDialog";
+import ScenarioDetail from "./ScenarioDetails";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchScenarios, deleteScenario } from "../../../redux/scenarioSlice";
 
 const Scenarios = () => {
   const { projectId } = useParams();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [selectedScenario, setSelectedScenario] = useState(null);
+  const [activeScenarioId, setActiveScenarioId] = useState(null);
 
   const scenarios = useSelector(
     (state) => state.scenarios.byProject[projectId] || []
   );
   const loading = useSelector((state) => state.scenarios.loading);
+  const activeScenario = useSelector(
+    (state) => state.scenarios?.byId?.[activeScenarioId]
+  );
 
   useEffect(() => {
-    console.log("[ScenarioDashboard] Fetching scenarios for project:", projectId);
+    console.log(
+      "[ScenarioDashboard] Fetching scenarios for project:",
+      projectId
+    );
     if (projectId) {
       dispatch(fetchScenarios(projectId));
     }
@@ -61,11 +70,19 @@ const Scenarios = () => {
     if (selectedScenario) {
       dispatch(deleteScenario(selectedScenario.id));
       handleMenuClose();
+      // If viewing the deleted scenario, go back to list
+      if (activeScenarioId === selectedScenario.id) {
+        setActiveScenarioId(null);
+      }
     }
   };
 
   const handleCardClick = (scenarioId) => {
-    navigate(`/projects/${projectId}/scenarios/${scenarioId}`);
+    setActiveScenarioId(scenarioId);
+  };
+
+  const handleBackToList = () => {
+    setActiveScenarioId(null);
   };
 
   const getGoalIcon = (goal) => {
@@ -94,8 +111,49 @@ const Scenarios = () => {
     }
   };
 
+  // Show scenario detail view
+  if (activeScenarioId) {
+    return (
+      <Box sx={{ p: 0 }}>
+        {/* Breadcrumb Navigation */}
+        <Box sx={{ mb: 3 }}>
+          <Breadcrumbs
+            separator={<NavigateNextIcon fontSize="small" />}
+            aria-label="breadcrumb"
+          >
+            <Link
+              component="button"
+              variant="h6"
+              underline="none"
+              color={"primary.main"}
+              onClick={handleBackToList}
+              sx={{
+                cursor: "pointer",
+                "&:hover": { color: "primary.main" },
+              }}
+            >
+              All Scenarios
+            </Link>
+            <Typography variant="h6" color="text.primary">
+              {activeScenario?.name || "Loading..."}
+            </Typography>
+          </Breadcrumbs>
+        </Box>
+
+        {/* Scenario Detail Component */}
+        <ScenarioDetail
+          scenarioId={activeScenarioId}
+          projectId={projectId}
+          onClose={handleBackToList}
+        />
+      </Box>
+    );
+  }
+
+  // Show scenario list view (default)
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 0 }}>
+      {/* Header */}
       <Box
         sx={{
           display: "flex",
@@ -114,6 +172,7 @@ const Scenarios = () => {
         </Button>
       </Box>
 
+      {/* Empty State */}
       {scenarios.length === 0 && !loading ? (
         <Box
           sx={{
@@ -141,9 +200,10 @@ const Scenarios = () => {
           </Button>
         </Box>
       ) : (
+        /* Scenario Cards Grid */
         <Grid container spacing={3}>
           {scenarios.map((scenario) => (
-            <Grid item xs={12} sm={6} md={4} key={scenario.id}>
+            <Grid xs={12} sm={6} md={4} key={scenario.id}>
               <Card
                 sx={{
                   cursor: "pointer",
@@ -220,7 +280,10 @@ const Scenarios = () => {
                 <CardActions>
                   <Button
                     size="small"
-                    onClick={() => handleCardClick(scenario.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCardClick(scenario.id);
+                    }}
                   >
                     View Details
                   </Button>
@@ -239,9 +302,7 @@ const Scenarios = () => {
       >
         <MenuItem
           onClick={() => {
-            navigate(
-              `/projects/${projectId}/scenarios/${selectedScenario.id}/edit`
-            );
+            // TODO: Add edit functionality
             handleMenuClose();
           }}
         >
@@ -249,7 +310,7 @@ const Scenarios = () => {
         </MenuItem>
         <MenuItem
           onClick={() => {
-            // Duplicate logic
+            // TODO: Add duplicate logic
             handleMenuClose();
           }}
         >

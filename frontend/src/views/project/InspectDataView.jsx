@@ -227,19 +227,19 @@ const InspectDataView = () => {
             Summary
           </Typography>
           <Grid container spacing={2}>
-            <Grid item xs={4}>
+            <Grid xs={4}>
               <Typography variant="body2" color="text.secondary">
                 Entities
               </Typography>
               <Typography variant="h5">{summary.entity_count}</Typography>
             </Grid>
-            <Grid item xs={4}>
+            <Grid xs={4}>
               <Typography variant="body2" color="text.secondary">
                 Relations
               </Typography>
               <Typography variant="h5">{summary.relation_count}</Typography>
             </Grid>
-            <Grid item xs={4}>
+            <Grid xs={4}>
               <Typography variant="body2" color="text.secondary">
                 Documents
               </Typography>

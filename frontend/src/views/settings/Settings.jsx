@@ -145,7 +145,7 @@ const Settings = () => {
 
             <Grid container spacing={3}>
                 {/* User Profile Section */}
-                <Grid item xs={12} md={8}>
+                <Grid xs={12} md={8}>
                     <Paper sx={{ p: 3 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                             {/* <Avatar sx={{ width: 60, height: 60, mr: 2, bgcolor: 'primary.main' }}>
@@ -183,7 +183,7 @@ const Settings = () => {
                         <Divider sx={{ my: 2 }} />
 
                         <Grid container spacing={2}>
-                            <Grid item xs={6}>
+                            <Grid xs={6}>
                                 <Typography variant="body2" color="text.secondary">
                                     Account Created
                                 </Typography>
@@ -191,7 +191,7 @@ const Settings = () => {
                                     {formatDate(userInfo.created_at)}
                                 </Typography>
                             </Grid>
-                            <Grid item xs={6}>
+                            <Grid xs={6}>
                                 <Typography variant="body2" color="text.secondary">
                                     Account Status
                                 </Typography>
@@ -201,7 +201,7 @@ const Settings = () => {
                                     size="small"
                                 />
                             </Grid>
-                            <Grid item xs={6}>
+                            <Grid xs={6}>
                                 <Typography variant="body2" color="text.secondary">
                                     Role
                                 </Typography>
@@ -215,7 +215,7 @@ const Settings = () => {
 
                 {/* Admin Actions Section - Only show if user is admin */}
                 {userInfo?.is_admin && (
-                    <Grid item xs={12} md={4}>
+                    <Grid xs={12} md={4}>
                         <Paper sx={{ p: 3, bgcolor: 'error.50', }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                                 <AdminIcon sx={{ mr: 1, color: 'error.main' }} />
@@ -250,7 +250,7 @@ const Settings = () => {
                 )}
 
                 {/* Account Preferences Section */}
-                <Grid item xs={12}>
+                <Grid xs={12}>
                     <Paper sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
                             Account Preferences

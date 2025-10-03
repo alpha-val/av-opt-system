@@ -214,7 +214,7 @@ const EntityDetails = ({ entity, compact = false }) => {
                     <Box sx={{ mt: 1 }}>
                         <Grid container spacing={1}>
                             {relevantProperties.slice(0, 3).map(([key, value]) => (
-                                <Grid item xs={12} sm={6} key={key}>
+                                <Grid xs={12} sm={6} key={key}>
                                     <Typography variant="caption" color="text.secondary" display="block">
                                         {formatPropertyName(key)}
                                     </Typography>
@@ -249,7 +249,7 @@ const EntityDetails = ({ entity, compact = false }) => {
                             </Typography>
                             <Grid container spacing={1}>
                                 {relevantProperties.map(([key, value]) => (
-                                    <Grid item xs={12} sm={6} key={key}>
+                                    <Grid xs={12} sm={6} key={key}>
                                         <Box sx={{ mb: 1 }}>
                                             <Typography variant="caption" color="text.secondary" display="block">
                                                 {formatPropertyName(key)}

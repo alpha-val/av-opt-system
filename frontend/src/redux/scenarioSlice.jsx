@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import REACT_APP_CONFIG from "../AppConfig";
 
-const API_BASE_URL = "http://localhost:8000/api/v1";
+const API_BASE_URL = REACT_APP_CONFIG.url.API_URL;
 
 export const fetchScenarios = createAsyncThunk(
   "scenarios/fetchByProject",

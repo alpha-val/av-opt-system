@@ -121,7 +121,7 @@ const LandingPage = () => {
                     </Typography>
                     <Grid container spacing={4} justifyContent="center">
                         {features.map((feature, i) => (
-                            <Grid item xs={12} md={4} key={i}>
+                            <Grid xs={12} md={4} key={i}>
                                 <Card elevation={2} sx={{ height: "300px", maxWidth: "350px", p: 4, textAlign: "center", borderRadius: 3, bgcolor: "#fff" }}>
                                     <CardContent>
                                         {feature.icon}
@@ -147,7 +147,7 @@ const LandingPage = () => {
                     </Typography>
                     <Grid container spacing={4} justifyContent="center">
                         {personas.map((persona, i) => (
-                            <Grid item xs={12} md={4} key={i}>
+                            <Grid xs={12} md={4} key={i}>
                                 <Card elevation={0} sx={{ p: 4, textAlign: "center", borderRadius: 3, bgcolor: "#fff" }}>
                                     <CardContent>
                                         {persona.icon}

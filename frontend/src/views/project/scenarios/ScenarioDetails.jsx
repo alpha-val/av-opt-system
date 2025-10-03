@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Box,
@@ -10,8 +9,6 @@ import {
   Grid,
   Card,
   CardContent,
-  Breadcrumbs,
-  Link,
   Tabs,
   Tab,
   IconButton,
@@ -21,7 +18,6 @@ import {
   CircularProgress,
 } from "@mui/material";
 import {
-  ArrowBack,
   Add as AddIcon,
   MoreVert as MoreVertIcon,
   TrendingUp,
@@ -40,9 +36,7 @@ import OptionsTable from "./options/OptionsTabularView";
 import OptionComparisonView from "./options/OptionsComparisonView";
 import CreateOptionDialog from "./options/CreateOptionDialog";
 
-const ScenarioDetail = () => {
-  const { projectId, scenarioId } = useParams();
-  const navigate = useNavigate();
+const ScenarioDetail = ({ scenarioId, projectId, onClose }) => {
   const dispatch = useDispatch();
 
   const [activeTab, setActiveTab] = useState(0);
@@ -63,10 +57,6 @@ const ScenarioDetail = () => {
     }
   }, [scenarioId, dispatch]);
 
-  const handleBack = () => {
-    navigate(`/projects/${projectId}/scenarios`);
-  };
-
   const handleMenuClick = (event) => {
     setMenuAnchor(event.currentTarget);
   };
@@ -84,7 +74,7 @@ const ScenarioDetail = () => {
     if (window.confirm("Are you sure you want to delete this scenario?")) {
       dispatch(deleteScenario(scenarioId));
       handleMenuClose();
-      navigate(`/projects/${projectId}/scenarios`);
+      if (onClose) onClose();
     }
   };
 
@@ -163,35 +153,6 @@ const ScenarioDetail = () => {
     <Box sx={{ p: 3 }}>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
-        {/* Breadcrumbs */}
-        <Breadcrumbs sx={{ mb: 2 }}>
-          <Link
-            component="button"
-            variant="body2"
-            onClick={() => navigate("/projects")}
-            sx={{ textDecoration: "none" }}
-          >
-            Projects
-          </Link>
-          <Link
-            component="button"
-            variant="body2"
-            onClick={() => navigate(`/projects/${projectId}`)}
-            sx={{ textDecoration: "none" }}
-          >
-            Project
-          </Link>
-          <Link
-            component="button"
-            variant="body2"
-            onClick={handleBack}
-            sx={{ textDecoration: "none" }}
-          >
-            Scenarios
-          </Link>
-          <Typography color="text.primary">{scenario.name}</Typography>
-        </Breadcrumbs>
-
         {/* Title and Actions */}
         <Box
           sx={{
@@ -200,14 +161,9 @@ const ScenarioDetail = () => {
             alignItems: "center",
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <IconButton onClick={handleBack}>
-              <ArrowBack />
-            </IconButton>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              {getGoalIcon(scenario.goal)}
-              <Typography variant="h4">{scenario.name}</Typography>
-            </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {getGoalIcon(scenario.goal)}
+            <Typography variant="h4">{scenario.name}</Typography>
           </Box>
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button
@@ -406,8 +362,7 @@ const ScenarioDetail = () => {
         />
       )}
       {activeTab === 1 && options.length >= 2 && (
-        // <OptionComparisonView options={options} />
-        <div>Comparison view coming soon...</div>
+        <OptionComparisonView options={options} />
       )}
       {activeTab === 2 && options.length > 0 && (
         <Paper sx={{ p: 3 }}>
