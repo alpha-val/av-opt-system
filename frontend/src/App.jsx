@@ -8,7 +8,7 @@ import ProjectView from "./views/project/ProjectView"; // New component for proj
 import AuthProvider from "./services/AuthProvider";
 import { useThemeMode } from "./themes/ThemeContext";
 import SettingsView from './views/settings/SettingsView';
-
+import ScenarioDetail from "./views/project/scenarios/ScenarioDetails";
 
 
 // Optional: global background gradient using your custom theme
@@ -38,8 +38,7 @@ const AppContent = () => {
           <Route path="/" element={<MainGrid />} />
           <Route path="/dashboard" element={<MainGrid />} />
           <Route path="/projects/:projectId" element={<ProjectView />} /> {/* Separate route */}
-
-          {/* Add Settings route */}
+          <Route path="/projects/:projectId/scenarios/:scenarioId" element={<ScenarioDetail />} />
           <Route path="/settings" element={
             <SettingsView />
           } />

@@ -43,35 +43,53 @@ def clear_all_collections():
 
 def ensure_bronze_indexes():
     print("[DEBUG] Ensuring indexes on Bronze collections...")
+
+    # Document indexes
     _db.documents.create_index([("_id", ASCENDING)])
     _db.documents.create_index([("sha256", ASCENDING)])
 
+    # Chunk indexes
     _db.chunks.create_index([("_id", ASCENDING)])
     _db.chunks.create_index([("doc_id", ASCENDING), ("seq", ASCENDING)])
     _db.chunks.create_index([("doc_id", ASCENDING), ("page", ASCENDING)])
 
+    # Table indexes
     _db.tables.create_index([("_id", ASCENDING)])
     _db.tables.create_index(
         [("doc_id", ASCENDING), ("page", ASCENDING), ("index", ASCENDING)]
     )
 
+    # Row indexes
     _db.rows.create_index([("_id", ASCENDING)])
     _db.rows.create_index([("table_id", ASCENDING), ("row_idx", ASCENDING)])
 
+    # Entity indexes
     _db.entities.create_index([("_id", ASCENDING)])
     _db.entities.create_index([("properties.canonical_key", ASCENDING)])
     _db.entities.create_index([("sources.doc_id", ASCENDING)])
 
+    # Relation indexes
     _db.relations.create_index(
         [("source", ASCENDING), ("target", ASCENDING), ("type", ASCENDING)]
     )
 
-    # _db.mentions.create_index([("_id", ASCENDING)])
-    # _db.mentions.create_index([("entity_id", ASCENDING)])
-    # _db.mentions.create_index([("chunk_id", ASCENDING)])
-
+    # Project indexes
     _db.projects.create_index([("_id", ASCENDING)])
 
+    # Scenario indexes
+    _db.scenarios.create_index([("_id", ASCENDING)])
+    _db.scenarios.create_index("project_id")
+    _db.scenarios.create_index("created_by")
+    _db.scenarios.create_index("status")
+    _db.scenarios.create_index([("project_id", 1), ("status", 1)])
+
+    # Option indexes
+    _db.options.create_index("id", unique=True)
+    _db.options.create_index("scenario_id")
+    _db.options.create_index("created_by")
+    _db.options.create_index([("scenario_id", 1), ("selected", 1)])
+
+    # User and Org indexes
     _db.users.create_index([("_id", ASCENDING)])
     _db.orgs.create_index([("_id", ASCENDING)])
 

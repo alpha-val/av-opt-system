@@ -13,6 +13,7 @@ from .pipeline_projects import router_projects
 from .pipeline_query import router_query_vault_data
 from .pipeline_users import router_auth
 from .pipeline_admin import router_admin
+from .scenario.pipeline_scenarios import router_scenarios
 
 
 @asynccontextmanager
@@ -50,6 +51,7 @@ app.include_router(router_costing, prefix="/api/v1")
 app.include_router(router_projects, prefix="/api/v1")
 app.include_router(router_auth, prefix="/api/v1")
 app.include_router(router_admin, prefix="/api/v1")
+app.include_router(router_scenarios, prefix="/api/v1")
 
 
 # Health
