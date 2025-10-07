@@ -1,0 +1,150 @@
+# Alpha-Val Code base
+
+# Data models
+```
+{
+"\_id": "507f1f77bcf86cd799439011",
+"name": "Copper Mountain Expansion",
+"code": "CM-2024-001",
+"description": "Phase 2 expansion to increase throughput from 60ktpd to 100ktpd",
+
+"metadata": {
+"country": "Chile",
+"region": "Antofagasta",
+"site_name": "Copper Mountain Mine",
+"coordinates": {
+"lat": -23.4567,
+"lon": -69.1234
+},
+"project_stage": "feasibility",
+"commodity": "copper",
+"ore_type": "sulfide",
+"design_capacity_tpd": 100000,
+"design_capacity_mtpa": 33.0,
+"mine_life_years": 25,
+"estimated_capex_usd": 450000000,
+"currency": "USD",
+"cost_basis_year": 2024
+},
+
+"settings": {
+"default_escalation_index": "CEPCI",
+"default_lang_factor_source": "Richardson_2019",
+"enable_downstream_analysis": true,
+"enable_opex_estimation": true,
+"enable_npv_calculation": true,
+"default_discount_rate": 0.10,
+"default_analysis_period_years": 20,
+"min_capacity_margin_pct": 10.0,
+"max_capacity_margin_pct": 50.0,
+"power_cost_usd_per_kwh": 0.085,
+"operating_hours_per_year": 8000,
+"require_cost_validation": true,
+"use_metric": true
+},
+
+"base_case": {
+"snapshot_date": "2024-10-04T12:00:00Z",
+"primary_crushing_p80_in": 8.0,
+"throughput_tph": 4167,
+"entity_ids": [
+"507f1f77bcf86cd799439012",
+"507f1f77bcf86cd799439013",
+"507f1f77bcf86cd799439014"
+],
+"entity_count_by_type": {
+"gyratory_crusher": 1,
+"cone_crusher": 2,
+"sag_mill": 1,
+"ball_mill": 2,
+"conveyor": 8,
+"screen": 3
+},
+"total_capex_base": 35000000,
+"total_opex_annual_base": 8500000,
+"description": "Current 60ktpd operation with single-stage SAG milling"
+},
+
+"data_inventory": {
+"cost_tables": [
+{
+"table_id": "507f1f77bcf86cd799439020",
+"name": "Crusher Equipment Costs 2024",
+"entity_type": "crusher",
+"row_count": 45,
+"last_updated": "2024-09-15T10:30:00Z"
+},
+{
+"table_id": "507f1f77bcf86cd799439021",
+"name": "Mill Equipment Costs 2024",
+"entity_type": "mill",
+"row_count": 32,
+"last_updated": "2024-09-15T10:35:00Z"
+}
+],
+"sizing_tables": [
+{
+"table_id": "507f1f77bcf86cd799439030",
+"name": "Metso Gyratory Crusher Sizing",
+"entity_type": "gyratory_crusher",
+"row_count": 18,
+"manufacturer": "Metso",
+"last_updated": "2024-08-20T14:00:00Z"
+}
+],
+"lang_factor_tables": [
+{
+"table_id": "507f1f77bcf86cd799439040",
+"name": "Richardson Lang Factors - Mining",
+"source": "Richardson_2019",
+"factor_count": 25,
+"last_updated": "2024-07-10T09:00:00Z"
+}
+],
+"escalation_indices": [
+"CEPCI",
+"M&S",
+"Platts_Steel"
+],
+"entity_count": 42,
+"entity_types": [
+"gyratory_crusher",
+"cone_crusher",
+"sag_mill",
+"ball_mill",
+"conveyor",
+"screen",
+"pump",
+"cyclone",
+"thickener"
+],
+"scenario_count": 5,
+"option_count": 23,
+"last_data_upload": "2024-10-01T16:45:00Z"
+},
+
+"status": "active",
+"owner_id": "user_12345",
+"team_member_ids": [
+"user_12346",
+"user_12347",
+"user_12348"
+],
+"visibility": "team",
+"tags": [
+"copper",
+"expansion",
+"SAG_milling",
+"high_priority"
+],
+"custom_fields": {
+"client_name": "Copper Mountain Mining Corp",
+"contract_number": "ENG-2024-042",
+"project_manager": "Jane Smith",
+"internal_code": "INT-CM-001"
+},
+
+"created_at": "2024-01-15T09:00:00Z",
+"updated_at": "2024-10-04T12:00:00Z"
+}
+```

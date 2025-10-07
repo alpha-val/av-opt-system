@@ -8,14 +8,10 @@
       "module": "flask",
       "jinja": true,
       "env": {
-        "FLASK_APP": "app:create_app()", // factory pattern
+        "FLASK_APP": "app:create_app()",
         "FLASK_ENV": "development"
       },
-      "args": [
-        "run",
-        "--no-debugger" // VS Code debugger will handle breakpoints
-        // "--no-reload"
-      ],
+      "args": ["run", "--no-debugger"],
       "cwd": "${workspaceFolder}/backend",
       "pythonPath": "${workspaceFolder}/backend/venv_3.12/bin/python3",
       "justMyCode": true
@@ -32,7 +28,9 @@
         "--host",
         "127.0.0.1",
         "--port",
-        "8000"
+        "8000",
+        "--log-level",
+        "info"
       ],
       "cwd": "${workspaceFolder}/backend",
       "envFile": "${workspaceFolder}/backend/.env",
@@ -41,9 +39,9 @@
       "console": "integratedTerminal"
     },
 
-    // --- FastAPI / Uvicorn (with --reload) — convenient dev mode ---
+    // --- FastAPI / Uvicorn (with --reload) — debug mode with auto-reload ---
     {
-      "name": "FastAPI: Dev (Reload)",
+      "name": "FastAPI: Dev (Reload + Debug)",
       "type": "python",
       "request": "launch",
       "module": "uvicorn",
@@ -55,14 +53,41 @@
         "8000",
         "--reload",
         "--reload-dir",
-        "app"
+        "app",
+        "--log-level",
+        "info"
       ],
       "cwd": "${workspaceFolder}/backend",
       "envFile": "${workspaceFolder}/backend/.env",
       "pythonPath": "${workspaceFolder}/backend/venv_3.12/bin/python3",
       "justMyCode": true,
-      "subProcess": true, // uvicorn --reload spawns a subprocess
+      "subProcess": true,
       "console": "integratedTerminal"
+    },
+
+    // --- NEW: FastAPI / Uvicorn (pure dev mode, no debugger) ---
+    {
+      "name": "FastAPI: Run (No Debug)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/venv_3.12/bin/uvicorn",
+      "args": [
+        "app.app_fastapi:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000",
+        "--reload",
+        "--reload-dir",
+        "app",
+        "--log-level",
+        "info"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/backend/.env",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "debugOptions": []
     }
   ]
 }

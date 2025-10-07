@@ -1,6 +1,6 @@
 # bronze_store.py
 from __future__ import annotations
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import os
 from datetime import datetime, timezone  # Add timezone import
 from pymongo import MongoClient, UpdateOne, ASCENDING
@@ -158,22 +158,43 @@ def upsert_table(
     doc_id: str,
     table_id: str,
     meta: Dict[str, Any],
-    preview_rows: List[Dict[str, Any]],
-    n_cols: int,
-    properties: Dict[str, Any] = None,
-):
-    rec = {
+    properties: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """
+    Upsert a table document in the 'tables' collection.
+
+    Args:
+        doc_id: Document ID
+        table_id: Unique table ID
+        meta: Table metadata (all fields to store)
+        properties: Additional properties (optional, defaults to meta)
+
+    Returns:
+        The stored document
+    """
+
+    if properties is None:
+        properties = meta
+
+    # Build the document - meta contains everything
+    doc = {
         "_id": table_id,
         "doc_id": doc_id,
-        "page": meta.get("page"),
-        "index": meta.get("index"),
-        "flavor": meta.get("flavor"),
-        "n_rows": len(preview_rows),
-        "n_cols": n_cols,
-        "preview": preview_rows[:5],
-        "properties": properties or {},
+        "table_id": table_id,
+        **meta,  # Spread all meta fields into doc
     }
-    _db.tables.replace_one({"_id": table_id}, rec, upsert=True)
+
+    # Add properties if different from meta
+    if properties != meta:
+        doc["properties"] = properties
+
+    _db.tables.replace_one(
+        {"_id": table_id},
+        doc,
+        upsert=True,
+    )
+
+    return doc
 
 
 def bulk_upsert_rows(rows: List[Dict[str, Any]]):
@@ -223,3 +244,62 @@ def bulk_upsert_mentions(mentions: List[Dict[str, Any]]):
         ops.append(UpdateOne({"_id": _id}, {"$set": m}, upsert=True))
     if ops:
         _db.mentions.bulk_write(ops, ordered=False)
+
+
+def get_tables(
+    project_id: Optional[str] = None,
+    doc_id: Optional[str] = None,
+    table_ids: Optional[List[str]] = None,
+    limit: int = 100,
+) -> List[Dict[str, Any]]:
+    """
+    Fetch table metadata from Bronze tables collection.
+
+    Args:
+        project_id: Filter by project
+        doc_id: Filter by document
+        table_ids: Filter by specific table IDs
+        limit: Maximum tables to return
+
+    Returns:
+        List of table metadata dictionaries
+    """
+    query = {}
+
+    if project_id:
+        query["project_id"] = project_id
+
+    if doc_id:
+        query["doc_id"] = doc_id
+
+    if table_ids:
+        query["table_id"] = {"$in": table_ids}
+
+    try:
+        cursor = _db.tables.find(query).limit(limit)
+        tables = list(cursor)
+        return tables
+    except Exception as e:
+        print(f"[BRONZE_STORE] - Failed to fetch tables: {e}")
+        return []
+
+
+def get_rows_for_table(table_id: str, limit: int = 1000) -> List[Dict[str, Any]]:
+    """
+    Fetch all rows for a specific table from Bronze rows collection.
+
+    Args:
+        table_id: Table identifier
+        limit: Maximum rows to return
+
+    Returns:
+        List of row documents
+    """
+    try:
+        cursor = _db.rows.find({"table_id": table_id}).sort("row_idx", 1).limit(limit)
+
+        rows = list(cursor)
+        return rows
+    except Exception as e:
+        print(f"[BRONZE_STORE] - Failed to fetch rows for table {table_id}: {e}")
+        return []

@@ -4,16 +4,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.bronze_store import ensure_bronze_indexes
+from .app_logging import setup_logging
 
-# from .etl_bronze_DELETE import router as etl_router
 from .etl_base_case import router_base_case
-from .etl_vault_data import router_vault_data
+from .etl_tabular_data import router_vault_data
 from .pipeline_costing import router_costing
 from .pipeline_projects import router_projects
 from .pipeline_query import router_query_vault_data
 from .pipeline_users import router_auth
 from .pipeline_admin import router_admin
 from .scenario.pipeline_scenarios import router_scenarios
+from .tabular_data.pipeline_tabular_data import router_ingest_tables
+from .hybrid.etl_hybrid import router_hybrid_etl
 
 
 @asynccontextmanager
@@ -34,6 +36,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Alpha-Val ETL (FastAPI)", version="0.1.0", lifespan=lifespan)
 
+# Setup logging at startup
+setup_logging()
+
 # CORS (tune as needed)
 app.add_middleware(
     CORSMiddleware,
@@ -51,8 +56,9 @@ app.include_router(router_costing, prefix="/api/v1")
 app.include_router(router_projects, prefix="/api/v1")
 app.include_router(router_auth, prefix="/api/v1")
 app.include_router(router_admin, prefix="/api/v1")
+app.include_router(router_hybrid_etl, prefix="/api/v1")
 app.include_router(router_scenarios, prefix="/api/v1")
-
+app.include_router(router_ingest_tables, prefix="/api/v1")
 
 # Health
 @app.get("/healthz")

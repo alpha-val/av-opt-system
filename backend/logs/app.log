@@ -1,0 +1,33 @@
+2025-10-07 14:09:53 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-07 14:13:20 - app.tabular_data.pipeline_tabular_data - INFO - [pipeline_tabular_data.py:313] - [TABULAR_PIPELINE] Starting table extraction for Pg 13 Gyratory Crusher Cost Tables.pdf
+2025-10-07 14:13:29 - app.tabular_data.pipeline_tabular_data - INFO - [pipeline_tabular_data.py:318] - [TABULAR_PIPELINE] Generated doc_id: e2adf89c-dd99-4385-b858-e1816b9bce0a
+2025-10-07 14:13:31 - app.tabular_data.pipeline_tabular_data - INFO - [pipeline_tabular_data.py:38] - [TABLE_EXTRACT] Extracted 3 tables using cascade
+2025-10-07 14:13:31 - app.tabular_data.pipeline_tabular_data - INFO - [pipeline_tabular_data.py:326] - [TABULAR_PIPELINE] Extracted 3 tables from PDF
+2025-10-07 14:13:31 - app.tabular_data.pipeline_tabular_data - INFO - [pipeline_tabular_data.py:374] - [TABULAR_PIPELINE] Processing table tbl::e2adf89c-dd99-4385-b858-e1816b9bce0a::p1::0 (3 rows)
+2025-10-07 14:13:31 - app.tabular_data.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-07 14:13:31 - app.tabular_data.pipeline_tabular_data - INFO - [pipeline_tabular_data.py:398] - [TABULAR_PIPELINE] Calling LLM for table tbl::e2adf89c-dd99-4385-b858-e1816b9bce0a::p1::0 (3 rows)
+2025-10-07 14:13:34 - app.tabular_data.extract_with_openai - INFO - [extract_with_openai.py:29] - Sending 12227 chars to OpenAI
+2025-10-07 14:14:00 - app.tabular_data.extract_with_openai - INFO - [extract_with_openai.py:46] - Received 2980 chars from OpenAI
+2025-10-07 14:14:00 - app.tabular_data.extract_with_openai - INFO - [extract_with_openai.py:57] - Extracted 4 nodes, 0 edges
+2025-10-07 14:14:00 - app.tabular_data.silver_store - INFO - [silver_store.py:69] - [SILVER_STORE] Stored 7 nodes (upserted: 4, modified: 3)
+2025-10-07 14:14:00 - app.tabular_data.silver_store - INFO - [silver_store.py:148] - [SILVER_STORE] Stored 4 edges (upserted: 4, modified: 0)
+2025-10-07 14:14:00 - app.tabular_data.pipeline_tabular_data - INFO - [pipeline_tabular_data.py:438] - [TABULAR_PIPELINE] Table tbl::e2adf89c-dd99-4385-b858-e1816b9bce0a::p1::0: 7 nodes, 4 edges
+2025-10-07 14:14:00 - app.tabular_data.pipeline_tabular_data - INFO - [pipeline_tabular_data.py:374] - [TABULAR_PIPELINE] Processing table tbl::e2adf89c-dd99-4385-b858-e1816b9bce0a::p1::1 (3 rows)
+2025-10-07 14:14:00 - app.tabular_data.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-07 14:14:00 - app.tabular_data.pipeline_tabular_data - INFO - [pipeline_tabular_data.py:398] - [TABULAR_PIPELINE] Calling LLM for table tbl::e2adf89c-dd99-4385-b858-e1816b9bce0a::p1::1 (3 rows)
+2025-10-07 14:14:00 - app.tabular_data.extract_with_openai - INFO - [extract_with_openai.py:29] - Sending 11472 chars to OpenAI
+2025-10-07 14:14:29 - app.tabular_data.extract_with_openai - INFO - [extract_with_openai.py:46] - Received 3786 chars from OpenAI
+2025-10-07 14:14:29 - app.tabular_data.extract_with_openai - INFO - [extract_with_openai.py:57] - Extracted 0 nodes, 0 edges
+2025-10-07 14:14:29 - app.tabular_data.silver_store - INFO - [silver_store.py:69] - [SILVER_STORE] Stored 3 nodes (upserted: 3, modified: 0)
+2025-10-07 14:14:29 - app.tabular_data.silver_store - WARNING - [silver_store.py:94] - [SILVER_STORE] No edges to store
+2025-10-07 14:14:29 - app.tabular_data.pipeline_tabular_data - INFO - [pipeline_tabular_data.py:438] - [TABULAR_PIPELINE] Table tbl::e2adf89c-dd99-4385-b858-e1816b9bce0a::p1::1: 3 nodes, 0 edges
+2025-10-07 14:14:29 - app.tabular_data.pipeline_tabular_data - INFO - [pipeline_tabular_data.py:374] - [TABULAR_PIPELINE] Processing table tbl::e2adf89c-dd99-4385-b858-e1816b9bce0a::p1::2 (3 rows)
+2025-10-07 14:14:29 - app.tabular_data.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-07 14:14:29 - app.tabular_data.pipeline_tabular_data - INFO - [pipeline_tabular_data.py:398] - [TABULAR_PIPELINE] Calling LLM for table tbl::e2adf89c-dd99-4385-b858-e1816b9bce0a::p1::2 (3 rows)
+2025-10-07 14:14:29 - app.tabular_data.extract_with_openai - INFO - [extract_with_openai.py:29] - Sending 11922 chars to OpenAI
+2025-10-07 14:15:01 - app.tabular_data.extract_with_openai - INFO - [extract_with_openai.py:46] - Received 4689 chars from OpenAI
+2025-10-07 14:15:01 - app.tabular_data.extract_with_openai - INFO - [extract_with_openai.py:57] - Extracted 9 nodes, 0 edges
+2025-10-07 14:15:02 - app.tabular_data.silver_store - INFO - [silver_store.py:69] - [SILVER_STORE] Stored 12 nodes (upserted: 8, modified: 4)
+2025-10-07 14:15:02 - app.tabular_data.silver_store - INFO - [silver_store.py:148] - [SILVER_STORE] Stored 9 edges (upserted: 9, modified: 0)
+2025-10-07 14:15:02 - app.tabular_data.pipeline_tabular_data - INFO - [pipeline_tabular_data.py:438] - [TABULAR_PIPELINE] Table tbl::e2adf89c-dd99-4385-b858-e1816b9bce0a::p1::2: 12 nodes, 9 edges
+2025-10-07 14:15:06 - app.tabular_data.pipeline_tabular_data - INFO - [pipeline_tabular_data.py:450] - [TABULAR_PIPELINE] Completed: {'doc_id': 'e2adf89c-dd99-4385-b858-e1816b9bce0a', 'filename': 'Pg 13 Gyratory Crusher Cost Tables.pdf', 'tables_processed': 3, 'rows_processed': 9, 'nodes_created': 22, 'edges_created': 13, 'errors': []}
