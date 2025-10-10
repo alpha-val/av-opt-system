@@ -160,6 +160,7 @@ const ProjectDashboard = () => {
   // Handle breadcrumb navigation
   const handleProjectsClick = useCallback(
     (event) => {
+      console.log("Navigating to all projects", event);
       event.preventDefault();
       navigate("/");
     },
@@ -429,7 +430,7 @@ const ProjectDashboard = () => {
           ...recentProjects.map((project) => (
             <MenuItem
               key={project.project_id}
-              onClick={() => handleProjectSelect(project.project_id)}
+              onClick={() => handleProjectSelect(project.id)}
             >
               {/* <ListItemIcon>
                 <FolderIcon fontSize="small" />

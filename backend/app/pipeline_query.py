@@ -41,10 +41,10 @@ def get_doc_summary(doc_id: str):
     doc = D.documents.find_one({"_id": doc_id}, {"_id": 0})
     if not doc:
         raise HTTPException(404, "Document not found")
-    chunk_count = D.chunks.count_documents({"doc_id": doc_id})
+    chunk_count = D.chunks.count_documents({"properties.doc_id": doc_id})
     tables = list(
         D.tables.find(
-            {"doc_id": doc_id},
+            {"properties.doc_id": doc_id},
             {"_id": 1, "page": 1, "index": 1, "n_rows": 1, "n_cols": 1},
         )
     )

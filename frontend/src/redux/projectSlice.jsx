@@ -73,7 +73,7 @@ export const fetchProjects = createAsyncThunk(
       if (project_type) params.append("project_type", project_type);
       if (search) params.append("search", search);
 
-      const response = await fetch(`${API_BASE_URL}/projects?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/projects/all?${params}`, {
         method: "GET",
         headers: getAuthHeaders(),
       });
@@ -86,7 +86,7 @@ export const fetchProjects = createAsyncThunk(
       }
 
       const data = await response.json();
-
+      console.log("[projectSlice] Fetched projects:", data);
       return data;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -278,11 +278,10 @@ export const fetchProjectSmart = createAsyncThunk(
   }
 );
 
-// Initial state
+// Initial state - Make sure projects array is always initialized
 const initialState = {
   projects: [],
-  // Add a cache for individual projects by ID
-  projectsCache: {}, // Structure: { "project-123": { data: {...}, lastFetched: timestamp } }
+  projectsCache: {},
   currentProject: null,
   projectStats: null,
   pagination: {
@@ -333,6 +332,10 @@ const projectSlice = createSlice({
       })
       .addCase(createProject.fulfilled, (state, action) => {
         state.loading.create = false;
+        if (!state.projects) {
+          state.projects = [];
+        }
+
         state.projects.unshift(action.payload);
         state.error = null;
       })
@@ -348,16 +351,33 @@ const projectSlice = createSlice({
       })
       .addCase(fetchProjects.fulfilled, (state, action) => {
         state.loading.fetch = false;
-        state.projects = action.payload.projects;
-        state.pagination = {
-          total: action.payload.total,
-          page: action.payload.page,
-          limit: action.payload.limit,
-        };
+
+        if (Array.isArray(action.payload)) {
+          // Direct array response
+          state.projects = action.payload;
+          state.pagination = {
+            total: action.payload.length,
+            page: 1,
+            limit: action.payload.length,
+          };
+        } else if (action.payload && action.payload.projects) {
+          // Object with projects array
+          state.projects = action.payload.projects || [];
+          state.pagination = {
+            total: action.payload.total || 0,
+            page: action.payload.page || 1,
+            limit: action.payload.limit || 10,
+          };
+        } else {
+          // Fallback
+          state.projects = [];
+        }
+
         state.error = null;
       })
       .addCase(fetchProjects.rejected, (state, action) => {
         state.loading.fetch = false;
+        state.projects = []; // ✅ Reset to empty array on error
         state.error = action.payload;
       })
 
@@ -371,10 +391,12 @@ const projectSlice = createSlice({
         state.currentProject = action.payload;
 
         // Cache the project data with timestamp
-        state.projectsCache[action.payload.project_id] = {
-          data: action.payload,
-          lastFetched: Date.now(),
-        };
+        if (action.payload && action.payload.id) {
+          state.projectsCache[action.payload.id] = {
+            data: action.payload,
+            lastFetched: Date.now(),
+          };
+        }
 
         state.error = null;
       })
@@ -390,21 +412,29 @@ const projectSlice = createSlice({
       })
       .addCase(updateProject.fulfilled, (state, action) => {
         state.loading.update = false;
+
+        // ✅ Ensure projects array exists
+        if (!state.projects) {
+          state.projects = [];
+        }
+
         const index = state.projects.findIndex(
-          (p) => p.project_id === action.payload.project_id
+          (p) => p.id === action.payload.id
         );
         if (index !== -1) {
           state.projects[index] = action.payload;
         }
-        if (state.currentProject?.project_id === action.payload.project_id) {
+        if (state.currentProject?.id === action.payload.id) {
           state.currentProject = action.payload;
         }
 
         // Update cache
-        state.projectsCache[action.payload.project_id] = {
-          data: action.payload,
-          lastFetched: Date.now(),
-        };
+        if (action.payload && action.payload.id) {
+          state.projectsCache[action.payload.id] = {
+            data: action.payload,
+            lastFetched: Date.now(),
+          };
+        }
 
         state.error = null;
       })
@@ -420,10 +450,16 @@ const projectSlice = createSlice({
       })
       .addCase(deleteProject.fulfilled, (state, action) => {
         state.loading.delete = false;
+
+        // ✅ Ensure projects array exists
+        if (!state.projects) {
+          state.projects = [];
+        }
+
         state.projects = state.projects.filter(
-          (p) => p.project_id !== action.payload.projectId
+          (p) => p.id !== action.payload.projectId
         );
-        if (state.currentProject?.project_id === action.payload.projectId) {
+        if (state.currentProject?.id === action.payload.projectId) {
           state.currentProject = null;
         }
         state.error = null;
@@ -435,8 +471,12 @@ const projectSlice = createSlice({
 
       // Archive project
       .addCase(archiveProject.fulfilled, (state, action) => {
+        if (!state.projects) {
+          state.projects = [];
+        }
+
         const index = state.projects.findIndex(
-          (p) => p.project_id === action.payload.projectId
+          (p) => p.id === action.payload.projectId
         );
         if (index !== -1) {
           state.projects[index].status = "archived";
@@ -467,8 +507,8 @@ const projectSlice = createSlice({
         state.loading.fetch = false;
         state.currentProject = action.payload;
 
-        if (action.payload && action.payload.project_id) {
-          state.projectsCache[action.payload.project_id] = {
+        if (action.payload && action.payload.id) {
+          state.projectsCache[action.payload.id] = {
             data: action.payload,
             lastFetched: Date.now(),
           };
@@ -493,7 +533,7 @@ export const {
 } = projectSlice.actions;
 
 // Selectors
-export const selectProjects = (state) => state.projects.projects;
+export const selectProjects = (state) => state.projects.projects || [];
 export const selectCurrentProject = (state) => state.projects.currentProject;
 export const selectProjectStats = (state) => state.projects.projectStats;
 export const selectProjectsPagination = (state) => state.projects.pagination;
