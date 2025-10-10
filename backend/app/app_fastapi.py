@@ -6,6 +6,7 @@ import logging
 import sys
 
 from app.bronze_store import ensure_bronze_indexes
+from .app_logging import setup_logging
 
 from .etl_base_case import router_base_case
 from .pipeline_costing import router_costing
@@ -52,6 +53,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Alpha-Val ETL (FastAPI)", version="0.1.0", lifespan=lifespan)
 
+# Setup logging at startup
+setup_logging()
+
 # CORS (tune as needed)
 app.add_middleware(
     CORSMiddleware,
@@ -65,7 +69,6 @@ app.add_middleware(
 app.include_router(router_base_case, prefix="/api/v1")
 app.include_router(router_query_vault_data, prefix="/api/v1")
 app.include_router(router_costing, prefix="/api/v1")
-# app.include_router(router_projects, prefix="/api/v1")
 app.include_router(router_auth, prefix="/api/v1")
 app.include_router(router_admin, prefix="/api/v1")
 app.include_router(router_scenarios, prefix="/api/v1")

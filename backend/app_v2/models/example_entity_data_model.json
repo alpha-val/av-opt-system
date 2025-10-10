@@ -1,0 +1,149 @@
+{
+  "_id": "507f1f77bcf86cd799439011",
+  "project_id": "507f1f77bcf86cd799439001",
+
+  "name": "Primary Gyratory Crusher",
+  "entity_type": "gyratory_crusher",
+  "entity_category": "crushing",
+  "description": "Primary crushing stage for ROM ore",
+  "tag_number": "CR-001",
+  "location": "Primary Crushing Station - North",
+
+  "status": "existing",
+  "is_base_case": true,
+  "scenario_id": null,
+  "option_id": null,
+
+  "specifications": {
+    "manufacturer": "Metso",
+    "model": "Superior MKII 60-89",
+    "serial_number": "MET-2019-1234",
+
+    "capacity": 5000,
+    "capacity_unit": "tph",
+    "capacity_margin_pct": 15.0,
+
+    "power_kw": 1120,
+    "voltage": "11kV",
+
+    "length_m": 8.5,
+    "width_m": 6.2,
+    "height_m": 12.3,
+    "weight_kg": 285000,
+    "footprint_m2": 52.7,
+
+    "feed_opening_in": 60.0,
+    "closed_side_setting_in": 8.0,
+    "min_p80_in": 6.0,
+    "max_p80_in": 10.0,
+    "reduction_ratio": 7.5,
+    "max_feed_size_in": 54.0,
+    "crusher_type": "gyratory",
+    "head_diameter_in": 60.0,
+    "mantle_diameter_in": 89.0,
+
+    "custom_specs": {
+      "eccentric_speed_rpm": 185,
+      "throw_inches": 2.5,
+      "liner_material": "Mn14Cr2",
+      "feed_arrangement": "center_feed"
+    }
+  },
+
+  "cost_data": {
+    "purchase_cost": 3500000,
+    "purchase_cost_year": 2020,
+    "purchase_cost_currency": "USD",
+
+    "installation_cost": 8750000,
+    "total_installed_cost": 12250000,
+
+    "cost_breakdown": {
+      "equipment_supply": 3500000,
+      "civil_works": 3850000,
+      "structural_steel": 1925000,
+      "mechanical_installation": 1650000,
+      "electrical_installation": 825000,
+      "instrumentation": 500000
+    },
+
+    "annual_maintenance_cost": 450000,
+    "annual_power_cost": 320000,
+    "annual_labor_cost": 80000,
+    "total_annual_opex": 850000,
+
+    "cost_source": "vendor_quote",
+    "cost_source_table_id": "507f1f77bcf86cd799439020",
+    "cost_confidence": "high",
+    "cost_notes": "Quote from Metso dated 2023-08-15. Includes 3-year warranty."
+  },
+
+  "performance_data": {
+    "operating_hours_per_year": 8000,
+    "availability_pct": 92.5,
+    "utilization_pct": 87.3,
+
+    "actual_throughput": 4800,
+    "throughput_unit": "tph",
+
+    "specific_energy_kwh_per_tonne": 0.234,
+    "annual_energy_consumption_kwh": 8960000,
+
+    "liner_life_hours": 4000,
+    "media_consumption_kg_per_tonne": 0.0,
+
+    "performance_metrics": {
+      "reduction_achieved": 7.2,
+      "average_css_in": 7.8,
+      "uptime_pct": 95.2,
+      "mtbf_hours": 450,
+      "mttr_hours": 8.5
+    }
+  },
+
+  "relationships": [
+    {
+      "related_entity_id": "507f1f77bcf86cd799439012",
+      "relationship_type": "receives_from",
+      "relationship_context": "ROM ore feed via grizzly",
+      "material_flow_tph": 5000,
+      "stream_name": "ROM_ORE_001"
+    },
+    {
+      "related_entity_id": "507f1f77bcf86cd799439013",
+      "relationship_type": "feeds_to",
+      "relationship_context": "Discharge to conveyor belt",
+      "material_flow_tph": 4800,
+      "stream_name": "CRUSHED_ORE_001"
+    },
+    {
+      "related_entity_id": "507f1f77bcf86cd799439014",
+      "relationship_type": "supported_by",
+      "relationship_context": "Lubrication system",
+      "material_flow_tph": null,
+      "stream_name": null
+    }
+  ],
+
+  "process_circuit": "primary_crushing",
+  "process_stage": 1,
+
+  "data_source": "vendor_specifications",
+  "source_document_ids": [
+    "507f1f77bcf86cd799439030",
+    "507f1f77bcf86cd799439031"
+  ],
+  "confidence": "high",
+
+  "tags": ["primary_crushing", "critical_equipment", "high_capacity", "metso"],
+  "custom_fields": {
+    "asset_id": "AST-CR-001",
+    "maintenance_schedule": "PM-WEEKLY",
+    "insurance_value": 15000000,
+    "criticality_rating": "A1"
+  },
+  "notes": "Installed 2020. Currently operating at 96% of rated capacity.",
+
+  "created_at": "2024-01-15T09:00:00Z",
+  "updated_at": "2024-10-04T12:00:00Z"
+}

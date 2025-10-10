@@ -29,11 +29,16 @@
         "127.0.0.1",
         "--port",
         "8000",
+<<<<<<< HEAD
         "--reload",
         "--reload-dir",
         "app",
         "--log-config",
         "logging_config.json"
+=======
+        "--log-level",
+        "info"
+>>>>>>> 8586fb7365fceccfb9cbf669ad8be8bd3bc91d39
       ],
       "cwd": "${workspaceFolder}/backend",
       "envFile": "${workspaceFolder}/backend/.env",
@@ -46,9 +51,13 @@
       }
     },
 
+<<<<<<< HEAD
     // --- FastAPI / Uvicorn (dev mode - faster reload, no breakpoints) ---
+=======
+    // --- FastAPI / Uvicorn (with --reload) — debug mode with auto-reload ---
+>>>>>>> 8586fb7365fceccfb9cbf669ad8be8bd3bc91d39
     {
-      "name": "FastAPI: Dev (Reload)",
+      "name": "FastAPI: Dev (Reload + Debug)",
       "type": "python",
       "request": "launch",
       "module": "uvicorn",
@@ -60,7 +69,9 @@
         "8000",
         "--reload",
         "--reload-dir",
-        "app"
+        "app",
+        "--log-level",
+        "info"
       ],
       "cwd": "${workspaceFolder}/backend",
       "envFile": "${workspaceFolder}/backend/.env",
@@ -68,6 +79,31 @@
       "justMyCode": true,
       "subProcess": true,
       "console": "integratedTerminal"
+    },
+
+    // --- NEW: FastAPI / Uvicorn (pure dev mode, no debugger) ---
+    {
+      "name": "FastAPI: Run (No Debug)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/venv_3.12/bin/uvicorn",
+      "args": [
+        "app.app_fastapi:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000",
+        "--reload",
+        "--reload-dir",
+        "app",
+        "--log-level",
+        "info"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/backend/.env",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "debugOptions": []
     }
   ]
 }

@@ -1,0 +1,208 @@
+{
+  "_id": "507f1f77bcf86cd799439020",
+  "project_id": "507f1f77bcf86cd799439001",
+
+  "name": "Crusher Equipment Costs 2024",
+  "table_type": "equipment_cost",
+  "description": "Equipment purchase costs for various crusher models from multiple manufacturers. Compiled from vendor quotes and historical project data.",
+
+  "entity_type": "crusher",
+  "entity_category": "crushing",
+
+  "columns": [
+    {
+      "name": "manufacturer",
+      "data_type": "string",
+      "unit": null,
+      "description": "Equipment manufacturer",
+      "required": true,
+      "searchable": true
+    },
+    {
+      "name": "model",
+      "data_type": "string",
+      "unit": null,
+      "description": "Model designation",
+      "required": true,
+      "searchable": true
+    },
+    {
+      "name": "crusher_type",
+      "data_type": "string",
+      "unit": null,
+      "description": "Type of crusher",
+      "required": true,
+      "allowed_values": ["gyratory", "cone", "jaw", "impact"]
+    },
+    {
+      "name": "capacity_tph",
+      "data_type": "number",
+      "unit": "tph",
+      "description": "Rated capacity in tonnes per hour",
+      "required": true,
+      "min_value": 0
+    },
+    {
+      "name": "power_kw",
+      "data_type": "number",
+      "unit": "kW",
+      "description": "Installed power",
+      "required": true,
+      "min_value": 0
+    },
+    {
+      "name": "feed_opening_in",
+      "data_type": "number",
+      "unit": "inches",
+      "description": "Feed opening size",
+      "required": false,
+      "min_value": 0
+    },
+    {
+      "name": "css_in",
+      "data_type": "number",
+      "unit": "inches",
+      "description": "Closed side setting",
+      "required": false,
+      "min_value": 0
+    },
+    {
+      "name": "purchase_cost",
+      "data_type": "number",
+      "unit": "USD",
+      "description": "Equipment purchase cost",
+      "required": true,
+      "min_value": 0
+    },
+    {
+      "name": "cost_year",
+      "data_type": "integer",
+      "unit": "year",
+      "description": "Year of cost basis",
+      "required": true,
+      "min_value": 2000,
+      "max_value": 2030
+    },
+    {
+      "name": "currency",
+      "data_type": "string",
+      "unit": null,
+      "description": "Cost currency",
+      "required": true,
+      "allowed_values": ["USD", "CAD", "EUR", "AUD", "CLP"]
+    },
+    {
+      "name": "source",
+      "data_type": "string",
+      "unit": null,
+      "description": "Data source",
+      "required": false
+    },
+    {
+      "name": "confidence",
+      "data_type": "string",
+      "unit": null,
+      "description": "Data confidence level",
+      "required": false,
+      "allowed_values": ["high", "medium", "low"]
+    }
+  ],
+
+  "rows": [
+    {
+      "row_id": "row_1",
+      "manufacturer": "Metso",
+      "model": "Superior MKII 60-89",
+      "crusher_type": "gyratory",
+      "capacity_tph": 5000,
+      "power_kw": 1120,
+      "feed_opening_in": 60.0,
+      "css_in": 8.0,
+      "purchase_cost": 3500000,
+      "cost_year": 2020,
+      "currency": "USD",
+      "source": "Vendor quote MET-2023-Q145",
+      "confidence": "high"
+    },
+    {
+      "row_id": "row_2",
+      "manufacturer": "Metso",
+      "model": "Superior MKII 54-75",
+      "crusher_type": "gyratory",
+      "capacity_tph": 4000,
+      "power_kw": 900,
+      "feed_opening_in": 54.0,
+      "css_in": 7.0,
+      "purchase_cost": 3200000,
+      "cost_year": 2020,
+      "currency": "USD",
+      "source": "Historical project CP-2021-003",
+      "confidence": "high"
+    },
+    {
+      "row_id": "row_3",
+      "manufacturer": "Sandvik",
+      "model": "CH895",
+      "crusher_type": "cone",
+      "capacity_tph": 1200,
+      "power_kw": 630,
+      "feed_opening_in": 24.0,
+      "css_in": 1.5,
+      "purchase_cost": 2200000,
+      "cost_year": 2021,
+      "currency": "USD",
+      "source": "Vendor quote SAN-2024-Q087",
+      "confidence": "high"
+    },
+    {
+      "row_id": "row_4",
+      "manufacturer": "Sandvik",
+      "model": "CH880",
+      "crusher_type": "cone",
+      "capacity_tph": 900,
+      "power_kw": 500,
+      "feed_opening_in": 20.0,
+      "css_in": 1.25,
+      "purchase_cost": 1850000,
+      "cost_year": 2021,
+      "currency": "USD",
+      "source": "Historical project CP-2022-008",
+      "confidence": "medium"
+    },
+    {
+      "row_id": "row_5",
+      "manufacturer": "ThyssenKrupp",
+      "model": "KB 63-89",
+      "crusher_type": "gyratory",
+      "capacity_tph": 4500,
+      "power_kw": 1000,
+      "feed_opening_in": 63.0,
+      "css_in": 7.5,
+      "purchase_cost": 3400000,
+      "cost_year": 2019,
+      "currency": "USD",
+      "source": "Cost database COSTMINE-2019",
+      "confidence": "medium"
+    }
+  ],
+
+  "metadata": {
+    "data_source": "Mixed: vendor quotes, historical projects, cost databases",
+    "last_updated": "2024-09-15T10:30:00Z",
+    "update_frequency": "quarterly",
+    "validation_status": "validated",
+    "validation_date": "2024-09-20T14:00:00Z",
+    "validated_by": "user_12345",
+    "notes": "Costs represent FOB equipment only, no freight or installation. All costs converted to USD at time of quote.",
+    "version": "2.1",
+    "contact": "procurement@example.com"
+  },
+
+  "tags": ["crushing", "equipment_costs", "vendor_quotes", "2024"],
+
+  "visibility": "team",
+  "owner_id": "user_12345",
+
+  "created_at": "2024-01-10T08:00:00Z",
+  "updated_at": "2024-09-15T10:30:00Z"
+}
