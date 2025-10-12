@@ -15,7 +15,7 @@ from .pipeline_query import router_query_vault_data
 from .pipeline_users import router_auth
 from .pipeline_admin import router_admin
 from .scenario.pipeline_scenarios import router_scenarios
-from .tabular_data.pipeline_tabular_data import router_ingest_tables
+
 
 # API V2
 
@@ -72,11 +72,11 @@ app.include_router(router_costing, prefix="/api/v1")
 app.include_router(router_auth, prefix="/api/v1")
 app.include_router(router_admin, prefix="/api/v1")
 app.include_router(router_scenarios, prefix="/api/v1")
-app.include_router(router_ingest_tables, prefix="/api/v1")
 
 
 app.include_router(router_for_projects, prefix="/api/v1")
 app.include_router(router_for_documents, prefix="/api/v1", tags=["documents"])
+
 
 # Health
 @app.get("/healthz")

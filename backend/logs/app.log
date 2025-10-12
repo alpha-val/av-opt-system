@@ -33,3 +33,438 @@
 2025-10-07 14:15:06 - app.tabular_data.pipeline_tabular_data - INFO - [pipeline_tabular_data.py:450] - [TABULAR_PIPELINE] Completed: {'doc_id': 'e2adf89c-dd99-4385-b858-e1816b9bce0a', 'filename': 'Pg 13 Gyratory Crusher Cost Tables.pdf', 'tables_processed': 3, 'rows_processed': 9, 'nodes_created': 22, 'edges_created': 13, 'errors': []}
 2025-10-10 11:52:38 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
 2025-10-10 11:53:12 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 12:20:34 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 12:21:58 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 12:26:31 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 12:27:03 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 12:31:59 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 12:58:00 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 13:09:42 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 13:11:58 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 14:20:43 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 14:21:23 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 14:25:51 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 14:26:03 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 14:26:58 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 14:30:55 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 14:35:42 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 14:44:43 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 14:46:56 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 14:52:27 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 14:53:44 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 14:53:54 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 14:58:14 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 15:02:27 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 15:02:41 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 15:02:53 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 15:04:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 18:57:03 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:453] - [TABULAR_PIPELINE] Starting table extraction for Origin of the 0_16mm end product.pdf
+2025-10-10 18:57:09 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:461] - [TABULAR_PIPELINE] Text extraction failed: too many values to unpack (expected 3)
+2025-10-10 18:58:16 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-10 18:58:34 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:453] - [TABULAR_PIPELINE] Starting table extraction for Origin of the 0_16mm end product.pdf
+2025-10-10 18:58:38 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:459] - [TABULAR_PIPELINE] Processed doc_id: ee91bd8c-baad-4da5-8101-9434538093c2
+2025-10-10 18:58:48 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:44] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-10 18:58:58 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:467] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-10 18:59:31 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:517] - [TABULAR_PIPELINE] Processing table tbl::ee91bd8c-baad-4da5-8101-9434538093c2::p1::0 (6 rows)
+2025-10-10 18:59:56 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:538] - [TABULAR_PIPELINE] Created 1 chunks for table tbl::ee91bd8c-baad-4da5-8101-9434538093c2::p1::0
+2025-10-10 19:00:11 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:608] - [TABULAR_PIPELINE] Failed to process table tbl::ee91bd8c-baad-4da5-8101-9434538093c2::p1::0: slice indices must be integers or None or have an __index__ method
+2025-10-10 19:00:32 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:615] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 0 nodes, 0 edges
+2025-10-10 19:00:32 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:628] - [TABULAR_PIPELINE] Database write failed: 'properties'
+2025-10-11 00:22:50 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 08:57:37 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 09:04:28 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 09:22:09 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 09:40:44 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 11:15:42 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:464] - [TABULAR_PIPELINE] Starting table extraction for Origin of the 0_16mm end product.pdf
+2025-10-11 11:15:42 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:470] - [TABULAR_PIPELINE] Processed doc_id: 41fe52cf-fbdf-41af-8c2d-3d97ae56e262
+2025-10-11 11:15:48 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:44] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-11 11:15:48 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:478] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-11 11:15:48 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:528] - [TABULAR_PIPELINE] Processing table tbl::41fe52cf-fbdf-41af-8c2d-3d97ae56e262::p1::0 (6 rows)
+2025-10-11 11:16:05 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:549] - [TABULAR_PIPELINE] Created 1 chunks for table tbl::41fe52cf-fbdf-41af-8c2d-3d97ae56e262::p1::0
+2025-10-11 11:16:05 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:619] - [TABULAR_PIPELINE] Failed to process table tbl::41fe52cf-fbdf-41af-8c2d-3d97ae56e262::p1::0: slice indices must be integers or None or have an __index__ method
+2025-10-11 11:16:05 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:626] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 0 nodes, 0 edges
+2025-10-11 11:16:05 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:639] - [TABULAR_PIPELINE] Database write failed: 'seq'
+2025-10-11 11:18:07 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 11:20:08 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 11:20:54 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:468] - [TABULAR_PIPELINE] Starting table extraction for Origin of the 0_16mm end product.pdf
+2025-10-11 11:20:55 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:476] - [TABULAR_PIPELINE] Processed doc_id: 7e9bae19-8ca0-42d4-8548-cfc6c2918a40
+2025-10-11 11:20:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:44] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-11 11:20:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:484] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-11 11:20:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:534] - [TABULAR_PIPELINE] Processing table tbl::7e9bae19-8ca0-42d4-8548-cfc6c2918a40::p1::0 (6 rows)
+2025-10-11 11:20:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:555] - [TABULAR_PIPELINE] Created 1 chunks for table tbl::7e9bae19-8ca0-42d4-8548-cfc6c2918a40::p1::0
+2025-10-11 11:20:57 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:625] - [TABULAR_PIPELINE] Failed to process table tbl::7e9bae19-8ca0-42d4-8548-cfc6c2918a40::p1::0: slice indices must be integers or None or have an __index__ method
+2025-10-11 11:20:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:633] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 0 nodes, 0 edges
+2025-10-11 11:20:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:666] - [TABULAR_PIPELINE] Completed: {'doc_id': '7e9bae19-8ca0-42d4-8548-cfc6c2918a40', 'filename': 'Origin of the 0_16mm end product.pdf', 'file_size': 60379, 'file_sha256': '3d5979fa026e7ec196fb6fc713d7c4d506de103e4cb38983c106c4d58d9b0272', 'pages': 1, 'tables_processed': 1, 'rows_processed': 0, 'chunks_written': 1, 'entities_written': 0, 'relations_written': 0, 'errors': [{'table_id': 'tbl::7e9bae19-8ca0-42d4-8548-cfc6c2918a40::p1::0', 'error': 'slice indices must be integers or None or have an __index__ method'}]}
+2025-10-11 11:23:15 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 11:24:30 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 11:29:57 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 11:30:29 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:474] - [TABULAR_PIPELINE] Starting table extraction for Origin of the 0_16mm end product.pdf
+2025-10-11 11:30:29 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:482] - [TABULAR_PIPELINE] Processed doc_id: 2a1f1c2d-d128-455f-912c-55337ff3f213
+2025-10-11 11:30:31 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:44] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-11 11:30:31 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:490] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-11 11:30:31 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:540] - [TABULAR_PIPELINE] Processing table tbl::2a1f1c2d-d128-455f-912c-55337ff3f213::p1::0 (6 rows)
+2025-10-11 11:30:31 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:561] - [TABULAR_PIPELINE] Created 1 chunks for table tbl::2a1f1c2d-d128-455f-912c-55337ff3f213::p1::0
+2025-10-11 11:30:31 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 6 rows, 6 columns
+2025-10-11 11:30:31 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:580] - [TABULAR_PIPELINE] Calling LLM for table tbl::2a1f1c2d-d128-455f-912c-55337ff3f213::p1::0 (6 rows)
+2025-10-11 11:30:34 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:29] - [TABULAR DATA] Sending 7933 chars to OpenAI
+2025-10-11 11:30:51 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:46] - Received 1915 chars from OpenAI
+2025-10-11 11:30:51 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:57] - Extracted 1 nodes, 1 edges
+2025-10-11 11:30:51 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:631] - [TABULAR_PIPELINE] Failed to process table tbl::2a1f1c2d-d128-455f-912c-55337ff3f213::p1::0: 'str' object has no attribute 'get'
+2025-10-11 11:30:51 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:639] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 0 nodes, 0 edges
+2025-10-11 11:33:43 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:672] - [TABULAR_PIPELINE] Completed: {'doc_id': '2a1f1c2d-d128-455f-912c-55337ff3f213', 'filename': 'Origin of the 0_16mm end product.pdf', 'file_size': 60379, 'file_sha256': '3d5979fa026e7ec196fb6fc713d7c4d506de103e4cb38983c106c4d58d9b0272', 'pages': 1, 'tables_processed': 1, 'rows_processed': 6, 'chunks_written': 1, 'entities_written': 0, 'relations_written': 0, 'errors': [{'table_id': 'tbl::2a1f1c2d-d128-455f-912c-55337ff3f213::p1::0', 'error': "'str' object has no attribute 'get'"}]}
+2025-10-11 11:34:49 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 11:35:24 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 11:35:51 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:474] - [TABULAR_PIPELINE] Starting table extraction for Origin of the 0_16mm end product.pdf
+2025-10-11 11:35:51 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:482] - [TABULAR_PIPELINE] Processed doc_id: 4ba5ae16-f71e-454d-81d5-c3a3829e262e
+2025-10-11 11:35:53 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:44] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-11 11:35:53 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:490] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-11 11:35:53 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:540] - [TABULAR_PIPELINE] Processing table tbl::4ba5ae16-f71e-454d-81d5-c3a3829e262e::p1::0 (6 rows)
+2025-10-11 11:35:53 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:561] - [TABULAR_PIPELINE] Created 1 chunks for table tbl::4ba5ae16-f71e-454d-81d5-c3a3829e262e::p1::0
+2025-10-11 11:35:53 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 6 rows, 6 columns
+2025-10-11 11:35:53 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:580] - [TABULAR_PIPELINE] Calling LLM for table tbl::4ba5ae16-f71e-454d-81d5-c3a3829e262e::p1::0 (6 rows)
+2025-10-11 11:36:08 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:29] - [TABULAR DATA] Sending 7933 chars to OpenAI
+2025-10-11 11:36:13 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:46] - Received 1915 chars from OpenAI
+2025-10-11 11:36:13 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:57] - Extracted 1 nodes, 1 edges
+2025-10-11 11:36:44 - app.etl_tables.etl_for_tabular_data - WARNING - [etl_for_tabular_data.py:601] - [TABULAR_PIPELINE] No valid nodes or edges returned for tbl::4ba5ae16-f71e-454d-81d5-c3a3829e262e::p1::0
+2025-10-11 11:36:44 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:650] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 0 nodes, 0 edges
+2025-10-11 11:36:44 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:683] - [TABULAR_PIPELINE] Completed: {'doc_id': '4ba5ae16-f71e-454d-81d5-c3a3829e262e', 'filename': 'Origin of the 0_16mm end product.pdf', 'file_size': 60379, 'file_sha256': '3d5979fa026e7ec196fb6fc713d7c4d506de103e4cb38983c106c4d58d9b0272', 'pages': 1, 'tables_processed': 1, 'rows_processed': 6, 'chunks_written': 1, 'entities_written': 0, 'relations_written': 0, 'errors': [{'table_id': 'tbl::4ba5ae16-f71e-454d-81d5-c3a3829e262e::p1::0', 'error': 'LLM returned invalid response format'}]}
+2025-10-11 11:40:22 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 11:40:49 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:476] - [TABULAR_PIPELINE] Starting table extraction for Origin of the 0_16mm end product.pdf
+2025-10-11 11:40:49 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:484] - [TABULAR_PIPELINE] Processed doc_id: b972b9e5-26a8-40d1-8723-9506272d00f9
+2025-10-11 11:40:51 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:46] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-11 11:40:51 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:492] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-11 11:40:51 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:542] - [TABULAR_PIPELINE] Processing table tbl::b972b9e5-26a8-40d1-8723-9506272d00f9::p1::0 (6 rows)
+2025-10-11 11:40:51 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:563] - [TABULAR_PIPELINE] Created 1 chunks for table tbl::b972b9e5-26a8-40d1-8723-9506272d00f9::p1::0
+2025-10-11 11:40:51 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 6 rows, 6 columns
+2025-10-11 11:40:51 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:582] - [TABULAR_PIPELINE] Calling LLM for table tbl::b972b9e5-26a8-40d1-8723-9506272d00f9::p1::0 (6 rows)
+2025-10-11 11:41:18 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:645] - [TABULAR_PIPELINE] Failed to process table tbl::b972b9e5-26a8-40d1-8723-9506272d00f9::p1::0: 'str' object has no attribute 'get'
+2025-10-11 11:41:43 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:653] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 0 nodes, 0 edges
+2025-10-11 11:41:54 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:686] - [TABULAR_PIPELINE] Completed: {'doc_id': 'b972b9e5-26a8-40d1-8723-9506272d00f9', 'filename': 'Origin of the 0_16mm end product.pdf', 'file_size': 60379, 'file_sha256': '3d5979fa026e7ec196fb6fc713d7c4d506de103e4cb38983c106c4d58d9b0272', 'pages': 1, 'tables_processed': 1, 'rows_processed': 6, 'chunks_written': 1, 'entities_written': 0, 'relations_written': 0, 'errors': [{'table_id': 'tbl::b972b9e5-26a8-40d1-8723-9506272d00f9::p1::0', 'error': "'str' object has no attribute 'get'"}]}
+2025-10-11 11:42:44 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:476] - [TABULAR_PIPELINE] Starting table extraction for Origin of the 0_16mm end product.pdf
+2025-10-11 11:42:44 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:484] - [TABULAR_PIPELINE] Processed doc_id: 8ca48a56-d2ca-467e-99bb-591ff253b345
+2025-10-11 11:42:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:46] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-11 11:42:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:492] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-11 11:42:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:542] - [TABULAR_PIPELINE] Processing table tbl::8ca48a56-d2ca-467e-99bb-591ff253b345::p1::0 (6 rows)
+2025-10-11 11:42:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:563] - [TABULAR_PIPELINE] Created 1 chunks for table tbl::8ca48a56-d2ca-467e-99bb-591ff253b345::p1::0
+2025-10-11 11:42:45 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 6 rows, 6 columns
+2025-10-11 11:42:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:582] - [TABULAR_PIPELINE] Calling LLM for table tbl::8ca48a56-d2ca-467e-99bb-591ff253b345::p1::0 (6 rows)
+2025-10-11 11:42:49 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:645] - [TABULAR_PIPELINE] Failed to process table tbl::8ca48a56-d2ca-467e-99bb-591ff253b345::p1::0: 'str' object has no attribute 'get'
+2025-10-11 11:42:49 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:653] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 0 nodes, 0 edges
+2025-10-11 11:42:49 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:686] - [TABULAR_PIPELINE] Completed: {'doc_id': '8ca48a56-d2ca-467e-99bb-591ff253b345', 'filename': 'Origin of the 0_16mm end product.pdf', 'file_size': 60379, 'file_sha256': '3d5979fa026e7ec196fb6fc713d7c4d506de103e4cb38983c106c4d58d9b0272', 'pages': 1, 'tables_processed': 1, 'rows_processed': 6, 'chunks_written': 1, 'entities_written': 0, 'relations_written': 0, 'errors': [{'table_id': 'tbl::8ca48a56-d2ca-467e-99bb-591ff253b345::p1::0', 'error': "'str' object has no attribute 'get'"}]}
+2025-10-11 11:43:30 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:476] - [TABULAR_PIPELINE] Starting table extraction for Pg 13 Gyratory Crusher Cost Tables.pdf
+2025-10-11 11:43:31 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:484] - [TABULAR_PIPELINE] Processed doc_id: 51cd2bcb-df81-425b-ad9a-c9fdf755e2ea
+2025-10-11 11:43:32 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:46] - [TABLE_EXTRACT] Extracted 3 tables using cascade
+2025-10-11 11:43:32 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:492] - [TABULAR_PIPELINE] Extracted 3 tables from PDF
+2025-10-11 11:43:32 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:542] - [TABULAR_PIPELINE] Processing table tbl::51cd2bcb-df81-425b-ad9a-c9fdf755e2ea::p1::0 (3 rows)
+2025-10-11 11:43:32 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:563] - [TABULAR_PIPELINE] Created 1 chunks for table tbl::51cd2bcb-df81-425b-ad9a-c9fdf755e2ea::p1::0
+2025-10-11 11:43:32 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 11:43:32 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:582] - [TABULAR_PIPELINE] Calling LLM for table tbl::51cd2bcb-df81-425b-ad9a-c9fdf755e2ea::p1::0 (3 rows)
+2025-10-11 11:43:57 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:645] - [TABULAR_PIPELINE] Failed to process table tbl::51cd2bcb-df81-425b-ad9a-c9fdf755e2ea::p1::0: 'str' object has no attribute 'get'
+2025-10-11 11:43:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:542] - [TABULAR_PIPELINE] Processing table tbl::51cd2bcb-df81-425b-ad9a-c9fdf755e2ea::p1::1 (3 rows)
+2025-10-11 11:43:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:563] - [TABULAR_PIPELINE] Created 1 chunks for table tbl::51cd2bcb-df81-425b-ad9a-c9fdf755e2ea::p1::1
+2025-10-11 11:43:57 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 11:43:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:582] - [TABULAR_PIPELINE] Calling LLM for table tbl::51cd2bcb-df81-425b-ad9a-c9fdf755e2ea::p1::1 (3 rows)
+2025-10-11 11:44:09 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:645] - [TABULAR_PIPELINE] Failed to process table tbl::51cd2bcb-df81-425b-ad9a-c9fdf755e2ea::p1::1: 'str' object has no attribute 'get'
+2025-10-11 11:44:09 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:542] - [TABULAR_PIPELINE] Processing table tbl::51cd2bcb-df81-425b-ad9a-c9fdf755e2ea::p1::2 (3 rows)
+2025-10-11 11:44:09 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:563] - [TABULAR_PIPELINE] Created 1 chunks for table tbl::51cd2bcb-df81-425b-ad9a-c9fdf755e2ea::p1::2
+2025-10-11 11:44:09 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 11:44:09 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:582] - [TABULAR_PIPELINE] Calling LLM for table tbl::51cd2bcb-df81-425b-ad9a-c9fdf755e2ea::p1::2 (3 rows)
+2025-10-11 11:44:17 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:645] - [TABULAR_PIPELINE] Failed to process table tbl::51cd2bcb-df81-425b-ad9a-c9fdf755e2ea::p1::2: 'str' object has no attribute 'get'
+2025-10-11 11:44:17 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:653] - [TABULAR_PIPELINE] Writing to database: 3 chunks, 0 nodes, 0 edges
+2025-10-11 11:44:17 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:686] - [TABULAR_PIPELINE] Completed: {'doc_id': '51cd2bcb-df81-425b-ad9a-c9fdf755e2ea', 'filename': 'Pg 13 Gyratory Crusher Cost Tables.pdf', 'file_size': 77638, 'file_sha256': 'd9cca90d44e6ee8df668d7773eb95d2c4c91ffffa92a99b310048e25cbab26a1', 'pages': 1, 'tables_processed': 3, 'rows_processed': 9, 'chunks_written': 3, 'entities_written': 0, 'relations_written': 0, 'errors': [{'table_id': 'tbl::51cd2bcb-df81-425b-ad9a-c9fdf755e2ea::p1::0', 'error': "'str' object has no attribute 'get'"}, {'table_id': 'tbl::51cd2bcb-df81-425b-ad9a-c9fdf755e2ea::p1::1', 'error': "'str' object has no attribute 'get'"}, {'table_id': 'tbl::51cd2bcb-df81-425b-ad9a-c9fdf755e2ea::p1::2', 'error': "'str' object has no attribute 'get'"}]}
+2025-10-11 11:45:22 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:476] - [TABULAR_PIPELINE] Starting table extraction for Origin of the 0_16mm end product.pdf
+2025-10-11 11:45:23 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:484] - [TABULAR_PIPELINE] Processed doc_id: cbe5daca-83f5-4c3f-90e6-b0e7103266b0
+2025-10-11 11:45:24 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:46] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-11 11:45:24 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:492] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-11 11:45:48 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:542] - [TABULAR_PIPELINE] Processing table tbl::cbe5daca-83f5-4c3f-90e6-b0e7103266b0::p1::0 (6 rows)
+2025-10-11 11:45:55 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:563] - [TABULAR_PIPELINE] Created 1 chunks for table tbl::cbe5daca-83f5-4c3f-90e6-b0e7103266b0::p1::0
+2025-10-11 11:45:57 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 6 rows, 6 columns
+2025-10-11 11:46:12 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:582] - [TABULAR_PIPELINE] Calling LLM for table tbl::cbe5daca-83f5-4c3f-90e6-b0e7103266b0::p1::0 (6 rows)
+2025-10-11 11:47:24 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:645] - [TABULAR_PIPELINE] Failed to process table tbl::cbe5daca-83f5-4c3f-90e6-b0e7103266b0::p1::0: 'str' object has no attribute 'get'
+2025-10-11 11:47:27 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:653] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 0 nodes, 0 edges
+2025-10-11 11:47:27 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:686] - [TABULAR_PIPELINE] Completed: {'doc_id': 'cbe5daca-83f5-4c3f-90e6-b0e7103266b0', 'filename': 'Origin of the 0_16mm end product.pdf', 'file_size': 60379, 'file_sha256': '3d5979fa026e7ec196fb6fc713d7c4d506de103e4cb38983c106c4d58d9b0272', 'pages': 1, 'tables_processed': 1, 'rows_processed': 6, 'chunks_written': 1, 'entities_written': 0, 'relations_written': 0, 'errors': [{'table_id': 'tbl::cbe5daca-83f5-4c3f-90e6-b0e7103266b0::p1::0', 'error': "'str' object has no attribute 'get'"}]}
+2025-10-11 11:50:07 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 11:51:43 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 11:52:47 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:476] - [TABULAR_PIPELINE] Starting table extraction for Origin of the 0_16mm end product.pdf
+2025-10-11 11:52:47 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:484] - [TABULAR_PIPELINE] Processed doc_id: fc7e8736-de7c-40a6-818a-65c2a5f67d3c
+2025-10-11 11:52:50 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:46] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-11 11:52:50 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:492] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-11 11:52:50 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:542] - [TABULAR_PIPELINE] Processing table tbl::fc7e8736-de7c-40a6-818a-65c2a5f67d3c::p1::0 (6 rows)
+2025-10-11 11:52:50 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:574] - [TABULAR_PIPELINE] Created 1 chunks for table tbl::fc7e8736-de7c-40a6-818a-65c2a5f67d3c::p1::0
+2025-10-11 11:52:50 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:579] - [TABULAR_PIPELINE] Extracting entities from 1 chunks for table tbl::fc7e8736-de7c-40a6-818a-65c2a5f67d3c::p1::0
+2025-10-11 11:53:53 - app.etl_tables.etl_for_tabular_data - WARNING - [etl_for_tabular_data.py:600] - [TABULAR_PIPELINE] No valid nodes or edges returned for tbl::fc7e8736-de7c-40a6-818a-65c2a5f67d3c::p1::0
+2025-10-11 11:53:53 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:649] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 0 nodes, 0 edges
+2025-10-11 11:53:53 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:682] - [TABULAR_PIPELINE] Completed: {'doc_id': 'fc7e8736-de7c-40a6-818a-65c2a5f67d3c', 'filename': 'Origin of the 0_16mm end product.pdf', 'file_size': 60379, 'file_sha256': '3d5979fa026e7ec196fb6fc713d7c4d506de103e4cb38983c106c4d58d9b0272', 'pages': 1, 'tables_processed': 1, 'rows_processed': 0, 'chunks_written': 1, 'entities_written': 0, 'relations_written': 0, 'errors': [{'table_id': 'tbl::fc7e8736-de7c-40a6-818a-65c2a5f67d3c::p1::0', 'error': 'LLM returned invalid response format'}]}
+2025-10-11 11:55:07 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:476] - [TABULAR_PIPELINE] Starting table extraction for Origin of the 0_16mm end product.pdf
+2025-10-11 11:55:08 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:484] - [TABULAR_PIPELINE] Processed doc_id: 57caec11-3231-43c6-a232-c71c545aa509
+2025-10-11 11:55:09 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:46] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-11 11:55:09 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:492] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-11 11:55:09 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:542] - [TABULAR_PIPELINE] Processing table tbl::57caec11-3231-43c6-a232-c71c545aa509::p1::0 (6 rows)
+2025-10-11 11:55:09 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:574] - [TABULAR_PIPELINE] Created 1 chunks for table tbl::57caec11-3231-43c6-a232-c71c545aa509::p1::0
+2025-10-11 11:55:09 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:579] - [TABULAR_PIPELINE] Extracting entities from 1 chunks for table tbl::57caec11-3231-43c6-a232-c71c545aa509::p1::0
+2025-10-11 11:55:51 - app.etl_tables.etl_for_tabular_data - WARNING - [etl_for_tabular_data.py:600] - [TABULAR_PIPELINE] No valid nodes or edges returned for tbl::57caec11-3231-43c6-a232-c71c545aa509::p1::0
+2025-10-11 11:55:51 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:649] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 0 nodes, 0 edges
+2025-10-11 11:55:51 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:682] - [TABULAR_PIPELINE] Completed: {'doc_id': '57caec11-3231-43c6-a232-c71c545aa509', 'filename': 'Origin of the 0_16mm end product.pdf', 'file_size': 60379, 'file_sha256': '3d5979fa026e7ec196fb6fc713d7c4d506de103e4cb38983c106c4d58d9b0272', 'pages': 1, 'tables_processed': 1, 'rows_processed': 0, 'chunks_written': 1, 'entities_written': 0, 'relations_written': 0, 'errors': [{'table_id': 'tbl::57caec11-3231-43c6-a232-c71c545aa509::p1::0', 'error': 'LLM returned invalid response format'}]}
+2025-10-11 11:56:27 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 12:01:14 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 12:01:52 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:476] - [TABULAR_PIPELINE] Starting table extraction for Origin of the 0_16mm end product.pdf
+2025-10-11 12:01:53 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:484] - [TABULAR_PIPELINE] Processed doc_id: 782e6fd8-f848-4d74-9957-71cc803ceedb
+2025-10-11 12:01:55 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:46] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-11 12:01:55 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:492] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-11 12:01:55 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:542] - [TABULAR_PIPELINE] Processing table tbl::782e6fd8-f848-4d74-9957-71cc803ceedb::p1::0 (6 rows)
+2025-10-11 12:01:55 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:574] - [TABULAR_PIPELINE] Created 1 chunks for table tbl::782e6fd8-f848-4d74-9957-71cc803ceedb::p1::0
+2025-10-11 12:01:55 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:579] - [TABULAR_PIPELINE] Extracting entities from 1 chunks for table tbl::782e6fd8-f848-4d74-9957-71cc803ceedb::p1::0
+2025-10-11 12:03:59 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:641] - [TABULAR_PIPELINE] Table tbl::782e6fd8-f848-4d74-9957-71cc803ceedb::p1::0: 7 nodes, 6 edges
+2025-10-11 12:03:59 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:654] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 7 nodes, 6 edges
+2025-10-11 12:03:59 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:687] - [TABULAR_PIPELINE] Completed: {'doc_id': '782e6fd8-f848-4d74-9957-71cc803ceedb', 'filename': 'Origin of the 0_16mm end product.pdf', 'file_size': 60379, 'file_sha256': '3d5979fa026e7ec196fb6fc713d7c4d506de103e4cb38983c106c4d58d9b0272', 'pages': 1, 'tables_processed': 1, 'rows_processed': 0, 'chunks_written': 1, 'entities_written': 7, 'relations_written': 6, 'errors': None}
+2025-10-11 12:05:17 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:476] - [TABULAR_PIPELINE] Starting table extraction for Pg 13 Gyratory Crusher Cost Tables.pdf
+2025-10-11 12:05:17 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:484] - [TABULAR_PIPELINE] Processed doc_id: c7ed2df8-c1fd-44a6-9339-816d3ad75646
+2025-10-11 12:05:19 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:46] - [TABLE_EXTRACT] Extracted 3 tables using cascade
+2025-10-11 12:05:19 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:492] - [TABULAR_PIPELINE] Extracted 3 tables from PDF
+2025-10-11 12:05:19 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:542] - [TABULAR_PIPELINE] Processing table tbl::c7ed2df8-c1fd-44a6-9339-816d3ad75646::p1::0 (3 rows)
+2025-10-11 12:05:19 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:574] - [TABULAR_PIPELINE] Created 1 chunks for table tbl::c7ed2df8-c1fd-44a6-9339-816d3ad75646::p1::0
+2025-10-11 12:05:19 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:579] - [TABULAR_PIPELINE] Extracting entities from 1 chunks for table tbl::c7ed2df8-c1fd-44a6-9339-816d3ad75646::p1::0
+2025-10-11 12:06:01 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:641] - [TABULAR_PIPELINE] Table tbl::c7ed2df8-c1fd-44a6-9339-816d3ad75646::p1::0: 9 nodes, 8 edges
+2025-10-11 12:06:01 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:542] - [TABULAR_PIPELINE] Processing table tbl::c7ed2df8-c1fd-44a6-9339-816d3ad75646::p1::1 (3 rows)
+2025-10-11 12:06:01 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:574] - [TABULAR_PIPELINE] Created 1 chunks for table tbl::c7ed2df8-c1fd-44a6-9339-816d3ad75646::p1::1
+2025-10-11 12:06:01 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:579] - [TABULAR_PIPELINE] Extracting entities from 1 chunks for table tbl::c7ed2df8-c1fd-44a6-9339-816d3ad75646::p1::1
+2025-10-11 12:06:14 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:641] - [TABULAR_PIPELINE] Table tbl::c7ed2df8-c1fd-44a6-9339-816d3ad75646::p1::1: 6 nodes, 5 edges
+2025-10-11 12:06:14 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:542] - [TABULAR_PIPELINE] Processing table tbl::c7ed2df8-c1fd-44a6-9339-816d3ad75646::p1::2 (3 rows)
+2025-10-11 12:06:14 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:574] - [TABULAR_PIPELINE] Created 1 chunks for table tbl::c7ed2df8-c1fd-44a6-9339-816d3ad75646::p1::2
+2025-10-11 12:06:14 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:579] - [TABULAR_PIPELINE] Extracting entities from 1 chunks for table tbl::c7ed2df8-c1fd-44a6-9339-816d3ad75646::p1::2
+2025-10-11 12:06:28 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:641] - [TABULAR_PIPELINE] Table tbl::c7ed2df8-c1fd-44a6-9339-816d3ad75646::p1::2: 7 nodes, 6 edges
+2025-10-11 12:06:28 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:654] - [TABULAR_PIPELINE] Writing to database: 3 chunks, 22 nodes, 19 edges
+2025-10-11 12:06:42 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:687] - [TABULAR_PIPELINE] Completed: {'doc_id': 'c7ed2df8-c1fd-44a6-9339-816d3ad75646', 'filename': 'Pg 13 Gyratory Crusher Cost Tables.pdf', 'file_size': 77638, 'file_sha256': 'd9cca90d44e6ee8df668d7773eb95d2c4c91ffffa92a99b310048e25cbab26a1', 'pages': 1, 'tables_processed': 3, 'rows_processed': 0, 'chunks_written': 3, 'entities_written': 22, 'relations_written': 19, 'errors': None}
+2025-10-11 12:16:16 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 12:16:31 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:476] - [TABULAR_PIPELINE] Starting table extraction for Origin of the 0_16mm end product.pdf
+2025-10-11 12:16:31 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:484] - [TABULAR_PIPELINE] Processed doc_id: 07fda326-b61a-4729-a913-c4f4db56c286
+2025-10-11 12:16:33 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:46] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-11 12:16:33 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:492] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-11 12:16:33 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:542] - [TABULAR_PIPELINE] Processing table tbl::07fda326-b61a-4729-a913-c4f4db56c286::p1::0 (6 rows)
+2025-10-11 12:16:35 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 6 rows, 6 columns
+2025-10-11 12:16:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:605] - [TABULAR_PIPELINE] Calling LLM for table tbl::07fda326-b61a-4729-a913-c4f4db56c286::p1::0 (6 rows)
+2025-10-11 12:17:14 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:29] - [TABULAR DATA] Sending 7933 chars to OpenAI
+2025-10-11 12:17:58 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:46] - Received 1915 chars from OpenAI
+2025-10-11 12:18:15 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:57] - Extracted 1 nodes, 1 edges
+2025-10-11 12:18:51 - app.etl_tables.etl_for_tabular_data - WARNING - [etl_for_tabular_data.py:625] - [TABULAR_PIPELINE] No valid nodes or edges returned for tbl::07fda326-b61a-4729-a913-c4f4db56c286::p1::0
+2025-10-11 12:18:51 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:679] - [TABULAR_PIPELINE] Writing to database: 0 chunks, 0 nodes, 0 edges
+2025-10-11 12:18:53 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:712] - [TABULAR_PIPELINE] Completed: {'doc_id': '07fda326-b61a-4729-a913-c4f4db56c286', 'filename': 'Origin of the 0_16mm end product.pdf', 'file_size': 60379, 'file_sha256': '3d5979fa026e7ec196fb6fc713d7c4d506de103e4cb38983c106c4d58d9b0272', 'pages': 1, 'tables_processed': 1, 'rows_processed': 0, 'chunks_written': 0, 'entities_written': 0, 'relations_written': 0, 'errors': [{'table_id': 'tbl::07fda326-b61a-4729-a913-c4f4db56c286::p1::0', 'error': 'LLM returned invalid response format'}]}
+2025-10-11 12:21:24 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 12:21:34 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:476] - [TABULAR_PIPELINE] Starting table extraction for Origin of the 0_16mm end product.pdf
+2025-10-11 12:21:34 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:484] - [TABULAR_PIPELINE] Processed doc_id: d480d7cf-23c8-4037-8ed0-1ccef72ffc45
+2025-10-11 12:21:36 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:46] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-11 12:21:36 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:492] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-11 12:21:36 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:542] - [TABULAR_PIPELINE] Processing table tbl::d480d7cf-23c8-4037-8ed0-1ccef72ffc45::p1::0 (6 rows)
+2025-10-11 12:21:39 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 6 rows, 6 columns
+2025-10-11 12:21:39 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:605] - [TABULAR_PIPELINE] Calling LLM for table tbl::d480d7cf-23c8-4037-8ed0-1ccef72ffc45::p1::0 (6 rows)
+2025-10-11 12:21:41 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:29] - [TABULAR DATA] Sending 7933 chars to OpenAI
+2025-10-11 12:21:47 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:46] - Received 1915 chars from OpenAI
+2025-10-11 12:22:09 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:71] - Extracted 5 nodes, 4 edges
+2025-10-11 12:22:15 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:666] - [TABULAR_PIPELINE] Table tbl::d480d7cf-23c8-4037-8ed0-1ccef72ffc45::p1::0: 5 nodes, 4 edges
+2025-10-11 12:22:15 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:679] - [TABULAR_PIPELINE] Writing to database: 0 chunks, 5 nodes, 4 edges
+2025-10-11 12:22:16 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:712] - [TABULAR_PIPELINE] Completed: {'doc_id': 'd480d7cf-23c8-4037-8ed0-1ccef72ffc45', 'filename': 'Origin of the 0_16mm end product.pdf', 'file_size': 60379, 'file_sha256': '3d5979fa026e7ec196fb6fc713d7c4d506de103e4cb38983c106c4d58d9b0272', 'pages': 1, 'tables_processed': 1, 'rows_processed': 0, 'chunks_written': 0, 'entities_written': 5, 'relations_written': 4, 'errors': None}
+2025-10-11 12:22:35 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:476] - [TABULAR_PIPELINE] Starting table extraction for Pg 13 Gyratory Crusher Cost Tables.pdf
+2025-10-11 12:22:36 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:484] - [TABULAR_PIPELINE] Processed doc_id: 6f22a65b-4a9d-4849-9d93-618aa134215a
+2025-10-11 12:22:37 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:46] - [TABLE_EXTRACT] Extracted 3 tables using cascade
+2025-10-11 12:22:37 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:492] - [TABULAR_PIPELINE] Extracted 3 tables from PDF
+2025-10-11 12:22:37 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:542] - [TABULAR_PIPELINE] Processing table tbl::6f22a65b-4a9d-4849-9d93-618aa134215a::p1::0 (3 rows)
+2025-10-11 12:22:40 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 12:22:40 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:605] - [TABULAR_PIPELINE] Calling LLM for table tbl::6f22a65b-4a9d-4849-9d93-618aa134215a::p1::0 (3 rows)
+2025-10-11 12:22:40 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:29] - [TABULAR DATA] Sending 8150 chars to OpenAI
+2025-10-11 12:22:52 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:46] - Received 6063 chars from OpenAI
+2025-10-11 12:23:04 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:71] - Extracted 9 nodes, 0 edges
+2025-10-11 12:23:16 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:666] - [TABULAR_PIPELINE] Table tbl::6f22a65b-4a9d-4849-9d93-618aa134215a::p1::0: 9 nodes, 0 edges
+2025-10-11 12:23:16 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:542] - [TABULAR_PIPELINE] Processing table tbl::6f22a65b-4a9d-4849-9d93-618aa134215a::p1::1 (3 rows)
+2025-10-11 12:23:17 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 12:23:17 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:605] - [TABULAR_PIPELINE] Calling LLM for table tbl::6f22a65b-4a9d-4849-9d93-618aa134215a::p1::1 (3 rows)
+2025-10-11 12:23:17 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:29] - [TABULAR DATA] Sending 7395 chars to OpenAI
+2025-10-11 12:23:25 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:46] - Received 3017 chars from OpenAI
+2025-10-11 12:23:31 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:71] - Extracted 6 nodes, 0 edges
+2025-10-11 12:23:31 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:666] - [TABULAR_PIPELINE] Table tbl::6f22a65b-4a9d-4849-9d93-618aa134215a::p1::1: 6 nodes, 0 edges
+2025-10-11 12:23:31 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:542] - [TABULAR_PIPELINE] Processing table tbl::6f22a65b-4a9d-4849-9d93-618aa134215a::p1::2 (3 rows)
+2025-10-11 12:23:38 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 12:23:38 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:605] - [TABULAR_PIPELINE] Calling LLM for table tbl::6f22a65b-4a9d-4849-9d93-618aa134215a::p1::2 (3 rows)
+2025-10-11 12:23:38 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:29] - [TABULAR DATA] Sending 7845 chars to OpenAI
+2025-10-11 12:23:45 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:46] - Received 4068 chars from OpenAI
+2025-10-11 12:23:45 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:71] - Extracted 9 nodes, 0 edges
+2025-10-11 12:23:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:666] - [TABULAR_PIPELINE] Table tbl::6f22a65b-4a9d-4849-9d93-618aa134215a::p1::2: 9 nodes, 0 edges
+2025-10-11 12:23:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:679] - [TABULAR_PIPELINE] Writing to database: 0 chunks, 24 nodes, 0 edges
+2025-10-11 12:23:54 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:712] - [TABULAR_PIPELINE] Completed: {'doc_id': '6f22a65b-4a9d-4849-9d93-618aa134215a', 'filename': 'Pg 13 Gyratory Crusher Cost Tables.pdf', 'file_size': 77638, 'file_sha256': 'd9cca90d44e6ee8df668d7773eb95d2c4c91ffffa92a99b310048e25cbab26a1', 'pages': 1, 'tables_processed': 3, 'rows_processed': 0, 'chunks_written': 0, 'entities_written': 24, 'relations_written': 0, 'errors': None}
+2025-10-11 12:31:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 13:26:13 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:482] - [TABULAR_PIPELINE] Processed doc_id: 4ed6e638-6169-4fb5-9a4d-bddefd2c2f98
+2025-10-11 13:26:16 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:46] - [TABLE_EXTRACT] Extracted 3 tables using cascade
+2025-10-11 13:26:16 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:490] - [TABULAR_PIPELINE] Extracted 3 tables from PDF
+2025-10-11 13:26:16 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 13:26:16 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:581] - [TABULAR_PIPELINE] Calling LLM for table tbl::4ed6e638-6169-4fb5-9a4d-bddefd2c2f98::p1::0 (3 rows)
+2025-10-11 13:26:18 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:32] - [TABULAR DATA] Sending 8150 chars to OpenAI
+2025-10-11 13:27:32 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:49] - Received 6063 chars from OpenAI
+2025-10-11 13:27:32 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-11 13:27:32 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:643] - [TABULAR_PIPELINE] Table tbl::4ed6e638-6169-4fb5-9a4d-bddefd2c2f98::p1::0: 9 nodes, 0 edges
+2025-10-11 13:27:32 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 13:27:32 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:581] - [TABULAR_PIPELINE] Calling LLM for table tbl::4ed6e638-6169-4fb5-9a4d-bddefd2c2f98::p1::1 (3 rows)
+2025-10-11 13:27:32 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:32] - [TABULAR DATA] Sending 7395 chars to OpenAI
+2025-10-11 13:27:42 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:49] - Received 2588 chars from OpenAI
+2025-10-11 13:27:42 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:74] - Extracted 6 nodes, 0 edges
+2025-10-11 13:27:42 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:643] - [TABULAR_PIPELINE] Table tbl::4ed6e638-6169-4fb5-9a4d-bddefd2c2f98::p1::1: 6 nodes, 0 edges
+2025-10-11 13:27:42 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 13:27:42 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:581] - [TABULAR_PIPELINE] Calling LLM for table tbl::4ed6e638-6169-4fb5-9a4d-bddefd2c2f98::p1::2 (3 rows)
+2025-10-11 13:27:42 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:32] - [TABULAR DATA] Sending 7845 chars to OpenAI
+2025-10-11 13:27:57 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:49] - Received 4367 chars from OpenAI
+2025-10-11 13:27:57 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-11 13:27:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:643] - [TABULAR_PIPELINE] Table tbl::4ed6e638-6169-4fb5-9a4d-bddefd2c2f98::p1::2: 9 nodes, 0 edges
+2025-10-11 13:27:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:656] - [TABULAR_PIPELINE] Writing to database: 0 chunks, 24 nodes, 0 edges
+2025-10-11 13:27:58 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:689] - [TABULAR_PIPELINE] Completed: {'doc_id': '4ed6e638-6169-4fb5-9a4d-bddefd2c2f98', 'filename': 'Pg 13 Gyratory Crusher Cost Tables.pdf', 'file_size': 77638, 'file_sha256': 'd9cca90d44e6ee8df668d7773eb95d2c4c91ffffa92a99b310048e25cbab26a1', 'pages': 1, 'tables_processed': 3, 'rows_processed': 0, 'chunks_written': 0, 'entities_written': 24, 'relations_written': 0, 'errors': None}
+2025-10-11 16:14:45 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 16:14:52 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 18:12:01 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 18:12:47 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:482] - [TABULAR_PIPELINE] Processed doc_id: b336cd08-049a-4771-ab02-07f8b7b918f3
+2025-10-11 18:12:52 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:46] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-11 18:12:52 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:490] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-11 18:12:52 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 6 rows, 6 columns
+2025-10-11 18:12:52 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:581] - [TABULAR_PIPELINE] Calling LLM for table tbl::b336cd08-049a-4771-ab02-07f8b7b918f3::p1::0 (6 rows)
+2025-10-11 18:12:55 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:32] - [TABULAR DATA] Sending 11550 chars to OpenAI
+2025-10-11 18:13:35 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:49] - Received 2691 chars from OpenAI
+2025-10-11 18:13:35 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:74] - Extracted 5 nodes, 4 edges
+2025-10-11 18:13:35 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:643] - [TABULAR_PIPELINE] Table tbl::b336cd08-049a-4771-ab02-07f8b7b918f3::p1::0: 5 nodes, 4 edges
+2025-10-11 18:13:35 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:656] - [TABULAR_PIPELINE] Writing to database: 0 chunks, 5 nodes, 4 edges
+2025-10-11 18:13:35 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:689] - [TABULAR_PIPELINE] Completed: {'doc_id': 'b336cd08-049a-4771-ab02-07f8b7b918f3', 'filename': 'Origin of the 0_16mm end product.pdf', 'file_size': 60379, 'file_sha256': '3d5979fa026e7ec196fb6fc713d7c4d506de103e4cb38983c106c4d58d9b0272', 'pages': 1, 'tables_processed': 1, 'rows_processed': 0, 'chunks_written': 0, 'entities_written': 5, 'relations_written': 4, 'errors': None}
+2025-10-11 18:14:04 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:482] - [TABULAR_PIPELINE] Processed doc_id: 5705129d-0a92-4c0f-a5df-b946c9f71e30
+2025-10-11 18:14:05 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:46] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-11 18:14:05 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:490] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-11 18:14:05 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 6 rows, 6 columns
+2025-10-11 18:14:05 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:581] - [TABULAR_PIPELINE] Calling LLM for table tbl::5705129d-0a92-4c0f-a5df-b946c9f71e30::p1::0 (6 rows)
+2025-10-11 18:14:05 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:32] - [TABULAR DATA] Sending 11550 chars to OpenAI
+2025-10-11 18:14:13 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:49] - Received 2984 chars from OpenAI
+2025-10-11 18:14:13 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:74] - Extracted 5 nodes, 6 edges
+2025-10-11 18:14:13 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:643] - [TABULAR_PIPELINE] Table tbl::5705129d-0a92-4c0f-a5df-b946c9f71e30::p1::0: 5 nodes, 6 edges
+2025-10-11 18:14:13 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:656] - [TABULAR_PIPELINE] Writing to database: 0 chunks, 5 nodes, 6 edges
+2025-10-11 18:14:13 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:689] - [TABULAR_PIPELINE] Completed: {'doc_id': '5705129d-0a92-4c0f-a5df-b946c9f71e30', 'filename': 'Origin of the 0_16mm end product.pdf', 'file_size': 60379, 'file_sha256': '3d5979fa026e7ec196fb6fc713d7c4d506de103e4cb38983c106c4d58d9b0272', 'pages': 1, 'tables_processed': 1, 'rows_processed': 0, 'chunks_written': 0, 'entities_written': 5, 'relations_written': 6, 'errors': None}
+2025-10-11 18:14:27 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:482] - [TABULAR_PIPELINE] Processed doc_id: dbd2f84c-0715-470a-ac91-226a7e1fa21b
+2025-10-11 18:14:29 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:46] - [TABLE_EXTRACT] Extracted 3 tables using cascade
+2025-10-11 18:14:29 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:490] - [TABULAR_PIPELINE] Extracted 3 tables from PDF
+2025-10-11 18:14:29 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 18:14:29 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:581] - [TABULAR_PIPELINE] Calling LLM for table tbl::dbd2f84c-0715-470a-ac91-226a7e1fa21b::p1::0 (3 rows)
+2025-10-11 18:14:29 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:32] - [TABULAR DATA] Sending 11767 chars to OpenAI
+2025-10-11 18:14:41 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:49] - Received 5667 chars from OpenAI
+2025-10-11 18:14:41 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-11 18:14:41 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:643] - [TABULAR_PIPELINE] Table tbl::dbd2f84c-0715-470a-ac91-226a7e1fa21b::p1::0: 9 nodes, 0 edges
+2025-10-11 18:14:41 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 18:14:41 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:581] - [TABULAR_PIPELINE] Calling LLM for table tbl::dbd2f84c-0715-470a-ac91-226a7e1fa21b::p1::1 (3 rows)
+2025-10-11 18:14:41 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:32] - [TABULAR DATA] Sending 11012 chars to OpenAI
+2025-10-11 18:14:59 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:49] - Received 2458 chars from OpenAI
+2025-10-11 18:14:59 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:74] - Extracted 6 nodes, 0 edges
+2025-10-11 18:14:59 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:643] - [TABULAR_PIPELINE] Table tbl::dbd2f84c-0715-470a-ac91-226a7e1fa21b::p1::1: 6 nodes, 0 edges
+2025-10-11 18:14:59 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 18:14:59 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:581] - [TABULAR_PIPELINE] Calling LLM for table tbl::dbd2f84c-0715-470a-ac91-226a7e1fa21b::p1::2 (3 rows)
+2025-10-11 18:14:59 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:32] - [TABULAR DATA] Sending 11462 chars to OpenAI
+2025-10-11 18:15:08 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:49] - Received 4091 chars from OpenAI
+2025-10-11 18:15:08 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-11 18:15:08 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:643] - [TABULAR_PIPELINE] Table tbl::dbd2f84c-0715-470a-ac91-226a7e1fa21b::p1::2: 9 nodes, 0 edges
+2025-10-11 18:15:08 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:656] - [TABULAR_PIPELINE] Writing to database: 0 chunks, 24 nodes, 0 edges
+2025-10-11 18:15:08 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:689] - [TABULAR_PIPELINE] Completed: {'doc_id': 'dbd2f84c-0715-470a-ac91-226a7e1fa21b', 'filename': 'Pg 13 Gyratory Crusher Cost Tables.pdf', 'file_size': 77638, 'file_sha256': 'd9cca90d44e6ee8df668d7773eb95d2c4c91ffffa92a99b310048e25cbab26a1', 'pages': 1, 'tables_processed': 3, 'rows_processed': 0, 'chunks_written': 0, 'entities_written': 24, 'relations_written': 0, 'errors': None}
+2025-10-11 18:19:31 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 18:19:33 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:482] - [TABULAR_PIPELINE] Processed doc_id: d14f362e-178b-4fa8-ba96-4d35444c21a9
+2025-10-11 18:19:35 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:46] - [TABLE_EXTRACT] Extracted 3 tables using cascade
+2025-10-11 18:19:35 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:490] - [TABULAR_PIPELINE] Extracted 3 tables from PDF
+2025-10-11 18:19:35 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 18:19:35 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:581] - [TABULAR_PIPELINE] Calling LLM for table tbl::d14f362e-178b-4fa8-ba96-4d35444c21a9::p1::0 (3 rows)
+2025-10-11 18:19:37 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:32] - [TABULAR DATA] Sending 8266 chars to OpenAI
+2025-10-11 18:19:52 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:49] - Received 6063 chars from OpenAI
+2025-10-11 18:19:52 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-11 18:19:52 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:643] - [TABULAR_PIPELINE] Table tbl::d14f362e-178b-4fa8-ba96-4d35444c21a9::p1::0: 9 nodes, 0 edges
+2025-10-11 18:19:52 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 18:19:52 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:581] - [TABULAR_PIPELINE] Calling LLM for table tbl::d14f362e-178b-4fa8-ba96-4d35444c21a9::p1::1 (3 rows)
+2025-10-11 18:19:52 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:32] - [TABULAR DATA] Sending 7511 chars to OpenAI
+2025-10-11 18:20:00 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:49] - Received 2776 chars from OpenAI
+2025-10-11 18:20:00 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:74] - Extracted 6 nodes, 0 edges
+2025-10-11 18:20:00 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:643] - [TABULAR_PIPELINE] Table tbl::d14f362e-178b-4fa8-ba96-4d35444c21a9::p1::1: 6 nodes, 0 edges
+2025-10-11 18:20:00 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 18:20:00 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:581] - [TABULAR_PIPELINE] Calling LLM for table tbl::d14f362e-178b-4fa8-ba96-4d35444c21a9::p1::2 (3 rows)
+2025-10-11 18:20:00 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:32] - [TABULAR DATA] Sending 7961 chars to OpenAI
+2025-10-11 18:20:09 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:49] - Received 4003 chars from OpenAI
+2025-10-11 18:20:09 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-11 18:20:09 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:643] - [TABULAR_PIPELINE] Table tbl::d14f362e-178b-4fa8-ba96-4d35444c21a9::p1::2: 9 nodes, 0 edges
+2025-10-11 18:20:09 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:656] - [TABULAR_PIPELINE] Writing to database: 0 chunks, 24 nodes, 0 edges
+2025-10-11 18:20:09 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:689] - [TABULAR_PIPELINE] Completed: {'doc_id': 'd14f362e-178b-4fa8-ba96-4d35444c21a9', 'filename': 'Pg 13 Gyratory Crusher Cost Tables.pdf', 'file_size': 77638, 'file_sha256': 'd9cca90d44e6ee8df668d7773eb95d2c4c91ffffa92a99b310048e25cbab26a1', 'pages': 1, 'tables_processed': 3, 'rows_processed': 0, 'chunks_written': 0, 'entities_written': 24, 'relations_written': 0, 'errors': None}
+2025-10-11 18:24:54 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 18:25:18 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:482] - [TABULAR_PIPELINE] Processed doc_id: 87e1fc2d-0f2b-42e7-b083-4c42ad8de306
+2025-10-11 18:25:20 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:46] - [TABLE_EXTRACT] Extracted 3 tables using cascade
+2025-10-11 18:25:20 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:490] - [TABULAR_PIPELINE] Extracted 3 tables from PDF
+2025-10-11 18:25:20 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 18:25:20 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:581] - [TABULAR_PIPELINE] Calling LLM for table tbl::87e1fc2d-0f2b-42e7-b083-4c42ad8de306::p1::0 (3 rows)
+2025-10-11 18:25:22 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:32] - [TABULAR DATA] Sending 11827 chars to OpenAI
+2025-10-11 18:26:10 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:49] - Received 5540 chars from OpenAI
+2025-10-11 18:26:10 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-11 18:26:10 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:643] - [TABULAR_PIPELINE] Table tbl::87e1fc2d-0f2b-42e7-b083-4c42ad8de306::p1::0: 9 nodes, 0 edges
+2025-10-11 18:26:10 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 18:26:10 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:581] - [TABULAR_PIPELINE] Calling LLM for table tbl::87e1fc2d-0f2b-42e7-b083-4c42ad8de306::p1::1 (3 rows)
+2025-10-11 18:26:10 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:32] - [TABULAR DATA] Sending 11072 chars to OpenAI
+2025-10-11 18:26:17 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:49] - Received 2983 chars from OpenAI
+2025-10-11 18:26:17 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:74] - Extracted 6 nodes, 0 edges
+2025-10-11 18:26:17 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:643] - [TABULAR_PIPELINE] Table tbl::87e1fc2d-0f2b-42e7-b083-4c42ad8de306::p1::1: 6 nodes, 0 edges
+2025-10-11 18:26:17 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 18:26:17 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:581] - [TABULAR_PIPELINE] Calling LLM for table tbl::87e1fc2d-0f2b-42e7-b083-4c42ad8de306::p1::2 (3 rows)
+2025-10-11 18:26:17 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:32] - [TABULAR DATA] Sending 11522 chars to OpenAI
+2025-10-11 18:26:24 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:49] - Received 3857 chars from OpenAI
+2025-10-11 18:26:24 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-11 18:26:24 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:643] - [TABULAR_PIPELINE] Table tbl::87e1fc2d-0f2b-42e7-b083-4c42ad8de306::p1::2: 9 nodes, 0 edges
+2025-10-11 18:26:24 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:656] - [TABULAR_PIPELINE] Writing to database: 0 chunks, 24 nodes, 0 edges
+2025-10-11 18:26:24 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:689] - [TABULAR_PIPELINE] Completed: {'doc_id': '87e1fc2d-0f2b-42e7-b083-4c42ad8de306', 'filename': 'Pg 13 Gyratory Crusher Cost Tables.pdf', 'file_size': 77638, 'file_sha256': 'd9cca90d44e6ee8df668d7773eb95d2c4c91ffffa92a99b310048e25cbab26a1', 'pages': 1, 'tables_processed': 3, 'rows_processed': 0, 'chunks_written': 0, 'entities_written': 24, 'relations_written': 0, 'errors': None}
+2025-10-11 22:39:36 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 22:39:44 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 22:44:44 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 22:45:08 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:482] - [TABULAR_PIPELINE] Processed doc_id: 72b967e8-3c7e-4e75-b198-048dab2fcb75
+2025-10-11 22:45:10 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:46] - [TABLE_EXTRACT] Extracted 3 tables using cascade
+2025-10-11 22:45:10 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:490] - [TABULAR_PIPELINE] Extracted 3 tables from PDF
+2025-10-11 22:45:10 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 22:45:10 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:581] - [TABULAR_PIPELINE] Calling LLM for table tbl::72b967e8-3c7e-4e75-b198-048dab2fcb75::p1::0 (3 rows)
+2025-10-11 22:45:13 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:32] - [TABULAR DATA] Sending 12255 chars to OpenAI
+2025-10-11 22:46:04 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:49] - Received 6214 chars from OpenAI
+2025-10-11 22:48:49 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-11 22:49:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:643] - [TABULAR_PIPELINE] Table tbl::72b967e8-3c7e-4e75-b198-048dab2fcb75::p1::0: 9 nodes, 0 edges
+2025-10-11 22:49:45 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 22:49:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:581] - [TABULAR_PIPELINE] Calling LLM for table tbl::72b967e8-3c7e-4e75-b198-048dab2fcb75::p1::1 (3 rows)
+2025-10-11 22:49:45 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:32] - [TABULAR DATA] Sending 11500 chars to OpenAI
+2025-10-11 22:49:54 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:49] - Received 2956 chars from OpenAI
+2025-10-11 22:49:54 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:74] - Extracted 6 nodes, 0 edges
+2025-10-11 22:49:54 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:643] - [TABULAR_PIPELINE] Table tbl::72b967e8-3c7e-4e75-b198-048dab2fcb75::p1::1: 6 nodes, 0 edges
+2025-10-11 22:49:54 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-11 22:49:54 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:581] - [TABULAR_PIPELINE] Calling LLM for table tbl::72b967e8-3c7e-4e75-b198-048dab2fcb75::p1::2 (3 rows)
+2025-10-11 22:49:54 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:32] - [TABULAR DATA] Sending 11950 chars to OpenAI
+2025-10-11 22:50:06 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:49] - Received 5036 chars from OpenAI
+2025-10-11 22:50:06 - app.etl_tables.extract_with_openai - INFO - [extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-11 22:50:06 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:643] - [TABULAR_PIPELINE] Table tbl::72b967e8-3c7e-4e75-b198-048dab2fcb75::p1::2: 9 nodes, 0 edges
+2025-10-11 22:50:06 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:656] - [TABULAR_PIPELINE] Writing to database: 0 chunks, 24 nodes, 0 edges
+2025-10-11 22:50:06 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:689] - [TABULAR_PIPELINE] Completed: {'doc_id': '72b967e8-3c7e-4e75-b198-048dab2fcb75', 'filename': 'Pg 13 Gyratory Crusher Cost Tables.pdf', 'file_size': 77638, 'file_sha256': 'd9cca90d44e6ee8df668d7773eb95d2c4c91ffffa92a99b310048e25cbab26a1', 'pages': 1, 'tables_processed': 3, 'rows_processed': 0, 'chunks_written': 0, 'entities_written': 24, 'relations_written': 0, 'errors': None}
+2025-10-11 22:54:29 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:482] - [TABULAR_PIPELINE] Processed doc_id: 9476a364-56c3-4d5f-bbbd-e0b8519f30a6
+2025-10-11 22:54:31 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:54] - [TABLE_EXTRACT] Cascade extraction failed: Unable to get page count. Is poppler installed and in PATH?, falling back to Camelot
+2025-10-11 22:54:32 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:102] - [TABLE_EXTRACT] Extracted 0 tables using Camelot
+2025-10-11 22:54:32 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:490] - [TABULAR_PIPELINE] Extracted 0 tables from PDF
+2025-10-11 22:54:32 - app.etl_tables.etl_for_tabular_data - WARNING - [etl_for_tabular_data.py:498] - [TABULAR_PIPELINE] No tables found in Pg 90 Gyratory Crusher Sizing.pdf
+2025-10-11 22:56:54 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:482] - [TABULAR_PIPELINE] Processed doc_id: bfaf3124-5977-4598-9411-c1fd1c448e38
+2025-10-11 22:57:28 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:54] - [TABLE_EXTRACT] Cascade extraction failed: Unable to get page count. Is poppler installed and in PATH?, falling back to Camelot
+2025-10-11 22:58:12 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:102] - [TABLE_EXTRACT] Extracted 0 tables using Camelot
+2025-10-11 22:58:33 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:490] - [TABULAR_PIPELINE] Extracted 0 tables from PDF
+2025-10-11 22:58:52 - app.etl_tables.etl_for_tabular_data - WARNING - [etl_for_tabular_data.py:498] - [TABULAR_PIPELINE] No tables found in Pg 90 Gyratory Crusher Sizing.pdf
+2025-10-11 23:01:22 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:482] - [TABULAR_PIPELINE] Processed doc_id: 40de056e-84aa-4df8-a9ee-764eb175a5a9
+2025-10-11 23:01:36 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:54] - [TABLE_EXTRACT] Cascade extraction failed: Unable to get page count. Is poppler installed and in PATH?, falling back to Camelot
+2025-10-11 23:01:37 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:102] - [TABLE_EXTRACT] Extracted 0 tables using Camelot
+2025-10-11 23:01:37 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:490] - [TABULAR_PIPELINE] Extracted 0 tables from PDF
+2025-10-11 23:02:30 - app.etl_tables.etl_for_tabular_data - WARNING - [etl_for_tabular_data.py:498] - [TABULAR_PIPELINE] No tables found in Pg 90 Gyratory Crusher Sizing.pdf
+2025-10-11 23:04:00 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 23:04:11 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:482] - [TABULAR_PIPELINE] Processed doc_id: 3c5e7adc-b2d6-4e55-8d46-907054bbb360
+2025-10-11 23:04:13 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:54] - [TABLE_EXTRACT] Cascade extraction failed: Unable to get page count. Is poppler installed and in PATH?, falling back to Camelot
+2025-10-11 23:04:14 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:102] - [TABLE_EXTRACT] Extracted 0 tables using Camelot
+2025-10-11 23:04:14 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:490] - [TABULAR_PIPELINE] Extracted 0 tables from PDF
+2025-10-11 23:04:17 - app.etl_tables.etl_for_tabular_data - WARNING - [etl_for_tabular_data.py:498] - [TABULAR_PIPELINE] No tables found in Pg 90 Gyratory Crusher Sizing.pdf
+2025-10-11 23:06:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:482] - [TABULAR_PIPELINE] Processed doc_id: 0cd64548-e071-4477-959e-0a4e1649e7bb
+2025-10-11 23:06:58 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:54] - [TABLE_EXTRACT] Cascade extraction failed: Unable to get page count. Is poppler installed and in PATH?, falling back to Camelot
+2025-10-11 23:06:59 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:102] - [TABLE_EXTRACT] Extracted 0 tables using Camelot
+2025-10-11 23:06:59 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:490] - [TABULAR_PIPELINE] Extracted 0 tables from PDF
+2025-10-11 23:07:07 - app.etl_tables.etl_for_tabular_data - WARNING - [etl_for_tabular_data.py:498] - [TABULAR_PIPELINE] No tables found in Pg 90 Gyratory Crusher Sizing.pdf
+2025-10-11 23:09:37 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-11 23:09:50 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:482] - [TABULAR_PIPELINE] Processed doc_id: 52b00304-a52a-44ca-b63e-c8c524e46312
+2025-10-11 23:09:52 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:54] - [TABLE_EXTRACT] Cascade extraction failed: Unable to get page count. Is poppler installed and in PATH?, falling back to Camelot
+2025-10-11 23:09:53 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:102] - [TABLE_EXTRACT] Extracted 0 tables using Camelot
+2025-10-11 23:09:53 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:490] - [TABULAR_PIPELINE] Extracted 0 tables from PDF
+2025-10-11 23:09:56 - app.etl_tables.etl_for_tabular_data - WARNING - [etl_for_tabular_data.py:498] - [TABULAR_PIPELINE] No tables found in Pg 90 Gyratory Crusher Sizing.pdf

@@ -8,12 +8,7 @@ from .text_clean import extract_and_clean, chunk_by_page, NAMESPACE
 from .bronze_store import (
     bulk_upsert_chunks,
     bulk_upsert_entities,
-    bulk_upsert_mentions,
     bulk_upsert_relations,
-    clear_all_collections,
-    ensure_bronze_indexes,
-    store_document_metadata,
-    upsert_document,
 )
 
 
@@ -90,32 +85,6 @@ def etl_base_case(
         e["properties"]["project_id"] = project_id
         e["properties"]["user_id"] = user_id
         e["properties"]["doc_id"] = doc_id
-
-    # for m in mentions:
-    #     m["_id"] = _mention_id(
-    #         chunk_id=m.get("chunk_id"),
-    #         entity_id=m.get("entity_id"),
-    #         span_start=m.get("span_start"),
-    #         span_end=m.get("span_end"),
-    #         surface=m.get("surface"),
-    #     )
-    #     # Add project_id, user_id to mentions
-    #     m["project_id"] = project_id
-    #     m["user_id"] = user_id
-
-    # 4) ALREADY HANDLED in calling function: Store document metadata in documents collection
-    # try:
-    #     doc_metadata = store_document_metadata(
-    #         doc_id=doc_id,
-    #         filename=filename,
-    #         project_id=project_id,
-    #         user_id=user_id,
-    #         artifact_type=artifact_type,
-    #     )
-    #     print(f"[ETL:BRONZE] - Stored document metadata: {doc_metadata}")
-    # except Exception as e:
-    #     print(f"[ETL:BRONZE] - Failed to store document metadata: {e}")
-    #     doc_metadata = None
 
     bulk_upsert_chunks(chunks)
     bulk_upsert_entities(nodes)

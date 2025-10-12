@@ -183,7 +183,8 @@ def get_project(project_id: str, current_user: dict = Depends(get_current_user))
 
 # Delete a project
 @router_for_projects.delete(
-    "/projects/{project_id}", status_code=status.HTTP_200_OK  # ✅ Changed from 204 to 200
+    "/projects/{project_id}",
+    status_code=status.HTTP_200_OK,  # ✅ Changed from 204 to 200
 )
 def delete_project(project_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a project by ID and all its related data"""
@@ -213,8 +214,7 @@ def delete_project(project_id: str, current_user: dict = Depends(get_current_use
 
         # Get all document IDs for this project
         docs_cursor = db().documents.find(
-            {"project_id": project_id, "user_id": user_id}, 
-            {"doc_id": 1, "_id": 0}
+            {"project_id": project_id, "user_id": user_id}, {"doc_id": 1, "_id": 0}
         )
         docs = list(docs_cursor)
         doc_ids = [doc.get("doc_id") for doc in docs if doc.get("doc_id")]
@@ -222,23 +222,31 @@ def delete_project(project_id: str, current_user: dict = Depends(get_current_use
         print(f"[DEBUG] Deleting project {project_id} with {len(doc_ids)} documents")
 
         # Delete all project-related data from all collections
-        base_filter = {"project_id": project_id, "user_id": user_id}
 
-        documents_deleted = db().documents.delete_many(base_filter).deleted_count
+        documents_deleted = (
+            db()
+            .documents.delete_many({"project_id": project_id, "user_id": user_id})
+            .deleted_count
+        )
+
+        base_filter = {
+            "properties.project_id": project_id,
+            "properties.user_id": user_id,
+        }
         chunks_deleted = db().chunks.delete_many(base_filter).deleted_count
-        
+
         # Use correct collection names
-        entities_deleted = db().silver_nodes.delete_many(base_filter).deleted_count
-        relations_deleted = db().silver_edges.delete_many(base_filter).deleted_count
-        
+        entities_deleted = db().entities.delete_many(base_filter).deleted_count
+        relations_deleted = db().relations.delete_many(base_filter).deleted_count
+
         scenarios_deleted = db().scenarios.delete_many(base_filter).deleted_count
 
         # Delete tables by doc_id
         tables_deleted = 0
         if doc_ids:
-            tables_deleted = db().tables.delete_many(
-                {"doc_id": {"$in": doc_ids}}
-            ).deleted_count
+            tables_deleted = (
+                db().tables.delete_many({"doc_id": {"$in": doc_ids}}).deleted_count
+            )
 
         # Finally, delete the project itself
         result = db().projects.delete_one({"id": project_id, "user_id": user_id})
@@ -250,13 +258,13 @@ def delete_project(project_id: str, current_user: dict = Depends(get_current_use
             )
 
         total_items_deleted = (
-            documents_deleted +
-            chunks_deleted +
-            entities_deleted +
-            relations_deleted +
-            tables_deleted +
-            scenarios_deleted +
-            1  # The project itself
+            documents_deleted
+            + chunks_deleted
+            + entities_deleted
+            + relations_deleted
+            + tables_deleted
+            + scenarios_deleted
+            + 1  # The project itself
         )
 
         print(
@@ -301,9 +309,12 @@ def delete_project(project_id: str, current_user: dict = Depends(get_current_use
 
 # Delete a project's data
 @router_for_projects.delete(
-    "/projects/{project_id}/data", status_code=status.HTTP_200_OK  # ✅ Changed from 204 to 200
+    "/projects/{project_id}/data",
+    status_code=status.HTTP_200_OK,  # ✅ Changed from 204 to 200
 )
-def delete_project_data(project_id: str, current_user: dict = Depends(get_current_user)):
+def delete_project_data(
+    project_id: str, current_user: dict = Depends(get_current_user)
+):
     """Delete all data associated with a project by ID, but not the project itself"""
     try:
         user_id = (
@@ -320,8 +331,7 @@ def delete_project_data(project_id: str, current_user: dict = Depends(get_curren
 
         # First verify the project exists and belongs to the user
         project = db().projects.find_one(
-            {"id": project_id, "user_id": user_id}, 
-            {"_id": 0, "name": 1}
+            {"id": project_id, "user_id": user_id}, {"_id": 0, "name": 1}
         )
 
         if not project:
@@ -332,40 +342,49 @@ def delete_project_data(project_id: str, current_user: dict = Depends(get_curren
 
         # Get all document IDs for this project
         docs_cursor = db().documents.find(
-            {"project_id": project_id, "user_id": user_id}, 
-            {"doc_id": 1, "_id": 0}
+            {"project_id": project_id, "user_id": user_id}, {"doc_id": 1, "_id": 0}
         )
         docs = list(docs_cursor)
         doc_ids = [doc.get("doc_id") for doc in docs if doc.get("doc_id")]
 
-        print(f"[DEBUG] Deleting data for project {project_id} with {len(doc_ids)} documents")
+        print(
+            f"[DEBUG] Deleting data for project {project_id} with {len(doc_ids)} documents"
+        )
 
         # Delete all project-related data from all collections
-        base_filter = {"project_id": project_id, "user_id": user_id}
 
-        documents_deleted = db().documents.delete_many(base_filter).deleted_count
+        documents_deleted = (
+            db()
+            .documents.delete_many({"project_id": project_id, "user_id": user_id})
+            .deleted_count
+        )
+
+        base_filter = {
+            "properties.project_id": project_id,
+            "properties.user_id": user_id,
+        }
         chunks_deleted = db().chunks.delete_many(base_filter).deleted_count
-        
+
         # Use correct collection names
-        entities_deleted = db().silver_nodes.delete_many(base_filter).deleted_count
-        relations_deleted = db().silver_edges.delete_many(base_filter).deleted_count
-        
+        entities_deleted = db().entities.delete_many(base_filter).deleted_count
+        relations_deleted = db().relations.delete_many(base_filter).deleted_count
+
         scenarios_deleted = db().scenarios.delete_many(base_filter).deleted_count
 
         # Delete tables by doc_id (if tables don't have project_id)
         tables_deleted = 0
         if doc_ids:
-            tables_deleted = db().tables.delete_many(
-                {"doc_id": {"$in": doc_ids}}
-            ).deleted_count
+            tables_deleted = (
+                db().tables.delete_many({"doc_id": {"$in": doc_ids}}).deleted_count
+            )
 
         total_items_deleted = (
-            documents_deleted +
-            chunks_deleted +
-            entities_deleted +
-            relations_deleted +
-            tables_deleted +
-            scenarios_deleted
+            documents_deleted
+            + chunks_deleted
+            + entities_deleted
+            + relations_deleted
+            + tables_deleted
+            + scenarios_deleted
         )
 
         print(
@@ -409,9 +428,7 @@ def delete_project_data(project_id: str, current_user: dict = Depends(get_curren
 
 
 # Delete all projects for the current user - USE WITH CAUTION
-@router_for_projects.delete(
-    "/projects/clear_all", status_code=status.HTTP_200_OK
-)
+@router_for_projects.delete("/projects/clear_all", status_code=status.HTTP_200_OK)
 def clear_all_projects(current_user: dict = Depends(get_current_user)):
     """Delete all projects and all related data for the current user - USE WITH CAUTION"""
     try:
@@ -428,7 +445,9 @@ def clear_all_projects(current_user: dict = Depends(get_current_user)):
             )
 
         # Get all project IDs for this user first
-        user_projects_cursor = db().projects.find({"user_id": user_id}, {"id": 1, "_id": 0})
+        user_projects_cursor = db().projects.find(
+            {"user_id": user_id}, {"id": 1, "_id": 0}
+        )
         user_projects = list(user_projects_cursor)
         project_ids = [p["id"] for p in user_projects]
 
@@ -436,32 +455,34 @@ def clear_all_projects(current_user: dict = Depends(get_current_user)):
 
         # Delete all project-related data
         base_filter = {"user_id": user_id}
-        
+
         # Delete data by user_id and project_id
         documents_deleted = db().documents.delete_many(base_filter).deleted_count
         chunks_deleted = db().chunks.delete_many(base_filter).deleted_count
-        entities_deleted = db().silver_nodes.delete_many(base_filter).deleted_count
-        relations_deleted = db().silver_edges.delete_many(base_filter).deleted_count
+        entities_deleted = db().entities.delete_many(base_filter).deleted_count
+        relations_deleted = db().relations.delete_many(base_filter).deleted_count
         scenarios_deleted = db().scenarios.delete_many(base_filter).deleted_count
-        
+
         # Delete tables by project_id (if tables have project_id field)
         tables_deleted = 0
         if project_ids:
-            tables_deleted = db().tables.delete_many(
-                {"project_id": {"$in": project_ids}}
-            ).deleted_count
+            tables_deleted = (
+                db()
+                .tables.delete_many({"project_id": {"$in": project_ids}})
+                .deleted_count
+            )
 
         # Delete all projects
         projects_deleted = db().projects.delete_many({"user_id": user_id}).deleted_count
 
         total_items_deleted = (
-            documents_deleted +
-            chunks_deleted +
-            entities_deleted +
-            relations_deleted +
-            tables_deleted +
-            scenarios_deleted +
-            projects_deleted
+            documents_deleted
+            + chunks_deleted
+            + entities_deleted
+            + relations_deleted
+            + tables_deleted
+            + scenarios_deleted
+            + projects_deleted
         )
 
         print(
@@ -496,6 +517,105 @@ def clear_all_projects(current_user: dict = Depends(get_current_user)):
         raise
     except Exception as e:
         print(f"[ERROR] Clear all projects failed: {e}")
+        import traceback
+
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}",
+        )
+
+
+# Fetch entities and relations for a document and add metadata
+@router_for_projects.get(
+    "/projects/{project_id}/entities_relations", status_code=status.HTTP_200_OK
+)
+def get_entities_relations_for_project(
+    project_id: str, current_user: dict = Depends(get_current_user)
+):
+    """Fetch entities and relations for a document and add project metadata"""
+    try:
+        user_id = (
+            current_user.get("user_id")
+            or current_user.get("sub")
+            or current_user.get("id")
+        )
+
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not extract user_id from authentication token",
+            )
+
+        # Fetch entities (nodes) for the document
+        nodes_cursor = db().entities.find(
+            {
+                "properties.project_id": project_id,
+                "properties.user_id": user_id,
+            },
+        )
+        nodes = list(nodes_cursor)
+
+        # Fetch relations (edges) for the document
+        edges_cursor = db().relations.find(
+            {
+                "properties.project_id": project_id,
+                "properties.user_id": user_id,
+            },
+        )
+        edges = list(edges_cursor)
+
+        # Add metadata to each node and edge
+        for n in nodes:
+            if "properties" not in n or not isinstance(n["properties"], dict):
+                n["properties"] = {}
+
+            n["id"] = (
+                n.get("id")  # Check root level id first
+                or n.get("properties", {}).get("id")  # Check properties.id
+                or str(n.get("_id"))  # Fall back to MongoDB _id
+            )
+
+            n["properties"]["project_id"] = project_id
+            n["properties"]["user_id"] = user_id
+
+            if "_id" in n:
+                del n["_id"]  # Remove MongoDB _id to avoid confusion
+
+        for e in edges:
+            if "properties" not in e or not isinstance(e["properties"], dict):
+                e["properties"] = {}
+
+            e["id"] = (
+                e.get("id")  # Check root level id first
+                or e.get("properties", {}).get("id")  # Check properties.id
+                or str(e.get("_id"))  # Fall back to MongoDB _id
+            )
+
+            e["properties"]["project_id"] = project_id
+            e["properties"]["user_id"] = user_id
+
+            if "_id" in e:
+                del e["_id"]  # Remove MongoDB _id to avoid confusion
+
+        # Add summary statistics
+        summary = {
+            "entity_count": len(nodes),
+            "relation_count": len(edges),
+            "project_id": project_id,
+        }
+
+        return {
+            "project_id": project_id,
+            "entities": nodes,
+            "relations": edges,
+            "summary": summary,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Fetch entities and relations failed: {e}")
         import traceback
 
         traceback.print_exc()

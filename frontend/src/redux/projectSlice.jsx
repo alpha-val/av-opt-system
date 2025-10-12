@@ -86,7 +86,7 @@ export const fetchProjects = createAsyncThunk(
       }
 
       const data = await response.json();
-      console.log("[projectSlice] Fetched projects:", data);
+
       return data;
     } catch (error) {
       return rejectWithValue(error.message);

@@ -205,6 +205,7 @@ const Sources = () => {
           okText: "Yes, Clear All Data",
           cancelText: "Cancel",
           severity: "error",
+          warningMsg: "",
         }
       );
 
@@ -339,7 +340,7 @@ const Sources = () => {
               <Typography variant="h6">All Documents ({totalCount})</Typography>
 
               {/* Add Clear All Data Button */}
-              {allDocuments.length > 0 && (
+              {
                 <Button
                   variant="outlined"
                   color="error"
@@ -348,9 +349,9 @@ const Sources = () => {
                   disabled={clearingData || loading.deleteDocument}
                   size="small"
                 >
-                  Clear All Data
+                  Clear All Project Data
                 </Button>
-              )}
+              }
             </Box>
 
             {allDocuments.length === 0 ? (
@@ -389,8 +390,7 @@ const Sources = () => {
                             {getFileIcon(doc.fileType, doc.fileName)}
                             <Box>
                               <Typography variant="body2" fontWeight="medium">
-                                {doc.file_name ||
-                                  "Unknown File"}
+                                {doc.file_name || "Unknown File"}
                               </Typography>
                             </Box>
                           </Box>

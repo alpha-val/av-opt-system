@@ -8,7 +8,8 @@ from collections import OrderedDict
 
 # from langchain_community.graphs import Node, Relationship
 from typing import Dict, List, Any, Union, Tuple
-from .build_prompt import gen_prompt
+# from .build_prompt import gen_prompt
+from ..build_prompt import gen_prompt
 from .ontology import load_ontology
 from ..config_adapter import SETTINGS
 from langchain_core.documents import Document
@@ -170,13 +171,13 @@ def openai_extract_nodes_rels(
     3. Merge & de-dupe nodes / edges across chunks.
     4. Ingest a single GraphDocument into Neo4j.
     """
-    print("====================================================")
-    print("[DEBUG] Starting text ingestion with chunking...")
-    print("====================================================")
+    logger.info("====================================================")
+    logger.info("[DEBUG] Starting text ingestion with chunking...")
+    logger.info("====================================================")
 
     # ── 1. Prep the LLM with tools ──────────────────────────
     llm = ChatOpenAI(
-        model="gpt-4o-mini",
+        model="gpt-4o",
         api_key=SETTINGS.openai_api_key,
         temperature=0,
         timeout=60,
@@ -187,15 +188,19 @@ def openai_extract_nodes_rels(
     all_nodes, all_edges, all_mentions = [], [], []
 
     user_prompt = gen_prompt(ontology=ont)
-    # print("[DEBUG] Using user prompt:", user_prompt)
+
     SYSTEM_PROMPT = SystemMessage(content=(user_prompt))
+
     input_text = ""
+
     for idx, chunk in enumerate(chunks):
         text = chunk.get("text", "")
         if not text.strip():
-            print(f"[DEBUG] ⇒ Skipping empty chunk {idx+1}/{len(chunks)} …")
+            logger.warning(f"[DEBUG] ⇒ Skipping empty chunk {idx+1}/{len(chunks)} …")
             continue
-        print(f"[DEBUG] ⇒ Processing chunk {idx+1}/{len(chunks)} …")
+        logger.info(f"[DEBUG] ⇒ Processing chunk {idx+1}/{len(chunks)} …")
+        logger.info(f"[TABULAR DATA] Sending {len(text)} chars to OpenAI")
+
         input_text += text
         messages = [SYSTEM_PROMPT, HumanMessage(content=text)]
         resp = llm.invoke(messages)
@@ -377,7 +382,7 @@ def openai_extract_nodes_rels_mentions(
             }
         )
         chunk_id_by_index[i] = cid
-        
+
     # ── 3. Iterate through chunks & collect calls + raw mentions ─
     all_nodes, all_edges = [], []
     all_mentions_tmp = []  # will store with 'entity_key' then remap to final entity_id
@@ -443,7 +448,7 @@ def openai_extract_nodes_rels_mentions(
 
             elif name == "extract_edges":
                 all_edges.extend(payload.get("edges", []) or [])
-                
+
         print(f"[DEBUG] Nodes: \n{pp.pformat(all_nodes)}")
         print(f"[DEBUG] Edges: \n{pp.pformat(all_edges)}")
         print(f"[DEBUG] Mentions so far: \n{pp.pformat(all_mentions_tmp)}")

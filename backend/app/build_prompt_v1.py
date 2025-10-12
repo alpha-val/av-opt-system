@@ -62,10 +62,9 @@ TABLE STRUCTURE RECOGNITION:
   - Example: "Type / Incl." → type_incl or {type: {incl: value}}
 
 EXTRACTION APPROACH:
-1. **Parse headers**: 
+1. **Identify table boundaries**: Start/end rows, column spans
+2. **Parse headers**: 
    - Top row(s) define property names
-   - Detect multi-level headers
-2. **Normalize headers**:
    - Handle merged cells and sub-headers
    - Normalize to ontology property names (NODE_PROPERTIES)
 3. **Process rows**:
@@ -81,7 +80,11 @@ COLUMN INTERPRETATION:
 * Detect units in headers: "Capacity (TPH)" → capacity_tph
 * Handle dual units: both imperial and metric as separate properties
 * Parse compound cells: "10-20" → min/max, "5 @ 80%" → value + condition
-* Separate numeric values from qualifiers: "100 kg" → value=100, unit=kg
+* Recognize data types:
+  - Numeric: parse numbers, preserve precision
+  - Monetary: extract amount + currency
+  - Boolean: Yes/No, ✓/✗, True/False
+  - Categorical: map to ontology enums if applicable
 
 ENTITY CONSTRUCTION FROM TABLES:
 * **Type inference**:
@@ -95,23 +98,9 @@ ENTITY CONSTRUCTION FROM TABLES:
   - Add table_id, row_index, col_index for lineage
   
 * **Naming convention**:
-  - Names should be explicit, not generic (e.g., avoid "Item")
-  - Names should include distinguishing attributes (e.g., "Pump 10 TPH")
+  - Use "Name" or "Model" column if present
   - Synthesize from key attributes: "{Type} {Dimension}"
   - Ensure uniqueness within table scope
-  
-* **Confidence scoring**:
-  - Direct extraction: confidence=1.0
-  - Inferred type/property: confidence=0.7–0.9
-  - Ambiguous mappings: confidence=0.5–0.7
-  - Missing/empty cells: confidence=0.0
-  - Document reasoning in 'extracted_from' metadata
-
-* **Evidence tracking**:
-  - Include table_id, row_index, col_index in node properties
-  - Include "evidence" snippet from table context
-  - Use "extracted_from": "table" with method "tabular"
-
 
 EDGE CREATION FROM TABLES:
 * **Implicit relationships**:
@@ -175,8 +164,6 @@ Allowed node types (NODE_TYPES):
 Allowed edge types (EDGE_TYPES):
 {_bulleted(ontology["EDGE_TYPES"])}
 
-# Table extraction policy
-{table_extraction_block}
 
 --------------------------------------------------------------------------------
 OUTPUT CONTRACT (strict)
@@ -205,6 +192,8 @@ ID rules:
   Never emit an empty/unknown type.
 
 {costrule_block}
+
+{table_extraction_block}
 
 --------------------------------------------------------------------------------
 NORMALIZATION & DEDUP

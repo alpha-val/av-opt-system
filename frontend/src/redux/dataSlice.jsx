@@ -166,20 +166,13 @@ export const uploadStructuredData = createAsyncThunk(
       formData.append("file", file);
       formData.append("user_id", userId);
       formData.append("project_id", projectId);
-      formData.append("data_type", "scenario"); // Set document type for structured data
+      formData.append("artifact_type", "tabular_data"); // Set document type for structured data
 
       if (metadata.description) {
         formData.append("description", metadata.description);
       }
-      console.log(
-        "Uploading structured data file:",
-        file.name,
-        "for project:",
-        projectId,
-        " url: ",
-        API_BASE_URL
-      );
-      const response = await fetch(`${API_BASE_URL}/tables_to_entities`, {
+
+      const response = await fetch(`${API_BASE_URL}/documents`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -244,10 +237,7 @@ export const fetchProjectDocuments = createAsyncThunk(
       if (artifact_type) params.append("artifact_type", artifact_type);
       params.append("page", page.toString());
       params.append("limit", limit.toString());
-      console.log(
-        "[fetchProjectDocuments] Fetching documents with params:",
-        params.toString()
-      );
+
       const response = await fetch(
         `${API_BASE_URL}/documents/project/${projectId}?${params}`,
         {
@@ -265,7 +255,7 @@ export const fetchProjectDocuments = createAsyncThunk(
       }
 
       const data = await response.json();
-      console.log("[fetchProjectDocuments] Fetched documents:", data);
+
       if (!data) {
         console.warn("Received null response from backend");
         return {
@@ -354,7 +344,7 @@ export const fetchProjectEntitiesRelations = createAsyncThunk(
       if (relation_type) params.append("relation_type", relation_type);
       params.append("include_metadata", include_metadata.toString());
 
-      const url = `${API_BASE_URL}/projects/${projectId}/entities-relations${
+      const url = `${API_BASE_URL}/projects/${projectId}/entities_relations${
         params.toString() ? "?" + params.toString() : ""
       }`;
 
@@ -531,7 +521,7 @@ export const clearAllProjectData = createAsyncThunk(
       }
 
       const data = await response.json();
-      console.log("[dataSlice] Clear all project data response:", data);
+
       return {
         projectId,
         ...data,
@@ -543,11 +533,10 @@ export const clearAllProjectData = createAsyncThunk(
   }
 );
 
-// Simplified initial state
+// Update the initial state to better structure the data
 const initialState = {
   documents: [],
-  // Store entities and relations by project and artifact type
-  entitiesRelationsData: {}, // Structure: { "project-123": { "base_case": { entities: [], relations: [], summary: {} } } }
+  entitiesRelationsData: {}, // Structure: { "project-123": { entities: [], relations: [], summary: {}, lastFetched: timestamp } }
   currentProjectId: null,
   loading: {
     uploadBase: false,
@@ -662,7 +651,7 @@ const dataSlice = createSlice({
         state.documents = state.documents.filter((doc) => doc.doc_id !== docId);
       })
 
-      // Fetch entities and relations
+      // Fetch entities and relations - UPDATED
       .addCase(fetchProjectEntitiesRelations.pending, (state) => {
         state.loading.fetchEntitiesRelations = true;
         state.error = null;
@@ -670,19 +659,17 @@ const dataSlice = createSlice({
       .addCase(fetchProjectEntitiesRelations.fulfilled, (state, action) => {
         state.loading.fetchEntitiesRelations = false;
 
-        const { projectId, artifact_type, entities, relations, summary } =
-          action.payload;
+        const { projectId, entities, relations, summary } = action.payload;
 
-        // Initialize project data if it doesn't exist
-        if (!state.entitiesRelationsData[projectId]) {
-          state.entitiesRelationsData[projectId] = {};
-        }
-
-        // Store data by project and artifact type
-        state.entitiesRelationsData[projectId][artifact_type || "all"] = {
-          entities,
-          relations,
-          summary,
+        // Store data directly at project level (not nested by artifact_type)
+        state.entitiesRelationsData[projectId] = {
+          entities: entities || [],
+          relations: relations || [],
+          summary: summary || {
+            entity_count: 0,
+            relation_count: 0,
+            document_count: 0,
+          },
           lastFetched: Date.now(),
         };
 
@@ -723,20 +710,18 @@ const dataSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(invalidateEntitiesRelationsCache, (state, action) => {
-        const { projectId, artifactType } = action.payload || {};
+        const { projectId } = action.payload || {};
 
-        if (projectId && artifactType) {
-          // Clear specific project and artifact type cache
-          if (state.entitiesRelationsData[projectId]) {
-            delete state.entitiesRelationsData[projectId][artifactType];
-          }
-        } else if (projectId) {
-          // Clear all cached data for a project
+        if (projectId) {
+          // Clear cached data for a specific project
           delete state.entitiesRelationsData[projectId];
+        } else {
+          // Clear all cached data
+          state.entitiesRelationsData = {};
         }
       })
 
-      // Clear all project data
+      // Clear all project data - UPDATED
       .addCase(clearAllProjectData.pending, (state) => {
         state.loading.deleteDocument = true;
         state.error = null;
@@ -752,9 +737,7 @@ const dataSlice = createSlice({
         );
 
         // Clear entities/relations data for this project
-        if (state.entitiesRelationsData[projectId]) {
-          delete state.entitiesRelationsData[projectId];
-        }
+        delete state.entitiesRelationsData[projectId];
 
         // Clear current project if it matches
         if (state.currentProjectId === projectId) {
@@ -877,6 +860,75 @@ export const selectIsDataStale = createSelector(
     if (!typeData || !typeData.lastFetched) return true;
 
     return Date.now() - typeData.lastFetched > maxAgeMs;
+  }
+);
+
+// UPDATED SELECTORS - Remove artifact_type parameter
+export const selectEntitiesByProject = createSelector(
+  [selectEntitiesRelationsData, (state, projectId) => projectId],
+  (entitiesRelationsData, projectId) => {
+    const projectData = entitiesRelationsData[projectId];
+    return projectData?.entities || [];
+  }
+);
+
+export const selectRelationsByProject = createSelector(
+  [selectEntitiesRelationsData, (state, projectId) => projectId],
+  (entitiesRelationsData, projectId) => {
+    const projectData = entitiesRelationsData[projectId];
+    return projectData?.relations || [];
+  }
+);
+
+export const selectSummaryByProject = createSelector(
+  [selectEntitiesRelationsData, (state, projectId) => projectId],
+  (entitiesRelationsData, projectId) => {
+    const projectData = entitiesRelationsData[projectId];
+    return projectData?.summary || null;
+  }
+);
+
+export const selectHasEntitiesRelationsDataForProject = createSelector(
+  [selectEntitiesRelationsData, (state, projectId) => projectId],
+  (entitiesRelationsData, projectId) => {
+    const projectData = entitiesRelationsData[projectId];
+    return !!projectData && !!projectData.lastFetched;
+  }
+);
+
+export const selectIsDataStaleForProject = createSelector(
+  [
+    selectEntitiesRelationsData,
+    (state, projectId) => projectId,
+    (state, projectId, maxAgeMs) => maxAgeMs || 5 * 60 * 1000, // 5 minutes default
+  ],
+  (entitiesRelationsData, projectId, maxAgeMs) => {
+    const projectData = entitiesRelationsData[projectId];
+    if (!projectData || !projectData.lastFetched) return true;
+
+    return Date.now() - projectData.lastFetched > maxAgeMs;
+  }
+);
+
+// Filter entities by type within a project
+export const selectEntitiesByProjectAndEntityType = createSelector(
+  [selectEntitiesByProject, (state, projectId, entityType) => entityType],
+  (entities, entityType) => {
+    if (!entityType) return entities;
+    return entities.filter((entity) => entity.type === entityType);
+  }
+);
+
+// Filter relations by type within a project
+export const selectRelationsByProjectAndRelationType = createSelector(
+  [selectRelationsByProject, (state, projectId, relationType) => relationType],
+  (relations, relationType) => {
+    if (!relationType) return relations;
+    return relations.filter(
+      (relation) =>
+        relation.relation_type === relationType ||
+        relation.type === relationType
+    );
   }
 );
 

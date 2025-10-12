@@ -30,7 +30,7 @@ import {
 
 const RelationRow = ({ relation, index, entityMap }) => {
   const [open, setOpen] = useState(false);
-
+  console.log("Rendering RelationRow for relation:", relation, entityMap);
   // Extract properties safely
   const properties = relation.properties || {};
   const hasProperties = Object.keys(properties).length > 0;
@@ -43,9 +43,13 @@ const RelationRow = ({ relation, index, entityMap }) => {
   const targetEntity = entityMap[targetEntityId];
 
   const sourceName =
-    sourceEntity?.properties.name || sourceEntity?.entity_name || sourceEntityId;
+    sourceEntity?.properties.name ||
+    sourceEntity?.entity_name ||
+    sourceEntityId;
   const targetName =
-    targetEntity?.properties.name || targetEntity?.entity_name || targetEntityId;
+    targetEntity?.properties.name ||
+    targetEntity?.entity_name ||
+    targetEntityId;
 
   return (
     <>
@@ -166,8 +170,9 @@ const RelationsDetailsView = ({
   // Create a map of entity_id to entity object for quick lookup
   const entityMap = useMemo(() => {
     const map = {};
+    console.log("Building entityMap from entities:", entities);
     entities.forEach((entity) => {
-      const entityId = entity._id;
+      const entityId = entity.id;
       if (entityId) {
         map[entityId] = entity;
       }

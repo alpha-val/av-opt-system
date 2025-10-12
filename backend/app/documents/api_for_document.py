@@ -9,7 +9,8 @@ from ..pipeline_users import get_current_user
 from .schemas_for_document import DocumentCreate, DocumentUpdate, DocumentResponse
 
 # ETL
-from ..etl.etl_for_document import etl_base_case
+from ..etl_base.etl_for_base_case import etl_base_case
+from ..etl_tables.etl_for_tabular_data import map_tables_to_entities
 
 router_for_documents = APIRouter()
 
@@ -57,17 +58,26 @@ def create_document(
         # Generate unique document ID
         doc_id = str(uuid.uuid4())
 
-        # # Read file content
-        # file_content = file.file.read()
-        # filename = file.filename or "uploaded.pdf"
-        etl_result = etl_base_case(
-            file=file,
-            pages=pages,
-            project_id=project_id,
-            user_id=user_id,
-            artifact_type=artifact_type,
-            doc_id=doc_id,
-        )
+        etl_result: Dict[str, Any] = {}
+        if artifact_type == "base_case":
+            etl_result = etl_base_case(
+                file=file,
+                pages=pages,
+                project_id=project_id,
+                user_id=user_id,
+                artifact_type=artifact_type,
+                doc_id=doc_id,
+            )
+        elif artifact_type == "tabular_data":
+            etl_result = map_tables_to_entities(
+                file=file,
+                pages=pages,
+                project_id=project_id,
+                user_id=user_id,
+                artifact_type=artifact_type,
+                doc_id=doc_id,
+            )
+
 
         # Parse tags if provided
         tags_list = []

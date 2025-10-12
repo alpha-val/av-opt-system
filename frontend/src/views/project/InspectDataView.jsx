@@ -7,7 +7,6 @@ import {
   Grid,
   Paper,
   Button,
-  Chip,
   LinearProgress,
   Alert,
   Snackbar,
@@ -18,11 +17,11 @@ import {
 import {
   fetchProjectEntitiesRelations,
   fetchProjectDocuments,
-  selectEntitiesByProjectAndType,
-  selectRelationsByProjectAndType,
-  selectSummaryByProjectAndType,
-  selectHasEntitiesRelationsData,
-  selectIsDataStale,
+  selectEntitiesByProject,
+  selectRelationsByProject,
+  selectSummaryByProject,
+  selectHasEntitiesRelationsDataForProject,
+  selectIsDataStaleForProject,
   selectDataLoading,
   selectDataError,
   selectBaseCaseDocuments,
@@ -30,6 +29,7 @@ import {
 
 import EntityDetailsTable from "../../components/EntityDetailsTable";
 import RelationsDetailsView from "../../components/RelationsDetailsView";
+import TableEntityDetailsTable from "../../components/TableEntityDetailsTable";
 
 const InspectDataView = () => {
   const { projectId } = useParams();
@@ -40,9 +40,7 @@ const InspectDataView = () => {
 
   // Get raw entities data
   const rawEntities =
-    useSelector((state) =>
-      selectEntitiesByProjectAndType(state, projectId, "base_case")
-    ) || [];
+    useSelector((state) => selectEntitiesByProject(state, projectId)) || [];
 
   // Sort entities by type, then by name
   const entities = useMemo(() => {
@@ -63,23 +61,50 @@ const InspectDataView = () => {
     });
   }, [rawEntities]);
 
-  const relations =
-    useSelector((state) =>
-      selectRelationsByProjectAndType(state, projectId, "base_case")
-    ) || [];
+  // Filter entities by artifact_type
+  const baseCaseEntities = useMemo(() => {
+    return entities.filter(
+      (entity) => entity.properties?.artifact_type === "base_case"
+    );
+  }, [entities]);
 
+  const tabularDataEntities = useMemo(() => {
+    return entities.filter(
+      (entity) => entity.properties?.artifact_type === "tabular_data"
+    );
+  }, [entities]);
+
+  // Get relations
+  const relations =
+    useSelector((state) => selectRelationsByProject(state, projectId)) || [];
+
+  // Filter relations by artifact_type
+  const baseCaseRelations = useMemo(() => {
+    return relations.filter(
+      (relation) => relation.properties?.artifact_type === "base_case"
+    );
+  }, [relations]);
+
+  const tabularDataRelations = useMemo(() => {
+    return relations.filter(
+      (relation) => relation.properties?.artifact_type === "tabular_data"
+    );
+  }, [relations]);
+
+  // Get summary
   const summary = useSelector((state) =>
-    selectSummaryByProjectAndType(state, projectId, "base_case")
+    selectSummaryByProject(state, projectId)
   );
 
   const baseCaseDocuments = useSelector(selectBaseCaseDocuments) || [];
 
   // Check if we have data and if it's stale
   const hasData = useSelector((state) =>
-    selectHasEntitiesRelationsData(state, projectId, "base_case")
+    selectHasEntitiesRelationsDataForProject(state, projectId)
   );
+
   const isDataStale = useSelector(
-    (state) => selectIsDataStale(state, projectId, "base_case", 5 * 60 * 1000) // 5 minutes
+    (state) => selectIsDataStaleForProject(state, projectId, 5 * 60 * 1000) // 5 minutes
   );
 
   const loading = useSelector(selectDataLoading);
@@ -93,11 +118,9 @@ const InspectDataView = () => {
     if (projectId) {
       // Load entities and relations if no data or data is stale
       if (!hasData || isDataStale) {
-        console.log("Loading base case data for project:", projectId);
         dispatch(
           fetchProjectEntitiesRelations({
             projectId,
-            artifact_type: "base_case",
             include_metadata: true,
           })
         );
@@ -121,15 +144,10 @@ const InspectDataView = () => {
 
     // If document count decreased (document was deleted)
     if (lastDocumentCount > 0 && currentDocumentCount < lastDocumentCount) {
-      console.log(
-        `Document deleted - count changed from ${lastDocumentCount} to ${currentDocumentCount}`
-      );
-
       // Force refresh entities and relations data
       dispatch(
         fetchProjectEntitiesRelations({
           projectId,
-          artifact_type: "base_case",
           include_metadata: true,
         })
       );
@@ -142,7 +160,6 @@ const InspectDataView = () => {
   useEffect(() => {
     // If data becomes stale (cache was invalidated), reload it
     if (hasData && isDataStale && !loading.fetchEntitiesRelations) {
-      console.log("Cache invalidated - reloading base case data");
       loadBaseCaseData();
     }
   }, [hasData, isDataStale, loading.fetchEntitiesRelations, loadBaseCaseData]);
@@ -155,11 +172,9 @@ const InspectDataView = () => {
   // Force refresh function
   const forceRefresh = useCallback(() => {
     if (projectId) {
-      console.log("Force refreshing base case data");
       dispatch(
         fetchProjectEntitiesRelations({
           projectId,
-          artifact_type: "base_case",
           include_metadata: true,
         })
       );
@@ -171,26 +186,6 @@ const InspectDataView = () => {
       );
     }
   }, [dispatch, projectId]);
-
-  // Memoized entity types for performance
-  const entityTypes = useMemo(() => {
-    const types = {};
-    entities.forEach((entity) => {
-      const type = entity.type || "unknown";
-      types[type] = (types[type] || 0) + 1;
-    });
-    return types;
-  }, [entities]);
-
-  // Memoized relation types for performance
-  const relationTypes = useMemo(() => {
-    const types = {};
-    relations.forEach((relation) => {
-      const type = relation.relation_type || relation.type || "unknown";
-      types[type] = (types[type] || 0) + 1;
-    });
-    return types;
-  }, [relations]);
 
   useEffect(() => {
     if (error) {
@@ -258,18 +253,23 @@ const InspectDataView = () => {
           sx={{ borderBottom: 1, borderColor: "divider" }}
         >
           <Tab
-            label={`Entities (${entities.length})`}
+            label={`Base Case Entities (${baseCaseEntities.length})`}
             id="tab-0"
             aria-controls="tabpanel-0"
           />
           <Tab
-            label={`Relations (${relations.length})`}
+            label={`Base Case Relations (${baseCaseRelations.length})`}
             id="tab-1"
             aria-controls="tabpanel-1"
           />
+          <Tab
+            label={`Tabular Data (${tabularDataEntities.length})`}
+            id="tab-2"
+            aria-controls="tabpanel-2"
+          />
         </Tabs>
 
-        {/* Entities Tab */}
+        {/* Base Case Entities Tab */}
         <Box
           role="tabpanel"
           hidden={tabValue !== 0}
@@ -279,13 +279,13 @@ const InspectDataView = () => {
         >
           {tabValue === 0 && (
             <EntityDetailsTable
-              entities={entities}
+              entities={baseCaseEntities}
               title="Base Case Entities"
             />
           )}
         </Box>
 
-        {/* Relations Tab */}
+        {/* Base Case Relations Tab */}
         <Box
           role="tabpanel"
           hidden={tabValue !== 1}
@@ -295,9 +295,25 @@ const InspectDataView = () => {
         >
           {tabValue === 1 && (
             <RelationsDetailsView
-              relations={relations}
-              entities={entities}
+              relations={baseCaseRelations}
+              entities={baseCaseEntities}
               title="Base Case Relations"
+            />
+          )}
+        </Box>
+
+        {/* Tabular Data Tab */}
+        <Box
+          role="tabpanel"
+          hidden={tabValue !== 2}
+          id="tabpanel-2"
+          aria-labelledby="tab-2"
+          sx={{ p: 0 }}
+        >
+          {tabValue === 2 && (
+            <EntityDetailsTable
+              entities={tabularDataEntities}
+              title="Tabular Data Entities"
             />
           )}
         </Box>
