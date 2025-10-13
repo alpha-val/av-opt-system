@@ -4,52 +4,183 @@ import REACT_APP_CONFIG from "../AppConfig";
 
 const API_BASE_URL = REACT_APP_CONFIG.url.API_URL;
 
+const getAuthToken = () => {
+  return localStorage.getItem("access_token"); // Changed from "authToken" to "access_token"
+};
+
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+};
+
+const setAuthToken = (token, rememberMe = false) => {
+  localStorage.setItem("access_token", token); // Changed from "authToken" to "access_token"
+};
+
+const clearAuthToken = () => {
+  localStorage.removeItem("access_token"); // Changed from "authToken" to "access_token"
+};
+
 export const fetchScenarios = createAsyncThunk(
   "scenarios/fetchByProject",
-  async (projectId) => {
-    console.log("[scenarioSlice] fetching: ", `${API_BASE_URL}/projects/${projectId}/scenarios`)
-    const response = await axios.get(
-      `${API_BASE_URL}/projects/${projectId}/scenarios`
-    );
-    console.log("[scenarioSlice] Fetched scenarios:", response.data);
-    return { projectId, scenarios: response.data };
+  async (projectId, { rejectWithValue }) => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      console.log(
+        "[scenarioSlice] fetching: ",
+        `${API_BASE_URL}/projects/${projectId}/scenarios`
+      );
+
+      const response = await fetch(
+        `${API_BASE_URL}/projects/${projectId}/scenarios`,
+        {
+          method: "GET",
+          headers: getAuthHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.detail || `HTTP error! status: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+      console.log("[scenarioSlice] Fetched scenarios:", data);
+      return { projectId, scenarios: data };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
 export const fetchScenario = createAsyncThunk(
   "scenarios/fetchById",
-  async (scenarioId) => {
-    const response = await axios.get(`${API_BASE_URL}/scenarios/${scenarioId}`);
-    return response.data;
+  async (scenarioId, { rejectWithValue }) => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const response = await fetch(`${API_BASE_URL}/scenarios/${scenarioId}`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.detail || `HTTP error! status: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
 export const createScenario = createAsyncThunk(
   "scenarios/create",
-  async (scenario) => {
-    console.log("Creating scenario:", scenario);
-    const response = await axios.post(`${API_BASE_URL}/scenarios`, scenario);
-    return response.data;
+  async (scenario, { rejectWithValue }) => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      console.log("Creating scenario:", scenario);
+
+      const response = await fetch(`${API_BASE_URL}/scenarios/add`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(scenario),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.detail || `HTTP error! status: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+      console.log("[scenarioSlice] Created scenario:", data);
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
-// ADD THIS: updateScenario thunk
 export const updateScenario = createAsyncThunk(
   "scenarios/update",
-  async ({ scenarioId, updates }) => {
-    const response = await axios.patch(
-      `${API_BASE_URL}/scenarios/${scenarioId}`,
-      updates
-    );
-    return response.data;
+  async ({ scenarioId, updates }, { rejectWithValue }) => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      console.log("Updating scenario:", scenarioId, updates);
+
+      const response = await fetch(`${API_BASE_URL}/scenarios/${scenarioId}`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(updates),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.detail || `HTTP error! status: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
 export const deleteScenario = createAsyncThunk(
   "scenarios/delete",
-  async (scenarioId) => {
-    await axios.delete(`${API_BASE_URL}/scenarios/${scenarioId}`);
-    return scenarioId;
+  async (scenarioId, { rejectWithValue }) => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const response = await fetch(`${API_BASE_URL}/scenarios/${scenarioId}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.detail || `HTTP error! status: ${response.status}`
+        );
+      }
+
+      return scenarioId;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
@@ -64,7 +195,6 @@ const scenarioSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Fetch scenarios by project
       .addCase(fetchScenarios.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -79,10 +209,9 @@ const scenarioSlice = createSlice({
       })
       .addCase(fetchScenarios.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
 
-      // Fetch single scenario
       .addCase(fetchScenario.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -92,7 +221,6 @@ const scenarioSlice = createSlice({
         const scenario = action.payload;
         state.byId[scenario.id] = scenario;
 
-        // Also update the project list if it exists
         if (state.byProject[scenario.project_id]) {
           const index = state.byProject[scenario.project_id].findIndex(
             (s) => s.id === scenario.id
@@ -106,10 +234,9 @@ const scenarioSlice = createSlice({
       })
       .addCase(fetchScenario.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
 
-      // Create scenario
       .addCase(createScenario.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -125,10 +252,9 @@ const scenarioSlice = createSlice({
       })
       .addCase(createScenario.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
 
-      // Update scenario
       .addCase(updateScenario.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -138,7 +264,6 @@ const scenarioSlice = createSlice({
         const scenario = action.payload;
         state.byId[scenario.id] = scenario;
 
-        // Update in project list if it exists
         if (state.byProject[scenario.project_id]) {
           const index = state.byProject[scenario.project_id].findIndex(
             (s) => s.id === scenario.id
@@ -150,10 +275,9 @@ const scenarioSlice = createSlice({
       })
       .addCase(updateScenario.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
 
-      // Delete scenario
       .addCase(deleteScenario.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -171,7 +295,7 @@ const scenarioSlice = createSlice({
       })
       .addCase(deleteScenario.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       });
   },
 });

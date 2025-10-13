@@ -88,6 +88,14 @@ const ScenarioCard = ({ scenario, onClick, onMenuClick }) => {
             size="small"
             sx={{ mr: 1 }}
           />
+          <Chip
+            label={`Last Modified: ${new Date(
+              scenario.last_modified
+            ).toLocaleDateString()}`}
+            variant="outlined"
+            size="small"
+            sx={{ mr: 1 }}
+          />
           <Chip label={scenario.change_type} variant="outlined" size="small" />
         </Box>
       </CardContent>

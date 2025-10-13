@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Box,
@@ -7,8 +7,6 @@ import {
   Button,
   Chip,
   Grid,
-  Card,
-  CardContent,
   Tabs,
   Tab,
   IconButton,
@@ -16,46 +14,57 @@ import {
   MenuItem,
   Alert,
   CircularProgress,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
 } from "@mui/material";
 import {
-  Add as AddIcon,
-  MoreVert as MoreVertIcon,
   TrendingUp,
   AttachMoney,
   Speed,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  MoreVert as MoreVertIcon,
 } from "@mui/icons-material";
 import {
   fetchScenario,
   updateScenario,
   deleteScenario,
 } from "../../../redux/scenarioSlice";
-import { fetchOptions } from "../../../redux/optionSlice";
-import OptionsTable from "./options/OptionsTabularView";
-import OptionComparisonView from "./options/OptionsComparisonView";
-import CreateOptionDialog from "./options/CreateOptionDialog";
 
-const ScenarioDetail = ({ scenarioId, projectId, onClose }) => {
+const ScenarioDetail = ({ scenarioId, scenario: initialScenario, projectId, onClose }) => {
   const dispatch = useDispatch();
 
   const [activeTab, setActiveTab] = useState(0);
   const [menuAnchor, setMenuAnchor] = useState(null);
-  const [createOptionDialogOpen, setCreateOptionDialogOpen] = useState(false);
+  const [goal, setGoal] = useState("");
+  const [description, setDescription] = useState("");
+  const [changeType, setChangeType] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const scenario = useSelector((state) => state.scenarios?.byId?.[scenarioId]);
-  const options = useSelector(
-    (state) => state.options?.byScenario?.[scenarioId] || []
-  );
+  const scenario = useSelector((state) => state.scenarios?.byId?.[scenarioId]) || initialScenario;
   const loading = useSelector((state) => state.scenarios?.loading || false);
   const error = useSelector((state) => state.scenarios?.error);
+  console.log("[ScenarioDetails] scenario:", scenario);
+  useEffect(() => {
+    if (scenarioId && !initialScenario) {
+      dispatch(fetchScenario(scenarioId));
+    }
+  }, [scenarioId, initialScenario, dispatch]);
 
   useEffect(() => {
-    if (scenarioId) {
-      dispatch(fetchScenario(scenarioId));
-      dispatch(fetchOptions(scenarioId));
+    if (scenario) {
+      setGoal(scenario.goal || "");
+      setDescription(scenario.description || "");
+      setChangeType(scenario.change_type || "");
+      setIsAnalyzing(
+        scenario.status === "analyzing" ||
+          scenario.compute_state === "running" ||
+          scenario.compute_state === "queued"
+      );
     }
-  }, [scenarioId, dispatch]);
+  }, [scenario]);
 
   const handleMenuClick = (event) => {
     setMenuAnchor(event.currentTarget);
@@ -66,7 +75,6 @@ const ScenarioDetail = ({ scenarioId, projectId, onClose }) => {
   };
 
   const handleEdit = () => {
-    // TODO: Open edit dialog
     handleMenuClose();
   };
 
@@ -78,14 +86,51 @@ const ScenarioDetail = ({ scenarioId, projectId, onClose }) => {
     }
   };
 
-  const handleAnalyze = () => {
-    dispatch(
-      updateScenario({
-        scenarioId,
-        updates: { status: "analyzing", compute_state: "queued" },
-      })
-    );
-    // TODO: Trigger backend analysis
+  const handleGoalChange = (event) => {
+    setGoal(event.target.value);
+  };
+
+  const handleDescriptionChange = (event) => {
+    setDescription(event.target.value);
+  };
+
+  const handleChangeTypeChange = (event) => {
+    setChangeType(event.target.value);
+  };
+
+  const handleAnalyze = async () => {
+    setIsAnalyzing(true);
+
+    const updates = {
+      status: "analyzing",
+      compute_state: "queued",
+    };
+
+    if (description && description.trim() !== scenario.description) {
+      updates.description = description;
+    }
+
+    if (goal && goal !== scenario.goal) {
+      updates.goal = goal;
+    }
+
+    if (changeType && changeType !== scenario.change_type) {
+      updates.change_type = changeType;
+    }
+
+    try {
+      await dispatch(
+        updateScenario({
+          scenarioId,
+          updates,
+        })
+      ).unwrap();
+
+      console.log("[ScenarioDetails] Analysis triggered successfully");
+    } catch (err) {
+      console.error("[ScenarioDetails] Failed to trigger analysis:", err);
+      setIsAnalyzing(false);
+    }
   };
 
   const getGoalIcon = (goal) => {
@@ -114,10 +159,6 @@ const ScenarioDetail = ({ scenarioId, projectId, onClose }) => {
     }
   };
 
-  const selectedOption = useMemo(() => {
-    return options.find((opt) => opt.selected);
-  }, [options]);
-
   if (loading && !scenario) {
     return (
       <Box
@@ -143,14 +184,14 @@ const ScenarioDetail = ({ scenarioId, projectId, onClose }) => {
 
   if (!scenario) {
     return (
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: 0 }}>
         <Alert severity="warning">Scenario not found</Alert>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 0 }}>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         {/* Title and Actions */}
@@ -168,22 +209,11 @@ const ScenarioDetail = ({ scenarioId, projectId, onClose }) => {
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button
               variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setCreateOptionDialogOpen(true)}
+              onClick={handleAnalyze}
+              disabled={isAnalyzing || !description.trim()}
             >
-              Add Option
+              {isAnalyzing ? "Analyzing..." : "Run Analysis"}
             </Button>
-            {scenario.status === "draft" && options.length === 0 && (
-              <Button
-                variant="outlined"
-                onClick={handleAnalyze}
-                disabled={scenario.compute_state === "running"}
-              >
-                {scenario.compute_state === "running"
-                  ? "Analyzing..."
-                  : "Generate Options"}
-              </Button>
-            )}
             <IconButton onClick={handleMenuClick}>
               <MoreVertIcon />
             </IconButton>
@@ -206,6 +236,12 @@ const ScenarioDetail = ({ scenarioId, projectId, onClose }) => {
         </Menu>
       </Box>
 
+      {isAnalyzing && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          Cost estimation is in progress. This may take a few moments...
+        </Alert>
+      )}
+
       {/* Overview Cards */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {/* Scenario Info */}
@@ -216,16 +252,74 @@ const ScenarioDetail = ({ scenarioId, projectId, onClose }) => {
             </Typography>
 
             <Box sx={{ mb: 2 }}>
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>What are you trying to achieve?</InputLabel>
+                <Select
+                  value={goal}
+                  onChange={handleGoalChange}
+                  label="What are you trying to achieve?"
+                  disabled={isAnalyzing}
+                >
+                  <MenuItem value="increase_production">
+                    Increase Production
+                  </MenuItem>
+                  <MenuItem value="reduce_cost">Reduce Cost</MenuItem>
+                  <MenuItem value="improve_quality">Improve Quality</MenuItem>
+                  <MenuItem value="change_technology">
+                    Change Technology
+                  </MenuItem>
+                  <MenuItem value="other">Other</MenuItem>
+                </Select>
+              </FormControl>
+
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Description
               </Typography>
-              <Typography variant="body1">
-                {scenario.description || "No description provided"}
+              <TextField
+                fullWidth
+                multiline
+                rows={6}
+                value={description}
+                onChange={handleDescriptionChange}
+                placeholder="Describe your scenario here. Include goals, changes to make, equipment to add/remove, and any constraints..."
+                variant="outlined"
+                disabled={isAnalyzing}
+                sx={{
+                  mb: 2,
+                  "& .MuiOutlinedInput-root": {
+                    fontFamily: "monospace",
+                    fontSize: "0.9rem",
+                  },
+                }}
+              />
+
+              <FormControl fullWidth sx={{ mb: 1 }}>
+                <InputLabel>Type of Change</InputLabel>
+                <Select
+                  value={changeType}
+                  onChange={handleChangeTypeChange}
+                  label="Type of Change"
+                  disabled={isAnalyzing}
+                >
+                  <MenuItem value="equipment">Equipment</MenuItem>
+                  <MenuItem value="process">Process</MenuItem>
+                  <MenuItem value="capacity">Capacity</MenuItem>
+                  <MenuItem value="location">Location</MenuItem>
+                  <MenuItem value="technology">Technology</MenuItem>
+                </Select>
+              </FormControl>
+
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ mt: 1, display: "block" }}
+              >
+                Edit the fields above and click "Run Analysis" to estimate costs
               </Typography>
             </Box>
 
             <Grid container spacing={2}>
-              <Grid item xs={6} sm={3}>
+              <Grid item xs={6} sm={4}>
                 <Typography variant="body2" color="text.secondary">
                   Status
                 </Typography>
@@ -236,7 +330,7 @@ const ScenarioDetail = ({ scenarioId, projectId, onClose }) => {
                   sx={{ mt: 0.5 }}
                 />
               </Grid>
-              <Grid item xs={6} sm={3}>
+              <Grid item xs={6} sm={4}>
                 <Typography variant="body2" color="text.secondary">
                   Change Type
                 </Typography>
@@ -247,141 +341,70 @@ const ScenarioDetail = ({ scenarioId, projectId, onClose }) => {
                   sx={{ mt: 0.5 }}
                 />
               </Grid>
-              <Grid item xs={6} sm={3}>
+              <Grid item xs={6} sm={4}>
                 <Typography variant="body2" color="text.secondary">
-                  Goal
+                  Compute State
                 </Typography>
-                <Typography variant="body1" sx={{ mt: 0.5 }}>
-                  {scenario.goal.replace(/_/g, " ")}
-                </Typography>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <Typography variant="body2" color="text.secondary">
-                  Options
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 0.5 }}>
-                  {scenario.option_count || options.length}
-                </Typography>
+                <Chip
+                  label={scenario.compute_state || "idle"}
+                  variant="outlined"
+                  size="small"
+                  sx={{ mt: 0.5 }}
+                />
               </Grid>
             </Grid>
           </Paper>
         </Grid>
-
-        {/* Target and Constraints */}
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, height: "100%" }}>
-            <Typography variant="h6" gutterBottom>
-              Target & Constraints
-            </Typography>
-
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                Target
-              </Typography>
-              <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                {scenario.target.metric}: {scenario.target.value > 0 ? "+" : ""}
-                {scenario.target.value}
-                {scenario.target.unit}
-              </Typography>
-            </Box>
-
-            {scenario.constraints && (
-              <>
-                {scenario.constraints.budget_capex && (
-                  <Box sx={{ mb: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Budget (CAPEX)
-                    </Typography>
-                    <Typography variant="body1">
-                      ${scenario.constraints.budget_capex.toLocaleString()}
-                    </Typography>
-                  </Box>
-                )}
-                {scenario.constraints.timeline_months && (
-                  <Box sx={{ mb: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Timeline
-                    </Typography>
-                    <Typography variant="body1">
-                      {scenario.constraints.timeline_months} months
-                    </Typography>
-                  </Box>
-                )}
-                {scenario.constraints.use_existing_equipment_only && (
-                  <Chip
-                    label="Use existing equipment only"
-                    size="small"
-                    color="info"
-                    sx={{ mt: 1 }}
-                  />
-                )}
-              </>
-            )}
-          </Paper>
-        </Grid>
       </Grid>
-
-      {/* Selected Option Summary */}
-      {selectedOption && (
-        <Alert severity="info" sx={{ mb: 3 }}>
-          <Typography variant="body2">
-            <strong>Selected Option:</strong> {selectedOption.name}
-            {selectedOption.estimates?.capex && (
-              <>
-                {" "}
-                • CAPEX: $
-                {selectedOption.estimates.capex.value.toLocaleString()}
-              </>
-            )}
-            {selectedOption.estimates?.opex_per_year && (
-              <>
-                {" "}
-                • OPEX/year: $
-                {selectedOption.estimates.opex_per_year.value.toLocaleString()}
-              </>
-            )}
-          </Typography>
-        </Alert>
-      )}
 
       {/* Tabs */}
       <Paper sx={{ mb: 3 }}>
         <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)}>
-          <Tab label={`Options (${options.length})`} />
-          <Tab label="Comparison" disabled={options.length < 2} />
-          <Tab label="Analysis" disabled={options.length === 0} />
+          <Tab label="Configuration" />
+          <Tab label="Cost Estimate" />
+          <Tab label="Results" />
         </Tabs>
       </Paper>
 
       {/* Tab Content */}
       {activeTab === 0 && (
-        <OptionsTable
-          options={options}
-          scenarioId={scenarioId}
-          onAddOption={() => setCreateOptionDialogOpen(true)}
-        />
-      )}
-      {activeTab === 1 && options.length >= 2 && (
-        <OptionComparisonView options={options} />
-      )}
-      {activeTab === 2 && options.length > 0 && (
         <Paper sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom>
-            Cost Analysis
+            Scenario Configuration
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Analysis features coming soon...
+            Configuration details will be displayed here...
           </Typography>
         </Paper>
       )}
 
-      {/* Create Option Dialog */}
-      <CreateOptionDialog
-        open={createOptionDialogOpen}
-        onClose={() => setCreateOptionDialogOpen(false)}
-        scenarioId={scenarioId}
-        scenario={scenario}
-      />
+      {activeTab === 1 && (
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Cost Estimate
+          </Typography>
+          {scenario.status === "ready" ? (
+            <Typography variant="body2" color="text.secondary">
+              Cost estimate results will be displayed here...
+            </Typography>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              Run analysis to generate cost estimate
+            </Typography>
+          )}
+        </Paper>
+      )}
+
+      {activeTab === 2 && (
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Results
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Results will be displayed here after analysis completes...
+          </Typography>
+        </Paper>
+      )}
     </Box>
   );
 };

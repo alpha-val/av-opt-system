@@ -46,8 +46,8 @@ class ScenarioBase(BaseModel):
         "other",
     ]
 
-    target: TargetModel
-    constraints: Optional[ConstraintsModel] = None
+    # target: TargetModel
+    # constraints: Optional[ConstraintsModel] = None
 
     status: Literal["draft", "analyzing", "ready", "archived"] = "draft"
     compute_state: Optional[
@@ -68,25 +68,16 @@ class ScenarioUpdate(BaseModel):
 
     name: Optional[str] = None
     description: Optional[str] = None
-    change_type: Optional[
-        Literal["equipment", "process", "capacity", "location", "technology"]
-    ] = None
-    goal: Optional[
-        Literal[
-            "increase_production",
-            "reduce_cost",
-            "improve_quality",
-            "change_technology",
-            "other",
-        ]
-    ] = None
-    target: Optional[TargetModel] = None
-    constraints: Optional[ConstraintsModel] = None
-    status: Optional[Literal["draft", "analyzing", "ready", "archived"]] = None
-    compute_state: Optional[
-        Literal["idle", "queued", "running", "failed", "succeeded"]
-    ] = None
-    option_count: Optional[int] = None
+    goal: Optional[str] = None
+    change_type: Optional[str] = None
+    status: Optional[str] = None
+    compute_state: Optional[str] = None
+    # target: Optional[Dict[str, Any]] = None
+    # constraints: Optional[Dict[str, Any]] = None
+    cost_estimate_id: Optional[str] = None
+
+    class Config:
+        extra = "forbid"
 
 
 class ScenarioInDB(ScenarioBase):

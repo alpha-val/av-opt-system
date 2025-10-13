@@ -9,6 +9,12 @@ from app.scenario.scenario_model import (
     OptionUpdate,
     OptionResponse,
 )
+from app.scenario.scenario_estimate import (
+    estimate_scenario_cost,
+    get_scenario_cost_estimate,
+)
+from ..pipeline_users import get_current_user
+
 from app.scenario.scenario_db import (
     create_scenario_db,
     get_scenario_db,
@@ -23,25 +29,17 @@ from app.scenario.scenario_db import (
     select_option_db,
 )
 
-router_scenarios = APIRouter()
-
-
-# Mock user authentication - replace with your actual auth
-def get_current_user():
-    return "user_sid"  # Replace with actual user ID from JWT/session
-
+router_scenarios_v0 = APIRouter()
 
 # ============================================================================
 # SCENARIO ROUTES
 # ============================================================================
 
 
-@router_scenarios.post(
-    "/scenarios", response_model=ScenarioResponse, status_code=status.HTTP_201_CREATED
+@router_scenarios_v0.post(
+    "/scenarios/add", response_model=ScenarioResponse, status_code=status.HTTP_201_CREATED
 )
-def create_scenario(
-    scenario: ScenarioCreate, user_id: str = Depends(get_current_user)
-):
+def create_scenario(scenario: ScenarioCreate, user_id: str = Depends(get_current_user)):
     """
     Create a new scenario
     """
@@ -55,7 +53,7 @@ def create_scenario(
         )
 
 
-@router_scenarios.get("/scenarios/{scenario_id}", response_model=ScenarioWithOptions)
+@router_scenarios_v0.get("/scenarios/{scenario_id}", response_model=ScenarioWithOptions)
 def get_scenario(scenario_id: str):
     """
     Get a scenario by ID with all its options
@@ -76,7 +74,7 @@ def get_scenario(scenario_id: str):
     return ScenarioWithOptions(**scenario_dict)
 
 
-@router_scenarios.get(
+@router_scenarios_v0.get(
     "/projects/{project_id}/scenarios", response_model=List[ScenarioResponse]
 )
 def get_project_scenarios(project_id: str):
@@ -87,21 +85,87 @@ def get_project_scenarios(project_id: str):
     return scenarios
 
 
-@router_scenarios.patch("/scenarios/{scenario_id}", response_model=ScenarioResponse)
-def update_scenario(scenario_id: str, update_data: ScenarioUpdate):
+@router_scenarios_v0.put("/scenarios/{scenario_id}/estimate", response_model=ScenarioResponse)
+def update_scenario(
+    scenario_id: str,
+    update_data: ScenarioUpdate,
+    user_id: str = Depends(get_current_user),
+):
     """
-    Update a scenario
+    Update a scenario and optionally trigger cost estimation
     """
-    updated_scenario = update_scenario_db(scenario_id, update_data)
-    if not updated_scenario:
+    scenario = get_scenario_db(scenario_id)
+    if not scenario:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Scenario {scenario_id} not found",
         )
+
+    updated_scenario = update_scenario_db(scenario_id, update_data)
+    if not updated_scenario:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update scenario {scenario_id}",
+        )
+
+    if update_data.status == "analyzing" or update_data.compute_state == "queued":
+        scenario_description = f"""
+            Name: {updated_scenario.name}
+            Description: {updated_scenario.description}
+            Goal: {updated_scenario.goal}
+            Change Type: {updated_scenario.change_type}
+            """
+
+        try:
+            cost_estimate = estimate_scenario_cost(
+                scenario_id=scenario_id,
+                scenario_description=scenario_description,
+                project_id=updated_scenario.project_id,
+                user_id=user_id,
+            )
+
+            if cost_estimate.get("status") == "completed":
+                update_scenario_db(
+                    scenario_id,
+                    ScenarioUpdate(
+                        status="ready",
+                        compute_state="completed",
+                        cost_estimate_id=cost_estimate.get("_id"),
+                    ),
+                )
+        except Exception as e:
+            # logger.error(f"Cost estimation failed for scenario {scenario_id}: {e}")
+            update_scenario_db(
+                scenario_id,
+                ScenarioUpdate(status="draft", compute_state="failed"),
+            )
+
     return updated_scenario
 
 
-@router_scenarios.delete(
+@router_scenarios_v0.get("/scenarios/{scenario_id}/estimate")
+def get_scenario_cost(scenario_id: str):
+    """
+    Get the cost estimate for a scenario
+    """
+    scenario = get_scenario_db(scenario_id)
+    if not scenario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Scenario {scenario_id} not found",
+        )
+
+    cost_estimate = get_scenario_cost_estimate(scenario_id)
+    if not cost_estimate:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No cost estimate found for scenario {scenario_id}",
+        )
+
+    return cost_estimate
+
+
+@router_scenarios_v0.delete(
     "/scenarios/{scenario_id}", status_code=status.HTTP_204_NO_CONTENT
 )
 def delete_scenario(scenario_id: str):
@@ -122,7 +186,7 @@ def delete_scenario(scenario_id: str):
 # ============================================================================
 
 
-@router_scenarios.post(
+@router_scenarios_v0.post(
     "/options", response_model=OptionResponse, status_code=status.HTTP_201_CREATED
 )
 def create_option(option: OptionCreate, user_id: str = Depends(get_current_user)):
@@ -147,7 +211,7 @@ def create_option(option: OptionCreate, user_id: str = Depends(get_current_user)
         )
 
 
-@router_scenarios.get("/options/{option_id}", response_model=OptionResponse)
+@router_scenarios_v0.get("/options/{option_id}", response_model=OptionResponse)
 def get_option(option_id: str):
     """
     Get an option by ID
@@ -161,7 +225,7 @@ def get_option(option_id: str):
     return option
 
 
-@router_scenarios.get(
+@router_scenarios_v0.get(
     "/scenarios/{scenario_id}/options", response_model=List[OptionResponse]
 )
 def get_scenario_options(scenario_id: str):
@@ -180,7 +244,7 @@ def get_scenario_options(scenario_id: str):
     return options
 
 
-@router_scenarios.patch("/options/{option_id}", response_model=OptionResponse)
+@router_scenarios_v0.patch("/options/{option_id}", response_model=OptionResponse)
 def update_option(option_id: str, update_data: OptionUpdate):
     """
     Update an option
@@ -193,7 +257,8 @@ def update_option(option_id: str, update_data: OptionUpdate):
         )
     return updated_option
 
-@router_scenarios.delete("/options/{option_id}", status_code=status.HTTP_204_NO_CONTENT)
+
+@router_scenarios_v0.delete("/options/{option_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_option(option_id: str):
     """
     Delete an option
@@ -207,7 +272,7 @@ def delete_option(option_id: str):
     return None
 
 
-@router_scenarios.post("/options/{option_id}/select", response_model=OptionResponse)
+@router_scenarios_v0.post("/options/{option_id}/select", response_model=OptionResponse)
 def select_option(option_id: str):
     """
     Select an option (and deselect others in the same scenario)
@@ -226,7 +291,7 @@ def select_option(option_id: str):
 # ============================================================================
 
 
-@router_scenarios.post(
+@router_scenarios_v0.post(
     "/scenarios/{scenario_id}/analyze", response_model=ScenarioResponse
 )
 def analyze_scenario(scenario_id: str):

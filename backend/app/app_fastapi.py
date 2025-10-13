@@ -8,13 +8,11 @@ import sys
 from app.bronze_store import ensure_bronze_indexes
 from .app_logging import setup_logging
 
-from .etl_base_case import router_base_case
 from .pipeline_costing import router_costing
-from .pipeline_projects import router_projects
 from .pipeline_query import router_query_vault_data
 from .pipeline_users import router_auth
 from .pipeline_admin import router_admin
-from .scenario.pipeline_scenarios import router_scenarios
+from app.scenarios.api_for_scenarios import router_scenarios
 
 
 # API V2
@@ -66,7 +64,6 @@ app.add_middleware(
 )
 
 # Routes
-app.include_router(router_base_case, prefix="/api/v1")
 app.include_router(router_query_vault_data, prefix="/api/v1")
 app.include_router(router_costing, prefix="/api/v1")
 app.include_router(router_auth, prefix="/api/v1")

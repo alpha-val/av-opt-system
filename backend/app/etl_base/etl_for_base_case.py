@@ -5,7 +5,7 @@ import os, tempfile, uuid, datetime
 import pandas as pd
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from .text_clean import extract_and_clean, chunk_by_page, NAMESPACE
-from .bronze_store import (
+from ..bronze_store import (
     bulk_upsert_chunks,
     bulk_upsert_entities,
     bulk_upsert_relations,

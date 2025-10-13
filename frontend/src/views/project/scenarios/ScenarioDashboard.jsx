@@ -70,7 +70,6 @@ const Scenarios = () => {
     if (selectedScenario) {
       dispatch(deleteScenario(selectedScenario.id));
       handleMenuClose();
-      // If viewing the deleted scenario, go back to list
       if (activeScenarioId === selectedScenario.id) {
         setActiveScenarioId(null);
       }
@@ -143,13 +142,14 @@ const Scenarios = () => {
         {/* Scenario Detail Component */}
         <ScenarioDetail
           scenarioId={activeScenarioId}
+          scenario={activeScenario}
           projectId={projectId}
           onClose={handleBackToList}
         />
       </Box>
     );
   }
-
+  console.log("[ScenarioDashboard] Rendering scenario list: ", scenarios);
   // Show scenario list view (default)
   return (
     <Box sx={{ p: 0 }}>
@@ -189,7 +189,7 @@ const Scenarios = () => {
             No scenarios yet
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Create your first scenario to explore different options
+            Create your first scenario to explore different configurations
           </Typography>
           <Button
             variant="contained"
@@ -200,7 +200,6 @@ const Scenarios = () => {
           </Button>
         </Box>
       ) : (
-        /* Scenario Cards Grid */
         <Grid container spacing={3}>
           {scenarios.map((scenario) => (
             <Grid xs={12} sm={6} md={4} key={scenario.id}>
@@ -266,13 +265,6 @@ const Scenarios = () => {
                       {scenario.target.value > 0 ? "+" : ""}
                       {scenario.target.value}
                       {scenario.target.unit}
-                    </Typography>
-                  )}
-
-                  {scenario.option_count !== undefined && (
-                    <Typography variant="body2" color="primary">
-                      <strong>{scenario.option_count}</strong> option
-                      {scenario.option_count !== 1 ? "s" : ""} generated
                     </Typography>
                   )}
                 </CardContent>

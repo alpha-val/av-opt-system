@@ -16,65 +16,55 @@ import {
   RadioGroup,
   FormControlLabel,
   Radio,
+  CircularProgress,
 } from "@mui/material";
 import { useDispatch } from "react-redux";
 import { createScenario } from "../../../redux/scenarioSlice";
 
 const CreateScenarioDialog = ({ open, onClose, projectId }) => {
   const dispatch = useDispatch();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     goal: "increase_production",
     change_type: "capacity",
-    target_metric: "throughput",
-    target_value: "",
-    target_unit: "%",
-    budget_capex: "",
-    use_existing_equipment_only: false,
   });
 
   const handleChange = (field) => (event) => {
     setFormData({ ...formData, [field]: event.target.value });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const scenario = {
       project_id: projectId,
       name: formData.name,
       description: formData.description,
       goal: formData.goal,
       change_type: formData.change_type,
-      target: {
-        metric: formData.target_metric,
-        value: parseFloat(formData.target_value),
-        unit: formData.target_unit,
-      },
-      constraints: {
-        budget_capex: formData.budget_capex
-          ? parseFloat(formData.budget_capex)
-          : undefined,
-        use_existing_equipment_only: formData.use_existing_equipment_only,
-      },
       status: "draft",
     };
 
-    dispatch(createScenario(scenario));
-    onClose();
+    console.log("Submitting new scenario:", scenario);
+    setIsSubmitting(true);
 
-    // Reset form
-    setFormData({
-      name: "",
-      description: "",
-      goal: "increase_production",
-      change_type: "capacity",
-      target_metric: "throughput",
-      target_value: "",
-      target_unit: "%",
-      budget_capex: "",
-      use_existing_equipment_only: false,
-    });
+    try {
+      await dispatch(createScenario(scenario)).unwrap();
+
+      setFormData({
+        name: "",
+        description: "",
+        goal: "increase_production",
+        change_type: "capacity",
+      });
+
+      onClose();
+    } catch (error) {
+      console.error("Failed to create scenario:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -89,6 +79,7 @@ const CreateScenarioDialog = ({ open, onClose, projectId }) => {
               value={formData.goal}
               onChange={handleChange("goal")}
               label="What are you trying to achieve?"
+              disabled={isSubmitting}
             >
               <MenuItem value="increase_production">
                 Increase Production
@@ -108,6 +99,7 @@ const CreateScenarioDialog = ({ open, onClose, projectId }) => {
             value={formData.name}
             onChange={handleChange("name")}
             placeholder="e.g., Increase production by 10%"
+            disabled={isSubmitting}
           />
 
           {/* Description */}
@@ -119,6 +111,7 @@ const CreateScenarioDialog = ({ open, onClose, projectId }) => {
             value={formData.description}
             onChange={handleChange("description")}
             placeholder="Optional description"
+            disabled={isSubmitting}
           />
 
           {/* Change Type */}
@@ -128,6 +121,7 @@ const CreateScenarioDialog = ({ open, onClose, projectId }) => {
               value={formData.change_type}
               onChange={handleChange("change_type")}
               label="Type of Change"
+              disabled={isSubmitting}
             >
               <MenuItem value="equipment">Equipment</MenuItem>
               <MenuItem value="process">Process</MenuItem>
@@ -136,111 +130,19 @@ const CreateScenarioDialog = ({ open, onClose, projectId }) => {
               <MenuItem value="technology">Technology</MenuItem>
             </Select>
           </FormControl>
-
-          {/* Target */}
-          <Box>
-            <Typography variant="subtitle2" gutterBottom>
-              Target
-            </Typography>
-            <Box sx={{ display: "flex", gap: 1 }}>
-              <FormControl sx={{ minWidth: 150 }}>
-                <InputLabel>Metric</InputLabel>
-                <Select
-                  value={formData.target_metric}
-                  onChange={handleChange("target_metric")}
-                  label="Metric"
-                  size="small"
-                >
-                  <MenuItem value="throughput">Throughput</MenuItem>
-                  <MenuItem value="cost">Cost</MenuItem>
-                  <MenuItem value="quality_score">Quality Score</MenuItem>
-                  <MenuItem value="efficiency">Efficiency</MenuItem>
-                </Select>
-              </FormControl>
-
-              <TextField
-                label="Value"
-                type="number"
-                value={formData.target_value}
-                onChange={handleChange("target_value")}
-                size="small"
-                sx={{ width: 100 }}
-              />
-
-              <FormControl sx={{ width: 100 }}>
-                <InputLabel>Unit</InputLabel>
-                <Select
-                  value={formData.target_unit}
-                  onChange={handleChange("target_unit")}
-                  label="Unit"
-                  size="small"
-                >
-                  <MenuItem value="%">%</MenuItem>
-                  <MenuItem value="units">units</MenuItem>
-                  <MenuItem value="USD">USD</MenuItem>
-                  <MenuItem value="units/day">units/day</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-          </Box>
-
-          {/* Constraints */}
-          <Box>
-            <Typography variant="subtitle2" gutterBottom>
-              Constraints (Optional)
-            </Typography>
-
-            <TextField
-              label="Budget (CAPEX)"
-              type="number"
-              fullWidth
-              value={formData.budget_capex}
-              onChange={handleChange("budget_capex")}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">$</InputAdornment>
-                ),
-              }}
-              sx={{ mb: 2 }}
-            />
-
-            <FormControl component="fieldset">
-              <Typography variant="body2" gutterBottom>
-                Use existing equipment only?
-              </Typography>
-              <RadioGroup
-                row
-                value={formData.use_existing_equipment_only}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    use_existing_equipment_only: e.target.value === "true",
-                  })
-                }
-              >
-                <FormControlLabel
-                  value={false}
-                  control={<Radio />}
-                  label="No"
-                />
-                <FormControlLabel
-                  value={true}
-                  control={<Radio />}
-                  label="Yes"
-                />
-              </RadioGroup>
-            </FormControl>
-          </Box>
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose} disabled={isSubmitting}>
+          Cancel
+        </Button>
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={!formData.name || !formData.target_value}
+          disabled={!formData.name || isSubmitting}
+          startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
         >
-          Create Scenario
+          {isSubmitting ? "Creating..." : "Create Scenario"}
         </Button>
       </DialogActions>
     </Dialog>

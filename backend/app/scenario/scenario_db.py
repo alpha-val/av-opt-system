@@ -17,23 +17,25 @@ from app.bronze_store import db
 # ============================================================================
 
 
-def create_scenario_db(scenario: ScenarioCreate, user_id: str) -> ScenarioInDB:
-    """Create a new scenario in database"""
-    scenario_data = scenario.model_dump()
-    scenario_data["created_by"] = user_id
-    scenario_data["created_at"] = datetime.utcnow()
-    scenario_data["updated_at"] = datetime.utcnow()
-
-    # Generate ID
+def create_scenario_db(scenario: ScenarioCreate, user_id: str) -> ScenarioResponse:
+    from app.bronze_store import db
+    from datetime import datetime, timezone
     import uuid
 
-    scenario_data["id"] = str(uuid.uuid4())
+    scenario_dict = scenario.model_dump()
+    scenario_dict["id"] = str(uuid.uuid4())
+    scenario_dict["created_by"] = user_id  # Use user_id string directly
+    scenario_dict["created_at"] = datetime.now(timezone.utc)
+    scenario_dict["updated_at"] = datetime.now(timezone.utc)
+    scenario_dict["status"] = scenario_dict.get("status", "draft")
+    scenario_dict["compute_state"] = "idle"
 
-    # Insert into database
-    result = db().scenarios.insert_one(scenario_data)
+    result = db().scenarios.insert_one(scenario_dict)
+    
+    if not result.inserted_id:
+        raise Exception("Failed to insert scenario into database")
 
-    # Return created scenario
-    return ScenarioInDB(**scenario_data)
+    return get_scenario_db(scenario_dict["id"])
 
 
 def get_scenario_db(scenario_id: str) -> Optional[ScenarioInDB]:
@@ -57,21 +59,24 @@ def get_scenarios_by_project_db(project_id: str) -> List[ScenarioInDB]:
 
 def update_scenario_db(
     scenario_id: str, update_data: ScenarioUpdate
-) -> Optional[ScenarioInDB]:
-    """Update a scenario"""
-    # Get existing scenario
-    existing = get_scenario_db(scenario_id)
-    if not existing:
+) -> Optional[ScenarioResponse]:
+    from app.bronze_store import db
+    from datetime import datetime, timezone
+
+    update_dict = update_data.model_dump(exclude_unset=True, exclude_none=True)
+
+    if not update_dict:
+        return get_scenario_db(scenario_id)
+
+    update_dict["updated_at"] = datetime.now(timezone.utc)
+
+    result = db().scenarios.update_one(
+        {"id": scenario_id}, {"$set": update_dict}
+    )
+
+    if result.modified_count == 0:
         return None
 
-    # Prepare update data
-    update_dict = update_data.model_dump(exclude_unset=True)
-    update_dict["updated_at"] = datetime.utcnow()
-
-    # Update in database
-    db().scenarios.update_one({"id": scenario_id}, {"$set": update_dict})
-
-    # Return updated scenario
     return get_scenario_db(scenario_id)
 
 
