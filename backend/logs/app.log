@@ -523,3 +523,19 @@
 2025-10-12 20:35:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
 2025-10-12 20:36:32 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
 2025-10-12 20:43:53 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-12 21:11:23 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-12 21:12:44 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-12 21:14:12 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-12 21:15:40 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-12 21:24:37 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:88] - [COST ESTIMATION] Starting for scenario 7b70ccaf-3cfc-489b-8560-a91097ceebf9
+2025-10-12 21:25:11 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:108] - [COST ESTIMATION] Found 46 base case entities, 24 tabular entities
+2025-10-12 21:25:48 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:131] - [COST ESTIMATION] Sending 29628 chars to OpenAI
+2025-10-12 21:26:35 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:151] - [COST ESTIMATION] Received 562 chars from OpenAI
+2025-10-12 21:27:38 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:169] - [COST ESTIMATION] Completed for scenario 7b70ccaf-3cfc-489b-8560-a91097ceebf9. Delta: 0
+2025-10-12 21:29:58 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-12 21:30:53 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-12 21:32:34 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:88] - [COST ESTIMATION] Starting for scenario 7b70ccaf-3cfc-489b-8560-a91097ceebf9
+2025-10-12 21:32:46 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:108] - [COST ESTIMATION] Found 46 base case entities, 24 tabular entities
+2025-10-12 21:32:48 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:131] - [COST ESTIMATION] Sending 29581 chars to OpenAI
+2025-10-12 21:33:02 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:151] - [COST ESTIMATION] Received 654 chars from OpenAI
+2025-10-12 21:33:09 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:169] - [COST ESTIMATION] Completed for scenario 7b70ccaf-3cfc-489b-8560-a91097ceebf9. Delta: 0

@@ -5,7 +5,7 @@ import REACT_APP_CONFIG from "../AppConfig";
 const API_BASE_URL = REACT_APP_CONFIG.url.API_URL;
 
 const getAuthToken = () => {
-  return localStorage.getItem("access_token"); // Changed from "authToken" to "access_token"
+  return localStorage.getItem("access_token");
 };
 
 const getAuthHeaders = () => {
@@ -17,11 +17,11 @@ const getAuthHeaders = () => {
 };
 
 const setAuthToken = (token, rememberMe = false) => {
-  localStorage.setItem("access_token", token); // Changed from "authToken" to "access_token"
+  localStorage.setItem("access_token", token);
 };
 
 const clearAuthToken = () => {
-  localStorage.removeItem("access_token"); // Changed from "authToken" to "access_token"
+  localStorage.removeItem("access_token");
 };
 
 export const fetchScenarios = createAsyncThunk(
@@ -156,6 +156,54 @@ export const updateScenario = createAsyncThunk(
   }
 );
 
+export const analyzeScenario = createAsyncThunk(
+  "scenarios/analyze",
+  async ({ scenarioId, updates }, { rejectWithValue, dispatch }) => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      console.log("[analyzeScenario] Starting analysis for:", scenarioId);
+
+      // First, update the scenario with any field changes
+      if (updates && Object.keys(updates).length > 0) {
+        console.log("[analyzeScenario] Updating scenario fields:", updates);
+        await dispatch(updateScenario({ scenarioId, updates })).unwrap();
+      }
+
+      // Then trigger the analysis
+      console.log("[analyzeScenario] Triggering cost analysis...");
+      const response = await fetch(
+        `${API_BASE_URL}/scenarios/${scenarioId}/analyze`,
+        {
+          method: "POST",
+          headers: getAuthHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.detail || `HTTP error! status: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+      console.log("[analyzeScenario] Analysis completed:", data);
+
+      return {
+        scenario: data.scenario,
+        costEstimate: data.cost_estimate,
+      };
+    } catch (error) {
+      console.error("[analyzeScenario] Failed:", error);
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 export const deleteScenario = createAsyncThunk(
   "scenarios/delete",
   async (scenarioId, { rejectWithValue }) => {
@@ -184,15 +232,53 @@ export const deleteScenario = createAsyncThunk(
   }
 );
 
+export const fetchCostEstimate = createAsyncThunk(
+  "scenarios/fetchCostEstimate",
+  async (scenarioId, { rejectWithValue }) => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/scenarios/${scenarioId}/cost-estimate`,
+        {
+          method: "GET",
+          headers: getAuthHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.detail || `HTTP error! status: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+      return { scenarioId, costEstimate: data };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 const scenarioSlice = createSlice({
   name: "scenarios",
   initialState: {
     byProject: {},
     byId: {},
+    costEstimates: {},
     loading: false,
+    analyzing: false,
     error: null,
   },
-  reducers: {},
+  reducers: {
+    clearError: (state) => {
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchScenarios.pending, (state) => {
@@ -278,6 +364,33 @@ const scenarioSlice = createSlice({
         state.error = action.payload || action.error.message;
       })
 
+      .addCase(analyzeScenario.pending, (state) => {
+        state.analyzing = true;
+        state.error = null;
+      })
+      .addCase(analyzeScenario.fulfilled, (state, action) => {
+        state.analyzing = false;
+        const { scenario, costEstimate } = action.payload;
+
+        // Update scenario
+        state.byId[scenario.id] = scenario;
+        if (state.byProject[scenario.project_id]) {
+          const index = state.byProject[scenario.project_id].findIndex(
+            (s) => s.id === scenario.id
+          );
+          if (index !== -1) {
+            state.byProject[scenario.project_id][index] = scenario;
+          }
+        }
+
+        // Store cost estimate
+        state.costEstimates[scenario.id] = costEstimate;
+      })
+      .addCase(analyzeScenario.rejected, (state, action) => {
+        state.analyzing = false;
+        state.error = action.payload || action.error.message;
+      })
+
       .addCase(deleteScenario.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -291,13 +404,30 @@ const scenarioSlice = createSlice({
             scenario.project_id
           ].filter((s) => s.id !== scenarioId);
           delete state.byId[scenarioId];
+          delete state.costEstimates[scenarioId];
         }
       })
       .addCase(deleteScenario.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
+      })
+
+      .addCase(fetchCostEstimate.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCostEstimate.fulfilled, (state, action) => {
+        state.loading = false;
+        const { scenarioId, costEstimate } = action.payload;
+        state.costEstimates[scenarioId] = costEstimate;
+      })
+      .addCase(fetchCostEstimate.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || action.error.message;
       });
   },
 });
+
+export const { clearError } = scenarioSlice.actions;
 
 export default scenarioSlice.reducer;

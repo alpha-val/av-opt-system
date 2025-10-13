@@ -29,11 +29,16 @@ import {
 } from "@mui/icons-material";
 import {
   fetchScenario,
-  updateScenario,
+  analyzeScenario,
   deleteScenario,
 } from "../../../redux/scenarioSlice";
 
-const ScenarioDetail = ({ scenarioId, scenario: initialScenario, projectId, onClose }) => {
+const ScenarioDetail = ({
+  scenarioId,
+  scenario: initialScenario,
+  projectId,
+  onClose,
+}) => {
   const dispatch = useDispatch();
 
   const [activeTab, setActiveTab] = useState(0);
@@ -41,12 +46,27 @@ const ScenarioDetail = ({ scenarioId, scenario: initialScenario, projectId, onCl
   const [goal, setGoal] = useState("");
   const [description, setDescription] = useState("");
   const [changeType, setChangeType] = useState("");
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const scenario = useSelector((state) => state.scenarios?.byId?.[scenarioId]) || initialScenario;
+  const scenario =
+    useSelector((state) => state.scenarios?.byId?.[scenarioId]) ||
+    initialScenario;
+  const costEstimate = useSelector(
+    (state) => state.scenarios?.costEstimates?.[scenarioId]
+  );
   const loading = useSelector((state) => state.scenarios?.loading || false);
+  const analyzing = useSelector((state) => state.scenarios?.analyzing || false);
   const error = useSelector((state) => state.scenarios?.error);
+
+  const isAnalyzing =
+    analyzing ||
+    scenario?.status === "analyzing" ||
+    scenario?.compute_state === "running" ||
+    scenario?.compute_state === "queued";
+
   console.log("[ScenarioDetails] scenario:", scenario);
+  console.log("[ScenarioDetails] costEstimate:", costEstimate);
+  console.log("[ScenarioDetails] isAnalyzing:", isAnalyzing);
+
   useEffect(() => {
     if (scenarioId && !initialScenario) {
       dispatch(fetchScenario(scenarioId));
@@ -58,11 +78,6 @@ const ScenarioDetail = ({ scenarioId, scenario: initialScenario, projectId, onCl
       setGoal(scenario.goal || "");
       setDescription(scenario.description || "");
       setChangeType(scenario.change_type || "");
-      setIsAnalyzing(
-        scenario.status === "analyzing" ||
-          scenario.compute_state === "running" ||
-          scenario.compute_state === "queued"
-      );
     }
   }, [scenario]);
 
@@ -99,12 +114,7 @@ const ScenarioDetail = ({ scenarioId, scenario: initialScenario, projectId, onCl
   };
 
   const handleAnalyze = async () => {
-    setIsAnalyzing(true);
-
-    const updates = {
-      status: "analyzing",
-      compute_state: "queued",
-    };
+    const updates = {};
 
     if (description && description.trim() !== scenario.description) {
       updates.description = description;
@@ -120,16 +130,15 @@ const ScenarioDetail = ({ scenarioId, scenario: initialScenario, projectId, onCl
 
     try {
       await dispatch(
-        updateScenario({
+        analyzeScenario({
           scenarioId,
-          updates,
+          updates: Object.keys(updates).length > 0 ? updates : null,
         })
       ).unwrap();
 
       console.log("[ScenarioDetails] Analysis triggered successfully");
     } catch (err) {
       console.error("[ScenarioDetails] Failed to trigger analysis:", err);
-      setIsAnalyzing(false);
     }
   };
 
@@ -211,6 +220,7 @@ const ScenarioDetail = ({ scenarioId, scenario: initialScenario, projectId, onCl
               variant="contained"
               onClick={handleAnalyze}
               disabled={isAnalyzing || !description.trim()}
+              startIcon={isAnalyzing ? <CircularProgress size={20} /> : null}
             >
               {isAnalyzing ? "Analyzing..." : "Run Analysis"}
             </Button>
@@ -239,6 +249,18 @@ const ScenarioDetail = ({ scenarioId, scenario: initialScenario, projectId, onCl
       {isAnalyzing && (
         <Alert severity="info" sx={{ mb: 3 }}>
           Cost estimation is in progress. This may take a few moments...
+        </Alert>
+      )}
+
+      {scenario.status === "ready" && scenario.compute_state === "succeeded" && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          Analysis completed successfully! View results in the Cost Estimate tab.
+        </Alert>
+      )}
+
+      {scenario.compute_state === "failed" && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          Analysis failed. Please try again or check your inputs.
         </Alert>
       )}
 
@@ -383,9 +405,38 @@ const ScenarioDetail = ({ scenarioId, scenario: initialScenario, projectId, onCl
           <Typography variant="h6" gutterBottom>
             Cost Estimate
           </Typography>
-          {scenario.status === "ready" ? (
+          {costEstimate ? (
+            <Box>
+              <Typography variant="body2" sx={{ mb: 2 }}>
+                <strong>Status:</strong> {costEstimate.status}
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 2 }}>
+                <strong>Confidence:</strong> {costEstimate.confidence}
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 2 }}>
+                <strong>Estimated at:</strong> {costEstimate.estimated_at}
+              </Typography>
+              {costEstimate.cost_breakdown && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Cost Breakdown:
+                  </Typography>
+                  <pre
+                    style={{
+                      backgroundColor: "#f5f5f5",
+                      padding: "16px",
+                      borderRadius: "4px",
+                      overflow: "auto",
+                    }}
+                  >
+                    {JSON.stringify(costEstimate.cost_breakdown, null, 2)}
+                  </pre>
+                </Box>
+              )}
+            </Box>
+          ) : scenario.status === "ready" ? (
             <Typography variant="body2" color="text.secondary">
-              Cost estimate results will be displayed here...
+              Loading cost estimate...
             </Typography>
           ) : (
             <Typography variant="body2" color="text.secondary">

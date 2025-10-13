@@ -7,10 +7,12 @@ import uuid
 from ..bronze_store import db
 from ..pipeline_users import get_current_user
 from .schemas_for_scenario import (
+    ScenarioBase,
     ScenarioCreate,
     ScenarioUpdate,
     ScenarioResponse,
 )
+from .scenario_estimate import estimate_scenario_cost, get_scenario_cost_estimate
 
 router_scenarios = APIRouter()
 
@@ -315,6 +317,201 @@ def delete_scenario(scenario_id: str, current_user: dict = Depends(get_current_u
         raise
     except Exception as e:
         print(f"[ERROR] Delete scenario failed: {e}")
+        import traceback
+
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}",
+        )
+
+
+# Run cost analysis for a scenario
+@router_scenarios.post("/scenarios/{scenario_id}/analyze")
+def analyze_scenario(scenario_id: str, current_user: dict = Depends(get_current_user)):
+    """Trigger cost analysis for a scenario"""
+    try:
+        user_id = (
+            current_user.get("user_id")
+            or current_user.get("sub")
+            or current_user.get("id")
+        )
+
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not extract user_id from authentication token",
+            )
+
+        # Get the scenario
+        scenario_data = db().scenarios.find_one(
+            {"id": scenario_id, "created_by": user_id}, {"_id": 0}
+        )
+
+        if not scenario_data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Scenario {scenario_id} not found",
+            )
+
+        # Update scenario status to analyzing
+        db().scenarios.update_one(
+            {"id": scenario_id, "created_by": user_id},
+            {
+                "$set": {
+                    "status": "analyzing",
+                    "compute_state": "running",
+                    "updated_at": datetime.utcnow(),
+                }
+            },
+        )
+
+        # Build scenario description for LLM
+        scenario_description = f"""
+Name: {scenario_data.get('name', 'Unnamed Scenario')}
+Goal: {scenario_data.get('goal', 'Not specified')}
+Description: {scenario_data.get('description', 'No description provided')}
+Change Type: {scenario_data.get('change_type', 'Not specified')}
+Target: {scenario_data.get('target', {})}
+Constraints: {scenario_data.get('constraints', {})}
+"""
+
+        print(f"[DEBUG] Scenario description for analysis:\n{scenario_description}")
+
+        # Run cost estimation
+        cost_estimate = estimate_scenario_cost(
+            scenario_id=scenario_id,
+            scenario_description=scenario_description,
+            project_id=scenario_data.get("project_id"),
+            user_id=user_id,
+        )
+
+        # Check if estimation succeeded
+        if cost_estimate.get("status") == "failed":
+            # Update scenario to failed state
+            db().scenarios.update_one(
+                {"id": scenario_id, "created_by": user_id},
+                {
+                    "$set": {
+                        "status": "draft",
+                        "compute_state": "failed",
+                        "updated_at": datetime.utcnow(),
+                    }
+                },
+            )
+
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Cost estimation failed: {cost_estimate.get('error', 'Unknown error')}",
+            )
+
+        # Update scenario to completed state with cost estimate reference
+        db().scenarios.update_one(
+            {"id": scenario_id, "created_by": user_id},
+            {
+                "$set": {
+                    "status": "ready",
+                    "compute_state": "succeeded",
+                    "updated_at": datetime.utcnow(),
+                }
+            },
+        )
+
+        # Fetch updated scenario
+        updated_scenario = db().scenarios.find_one(
+            {"id": scenario_id, "created_by": user_id}, {"_id": 0}
+        )
+
+        print(f"[DEBUG] Analysis completed for scenario {scenario_id}")
+
+        # Return both scenario and cost estimate data
+        return {
+            "message": "Scenario analysis completed successfully",
+            "scenario": ScenarioResponse(**updated_scenario),
+            "cost_estimate": {
+                "scenario_id": cost_estimate.get("scenario_id"),
+                "estimated_at": cost_estimate.get("estimated_at"),
+                "status": cost_estimate.get("status"),
+                "cost_breakdown": cost_estimate.get("cost_breakdown", {}),
+                "relevant_entities": cost_estimate.get("relevant_entities", {}),
+                "assumptions": cost_estimate.get("assumptions", []),
+                "confidence": cost_estimate.get("confidence", "medium"),
+                "notes": cost_estimate.get("notes", ""),
+            },
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Analyze scenario failed: {e}")
+        import traceback
+
+        traceback.print_exc()
+
+        # Update scenario to failed state
+        try:
+            db().scenarios.update_one(
+                {"id": scenario_id},
+                {
+                    "$set": {
+                        "status": "draft",
+                        "compute_state": "failed",
+                        "updated_at": datetime.utcnow(),
+                    }
+                },
+            )
+        except Exception as update_error:
+            print(f"[ERROR] Failed to update scenario status: {update_error}")
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}",
+        )
+
+
+# Get cost estimate for a scenario
+@router_scenarios.get("/scenarios/{scenario_id}/cost-estimate")
+def get_cost_estimate(scenario_id: str, current_user: dict = Depends(get_current_user)):
+    """Get the most recent cost estimate for a scenario"""
+    try:
+        user_id = (
+            current_user.get("user_id")
+            or current_user.get("sub")
+            or current_user.get("id")
+        )
+
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not extract user_id from authentication token",
+            )
+
+        # Verify scenario belongs to user
+        scenario = db().scenarios.find_one(
+            {"id": scenario_id, "created_by": user_id}, {"_id": 0, "id": 1}
+        )
+
+        if not scenario:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Scenario {scenario_id} not found",
+            )
+
+        # Get cost estimate
+        cost_estimate = get_scenario_cost_estimate(scenario_id)
+
+        if not cost_estimate:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No cost estimate found for scenario {scenario_id}",
+            )
+
+        return cost_estimate
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Get cost estimate failed: {e}")
         import traceback
 
         traceback.print_exc()
