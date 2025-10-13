@@ -539,3 +539,28 @@
 2025-10-12 21:32:48 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:131] - [COST ESTIMATION] Sending 29581 chars to OpenAI
 2025-10-12 21:33:02 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:151] - [COST ESTIMATION] Received 654 chars from OpenAI
 2025-10-12 21:33:09 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:169] - [COST ESTIMATION] Completed for scenario 7b70ccaf-3cfc-489b-8560-a91097ceebf9. Delta: 0
+2025-10-12 21:42:26 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-12 21:44:28 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-12 21:45:49 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-12 21:45:56 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-12 21:48:03 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-12 21:49:01 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-12 21:49:23 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:40] - [COST ESTIMATION] Starting for scenario 7b70ccaf-3cfc-489b-8560-a91097ceebf9
+2025-10-12 21:49:23 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:60] - [COST ESTIMATION] Found 46 base case entities, 24 tabular entities
+2025-10-12 21:49:55 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:83] - [COST ESTIMATION] Sending 51932 chars to OpenAI
+2025-10-12 21:50:12 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:103] - [COST ESTIMATION] Received 2445 chars from OpenAI
+2025-10-12 21:50:12 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:121] - [COST ESTIMATION] Completed for scenario 7b70ccaf-3cfc-489b-8560-a91097ceebf9. Delta: {'capital': -1522542, 'installation': -5206000, 'operating_annual': 0, 'maintenance_annual': 0, 'total': -6728542}
+2025-10-12 21:59:36 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-12 21:59:56 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-12 22:00:04 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-12 22:13:10 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:40] - [COST ESTIMATION] Starting for scenario b1794508-2f14-4cdf-8db8-2774a1fc9c9b
+2025-10-12 22:13:10 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:60] - [COST ESTIMATION] Found 46 base case entities, 24 tabular entities
+2025-10-12 22:13:10 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:83] - [COST ESTIMATION] Sending 51967 chars to OpenAI
+2025-10-12 22:13:17 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:103] - [COST ESTIMATION] Received 2510 chars from OpenAI
+2025-10-12 22:13:17 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:121] - [COST ESTIMATION] Completed for scenario b1794508-2f14-4cdf-8db8-2774a1fc9c9b. Delta: {'capital': -1522542, 'installation': -5310000, 'operating_annual': 0, 'maintenance_annual': 0, 'total': -6842542}
+2025-10-12 22:15:23 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-12 22:17:04 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:40] - [COST ESTIMATION] Starting for scenario b1794508-2f14-4cdf-8db8-2774a1fc9c9b
+2025-10-12 22:17:04 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:60] - [COST ESTIMATION] Found 46 base case entities, 24 tabular entities
+2025-10-12 22:17:04 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:83] - [COST ESTIMATION] Sending 51967 chars to OpenAI
+2025-10-12 22:17:12 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:103] - [COST ESTIMATION] Received 2606 chars from OpenAI
+2025-10-12 22:17:12 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:121] - [COST ESTIMATION] Completed for scenario b1794508-2f14-4cdf-8db8-2774a1fc9c9b. Delta: {'capital': -6632542, 'installation': -23210000, 'operating_annual': 0, 'maintenance_annual': 0, 'total': -29842542}

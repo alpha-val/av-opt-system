@@ -2,59 +2,11 @@ import json
 import logging
 from typing import Dict, Any, List, Optional
 from datetime import datetime
+from .prompt_for_estimation import _build_cost_estimation_prompt
 
 from typer import prompt
 
 logger = logging.getLogger(__name__)
-
-
-def _build_cost_estimation_prompt(
-    scenario_description: str,
-    base_case_entities: List[Dict[str, Any]],
-    tabular_entities: List[Dict[str, Any]],
-) -> str:
-    """
-    Build the prompt for LLM-based cost estimation.
-
-    Args:
-        scenario_description: User's scenario description and goals
-        base_case_entities: Entities from base case documents
-        tabular_entities: Entities from tabular data (equipment catalogs, price lists)
-
-    Returns:
-        Formatted prompt string
-    """
-    prompt = f"""
-# COST ESTIMATION TASK
-
-## Scenario Description
-{scenario_description}
-
-## Instructions
-1. **Identify Relevant Entities**: From the provided base case and tabular data, identify only the entities relevant to this scenario.
-2. **Extract Costs**: For each relevant entity, extract all cost-related properties (purchase_cost, installation_cost, operating_cost, etc.).
-3. **Match Base Case to Tabular**: Map base case equipment to equivalent or upgraded equipment in tabular data.
-4. **Compute Cost Differences**: Calculate the cost difference between:
-   - Current base case configuration
-   - Proposed new configuration (from tabular data)
-5. **Provide Breakdown**: Return a detailed breakdown by equipment type and cost category.
-
-## Base Case Entities
-Total entities provided: {len(base_case_entities)}
-
-```
-{json.dumps(base_case_entities, indent=2)}
-
-Guidelines:
-* Only include entities that are actually relevant to the scenario
-* Use zero if cost information is not available
-* For replacements, match base case equipment to closest equivalent in tabular data
-* For additions, only include proposed entities
-* For removals, only include base case entities
-* Delta = proposed_total - base_case_total (positive means cost increase)
-* Include confidence level based on completeness of cost data
-"""
-    return prompt
 
 
 def estimate_scenario_cost(

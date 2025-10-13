@@ -371,7 +371,7 @@ const scenarioSlice = createSlice({
       .addCase(analyzeScenario.fulfilled, (state, action) => {
         state.analyzing = false;
         const { scenario, costEstimate } = action.payload;
-
+        console.log("[scenarioSlice] Analysis result:", scenario, costEstimate);
         // Update scenario
         state.byId[scenario.id] = scenario;
         if (state.byProject[scenario.project_id]) {

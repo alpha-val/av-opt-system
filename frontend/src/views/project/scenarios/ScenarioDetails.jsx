@@ -252,11 +252,13 @@ const ScenarioDetail = ({
         </Alert>
       )}
 
-      {scenario.status === "ready" && scenario.compute_state === "succeeded" && (
-        <Alert severity="success" sx={{ mb: 3 }}>
-          Analysis completed successfully! View results in the Cost Estimate tab.
-        </Alert>
-      )}
+      {scenario.status === "ready" &&
+        scenario.compute_state === "succeeded" && (
+          <Alert severity="success" sx={{ mb: 3 }}>
+            Analysis completed successfully! View results in the Cost Estimate
+            tab.
+          </Alert>
+        )}
 
       {scenario.compute_state === "failed" && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -407,30 +409,309 @@ const ScenarioDetail = ({
           </Typography>
           {costEstimate ? (
             <Box>
-              <Typography variant="body2" sx={{ mb: 2 }}>
-                <strong>Status:</strong> {costEstimate.status}
-              </Typography>
-              <Typography variant="body2" sx={{ mb: 2 }}>
-                <strong>Confidence:</strong> {costEstimate.confidence}
-              </Typography>
-              <Typography variant="body2" sx={{ mb: 2 }}>
-                <strong>Estimated at:</strong> {costEstimate.estimated_at}
-              </Typography>
+              {/* Full Cost Estimate Data */}
+              <Box sx={{ mb: 3 }}>
+                <Typography
+                  variant="subtitle1"
+                  gutterBottom
+                  sx={{ fontWeight: "bold" }}
+                >
+                  Complete Cost Estimate
+                </Typography>
+                <pre
+                  style={{
+                    backgroundColor: "#f5f5f5",
+                    padding: "16px",
+                    borderRadius: "4px",
+                    overflow: "auto",
+                    maxHeight: "600px",
+                    fontSize: "0.85rem",
+                    lineHeight: "1.5",
+                  }}
+                >
+                  {JSON.stringify(costEstimate, null, 2)}
+                </pre>
+              </Box>
+
+              {/* Summary Cards */}
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid item xs={12} sm={4}>
+                  <Paper sx={{ p: 2, bgcolor: "#e3f2fd" }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Status
+                    </Typography>
+                    <Typography variant="h6">
+                      {costEstimate.status || "N/A"}
+                    </Typography>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Paper sx={{ p: 2, bgcolor: "#fff3e0" }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Confidence
+                    </Typography>
+                    <Typography variant="h6">
+                      {costEstimate.confidence || "N/A"}
+                    </Typography>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Paper sx={{ p: 2, bgcolor: "#e8f5e9" }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Estimated At
+                    </Typography>
+                    <Typography variant="body2">
+                      {costEstimate.estimated_at
+                        ? new Date(costEstimate.estimated_at).toLocaleString()
+                        : "N/A"}
+                    </Typography>
+                  </Paper>
+                </Grid>
+              </Grid>
+
+              {/* Cost Breakdown Section */}
               {costEstimate.cost_breakdown && (
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Cost Breakdown:
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Cost Breakdown
                   </Typography>
-                  <pre
-                    style={{
-                      backgroundColor: "#f5f5f5",
-                      padding: "16px",
-                      borderRadius: "4px",
-                      overflow: "auto",
-                    }}
-                  >
-                    {JSON.stringify(costEstimate.cost_breakdown, null, 2)}
-                  </pre>
+
+                  {/* Base Case Total */}
+                  {costEstimate.cost_breakdown.base_case_total && (
+                    <Paper sx={{ p: 2, mb: 2, bgcolor: "#fafafa" }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Base Case Total
+                      </Typography>
+                      <Grid container spacing={2}>
+                        {Object.entries(
+                          costEstimate.cost_breakdown.base_case_total
+                        ).map(([key, value]) => (
+                          <Grid item xs={6} sm={3} key={key}>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              {key.replace(/_/g, " ").toUpperCase()}
+                            </Typography>
+                            <Typography variant="body1">
+                              $
+                              {typeof value === "number"
+                                ? value.toLocaleString()
+                                : value}
+                            </Typography>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Paper>
+                  )}
+
+                  {/* Proposed Total */}
+                  {costEstimate.cost_breakdown.proposed_total && (
+                    <Paper sx={{ p: 2, mb: 2, bgcolor: "#e3f2fd" }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Proposed Total
+                      </Typography>
+                      <Grid container spacing={2}>
+                        {Object.entries(
+                          costEstimate.cost_breakdown.proposed_total
+                        ).map(([key, value]) => (
+                          <Grid item xs={6} sm={3} key={key}>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              {key.replace(/_/g, " ").toUpperCase()}
+                            </Typography>
+                            <Typography variant="body1">
+                              $
+                              {typeof value === "number"
+                                ? value.toLocaleString()
+                                : value}
+                            </Typography>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Paper>
+                  )}
+
+                  {/* Delta */}
+                  {costEstimate.cost_breakdown.delta && (
+                    <Paper sx={{ p: 2, mb: 2, bgcolor: "#fff3e0" }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Cost Delta (Proposed - Base Case)
+                      </Typography>
+                      <Grid container spacing={2}>
+                        {Object.entries(costEstimate.cost_breakdown.delta).map(
+                          ([key, value]) => (
+                            <Grid item xs={6} sm={3} key={key}>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                {key.replace(/_/g, " ").toUpperCase()}
+                              </Typography>
+                              <Typography
+                                variant="body1"
+                                sx={{
+                                  color:
+                                    typeof value === "number"
+                                      ? value > 0
+                                        ? "error.main"
+                                        : value < 0
+                                        ? "success.main"
+                                        : "text.primary"
+                                      : "text.primary",
+                                  fontWeight: "bold",
+                                }}
+                              >
+                                {typeof value === "number"
+                                  ? `${
+                                      value > 0 ? "+" : ""
+                                    }$${value.toLocaleString()}`
+                                  : value}
+                              </Typography>
+                            </Grid>
+                          )
+                        )}
+                      </Grid>
+                    </Paper>
+                  )}
+
+                  {/* By Category */}
+                  {costEstimate.cost_breakdown.by_category && (
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        By Category
+                      </Typography>
+                      <pre
+                        style={{
+                          backgroundColor: "#f5f5f5",
+                          padding: "16px",
+                          borderRadius: "4px",
+                          overflow: "auto",
+                          fontSize: "0.85rem",
+                        }}
+                      >
+                        {JSON.stringify(
+                          costEstimate.cost_breakdown.by_category,
+                          null,
+                          2
+                        )}
+                      </pre>
+                    </Box>
+                  )}
+                </Box>
+              )}
+
+              {/* Relevant Entities Section */}
+              {costEstimate.relevant_entities && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Relevant Entities
+                  </Typography>
+
+                  {/* Base Case Entities */}
+                  {costEstimate.relevant_entities.base_case && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Base Case (
+                        {costEstimate.relevant_entities.base_case.length}{" "}
+                        entities)
+                      </Typography>
+                      <pre
+                        style={{
+                          backgroundColor: "#f5f5f5",
+                          padding: "16px",
+                          borderRadius: "4px",
+                          overflow: "auto",
+                          maxHeight: "300px",
+                          fontSize: "0.85rem",
+                        }}
+                      >
+                        {JSON.stringify(
+                          costEstimate.relevant_entities.base_case,
+                          null,
+                          2
+                        )}
+                      </pre>
+                    </Box>
+                  )}
+
+                  {/* Proposed Entities */}
+                  {costEstimate.relevant_entities.proposed && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Proposed (
+                        {costEstimate.relevant_entities.proposed.length}{" "}
+                        entities)
+                      </Typography>
+                      <pre
+                        style={{
+                          backgroundColor: "#f5f5f5",
+                          padding: "16px",
+                          borderRadius: "4px",
+                          overflow: "auto",
+                          maxHeight: "300px",
+                          fontSize: "0.85rem",
+                        }}
+                      >
+                        {JSON.stringify(
+                          costEstimate.relevant_entities.proposed,
+                          null,
+                          2
+                        )}
+                      </pre>
+                    </Box>
+                  )}
+                </Box>
+              )}
+
+              {/* Assumptions Section */}
+              {costEstimate.assumptions &&
+                costEstimate.assumptions.length > 0 && (
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="h6" gutterBottom>
+                      Assumptions
+                    </Typography>
+                    <Paper sx={{ p: 2, bgcolor: "#fff3e0" }}>
+                      <ul style={{ margin: 0, paddingLeft: "20px" }}>
+                        {costEstimate.assumptions.map((assumption, index) => (
+                          <li key={index}>
+                            <Typography variant="body2">
+                              {assumption}
+                            </Typography>
+                          </li>
+                        ))}
+                      </ul>
+                    </Paper>
+                  </Box>
+                )}
+
+              {/* Confidence Explanation */}
+              {costEstimate.confidence_explanation && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Confidence Explanation
+                  </Typography>
+                  <Paper sx={{ p: 2, bgcolor: "#e8f5e9" }}>
+                    <Typography variant="body2">
+                      {costEstimate.confidence_explanation}
+                    </Typography>
+                  </Paper>
+                </Box>
+              )}
+
+              {/* Notes Section */}
+              {costEstimate.notes && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Notes
+                  </Typography>
+                  <Paper sx={{ p: 2, bgcolor: "#f3e5f5" }}>
+                    <Typography variant="body2">
+                      {costEstimate.notes}
+                    </Typography>
+                  </Paper>
                 </Box>
               )}
             </Box>

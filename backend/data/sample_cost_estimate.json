@@ -1,0 +1,82 @@
+{
+  "_id": { "$oid": "68ec61289e855b7c84e2153c" },
+  "scenario_id": "b1794508-2f14-4cdf-8db8-2774a1fc9c9b",
+  "project_id": "7627bdf7-a9d5-473e-b69e-46599a2b42dc",
+  "estimated_at": "2025-10-13T02:17:12.719617",
+  "status": "completed",
+  "relevant_entities": {
+    "base_case": [
+      {
+        "entity_id": "equipment|gyratory crusher|uuid-4",
+        "name": "Gyratory Crusher",
+        "type": "Equipment",
+        "costs": {
+          "capital_cost": { "$numberInt": "10132542" },
+          "installation_cost": { "$numberInt": "35460000" },
+          "operating_cost_annual": { "$numberInt": "0" },
+          "maintenance_cost_annual": { "$numberInt": "0" },
+          "total": { "$numberInt": "45592542" }
+        },
+        "reason_for_relevance": "Current gyratory crusher used in the base case with escalated cost to 2025."
+      }
+    ],
+    "proposed": [
+      {
+        "entity_id": "equipment|option 2 large primary jaw|option2_large_primary_jaw",
+        "name": "Option 2 Large Primary Jaw",
+        "type": "Equipment",
+        "source": "tabular_data",
+        "costs": {
+          "capital_cost": { "$numberInt": "3500000" },
+          "installation_cost": { "$numberInt": "12250000" },
+          "operating_cost_annual": { "$numberInt": "0" },
+          "maintenance_cost_annual": { "$numberInt": "0" },
+          "total": { "$numberInt": "15750000" }
+        },
+        "reason_for_inclusion": "Cheapest alternative crusher option to reduce overall costs."
+      }
+    ]
+  },
+  "cost_breakdown": {
+    "base_case_total": {
+      "capital": { "$numberInt": "10132542" },
+      "installation": { "$numberInt": "35460000" },
+      "operating_annual": { "$numberInt": "0" },
+      "maintenance_annual": { "$numberInt": "0" },
+      "total": { "$numberInt": "45592542" }
+    },
+    "proposed_total": {
+      "capital": { "$numberInt": "3500000" },
+      "installation": { "$numberInt": "12250000" },
+      "operating_annual": { "$numberInt": "0" },
+      "maintenance_annual": { "$numberInt": "0" },
+      "total": { "$numberInt": "15750000" }
+    },
+    "delta": {
+      "capital": { "$numberInt": "-6632542" },
+      "installation": { "$numberInt": "-23210000" },
+      "operating_annual": { "$numberInt": "0" },
+      "maintenance_annual": { "$numberInt": "0" },
+      "total": { "$numberInt": "-29842542" }
+    },
+    "by_category": {
+      "Gyratory Crusher": {
+        "base_case": { "$numberInt": "45592542" },
+        "proposed": { "$numberInt": "0" },
+        "delta": { "$numberInt": "-45592542" }
+      },
+      "Large Primary Jaw": {
+        "base_case": { "$numberInt": "0" },
+        "proposed": { "$numberInt": "15750000" },
+        "delta": { "$numberInt": "15750000" }
+      }
+    }
+  },
+  "assumptions": [
+    "Operating and maintenance costs are assumed to be negligible or unchanged.",
+    "Installation cost for the proposed equipment is estimated using a 3.5x multiplier of the capital cost.",
+    "The proposed equipment is assumed to meet the same capacity requirements as the base case."
+  ],
+  "confidence": "medium",
+  "notes": "The proposed scenario significantly reduces capital and installation costs by opting for a cheaper crusher alternative. Ensure the proposed equipment meets all operational requirements before implementation."
+}

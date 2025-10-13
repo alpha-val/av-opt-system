@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from typing import Optional, Dict, List, Any
 from datetime import datetime
 import uuid
+from bson import ObjectId
 
 from ..bronze_store import db
 from ..pipeline_users import get_current_user
@@ -326,6 +327,21 @@ def delete_scenario(scenario_id: str, current_user: dict = Depends(get_current_u
         )
 
 
+# Helper function to convert MongoDB ObjectId to string
+def convert_objectid_to_str(data):
+    """
+    Recursively convert MongoDB ObjectId to string in nested dicts/lists
+    """
+    if isinstance(data, dict):
+        return {key: convert_objectid_to_str(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [convert_objectid_to_str(item) for item in data]
+    elif isinstance(data, ObjectId):
+        return str(data)
+    else:
+        return data
+
+
 # Run cost analysis for a scenario
 @router_scenarios.post("/scenarios/{scenario_id}/analyze")
 def analyze_scenario(scenario_id: str, current_user: dict = Depends(get_current_user)):
@@ -386,6 +402,20 @@ Constraints: {scenario_data.get('constraints', {})}
             user_id=user_id,
         )
 
+        # Convert ObjectId to string for JSON serialization
+        cost_estimate = convert_objectid_to_str(cost_estimate)
+
+        # Print full cost estimate for debugging
+        print(f"[DEBUG] Full cost_estimate returned:")
+        print(f"[DEBUG] Type: {type(cost_estimate)}")
+        print(
+            f"[DEBUG] Keys: {cost_estimate.keys() if isinstance(cost_estimate, dict) else 'Not a dict'}"
+        )
+        print(f"[DEBUG] Full content:")
+        import json
+
+        print(json.dumps(cost_estimate, indent=2, default=str))
+
         # Check if estimation succeeded
         if cost_estimate.get("status") == "failed":
             # Update scenario to failed state
@@ -424,20 +454,11 @@ Constraints: {scenario_data.get('constraints', {})}
 
         print(f"[DEBUG] Analysis completed for scenario {scenario_id}")
 
-        # Return both scenario and cost estimate data
+        # Return the full cost estimate data
         return {
             "message": "Scenario analysis completed successfully",
             "scenario": ScenarioResponse(**updated_scenario),
-            "cost_estimate": {
-                "scenario_id": cost_estimate.get("scenario_id"),
-                "estimated_at": cost_estimate.get("estimated_at"),
-                "status": cost_estimate.get("status"),
-                "cost_breakdown": cost_estimate.get("cost_breakdown", {}),
-                "relevant_entities": cost_estimate.get("relevant_entities", {}),
-                "assumptions": cost_estimate.get("assumptions", []),
-                "confidence": cost_estimate.get("confidence", "medium"),
-                "notes": cost_estimate.get("notes", ""),
-            },
+            "cost_estimate": cost_estimate,
         }
 
     except HTTPException:
@@ -505,6 +526,9 @@ def get_cost_estimate(scenario_id: str, current_user: dict = Depends(get_current
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"No cost estimate found for scenario {scenario_id}",
             )
+
+        # Convert ObjectId to string for JSON serialization
+        cost_estimate = convert_objectid_to_str(cost_estimate)
 
         return cost_estimate
 
