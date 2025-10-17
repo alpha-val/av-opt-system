@@ -564,3 +564,5 @@
 2025-10-12 22:17:04 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:83] - [COST ESTIMATION] Sending 51967 chars to OpenAI
 2025-10-12 22:17:12 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:103] - [COST ESTIMATION] Received 2606 chars from OpenAI
 2025-10-12 22:17:12 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:121] - [COST ESTIMATION] Completed for scenario b1794508-2f14-4cdf-8db8-2774a1fc9c9b. Delta: {'capital': -6632542, 'installation': -23210000, 'operating_annual': 0, 'maintenance_annual': 0, 'total': -29842542}
+2025-10-17 17:21:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 17:28:02 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
