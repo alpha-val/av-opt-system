@@ -33,11 +33,6 @@ export const fetchScenarios = createAsyncThunk(
         throw new Error("No authentication token found");
       }
 
-      console.log(
-        "[scenarioSlice] fetching: ",
-        `${API_BASE_URL}/projects/${projectId}/scenarios`
-      );
-
       const response = await fetch(
         `${API_BASE_URL}/projects/${projectId}/scenarios`,
         {
@@ -54,7 +49,7 @@ export const fetchScenarios = createAsyncThunk(
       }
 
       const data = await response.json();
-      console.log("[scenarioSlice] Fetched scenarios:", data);
+
       return { projectId, scenarios: data };
     } catch (error) {
       return rejectWithValue(error.message);
@@ -100,8 +95,6 @@ export const createScenario = createAsyncThunk(
         throw new Error("No authentication token found");
       }
 
-      console.log("Creating scenario:", scenario);
-
       const response = await fetch(`${API_BASE_URL}/scenarios/add`, {
         method: "POST",
         headers: getAuthHeaders(),
@@ -116,7 +109,7 @@ export const createScenario = createAsyncThunk(
       }
 
       const data = await response.json();
-      console.log("[scenarioSlice] Created scenario:", data);
+
       return data;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -132,8 +125,6 @@ export const updateScenario = createAsyncThunk(
       if (!token) {
         throw new Error("No authentication token found");
       }
-
-      console.log("Updating scenario:", scenarioId, updates);
 
       const response = await fetch(`${API_BASE_URL}/scenarios/${scenarioId}`, {
         method: "PUT",
@@ -158,30 +149,47 @@ export const updateScenario = createAsyncThunk(
 
 export const analyzeScenario = createAsyncThunk(
   "scenarios/analyze",
-  async ({ scenarioId, updates }, { rejectWithValue, dispatch }) => {
+  async ({ scenarioId, updates }, { rejectWithValue, dispatch, getState }) => {
     try {
       const token = getAuthToken();
       if (!token) {
         throw new Error("No authentication token found");
       }
 
-      console.log("[analyzeScenario] Starting analysis for:", scenarioId);
+      // // First, update the scenario with any field changes
+      // if (updates && Object.keys(updates).length > 0) {
+      //   await dispatch(updateScenario({ scenarioId, updates })).unwrap();
+      // }
 
-      // First, update the scenario with any field changes
-      if (updates && Object.keys(updates).length > 0) {
-        console.log("[analyzeScenario] Updating scenario fields:", updates);
-        await dispatch(updateScenario({ scenarioId, updates })).unwrap();
+      // Get the updated scenario from state
+      const state = getState();
+      const scenario = state.scenarios.byId[scenarioId];
+
+      if (!scenario) {
+        throw new Error(`Scenario ${scenarioId} not found in state`);
       }
 
-      // Then trigger the analysis
-      console.log("[analyzeScenario] Triggering cost analysis...");
-      const response = await fetch(
-        `${API_BASE_URL}/scenarios/${scenarioId}/analyze`,
-        {
-          method: "POST",
-          headers: getAuthHeaders(),
-        }
-      );
+      // Build cost estimate request payload matching CostEstimateRequest schema
+      const costEstimateRequest = {
+        project_id: scenario.project_id,
+        scenario_id: scenario.id,
+        cost_id: null, // Auto-generate
+        scenario_description: scenario.description,
+        entity_types: ["Equipment", "Material", "Process"], // Default entity types
+        uncertainties: null, // TODO: Add if needed
+        goal: scenario.goal,
+        change_type: scenario.change_type,
+        equipment_types: null, // TODO: Extract from scenario if needed
+        capacity_range: null, // TODO: Extract from scenario if needed
+        selected_entities: updates.selected_entities || null,
+      };
+      console.log("Cost Estimate Request:", costEstimateRequest);
+      // Trigger the cost estimation
+      const response = await fetch(`${API_BASE_URL}/cost-estimates`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(costEstimateRequest),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -190,15 +198,43 @@ export const analyzeScenario = createAsyncThunk(
         );
       }
 
-      const data = await response.json();
-      console.log("[analyzeScenario] Analysis completed:", data);
+      const costEstimate = await response.json();
+
+      // Update scenario status to "ready" after successful estimation
+      const updatedScenario = await dispatch(
+        updateScenario({
+          scenarioId,
+          updates: {
+            status: "ready",
+            compute_state: "succeeded",
+          },
+        })
+      ).unwrap();
 
       return {
-        scenario: data.scenario,
-        costEstimate: data.cost_estimate,
+        scenario: updatedScenario,
+        costEstimate: costEstimate,
       };
     } catch (error) {
-      console.error("[analyzeScenario] Failed:", error);
+
+      // Update scenario status to "failed" on error
+      try {
+        await dispatch(
+          updateScenario({
+            scenarioId,
+            updates: {
+              status: "draft",
+              compute_state: "failed",
+            },
+          })
+        );
+      } catch (updateError) {
+        console.error(
+          "[analyzeScenario] Failed to update error state:",
+          updateError
+        );
+      }
+
       return rejectWithValue(error.message);
     }
   }
@@ -241,8 +277,9 @@ export const fetchCostEstimate = createAsyncThunk(
         throw new Error("No authentication token found");
       }
 
+      // Query cost estimates by scenario_id
       const response = await fetch(
-        `${API_BASE_URL}/scenarios/${scenarioId}/cost-estimate`,
+        `${API_BASE_URL}/cost-estimates?scenario_id=${scenarioId}&limit=1`,
         {
           method: "GET",
           headers: getAuthHeaders(),
@@ -257,7 +294,12 @@ export const fetchCostEstimate = createAsyncThunk(
       }
 
       const data = await response.json();
-      return { scenarioId, costEstimate: data };
+
+      // Extract the first estimate from the list
+      const costEstimate =
+        data.estimates && data.estimates.length > 0 ? data.estimates[0] : null;
+
+      return { scenarioId, costEstimate };
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -364,14 +406,21 @@ const scenarioSlice = createSlice({
         state.error = action.payload || action.error.message;
       })
 
-      .addCase(analyzeScenario.pending, (state) => {
+      .addCase(analyzeScenario.pending, (state, action) => {
         state.analyzing = true;
         state.error = null;
+
+        // Update scenario state to analyzing
+        const scenarioId = action.meta.arg.scenarioId;
+        if (state.byId[scenarioId]) {
+          state.byId[scenarioId].status = "analyzing";
+          state.byId[scenarioId].compute_state = "running";
+        }
       })
       .addCase(analyzeScenario.fulfilled, (state, action) => {
         state.analyzing = false;
         const { scenario, costEstimate } = action.payload;
-        console.log("[scenarioSlice] Analysis result:", scenario, costEstimate);
+
         // Update scenario
         state.byId[scenario.id] = scenario;
         if (state.byProject[scenario.project_id]) {
@@ -389,6 +438,13 @@ const scenarioSlice = createSlice({
       .addCase(analyzeScenario.rejected, (state, action) => {
         state.analyzing = false;
         state.error = action.payload || action.error.message;
+
+        // Update scenario state to failed
+        const scenarioId = action.meta.arg.scenarioId;
+        if (state.byId[scenarioId]) {
+          state.byId[scenarioId].status = "draft";
+          state.byId[scenarioId].compute_state = "failed";
+        }
       })
 
       .addCase(deleteScenario.pending, (state) => {
@@ -419,7 +475,9 @@ const scenarioSlice = createSlice({
       .addCase(fetchCostEstimate.fulfilled, (state, action) => {
         state.loading = false;
         const { scenarioId, costEstimate } = action.payload;
-        state.costEstimates[scenarioId] = costEstimate;
+        if (costEstimate) {
+          state.costEstimates[scenarioId] = costEstimate;
+        }
       })
       .addCase(fetchCostEstimate.rejected, (state, action) => {
         state.loading = false;

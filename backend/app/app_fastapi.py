@@ -8,7 +8,7 @@ import sys
 from app.bronze_store import ensure_bronze_indexes
 from .app_logging import setup_logging
 
-from .pipeline_costing import router_costing
+# from app.costing.pipeline_costing import router_costing
 from .pipeline_query import router_query_vault_data
 from .pipeline_users import router_auth
 from .pipeline_admin import router_admin
@@ -19,6 +19,7 @@ from app.scenarios.api_for_scenarios import router_scenarios
 
 from app.projects.api_for_project import router_for_projects
 from app.documents.api_for_document import router_for_documents
+from app.costing.api_for_costing import router_costing
 
 # Configure logging at the top of your file, before creating the FastAPI app
 logging.basicConfig(

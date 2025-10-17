@@ -4,6 +4,7 @@ from typing import List, Dict, Any, Optional
 import os
 from datetime import datetime, timezone  # Add timezone import
 from pymongo import MongoClient, UpdateOne, ASCENDING
+import uuid
 
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
 MONGO_DB = os.getenv("MONGO_DB", "alpha_val")
@@ -135,21 +136,48 @@ def store_document_metadata(
 
 
 def bulk_upsert_chunks(chunks: List[Dict[str, Any]]):
+    """
+    Bulk upsert chunks. Each chunk must have an id.
+    """
     if not chunks:
         return
+
+    for chunk in chunks:
+        # Generate _id if it doesn't exist
+        if "_id" not in chunk:
+            if "id" in chunk:
+                chunk["_id"] = chunk["id"]
+            else:
+                chunk["_id"] = str(uuid.uuid4())
+                chunk["id"] = chunk["_id"]
+
+        # Ensure id matches _id
+        if "id" not in chunk:
+            chunk["id"] = chunk["_id"]
+
+        # Ensure timestamps
+        if "created_at" not in chunk:
+            chunk["created_at"] = datetime.utcnow()
+        if "updated_at" not in chunk:
+            chunk["updated_at"] = datetime.utcnow()
+
+    # Upsert to MongoDB
     ops = []
-    for c in chunks:
-        d = {
-            "_id": c["chunk_id"],
-            "properties": c["properties"],
-            "seq": c["seq"],
-            "page": c.get("page"),
-            "text_raw": c.get("text_raw"),
-            "text_clean": c.get("text"),
-            "source": "pdf",
-        }
-        ops.append(UpdateOne({"_id": d["_id"]}, {"$set": d}, upsert=True))
-    _db.chunks.bulk_write(ops, ordered=False)
+    for chunk in chunks:
+        ops.append(
+            UpdateOne(
+                {"_id": chunk["_id"]},
+                {"$set": chunk},
+                upsert=True,
+            )
+        )
+
+    if ops:
+        result = db().chunks.bulk_write(ops, ordered=False)
+        print(
+            f"[bulk_upsert_chunks] Matched: {result.matched_count}, "
+            f"Modified: {result.modified_count}, Upserted: {result.upserted_count}"
+        )
 
 
 def upsert_table(
@@ -179,6 +207,7 @@ def upsert_table(
         "_id": table_id,
         "doc_id": doc_id,
         "table_id": table_id,
+        "id": table_id,
         **meta,  # Spread all meta fields into doc
     }
 
@@ -198,36 +227,97 @@ def upsert_table(
 def bulk_upsert_rows(rows: List[Dict[str, Any]]):
     if not rows:
         return
-    ops = [UpdateOne({"_id": r["_id"]}, {"$set": r}, upsert=True) for r in rows]
+    ops = [
+        UpdateOne({"_id": r["_id"]}, {"id": r["_id"]}, {"$set": r}, upsert=True)
+        for r in rows
+    ]
     _db.rows.bulk_write(ops, ordered=False)
 
 
-def bulk_upsert_entities(nodes: List[Dict[str, Any]]):
-    if not nodes:
+def bulk_upsert_entities(entities: List[Dict[str, Any]]):
+    """
+    Bulk upsert entities. Each entity should have an id, name, type, etc.
+    """
+    if not entities:
         return
+
+    for ent in entities:
+        # Generate _id if it doesn't exist
+        if "_id" not in ent:
+            if "id" in ent:
+                ent["_id"] = ent["id"]
+            else:
+                # Generate UUID if no id exists
+                ent["_id"] = str(uuid.uuid4())
+                ent["id"] = ent["_id"]
+
+        # Ensure id matches _id
+        if "id" not in ent:
+            ent["id"] = ent["_id"]
+
+        # Ensure timestamps
+        if "created_at" not in ent:
+            ent["created_at"] = datetime.utcnow()  # ✅ Now works
+        if "updated_at" not in ent:
+            ent["updated_at"] = datetime.utcnow()  # ✅ Now works
+
+    # Upsert to MongoDB
     ops = []
-    for n in nodes:
-        n = dict(n)
-        _id = n.get("id") or n.get("_id")
-        if not _id:
-            continue
-        n["_id"] = _id
-        n.pop("id", None)
-        ops.append(UpdateOne({"_id": _id}, {"$set": n}, upsert=True))
-    _db.entities.bulk_write(ops, ordered=False)
+    for ent in entities:
+        ops.append(
+            UpdateOne(
+                {"_id": ent["_id"]},
+                {"$set": ent},
+                upsert=True,
+            )
+        )
+
+    if ops:
+        result = db().entities.bulk_write(ops, ordered=False)
+        print(
+            f"[bulk_upsert_entities] Matched: {result.matched_count}, "
+            f"Modified: {result.modified_count}, Upserted: {result.upserted_count}"
+        )
 
 
 def bulk_upsert_relations(edges: List[Dict[str, Any]]):
+    """
+    Bulk upsert relations. Each edge must have source, target, type.
+    """
     if not edges:
         return
+
+    for e in edges:
+        # Generate _id if it doesn't exist
+        if "_id" not in e:
+            e["_id"] = f"{e['source']}|{e['target']}|{e['type']}"
+
+        # Set id to match _id
+        e["id"] = e["_id"]
+
+        # Ensure timestamps
+        if "created_at" not in e:
+            e["created_at"] = datetime.utcnow()  # ✅ Now works
+        if "updated_at" not in e:
+            e["updated_at"] = datetime.utcnow()  # ✅ Now works
+
+    # Upsert to MongoDB
     ops = []
     for e in edges:
-        if not e.get("source") or not e.get("target") or not e.get("type"):
-            continue
-        filt = {"source": e["source"], "target": e["target"], "type": e["type"]}
-        ops.append(UpdateOne(filt, {"$set": e}, upsert=True))
+        ops.append(
+            UpdateOne(
+                {"_id": e["_id"]},
+                {"$set": e},
+                upsert=True,
+            )
+        )
+
     if ops:
-        _db.relations.bulk_write(ops, ordered=False)
+        result = db().relations.bulk_write(ops, ordered=False)
+        print(
+            f"[bulk_upsert_relations] Matched: {result.matched_count}, "
+            f"Modified: {result.modified_count}, Upserted: {result.upserted_count}"
+        )
 
 
 def bulk_upsert_mentions(mentions: List[Dict[str, Any]]):

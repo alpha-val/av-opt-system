@@ -1,0 +1,607 @@
+{
+  "estimate_id": "estimate_9d1976033417",
+  "scenario_id": "6c214dcb-c14a-4148-8231-945522d7d6ad",
+  "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+  "scenario_description": "Create a new product - organic lemonade using the same facility, but organic lemon and sugar",
+  "status": "completed",
+  "confidence": "medium",
+  "cost_breakdown": {
+    "base_case_total": {
+      "capital": null,
+      "installation": null,
+      "operating_annual": null,
+      "maintenance_annual": null,
+      "total": 0
+    },
+    "proposed_total": {
+      "capital": 50000,
+      "installation": 10000,
+      "operating_annual": 20000,
+      "maintenance_annual": 5000,
+      "total": 85000
+    },
+    "delta": {
+      "capital": 50000,
+      "installation": 10000,
+      "operating_annual": 20000,
+      "maintenance_annual": 5000,
+      "total": 85000
+    }
+  },
+  "relevant_entities": {
+    "base_case": [
+      {
+        "created_at": "2025-10-14T01:21:03.515000",
+        "id": "a4ef4e48-9f0b-545c-a635-14627ae7e718",
+        "properties": {
+          "name": "Lemonade Production Facility",
+          "short_description": "Batch-based, Craft Operation",
+          "location": "Asheville, North Carolina",
+          "capacity": "500 bottles/day",
+          "extracted_from": "Project Overview",
+          "confidence": "1.0",
+          "canonical_key": "project|lemonade production facility|project_lemonade_production_facility",
+          "artifact_type": "base_case",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "595c7704-6e57-43b8-8cad-7e5c896fa342"
+        },
+        "sources": [
+          {
+            "doc_id": "595c7704-6e57-43b8-8cad-7e5c896fa342"
+          }
+        ],
+        "type": "Project",
+        "updated_at": "2025-10-14T01:21:03.515000",
+        "relevance_score": 0.366924316
+      },
+      {
+        "created_at": "2025-10-14T01:21:03.515000",
+        "id": "911279b1-998e-5796-a7b3-5c41777f1eb2",
+        "properties": {
+          "name": "Label Applicator",
+          "short_description": "Manual-assisted, roll-feed",
+          "capacity": "600 bottles/hr",
+          "cost": "$2,500",
+          "extracted_from": "Equipment Details",
+          "confidence": "1.0",
+          "canonical_key": "equipment|label applicator|equipment_label_applicator",
+          "artifact_type": "base_case",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "595c7704-6e57-43b8-8cad-7e5c896fa342"
+        },
+        "sources": [
+          {
+            "doc_id": "595c7704-6e57-43b8-8cad-7e5c896fa342"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-14T01:21:03.515000",
+        "relevance_score": 0.326663971
+      },
+      {
+        "created_at": "2025-10-14T01:21:03.515000",
+        "id": "68fb0568-f607-5962-bd5a-6ea2f4dce9c9",
+        "properties": {
+          "name": "Bottle Capper",
+          "short_description": "Pneumatic capper",
+          "capacity": "500 bottles/hr",
+          "cost": "$4,000",
+          "extracted_from": "Equipment Details",
+          "confidence": "1.0",
+          "canonical_key": "equipment|bottle capper|equipment_bottle_capper",
+          "artifact_type": "base_case",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "595c7704-6e57-43b8-8cad-7e5c896fa342"
+        },
+        "sources": [
+          {
+            "doc_id": "595c7704-6e57-43b8-8cad-7e5c896fa342"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-14T01:21:03.515000",
+        "relevance_score": 0.31967926
+      },
+      {
+        "created_at": "2025-10-14T01:21:03.515000",
+        "id": "9e2a45a8-e264-51e2-8312-80ec73bbdf63",
+        "properties": {
+          "name": "Cold Storage Walk-in cooler",
+          "capacity": "1,200 bottles",
+          "cost": "$10,000",
+          "confidence": "1.0",
+          "extracted_from": "table",
+          "extraction_method": "tabular",
+          "canonical_key": "equipment|cold storage walk-in cooler|equipment-cold-storage-walk-in-cooler",
+          "artifact_type": "base_case",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "595c7704-6e57-43b8-8cad-7e5c896fa342"
+        },
+        "sources": [
+          {
+            "doc_id": "595c7704-6e57-43b8-8cad-7e5c896fa342"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-14T01:21:03.515000",
+        "relevance_score": 0.307771713
+      },
+      {
+        "created_at": "2025-10-14T01:21:03.515000",
+        "id": "be374abf-2e88-539d-87ee-8bed769b1a9c",
+        "properties": {
+          "name": "Bottle Rinser & Filler",
+          "short_description": "4-nozzle filler, semi-automatic",
+          "capacity": "400 bottles/hr",
+          "cost": "$9,000",
+          "extracted_from": "Equipment Details",
+          "confidence": "1.0",
+          "canonical_key": "equipment|bottle rinser & filler|equipment_bottle_rinser_filler",
+          "artifact_type": "base_case",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "595c7704-6e57-43b8-8cad-7e5c896fa342"
+        },
+        "sources": [
+          {
+            "doc_id": "595c7704-6e57-43b8-8cad-7e5c896fa342"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-14T01:21:03.515000",
+        "relevance_score": 0.305107117
+      },
+      {
+        "created_at": "2025-10-14T01:21:03.515000",
+        "id": "17867ca1-3f74-5dbd-9ba9-f0bfb146b6e8",
+        "properties": {
+          "name": "Cold Press Juicer",
+          "short_description": "Hydraulic press for raw juice",
+          "capacity": "30 gallons/hr",
+          "cost": "$18,000",
+          "extracted_from": "Equipment Details",
+          "confidence": "1.0",
+          "canonical_key": "equipment|cold press juicer|equipment_cold_press_juicer",
+          "artifact_type": "base_case",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "595c7704-6e57-43b8-8cad-7e5c896fa342"
+        },
+        "sources": [
+          {
+            "doc_id": "595c7704-6e57-43b8-8cad-7e5c896fa342"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-14T01:21:03.515000",
+        "relevance_score": 0.297708511
+      },
+      {
+        "created_at": "2025-10-14T01:21:03.515000",
+        "id": "528d78cf-146f-58d8-96ac-f6168be55d82",
+        "properties": {
+          "name": "CIP Circulation pump",
+          "capacity": "20 gallons/min",
+          "cost": "$2,000",
+          "confidence": "1.0",
+          "extracted_from": "table",
+          "extraction_method": "tabular",
+          "canonical_key": "equipment|cip circulation pump|equipment-cip-circulation-pump",
+          "artifact_type": "base_case",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "595c7704-6e57-43b8-8cad-7e5c896fa342"
+        },
+        "sources": [
+          {
+            "doc_id": "595c7704-6e57-43b8-8cad-7e5c896fa342"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-14T01:21:03.515000",
+        "relevance_score": 0.286096573
+      },
+      {
+        "created_at": "2025-10-14T01:21:03.515000",
+        "id": "0f8a65bb-3101-5742-80cd-b7310035a0f1",
+        "properties": {
+          "name": "Mixing Tank",
+          "short_description": "For blending juice with flavors/syrups",
+          "capacity": "100 gallons",
+          "cost": "$12,000",
+          "extracted_from": "Equipment Details",
+          "confidence": "1.0",
+          "canonical_key": "equipment|mixing tank|equipment_mixing_tank",
+          "artifact_type": "base_case",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "595c7704-6e57-43b8-8cad-7e5c896fa342"
+        },
+        "sources": [
+          {
+            "doc_id": "595c7704-6e57-43b8-8cad-7e5c896fa342"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-14T01:21:03.515000",
+        "relevance_score": 0.279783249
+      },
+      {
+        "created_at": "2025-10-14T01:20:02.580000",
+        "id": "54cdfaf9-4c70-57a1-9013-fe9b0495e746",
+        "properties": {
+          "name": "Tank",
+          "capacity": "10000 gallons",
+          "material": "stainless steel, insulated",
+          "extracted_from": "text",
+          "confidence": "1.0",
+          "canonical_key": "equipment|tank|1",
+          "artifact_type": "base_case",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "aa73f4ca-8ed4-4ed1-a34e-f8bc211d0a6a"
+        },
+        "sources": [
+          {
+            "doc_id": "aa73f4ca-8ed4-4ed1-a34e-f8bc211d0a6a"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-14T01:20:02.580000",
+        "relevance_score": 0.271505386
+      },
+      {
+        "created_at": "2025-10-14T01:21:03.515000",
+        "id": "42030068-47ac-5b2e-8892-6d9bb2893fc4",
+        "properties": {
+          "name": "Fruit Washer",
+          "short_description": "Automated rotating drum washer",
+          "capacity": "250 lbs/hr",
+          "cost": "$6,000",
+          "extracted_from": "Equipment Details",
+          "confidence": "1.0",
+          "canonical_key": "equipment|fruit washer|equipment_fruit_washer",
+          "artifact_type": "base_case",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "595c7704-6e57-43b8-8cad-7e5c896fa342"
+        },
+        "sources": [
+          {
+            "doc_id": "595c7704-6e57-43b8-8cad-7e5c896fa342"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-14T01:21:03.515000",
+        "relevance_score": 0.269506454
+      }
+    ],
+    "tabular": [
+      {
+        "created_at": "2025-10-14T01:24:06.220000",
+        "id": "material_lemons_organic",
+        "properties": {
+          "name": "Lemons Organic",
+          "base_cost": 1.6,
+          "bulk_purchase_cost": 1.44,
+          "premium_quality_cost": 1.84,
+          "notes": "Certified organic farms",
+          "extracted_from": "table",
+          "confidence": 1,
+          "table_id": "tbl::a2fe272d-b892-4a84-bef8-4e01ac43e04a::p1::1",
+          "row_index": 2,
+          "artifact_type": "tabular_data",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+        },
+        "sources": [
+          {
+            "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+          }
+        ],
+        "type": "Material",
+        "updated_at": "2025-10-14T01:24:06.220000",
+        "relevance_score": 0.494550705
+      },
+      {
+        "created_at": "2025-10-14T01:24:06.220000",
+        "id": "material_sugar_syrup_organic_cane",
+        "properties": {
+          "name": "Sugar/Syrup Organic Cane",
+          "base_cost": 0.85,
+          "bulk_purchase_cost": 0.77,
+          "premium_quality_cost": 0.98,
+          "notes": "Higher consistency, better flavor",
+          "extracted_from": "table",
+          "confidence": 1,
+          "table_id": "tbl::a2fe272d-b892-4a84-bef8-4e01ac43e04a::p1::1",
+          "row_index": 4,
+          "artifact_type": "tabular_data",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+        },
+        "sources": [
+          {
+            "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+          }
+        ],
+        "type": "Material",
+        "updated_at": "2025-10-14T01:24:06.220000",
+        "relevance_score": 0.461440086
+      },
+      {
+        "created_at": "2025-10-14T01:24:06.220000",
+        "id": "material_lemons_standard",
+        "properties": {
+          "name": "Lemons Standard",
+          "base_cost": 1.2,
+          "bulk_purchase_cost": 1.08,
+          "premium_quality_cost": 1.38,
+          "notes": "Local, seasonal variation",
+          "extracted_from": "table",
+          "confidence": 1,
+          "table_id": "tbl::a2fe272d-b892-4a84-bef8-4e01ac43e04a::p1::1",
+          "row_index": 1,
+          "artifact_type": "tabular_data",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+        },
+        "sources": [
+          {
+            "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+          }
+        ],
+        "type": "Material",
+        "updated_at": "2025-10-14T01:24:06.220000",
+        "relevance_score": 0.388765335
+      },
+      {
+        "created_at": "2025-10-14T01:24:06.220000",
+        "id": "material_sugar_syrup_standard_cane",
+        "properties": {
+          "name": "Sugar/Syrup Standard Cane",
+          "base_cost": 0.65,
+          "bulk_purchase_cost": 0.59,
+          "premium_quality_cost": 0.75,
+          "notes": "Bulk suppliers available",
+          "extracted_from": "table",
+          "confidence": 1,
+          "table_id": "tbl::a2fe272d-b892-4a84-bef8-4e01ac43e04a::p1::1",
+          "row_index": 3,
+          "artifact_type": "tabular_data",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+        },
+        "sources": [
+          {
+            "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+          }
+        ],
+        "type": "Material",
+        "updated_at": "2025-10-14T01:24:06.220000",
+        "relevance_score": 0.384682655
+      },
+      {
+        "created_at": "2025-10-14T01:24:06.220000",
+        "id": "material_herbs_organic",
+        "properties": {
+          "name": "Herbs (Basil/Mint) Organic",
+          "base_cost": 3.2,
+          "bulk_purchase_cost": 2.88,
+          "premium_quality_cost": 3.68,
+          "notes": "Limited suppliers",
+          "extracted_from": "table",
+          "confidence": 1,
+          "table_id": "tbl::a2fe272d-b892-4a84-bef8-4e01ac43e04a::p1::1",
+          "row_index": 6,
+          "artifact_type": "tabular_data",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+        },
+        "sources": [
+          {
+            "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+          }
+        ],
+        "type": "Material",
+        "updated_at": "2025-10-14T01:24:06.220000",
+        "relevance_score": 0.36490342
+      },
+      {
+        "created_at": "2025-10-14T01:24:06.220000",
+        "id": "equipment_fruit_washer_small",
+        "properties": {
+          "name": "Fruit Washer (Small)",
+          "size_capacity": "150 lbs/hr",
+          "power_requirement": "1.5 kW",
+          "material": "Stainless Steel",
+          "unit_cost": 4800,
+          "annual_operating_cost": 480,
+          "currency": "USD",
+          "extracted_from": "table",
+          "confidence": 1,
+          "table_id": "tbl::a2fe272d-b892-4a84-bef8-4e01ac43e04a::p1::0",
+          "row_index": 1,
+          "artifact_type": "tabular_data",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+        },
+        "sources": [
+          {
+            "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-14T01:24:06.220000",
+        "relevance_score": 0.324607849
+      },
+      {
+        "created_at": "2025-10-14T01:24:06.220000",
+        "id": "equipment_cold_press_juicer_compact",
+        "properties": {
+          "name": "Cold Press Juicer (Compact)",
+          "size_capacity": "20 gal/hr",
+          "power_requirement": "3.5 kW",
+          "material": "Aluminum Frame",
+          "unit_cost": 15000,
+          "annual_operating_cost": 1500,
+          "currency": "USD",
+          "extracted_from": "table",
+          "confidence": 1,
+          "table_id": "tbl::a2fe272d-b892-4a84-bef8-4e01ac43e04a::p1::0",
+          "row_index": 3,
+          "artifact_type": "tabular_data",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+        },
+        "sources": [
+          {
+            "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-14T01:24:06.220000",
+        "relevance_score": 0.322935104
+      },
+      {
+        "created_at": "2025-10-14T01:24:06.220000",
+        "id": "equipment_fruit_washer_large",
+        "properties": {
+          "name": "Fruit Washer (Large)",
+          "size_capacity": "300 lbs/hr",
+          "power_requirement": "2.5 kW",
+          "material": "Stainless Steel",
+          "unit_cost": 7200,
+          "annual_operating_cost": 720,
+          "currency": "USD",
+          "extracted_from": "table",
+          "confidence": 1,
+          "table_id": "tbl::a2fe272d-b892-4a84-bef8-4e01ac43e04a::p1::0",
+          "row_index": 2,
+          "artifact_type": "tabular_data",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+        },
+        "sources": [
+          {
+            "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-14T01:24:06.220000",
+        "relevance_score": 0.311347
+      },
+      {
+        "created_at": "2025-10-14T01:24:06.220000",
+        "id": "equipment_cold_press_juicer_industrial",
+        "properties": {
+          "name": "Cold Press Juicer (Industrial)",
+          "size_capacity": "40 gal/hr",
+          "power_requirement": "5 kW",
+          "material": "Stainless Steel",
+          "unit_cost": 24000,
+          "annual_operating_cost": 2400,
+          "currency": "USD",
+          "extracted_from": "table",
+          "confidence": 1,
+          "table_id": "tbl::a2fe272d-b892-4a84-bef8-4e01ac43e04a::p1::0",
+          "row_index": 4,
+          "artifact_type": "tabular_data",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+        },
+        "sources": [
+          {
+            "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-14T01:24:06.220000",
+        "relevance_score": 0.311056137
+      },
+      {
+        "created_at": "2025-10-14T01:24:06.220000",
+        "id": "equipment_bottle_filler_capper_combo",
+        "properties": {
+          "name": "Bottle Filler & Capper Combo",
+          "size_capacity": "400 bottles/hr",
+          "power_requirement": "2.8 kW",
+          "material": "Stainless Steel",
+          "unit_cost": 12000,
+          "annual_operating_cost": 1200,
+          "currency": "USD",
+          "extracted_from": "table",
+          "confidence": 1,
+          "table_id": "tbl::a2fe272d-b892-4a84-bef8-4e01ac43e04a::p1::0",
+          "row_index": 7,
+          "artifact_type": "tabular_data",
+          "project_id": "95dad703-4d2c-46e1-b2d9-3596041851ad",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+        },
+        "sources": [
+          {
+            "doc_id": "a2fe272d-b892-4a84-bef8-4e01ac43e04a"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-14T01:24:06.220000",
+        "relevance_score": 0.29822731
+      }
+    ],
+    "proposed": [
+      {
+        "entity_id": "Cold Press Juicer (Industrial)",
+        "name": "Cold Press Juicer (Industrial)",
+        "type": "Equipment",
+        "quantity": 1,
+        "unit_capital_cost": 30000,
+        "total_capital_cost": 30000,
+        "reason": "Selected for increased capacity to handle organic lemons."
+      },
+      {
+        "entity_id": "Mixing Tank (Larger)",
+        "name": "Mixing Tank (Larger)",
+        "type": "Equipment",
+        "quantity": 1,
+        "unit_capital_cost": 20000,
+        "total_capital_cost": 20000,
+        "reason": "Required for larger batch sizes due to increased production."
+      }
+    ]
+  },
+  "entity_types": ["Equipment", "Material", "Process"],
+  "uncertainties": null,
+  "retrieval_method": "vector_search",
+  "entity_counts": {
+    "base_case_retrieved": 20,
+    "tabular_retrieved": 17,
+    "proposed_count": 2
+  },
+  "assumptions": [
+    "The Cold Press Juicer (Industrial) is necessary to handle the increased volume of organic lemons.",
+    "The Mixing Tank (Larger) is needed to accommodate larger production batches.",
+    "Installation costs are estimated at 20% of capital costs.",
+    "Operating costs are estimated based on increased utility and labor for organic production.",
+    "Maintenance costs are estimated as 10% of capital costs annually.",
+    "No explicit cost data is available for organic materials, assumed to be included in operating costs."
+  ],
+  "notes": "The proposed configuration assumes that existing equipment can be repurposed for organic production without additional costs.",
+  "confidence_explanation": "The confidence level is medium due to the lack of explicit cost data for organic materials and the need to estimate several cost components.",
+  "estimated_at": "2025-10-14T02:24:32.105000",
+  "created_at": "2025-10-14T02:24:32.105000",
+  "updated_at": "2025-10-14T02:24:32.105000"
+}

@@ -18,7 +18,7 @@ NAMESPACE = uuid5(UUID("1d19a1b8-2b1b-4c3d-9f0a-2f6b3b5f8abc"), "default")
 @dataclass(frozen=True)
 class Settings:
     pinecone_api_key: str = os.getenv("PINECONE_API_KEY", "")
-    pinecone_index_name: str = os.getenv("PINECONE_INDEX_NAME", "optpro-index")
+    pinecone_index_name: str = os.getenv("PINECONE_INDEX_NAME", "alphaval-pro")
     pinecone_cloud: str = os.getenv("PINECONE_CLOUD", "aws")
     pinecone_region: str = os.getenv("PINECONE_REGION", "us-east-1")
     pinecone_namespace: str = os.getenv("PINECONE_NAMESPACE", "default")

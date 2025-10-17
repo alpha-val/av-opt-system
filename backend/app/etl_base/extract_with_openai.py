@@ -8,6 +8,7 @@ from collections import OrderedDict
 
 # from langchain_community.graphs import Node, Relationship
 from typing import Dict, List, Any, Union, Tuple
+
 # from .build_prompt import gen_prompt
 from ..build_prompt import gen_prompt
 from .ontology import load_ontology
@@ -160,6 +161,30 @@ def _to_document(payload: Union[str, bytes]) -> Document:
     return Document(page_content=text, metadata={"source": "graph_ingest"})
 
 
+# Function to de-duplicate nodes based on their name
+def dedupe_nodes_by_name(nodes: list[dict]) -> list[dict]:
+    """
+    Merge nodes if their type and properties.name (case-insensitive, stripped) are identical.
+    Otherwise, keep as separate nodes.
+    Properties from duplicates are merged (last one wins for each property).
+    """
+    merged = {}
+    for node in nodes:
+        node_type = (node.get("type") or "").strip().lower()
+        name = (node.get("properties", {}).get("name") or "").strip().lower()
+        if not node_type or not name:
+            # If missing type or name, treat as unique
+            key = node.get("id", str(uuid.uuid4()))
+        else:
+            key = f"{node_type}|{name}"
+        if key in merged:
+            # Merge properties (last one wins)
+            merged[key]["properties"].update(node.get("properties", {}))
+        else:
+            merged[key] = node.copy()
+    return list(merged.values())
+
+
 NAMESPACE = uuid.UUID("6d978d8b-9e1b-4d3e-9f0a-2cfd5f9a9d9a")  # any constant
 
 
@@ -246,6 +271,9 @@ def openai_extract_nodes_rels(
         else:
             by_id[nid] = n
     all_nodes = list(by_id.values())
+    
+    # DEDUPE by name
+    all_nodes = dedupe_nodes_by_name(all_nodes)
 
     # Remap edges to the new ids (works even if model omitted id entirely)
     for e in all_edges:

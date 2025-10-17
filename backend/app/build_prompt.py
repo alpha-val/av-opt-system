@@ -14,11 +14,11 @@ def gen_prompt(ontology) -> str:
 --------------------------------------------------------------------------------
 COST & METHOD POLICY (Enforced by Ontology)
 --------------------------------------------------------------------------------
-* Reserve the 'CostRule' node type **only** for reusable cost-estimation methods.
+* Reserve the 'CostRule' node type only for reusable cost-estimation methods.
   Examples: factors, parametric curves, scale exponents, lookup tables,
   regressions, escalation/deflation formulas, or vendor price lists used as a
-  *method* (not just a one-off price).
-* Do **NOT** create a 'CostRule' node just because a dollar amount appears.
+  method (not just a one-off price).
+* Do not create a 'CostRule' node just because a dollar amount appears.
   - If the text states a specific price/cost for an entity, attach it to that
     entity as a property in its node 'properties' (e.g., 'cost_value' plus
     currency and basis year).
@@ -30,11 +30,18 @@ COST & METHOD POLICY (Enforced by Ontology)
 --------------------------------------------------------------------------------
 COST POLICY (Ontology has no 'CostRule')
 --------------------------------------------------------------------------------
-* Do **NOT** create any 'CostRule' nodes.
+* Do not create any 'CostRule' nodes.
 * When costs/prices appear in text, attach them directly as properties on the
-  relevant node (e.g., Equipment/Process) **or** use dedicated costing nodes
+  relevant node (e.g., Equipment/Process) or use dedicated costing nodes
   defined in your ontology (e.g., 'CostEstimate') and edges from EDGE_TYPES
   (e.g., :COSTED_BY / :AGGREGATES, if present).
+* For every cost or price, always extract and store the numeric value in a property
+  called 'cost_value' (or 'price_value' if appropriate), and store the currency
+  in a separate property called 'currency' (e.g., 'USD', 'EUR', etc.).
+* If a basis year is mentioned, store it in a property called 'basis_year'.
+* Do not merge cost value and currency into a single string; keep them as separate fields.
+* If a cost or price is mentioned without a currency, set 'currency' to null.
+* If a cost or price is mentioned without a basis year, omit 'basis_year'.
 """
     )
 
@@ -146,17 +153,17 @@ QUALITY REQUIREMENTS FOR TABLE EXTRACTION:
 Extract a knowledge graph from the user's text.
 
 === Mission ===
-Produce a **clean, deduplicated** knowledge graph for mining/process-engineering content
-aligned **exactly** to the configured ontology.
+Produce a clean, deduplicated knowledge graph for mining/process-engineering content
+aligned exactly to the configured ontology.
 
 You MUST:
 - Extract only what is explicitly or strongly implied by the text.
 - Do not infer or assume information not present.
-- Emit only node/edge **types** that appear in the ontology.
-- Each nodes **must** have a type or property["label"] that maps to NODE_TYPES.
-- Use only node/edge **property names** that appear in the ontology metadata lists.
-- Attach evidence and a confidence score to every node and edge **using the
-  allowed property names** from NODE_PROPERTIES / EDGE_PROPERTIES.
+- Emit only node/edge types that appear in the ontology.
+- Each node must have a type or property["label"] that maps to NODE_TYPES.
+- Use only node/edge property names that appear in the ontology metadata lists.
+- Attach evidence and a confidence score to every node and edge using the
+  allowed property names from NODE_PROPERTIES / EDGE_PROPERTIES.
 - Normalize entity names and deduplicate obvious variants.
 
 You MUST NOT:
@@ -175,21 +182,36 @@ Allowed node types (NODE_TYPES):
 Allowed edge types (EDGE_TYPES):
 {_bulleted(ontology["EDGE_TYPES"])}
 
-# Table extraction policy
+--------------------------------------------------------------------------------
+TABLES
+--------------------------------------------------------------------------------
+Table extraction policy
 {table_extraction_block}
+
+--------------------------------------------------------------------------------
+COST EXTRACTION POLICIES
+--------------------------------------------------------------------------------
+Cost & Method policy
+{costrule_block}
 
 --------------------------------------------------------------------------------
 OUTPUT CONTRACT (strict)
 --------------------------------------------------------------------------------
 Node object (each item in extract_nodes.nodes) MUST have:
 - "id": stable unique string identifier (uuid)
--- prefer deterministic, stable unique IDs, e.g., using uuid
--- If you must create a temporary reference, use a placeholder **type present in your ontology**. Never emit an empty/unknown type.
-- "type": one of NODE_TYPES; a Node object **must** have a type
+- "type": one of NODE_TYPES; a Node object must have a type
 - "properties": object/dict containing:
     • follow the properties mentioned in NODE_PROPERTIES in the ontology
-    • prioritize finding cost associated with an entity (e.g., 'cost', 'price', 'cost_value', 'currency', 'basis_year', 'expenditure')
-- enforce a 'name' property for the node
+    • prioritize finding cost associated with an entity (e.g., 'cost_value', 'price_value', 'currency', 'basis_year', 'expenditure')
+    • always keep cost value and currency as separate properties (never as a combined string)
+    • if a cost or price is present, extract the numeric value to 'cost_value' and the currency to 'currency'
+    • if a basis year is present, extract it to 'basis_year'
+    • if currency is not present, set 'currency' to null
+    • if basis year is not present, omit 'basis_year'
+    • include evidence/confidence meta-properties from NODE_PROPERTIES
+    • include any other domain-specific properties from NODE_PROPERTIES that appear in the text
+- "name": human-readable name (string)
+
 
 Edge object (each item in extract_edges.edges) MUST have:
 - "source": node id
@@ -197,14 +219,9 @@ Edge object (each item in extract_edges.edges) MUST have:
 - "type": one of EDGE_TYPES
 - "properties": object/dict containing ONLY:
     • the allowed meta-keys from EDGE_PROPERTIES for evidence/confidence, and
-    • any **domain** attributes the ontology expects for that edge (if any)
+    • any domain attributes the ontology expects for that edge (if any)
+--------------------------------------------------------------------------------
 
-ID rules:
-- Prefer deterministic, stable unique IDs, e.g., using uuid.
-- If you must create a temporary reference, use a placeholder **type present in your ontology**.
-  Never emit an empty/unknown type.
-
-{costrule_block}
 
 --------------------------------------------------------------------------------
 NORMALIZATION & DEDUP
@@ -217,6 +234,7 @@ NORMALIZATION & DEDUP
 Units & values:
 - Normalize units (prefer SI where sensible) but preserve the original in an
   auxiliary field (e.g., 'display_value' or 'orig_unit') if helpful.
+- For monetary values, always extract and store the numeric value and currency as separate properties.
 - For monetary values, carry currency (ISO code) and basis_year whenever stated.
 
 Confidence scoring (guideline):
@@ -229,7 +247,6 @@ Evidence:
 - Keep excerpts short (≤250 chars). Populate the appropriate meta fields strictly
   from NODE_PROPERTIES / EDGE_PROPERTIES (e.g., 'source_doc', 'extracted_from', etc.).
 
-
 --------------------------------------------------------------------------------
 QUALITY GATE (pre-return)
 --------------------------------------------------------------------------------
@@ -240,15 +257,16 @@ QUALITY GATE (pre-return)
 - For nodes of type 'Equipment', 'Process', 'Material', 'Product', 'Waste', etc., acquire cost details if they appear in text.
 - For nodes of type 'CostRule', ensure compliance with COST & METHOD POLICY above.
 - For nodes of type 'CostEstimate' or similar, ensure costing details are present.
+- For node properties that are costs/prices, always extract and store the numeric value and currency as separate properties.
 - For node properties that are costs/prices, include currency and basis_year when available.
 - Every edge: valid 'source', 'target', 'type', and a 'properties' dict.
 - Every edge property key matches EDGE_PROPERTIES.
+- For node and edge, include evidence; evidence must be present and derived from the text.
+- For node and edge, include confidence; confidence must be present and justified.
 - All nodes must be linked with type that matches EDGE_TYPES.
+- Normalize units and values as per the rules above.
 - Only ontology-approved types and meta property keys are used.
-- Deduplication applied; aliases captured; evidence present; confidence sensible.
 - Do not hallucinate entities, relationships, or properties.
-- Maintain a clear audit trail for all extracted data.
-- Confidence reflects evidence strength.
 
 Return nodes with extract_nodes(nodes=[...]) and edges with extract_edges(edges=[...]).
 """

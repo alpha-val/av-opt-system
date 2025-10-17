@@ -215,14 +215,14 @@ const Dashboard = ({ onOpenProject }) => {
         );
 
         if (deleteProject.fulfilled.match(resultAction)) {
-          await dialogs.alert(
-            `Project "${selectedProject.name}" has been deleted successfully.`,
-            {
-              title: "Project Deleted",
-              okText: "OK",
-            }
-          );
-          console.log("Project deleted:", resultAction.payload);
+          // await dialogs.alert(
+          //   `Project "${selectedProject.name}" has been deleted successfully.`,
+          //   {
+          //     title: "Project Deleted",
+          //     okText: "OK",
+          //   }
+          // );
+          // console.log("Project deleted:", resultAction.payload);
         } else {
           // Handle deletion error
           const errorMessage =
