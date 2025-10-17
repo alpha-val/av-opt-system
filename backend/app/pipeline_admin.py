@@ -100,10 +100,7 @@ async def clear_all_data(current_user: dict = Depends(get_current_user)):
     relations_result = db().relations.delete_many({"properties.user_id": user_id})
     collections_cleared.append(f"relations: {relations_result.deleted_count}")
     
-    # # Clear mentions belonging to this user
-    # mentions_result = db().mentions.delete_many({"properties.user_id": user_id})
-    # collections_cleared.append(f"mentions: {mentions_result.deleted_count}")
-    
+   
     # Clear rows belonging to this user
     rows_result = db().rows.delete_many({"properties.user_id": user_id})
     collections_cleared.append(f"rows: {rows_result.deleted_count}")
@@ -111,7 +108,15 @@ async def clear_all_data(current_user: dict = Depends(get_current_user)):
     # Clear tables belonging to this user
     tables_result = db().tables.delete_many({"properties.user_id": user_id})
     collections_cleared.append(f"tables: {tables_result.deleted_count}")
-    
+
+    # Clear cost estimates belonging to this user
+    scenarios_result = db().scenarios.delete_many({"user_id": user_id})
+    collections_cleared.append(f"scenarios: {scenarios_result.deleted_count}")
+
+    # Clear cost estimates belonging to this user
+    cost_estimates_result = db().cost_estimates.delete_many({"user_id": user_id})
+    collections_cleared.append(f"cost_estimates: {cost_estimates_result.deleted_count}")
+
     # Clear documents belonging to this user
     documents_result = db().documents.delete_many({"user_id": user_id})
     collections_cleared.append(f"documents: {documents_result.deleted_count}")

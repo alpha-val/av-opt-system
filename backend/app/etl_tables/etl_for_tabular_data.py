@@ -11,7 +11,7 @@ from ..ontology import load_ontology
 from ..build_prompt import gen_prompt
 from .tabular_rules import TABULAR_RULES
 from .table_payload import build_llm_payload
-from .extract_with_openai import call_llm_for_tables
+from .table_extract_with_openai import call_llm_for_tables
 from .validator import validate_kg_structure
 from .silver_store import store_silver_nodes, store_silver_edges
 from ..bronze_store import (
@@ -19,11 +19,89 @@ from ..bronze_store import (
     bulk_upsert_entities,
     bulk_upsert_relations,
 )
-from app.etl_base.etl_for_base_case import _extract_entities_mentions
+from app.etl_base.extract_with_openai import openai_extract_nodes_rels
+from app.vector_db.vector_operations import (
+    upsert_entities_to_pinecone,
+)
 
 
 logger = logging.getLogger(__name__)
 router_ingest_tables = APIRouter()
+
+
+def _generate_uuid() -> str:
+    """Generate a UUID4 string."""
+    return str(uuid.uuid4())
+
+
+def _normalize_entity_id(entity: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Ensure entity has proper UUID-style _id and id fields.
+
+    Args:
+        entity: Entity dictionary (node)
+
+    Returns:
+        Entity with normalized IDs
+    """
+    # Generate new UUID if _id doesn't exist or isn't UUID format
+    if "_id" not in entity or not _is_valid_uuid(entity.get("_id")):
+        entity["_id"] = _generate_uuid()
+
+    # Ensure id matches _id
+    entity["id"] = entity["_id"]
+
+    # Store original LLM-generated ID in properties for reference
+    if "properties" not in entity:
+        entity["properties"] = {}
+
+    # If there was an original text ID, preserve it as a reference
+    original_id = entity.get("name", "").lower().replace(" ", "_")
+    if original_id and original_id != entity["_id"]:
+        entity["properties"]["original_id"] = original_id
+
+    return entity
+
+
+def _normalize_edge_id(
+    edge: Dict[str, Any], node_id_map: Dict[str, str]
+) -> Dict[str, Any]:
+    """
+    Ensure edge has proper UUID-style _id and remapped source/target.
+
+    Args:
+        edge: Edge dictionary (relation)
+        node_id_map: Mapping from old text IDs to new UUIDs
+
+    Returns:
+        Edge with normalized IDs
+    """
+    # Remap source and target from text IDs to UUIDs
+    source = edge.get("source")
+    target = edge.get("target")
+
+    if source in node_id_map:
+        edge["source"] = node_id_map[source]
+    if target in node_id_map:
+        edge["target"] = node_id_map[target]
+
+    # Generate edge _id from source|target|type
+    if "_id" not in edge:
+        edge["_id"] = f"{edge['source']}|{edge['target']}|{edge['type']}"
+
+    # Ensure id matches _id
+    edge["id"] = edge["_id"]
+
+    return edge
+
+
+def _is_valid_uuid(id_str: str) -> bool:
+    """Check if string is a valid UUID."""
+    try:
+        uuid.UUID(str(id_str))
+        return True
+    except (ValueError, AttributeError, TypeError):
+        return False
 
 
 def _extract_tables_from_pdf(
@@ -224,45 +302,6 @@ def enhance_with_lineage(
     logger.info(f"[LINEAGE] Received {len(kg_data.get('nodes', []))} nodes")
     logger.info(f"[LINEAGE] Received {len(kg_data.get('edges', []))} edges")
 
-    # # Filter out invalid nodes (strings, non-dicts)
-    # valid_nodes = []
-    # for i, node in enumerate(kg_data.get("nodes", [])):
-    #     # DEBUG: Log type of each node
-    #     logger.debug(f"[LINEAGE] Node {i}: type={type(node)}, value={str(node)[:100]}")
-
-    #     if isinstance(node, str):
-    #         logger.warning(f"[LINEAGE] Skipping string node at index {i}: {node}")
-    #         continue
-    #     if not isinstance(node, dict):
-    #         logger.warning(f"[LINEAGE] Skipping non-dict node at index {i}: {type(node)}")
-    #         continue
-
-    #     # Node is valid dict
-    #     valid_nodes.append(node)
-
-    # logger.info(
-    #     f"[LINEAGE] Filtered to {len(valid_nodes)} valid nodes (removed {len(kg_data.get('nodes', [])) - len(valid_nodes)})"
-    # )
-    # kg_data["nodes"] = valid_nodes
-
-    # Filter out invalid edges
-    # valid_edges = []
-    # for i, edge in enumerate(kg_data.get("edges", [])):
-    #     logger.debug(f"[LINEAGE] Edge {i}: type={type(edge)}, value={str(edge)[:100]}")
-
-    #     if isinstance(edge, str):
-    #         logger.warning(f"[LINEAGE] Skipping string edge at index {i}: {edge}")
-    #         continue
-    #     if not isinstance(edge, dict):
-    #         logger.warning(f"[LINEAGE] Skipping non-dict edge at index {i}: {type(edge)}")
-    #         continue
-
-    #     valid_edges.append(edge)
-
-    # logger.info(
-    #     f"[LINEAGE] Filtered to {len(valid_edges)} valid edges (removed {len(kg_data.get('edges', [])) - len(valid_edges)})"
-    # )
-    # kg_data["edges"] = valid_edges
     valid_nodes = kg_data.get("nodes", [])
     valid_edges = kg_data.get("edges", [])
 
@@ -463,7 +502,7 @@ def map_tables_to_entities(
     if file.content_type not in ("application/pdf", "application/octet-stream"):
         raise HTTPException(400, "Please upload a PDF file")
 
-    # ✅ Ensure batch_size is an integer (Form data comes as string)
+    # Ensure batch_size is an integer (Form data comes as string)
     try:
         batch_size = int(batch_size)
     except (TypeError, ValueError):
@@ -496,20 +535,8 @@ def map_tables_to_entities(
 
     if not table_results:
         logger.warning(f"[TABULAR_PIPELINE] No tables found in {filename}")
-        # return {
-        #     "doc_id": doc_id,
-        #     "filename": filename,
-        #     "file_size": file_size,
-        #     "file_sha256": file_sha,
-        #     "tables_processed": 0,
-        #     "rows_processed": 0,
-        #     "chunks_written": 0,
-        #     "nodes_created": 0,
-        #     "edges_created": 0,
-        #     "errors": ["No tables found in PDF"],
-        # }
-        
-        # 2) Build page chunks (Bronze)
+
+        # 2) Build page chunks (Bronze) - Fallback to text extraction
         chunks = chunk_by_page(pages_clean, doc_id)
         raw_by_page = {p: t for p, t in pages_raw}
         for c in chunks:
@@ -523,12 +550,11 @@ def map_tables_to_entities(
             c["properties"]["doc_id"] = doc_id
 
         # 3) Entities/relations/mentions from free text (Bronze)
-        kg = _extract_entities_mentions(chunks)
+        kg = openai_extract_nodes_rels(chunks)
         nodes = list(kg.get("nodes", []) or [])
         edges = list(kg.get("edges", []) or [])
-        # mentions = list(kg.get("mentions", []) or [])
 
-        # Attach simple source back-pointer to each node; ensure deterministic mention IDs
+        # Attach simple source back-pointer to each node
         for n in nodes:
             srcs = n.get("sources") or []
             if not any(isinstance(s, dict) and s.get("doc_id") == doc_id for s in srcs):
@@ -554,7 +580,18 @@ def map_tables_to_entities(
         bulk_upsert_chunks(chunks)
         bulk_upsert_entities(nodes)
         bulk_upsert_relations(edges)
-        # bulk_upsert_mentions(mentions)
+
+        # ========== NEW: Store in Vector Database ==========
+        vectors_upserted = 0
+        try:
+            vectors_upserted = upsert_entities_to_pinecone(
+                entities=nodes, project_id=project_id, artifact_type=artifact_type
+            )
+            logger.info(f"[INFO] Upserted {vectors_upserted} vectors to Pinecone")
+        except Exception as e:
+            logger.error(f"[ERROR] Failed to upsert to Pinecone: {e}")
+            # Don't fail the entire ETL if vector upsert fails
+        # ===================================================
 
         return {
             "filename": filename,
@@ -564,8 +601,8 @@ def map_tables_to_entities(
             "chunks_written": len(chunks),
             "entities_written": len(nodes),
             "relations_written": len(edges),
+            "vectors_upserted": vectors_upserted,  # NEW
         }
-        
 
     # Load ontology and build prompt
     ontology = load_ontology()
@@ -595,7 +632,6 @@ def map_tables_to_entities(
         )
 
         table_id = table_meta["table_id"]
-        # logger.info(f"[TABULAR_PIPELINE] Processing table {table_id} ({len(df)} rows)")
 
         try:
             # Prepare row documents
@@ -616,16 +652,10 @@ def map_tables_to_entities(
                 artifact_type=artifact_type,
             )
 
-
-            # Prepare row documents
-            rows = _prepare_row_documents(df, table_id)
-
-            if not rows:
-                logger.warning(f"[TABULAR_PIPELINE] No rows in table {table_id}")
-                continue
+            all_chunks.extend(table_chunks)
 
             # Limit rows for this batch
-            rows_batch = rows[:batch_size]            
+            rows_batch = rows[:batch_size]
             payload = build_llm_payload(table_meta, rows_batch, max_rows=batch_size)
 
             # Construct prompt with payload
@@ -668,8 +698,26 @@ def map_tables_to_entities(
                 )
                 continue
 
-            # Attach metadata to nodes
+            # Create mapping from old text IDs to new UUIDs
+            node_id_map = {}
+            normalized_nodes = []
+
             for n in nodes:
+                # Store original ID before normalization
+                original_id = (
+                    n.get("id")
+                    or n.get("_id")
+                    or n.get("name", "").lower().replace(" ", "_")
+                )
+
+                # Normalize to UUID
+                n = _normalize_entity_id(n)
+
+                # Map old ID to new UUID
+                if original_id:
+                    node_id_map[original_id] = n["_id"]
+
+                # Attach metadata
                 srcs = n.get("sources") or []
                 if not any(
                     isinstance(s, dict) and s.get("doc_id") == doc_id for s in srcs
@@ -685,8 +733,15 @@ def map_tables_to_entities(
                 n["properties"]["doc_id"] = doc_id
                 n["properties"]["table_id"] = table_id
 
-            # Attach metadata to edges
+                normalized_nodes.append(n)
+
+            # Normalize edges with ID remapping
+            normalized_edges = []
             for e in edges:
+                # Remap source/target from text IDs to UUIDs
+                e = _normalize_edge_id(e, node_id_map)
+
+                # Attach metadata
                 if "properties" not in e or not isinstance(e["properties"], dict):
                     e["properties"] = {}
                 e["properties"]["artifact_type"] = artifact_type
@@ -695,11 +750,15 @@ def map_tables_to_entities(
                 e["properties"]["doc_id"] = doc_id
                 e["properties"]["table_id"] = table_id
 
-            all_nodes.extend(nodes)
-            all_edges.extend(edges)
+                normalized_edges.append(e)
+
+            # Use normalized entities
+            all_nodes.extend(normalized_nodes)
+            all_edges.extend(normalized_edges)
+            total_rows_processed += len(rows_batch)
 
             logger.info(
-                f"[TABULAR_PIPELINE] Table {table_id}: {len(nodes)} nodes, {len(edges)} edges"
+                f"[TABULAR_PIPELINE] Table {table_id}: {len(normalized_nodes)} nodes, {len(normalized_edges)} edges (IDs normalized)"
             )
 
         except Exception as e:
@@ -730,6 +789,19 @@ def map_tables_to_entities(
         traceback.print_exc()
         raise HTTPException(500, f"Database write failed: {str(e)}")
 
+    # Store in Vector Database
+    vectors_upserted = 0
+    try:
+        vectors_upserted = upsert_entities_to_pinecone(
+            entities=all_nodes, project_id=project_id, artifact_type=artifact_type
+        )
+        logger.info(f"[INFO] Upserted {vectors_upserted} vectors to Pinecone")
+    except Exception as e:
+        logger.error(f"[ERROR] Failed to upsert to Pinecone: {e}")
+        import traceback
+
+        traceback.print_exc()
+
     results = {
         "doc_id": doc_id,
         "filename": filename,
@@ -741,6 +813,7 @@ def map_tables_to_entities(
         "chunks_written": len(all_chunks),
         "entities_written": len(all_nodes),
         "relations_written": len(all_edges),
+        "vectors_upserted": vectors_upserted,
         "errors": all_errors if all_errors else None,
     }
 

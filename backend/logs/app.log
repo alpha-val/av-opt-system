@@ -564,3 +564,725 @@
 2025-10-12 22:17:04 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:83] - [COST ESTIMATION] Sending 51967 chars to OpenAI
 2025-10-12 22:17:12 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:103] - [COST ESTIMATION] Received 2606 chars from OpenAI
 2025-10-12 22:17:12 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:121] - [COST ESTIMATION] Completed for scenario b1794508-2f14-4cdf-8db8-2774a1fc9c9b. Delta: {'capital': -6632542, 'installation': -23210000, 'operating_annual': 0, 'maintenance_annual': 0, 'total': -29842542}
+2025-10-13 09:36:09 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 09:41:48 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 09:44:00 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 09:44:32 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 09:54:05 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 09:55:33 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 09:55:41 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 10:01:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 10:01:43 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 10:04:10 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 10:10:07 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 10:30:20 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 10:33:40 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 10:33:56 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 10:51:34 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 10:54:59 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 11:18:41 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 11:19:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 11:19:40 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 11:28:20 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:446] - [TABULAR_PIPELINE] Processed doc_id: 292df3c8-ae13-45bd-ba52-80ebc45c5a29
+2025-10-13 11:28:22 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:49] - [TABLE_EXTRACT] Extracted 3 tables using cascade
+2025-10-13 11:28:22 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:454] - [TABULAR_PIPELINE] Extracted 3 tables from PDF
+2025-10-13 11:28:34 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-13 11:28:34 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:594] - [TABULAR_PIPELINE] Calling LLM for table tbl::292df3c8-ae13-45bd-ba52-80ebc45c5a29::p1::0 (3 rows)
+2025-10-13 11:28:34 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 12255 chars to OpenAI
+2025-10-13 11:28:46 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 6215 chars from OpenAI
+2025-10-13 11:28:46 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-13 11:28:46 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:657] - [TABULAR_PIPELINE] Table tbl::292df3c8-ae13-45bd-ba52-80ebc45c5a29::p1::0: 9 nodes, 0 edges
+2025-10-13 11:28:46 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-13 11:28:46 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:594] - [TABULAR_PIPELINE] Calling LLM for table tbl::292df3c8-ae13-45bd-ba52-80ebc45c5a29::p1::1 (3 rows)
+2025-10-13 11:28:46 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 11500 chars to OpenAI
+2025-10-13 11:28:53 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 2956 chars from OpenAI
+2025-10-13 11:28:53 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 6 nodes, 0 edges
+2025-10-13 11:28:53 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:657] - [TABULAR_PIPELINE] Table tbl::292df3c8-ae13-45bd-ba52-80ebc45c5a29::p1::1: 6 nodes, 0 edges
+2025-10-13 11:28:53 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-13 11:28:53 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:594] - [TABULAR_PIPELINE] Calling LLM for table tbl::292df3c8-ae13-45bd-ba52-80ebc45c5a29::p1::2 (3 rows)
+2025-10-13 11:28:53 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 11950 chars to OpenAI
+2025-10-13 11:29:37 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 4634 chars from OpenAI
+2025-10-13 11:29:37 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-13 11:29:37 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:657] - [TABULAR_PIPELINE] Table tbl::292df3c8-ae13-45bd-ba52-80ebc45c5a29::p1::2: 9 nodes, 0 edges
+2025-10-13 11:29:37 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:670] - [TABULAR_PIPELINE] Writing to database: 3 chunks, 24 nodes, 0 edges
+2025-10-13 11:29:51 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:695] - [INFO] Upserted 24 vectors to Pinecone
+2025-10-13 11:29:51 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:720] - [TABULAR_PIPELINE] Completed: {'doc_id': '292df3c8-ae13-45bd-ba52-80ebc45c5a29', 'filename': 'Pg 13 Gyratory Crusher Cost Tables.pdf', 'file_size': 77638, 'file_sha256': 'd9cca90d44e6ee8df668d7773eb95d2c4c91ffffa92a99b310048e25cbab26a1', 'pages': 1, 'tables_processed': 3, 'rows_processed': 9, 'chunks_written': 3, 'entities_written': 24, 'relations_written': 0, 'vectors_upserted': 24, 'errors': None}
+2025-10-13 12:22:37 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 12:23:02 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 12:49:40 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 12:52:24 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 12:54:20 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 12:55:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 12:57:28 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 12:59:36 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 12:59:50 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 13:01:49 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 13:26:00 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 13:26:15 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 13:26:50 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 13:27:59 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 13:29:05 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 13:30:42 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 13:49:23 - app.costing.api_for_costing - INFO - [api_for_costing.py:43] - [COST_ESTIMATE] Creating estimate for project: b0f98292-bb08-4a4c-b9c2-5f40abdab0cc, scenario: 7780cc3f-6cd0-4778-bcfa-fa6523428c9e
+2025-10-13 13:49:58 - app.costing.api_for_costing - ERROR - [api_for_costing.py:72] - [COST_ESTIMATE] Failed to create estimate: estimate_cost() got an unexpected keyword argument 'scenario_id'
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/api_for_costing.py", line 54, in create_cost_estimate
+    estimate = estimate_cost(
+               ^^^^^^^^^^^^^^
+TypeError: estimate_cost() got an unexpected keyword argument 'scenario_id'
+2025-10-13 13:57:42 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 13:58:03 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 13:59:29 - app.costing.api_for_costing - INFO - [api_for_costing.py:43] - [COST_ESTIMATE] Creating estimate for project: b0f98292-bb08-4a4c-b9c2-5f40abdab0cc, scenario: 7780cc3f-6cd0-4778-bcfa-fa6523428c9e
+2025-10-13 13:59:38 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:94] - [COST_ESTIMATOR] Starting estimation: estimate_e9fc292a7aea for scenario: 7780cc3f-6cd0-4778-bcfa-fa6523428c9e
+2025-10-13 13:59:47 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:106] - [COST_ESTIMATOR] Retrieving relevant entities from Pinecone for project: b0f98292-bb08-4a4c-b9c2-5f40abdab0cc, entity_types: ['Equipment', 'Material', 'Process']
+2025-10-13 14:02:22 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:121] - [COST_ESTIMATOR] Vector search retrieved 0 base case and 0 tabular entities
+2025-10-13 14:02:41 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:176] - [COST_ESTIMATOR] After filtering, using 0 base case and 0 tabular entities
+2025-10-13 14:02:54 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:246] - [COST_ESTIMATOR] Estimate stored: estimate_e9fc292a7aea
+2025-10-13 14:02:59 - app.costing.api_for_costing - INFO - [api_for_costing.py:67] - [COST_ESTIMATE] Estimate created: estimate_e9fc292a7aea
+2025-10-13 14:04:28 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 16:09:47 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 16:11:30 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:446] - [TABULAR_PIPELINE] Processed doc_id: 8fcd736e-697a-4433-a02e-14a2193f3e59
+2025-10-13 16:11:33 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:49] - [TABLE_EXTRACT] Extracted 2 tables using cascade
+2025-10-13 16:11:33 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:454] - [TABULAR_PIPELINE] Extracted 2 tables from PDF
+2025-10-13 16:11:38 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 10 rows, 5 columns
+2025-10-13 16:11:38 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:594] - [TABULAR_PIPELINE] Calling LLM for table tbl::8fcd736e-697a-4433-a02e-14a2193f3e59::p1::0 (10 rows)
+2025-10-13 16:11:38 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 13359 chars to OpenAI
+2025-10-13 16:11:55 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 5106 chars from OpenAI
+2025-10-13 16:11:55 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-13 16:11:55 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:657] - [TABULAR_PIPELINE] Table tbl::8fcd736e-697a-4433-a02e-14a2193f3e59::p1::0: 9 nodes, 0 edges
+2025-10-13 16:11:55 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 9 rows, 6 columns
+2025-10-13 16:11:55 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:594] - [TABULAR_PIPELINE] Calling LLM for table tbl::8fcd736e-697a-4433-a02e-14a2193f3e59::p1::1 (9 rows)
+2025-10-13 16:11:55 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 13200 chars to OpenAI
+2025-10-13 16:12:08 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 3974 chars from OpenAI
+2025-10-13 16:12:08 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 8 nodes, 0 edges
+2025-10-13 16:12:08 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:657] - [TABULAR_PIPELINE] Table tbl::8fcd736e-697a-4433-a02e-14a2193f3e59::p1::1: 8 nodes, 0 edges
+2025-10-13 16:12:08 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:670] - [TABULAR_PIPELINE] Writing to database: 2 chunks, 17 nodes, 0 edges
+2025-10-13 16:12:09 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:695] - [INFO] Upserted 17 vectors to Pinecone
+2025-10-13 16:12:09 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:720] - [TABULAR_PIPELINE] Completed: {'doc_id': '8fcd736e-697a-4433-a02e-14a2193f3e59', 'filename': 'Lemonade_Project_Equipment_and_Materials.pdf', 'file_size': 3839, 'file_sha256': 'a24ad78544e9e06366193f866b6bb1383b7722452d68fe4ab1db14ab5d24412a', 'pages': 1, 'tables_processed': 2, 'rows_processed': 19, 'chunks_written': 2, 'entities_written': 17, 'relations_written': 0, 'vectors_upserted': 17, 'errors': None}
+2025-10-13 16:16:24 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 16:17:34 - app.costing.api_for_costing - INFO - [api_for_costing.py:43] - [COST_ESTIMATE] Creating estimate for project: 36f59ab9-d201-4d69-bda1-70adb7ec8489, scenario: 66ea8bb5-8682-41a7-b372-5f3e6c5f1f0d
+2025-10-13 16:17:45 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:94] - [COST_ESTIMATOR] Starting estimation: estimate_3ab9bcbb8896 for scenario: 66ea8bb5-8682-41a7-b372-5f3e6c5f1f0d
+2025-10-13 16:17:45 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:106] - [COST_ESTIMATOR] Retrieving relevant entities from Pinecone for project: 36f59ab9-d201-4d69-bda1-70adb7ec8489, entity_types: ['Equipment', 'Material', 'Process']
+2025-10-13 16:17:48 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:125] - [COST_ESTIMATOR] Vector search retrieved 0 base case and 0 tabular entities
+2025-10-13 16:17:48 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:180] - [COST_ESTIMATOR] After filtering, using 0 base case and 0 tabular entities
+2025-10-13 16:17:48 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:250] - [COST_ESTIMATOR] Estimate stored: estimate_3ab9bcbb8896
+2025-10-13 16:17:57 - app.costing.api_for_costing - INFO - [api_for_costing.py:67] - [COST_ESTIMATE] Estimate created: estimate_3ab9bcbb8896
+2025-10-13 16:20:40 - app.costing.api_for_costing - INFO - [api_for_costing.py:43] - [COST_ESTIMATE] Creating estimate for project: 36f59ab9-d201-4d69-bda1-70adb7ec8489, scenario: 66ea8bb5-8682-41a7-b372-5f3e6c5f1f0d
+2025-10-13 16:21:05 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:94] - [COST_ESTIMATOR] Starting estimation: estimate_c50c9720de9a for scenario: 66ea8bb5-8682-41a7-b372-5f3e6c5f1f0d
+2025-10-13 16:21:05 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:106] - [COST_ESTIMATOR] Retrieving relevant entities from Pinecone for project: 36f59ab9-d201-4d69-bda1-70adb7ec8489, entity_types: ['Equipment', 'Material', 'Process']
+2025-10-13 16:23:46 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:125] - [COST_ESTIMATOR] Vector search retrieved 0 base case and 0 tabular entities
+2025-10-13 16:23:48 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:180] - [COST_ESTIMATOR] After filtering, using 0 base case and 0 tabular entities
+2025-10-13 16:23:48 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:250] - [COST_ESTIMATOR] Estimate stored: estimate_c50c9720de9a
+2025-10-13 16:23:49 - app.costing.api_for_costing - INFO - [api_for_costing.py:67] - [COST_ESTIMATE] Estimate created: estimate_c50c9720de9a
+2025-10-13 16:25:38 - app.costing.api_for_costing - INFO - [api_for_costing.py:43] - [COST_ESTIMATE] Creating estimate for project: 36f59ab9-d201-4d69-bda1-70adb7ec8489, scenario: 66ea8bb5-8682-41a7-b372-5f3e6c5f1f0d
+2025-10-13 16:25:41 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:94] - [COST_ESTIMATOR] Starting estimation: estimate_1d9d4cb8b3ac for scenario: 66ea8bb5-8682-41a7-b372-5f3e6c5f1f0d
+2025-10-13 16:25:41 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:106] - [COST_ESTIMATOR] Retrieving relevant entities from Pinecone for project: 36f59ab9-d201-4d69-bda1-70adb7ec8489, entity_types: ['Equipment', 'Material', 'Process']
+2025-10-13 16:25:52 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:125] - [COST_ESTIMATOR] Vector search retrieved 0 base case and 0 tabular entities
+2025-10-13 16:25:52 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:180] - [COST_ESTIMATOR] After filtering, using 0 base case and 0 tabular entities
+2025-10-13 16:25:52 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:250] - [COST_ESTIMATOR] Estimate stored: estimate_1d9d4cb8b3ac
+2025-10-13 16:25:53 - app.costing.api_for_costing - INFO - [api_for_costing.py:67] - [COST_ESTIMATE] Estimate created: estimate_1d9d4cb8b3ac
+2025-10-13 16:29:31 - app.costing.api_for_costing - INFO - [api_for_costing.py:43] - [COST_ESTIMATE] Creating estimate for project: 36f59ab9-d201-4d69-bda1-70adb7ec8489, scenario: 66ea8bb5-8682-41a7-b372-5f3e6c5f1f0d
+2025-10-13 16:29:32 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:94] - [COST_ESTIMATOR] Starting estimation: estimate_e45957644892 for scenario: 66ea8bb5-8682-41a7-b372-5f3e6c5f1f0d
+2025-10-13 16:29:32 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:106] - [COST_ESTIMATOR] Retrieving relevant entities from Pinecone for project: 36f59ab9-d201-4d69-bda1-70adb7ec8489, entity_types: ['Equipment', 'Material', 'Process']
+2025-10-13 16:31:18 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:125] - [COST_ESTIMATOR] Vector search retrieved 0 base case and 0 tabular entities
+2025-10-13 16:31:18 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:180] - [COST_ESTIMATOR] After filtering, using 0 base case and 0 tabular entities
+2025-10-13 16:31:18 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:250] - [COST_ESTIMATOR] Estimate stored: estimate_e45957644892
+2025-10-13 16:31:20 - app.costing.api_for_costing - INFO - [api_for_costing.py:67] - [COST_ESTIMATE] Estimate created: estimate_e45957644892
+2025-10-13 16:33:33 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 16:33:48 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 16:34:24 - app.costing.api_for_costing - INFO - [api_for_costing.py:43] - [COST_ESTIMATE] Creating estimate for project: 36f59ab9-d201-4d69-bda1-70adb7ec8489, scenario: 66ea8bb5-8682-41a7-b372-5f3e6c5f1f0d
+2025-10-13 16:34:25 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:94] - [COST_ESTIMATOR] Starting estimation: estimate_098baf88c76e for scenario: 66ea8bb5-8682-41a7-b372-5f3e6c5f1f0d
+2025-10-13 16:34:25 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:106] - [COST_ESTIMATOR] Retrieving relevant entities from Pinecone for project: 36f59ab9-d201-4d69-bda1-70adb7ec8489, entity_types: ['Equipment', 'Material', 'Process']
+2025-10-13 16:40:55 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:125] - [COST_ESTIMATOR] Vector search retrieved 0 base case and 0 tabular entities
+2025-10-13 16:40:55 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:180] - [COST_ESTIMATOR] After filtering, using 0 base case and 0 tabular entities
+2025-10-13 16:40:55 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:250] - [COST_ESTIMATOR] Estimate stored: estimate_098baf88c76e
+2025-10-13 16:40:55 - app.costing.api_for_costing - INFO - [api_for_costing.py:67] - [COST_ESTIMATE] Estimate created: estimate_098baf88c76e
+2025-10-13 16:41:24 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 16:41:41 - app.costing.api_for_costing - INFO - [api_for_costing.py:43] - [COST_ESTIMATE] Creating estimate for project: 36f59ab9-d201-4d69-bda1-70adb7ec8489, scenario: 66ea8bb5-8682-41a7-b372-5f3e6c5f1f0d
+2025-10-13 16:41:45 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:94] - [COST_ESTIMATOR] Starting estimation: estimate_d967750162ac for scenario: 66ea8bb5-8682-41a7-b372-5f3e6c5f1f0d
+2025-10-13 16:41:45 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:106] - [COST_ESTIMATOR] Retrieving relevant entities from Pinecone for project: 36f59ab9-d201-4d69-bda1-70adb7ec8489, entity_types: ['Equipment', 'Material', 'Process']
+2025-10-13 16:47:05 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:125] - [COST_ESTIMATOR] Vector search retrieved 0 base case and 0 tabular entities
+2025-10-13 16:47:05 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:180] - [COST_ESTIMATOR] After filtering, using 0 base case and 0 tabular entities
+2025-10-13 16:47:05 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:250] - [COST_ESTIMATOR] Estimate stored: estimate_d967750162ac
+2025-10-13 16:47:08 - app.costing.api_for_costing - INFO - [api_for_costing.py:67] - [COST_ESTIMATE] Estimate created: estimate_d967750162ac
+2025-10-13 16:49:35 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 16:49:43 - app.costing.api_for_costing - INFO - [api_for_costing.py:43] - [COST_ESTIMATE] Creating estimate for project: 36f59ab9-d201-4d69-bda1-70adb7ec8489, scenario: 66ea8bb5-8682-41a7-b372-5f3e6c5f1f0d
+2025-10-13 16:49:43 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:94] - [COST_ESTIMATOR] Starting estimation: estimate_0383ef6bc2f5 for scenario: 66ea8bb5-8682-41a7-b372-5f3e6c5f1f0d
+2025-10-13 16:49:43 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:106] - [COST_ESTIMATOR] Retrieving relevant entities from Pinecone for project: 36f59ab9-d201-4d69-bda1-70adb7ec8489, entity_types: ['Equipment', 'Material', 'Process']
+2025-10-13 16:50:47 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:125] - [COST_ESTIMATOR] Vector search retrieved 0 base case and 0 tabular entities
+2025-10-13 16:50:47 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:180] - [COST_ESTIMATOR] After filtering, using 0 base case and 0 tabular entities
+2025-10-13 16:50:47 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:250] - [COST_ESTIMATOR] Estimate stored: estimate_0383ef6bc2f5
+2025-10-13 16:50:51 - app.costing.api_for_costing - INFO - [api_for_costing.py:67] - [COST_ESTIMATE] Estimate created: estimate_0383ef6bc2f5
+2025-10-13 18:17:17 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 18:17:40 - app.costing.api_for_costing - INFO - [api_for_costing.py:43] - [COST_ESTIMATE] Creating estimate for project: 36f59ab9-d201-4d69-bda1-70adb7ec8489, scenario: 66ea8bb5-8682-41a7-b372-5f3e6c5f1f0d
+2025-10-13 18:17:40 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:94] - [COST_ESTIMATOR] Starting estimation: estimate_b53744a07fc1 for scenario: 66ea8bb5-8682-41a7-b372-5f3e6c5f1f0d
+2025-10-13 18:17:40 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:106] - [COST_ESTIMATOR] Retrieving relevant entities from Pinecone for project: 36f59ab9-d201-4d69-bda1-70adb7ec8489, entity_types: ['Equipment', 'Material', 'Process']
+2025-10-13 18:26:08 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:125] - [COST_ESTIMATOR] Vector search retrieved 0 base case and 0 tabular entities
+2025-10-13 18:26:08 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:180] - [COST_ESTIMATOR] After filtering, using 0 base case and 0 tabular entities
+2025-10-13 18:26:08 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:250] - [COST_ESTIMATOR] Estimate stored: estimate_b53744a07fc1
+2025-10-13 18:26:09 - app.costing.api_for_costing - INFO - [api_for_costing.py:67] - [COST_ESTIMATE] Estimate created: estimate_b53744a07fc1
+2025-10-13 18:30:49 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 18:33:37 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 18:36:43 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 18:37:40 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 18:38:24 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 18:39:36 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 18:42:41 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 18:43:15 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 18:43:34 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 18:51:56 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 18:52:18 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 18:56:18 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 21:23:09 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:446] - [TABULAR_PIPELINE] Processed doc_id: a2fe272d-b892-4a84-bef8-4e01ac43e04a
+2025-10-13 21:23:15 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:49] - [TABLE_EXTRACT] Extracted 2 tables using cascade
+2025-10-13 21:23:15 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:454] - [TABULAR_PIPELINE] Extracted 2 tables from PDF
+2025-10-13 21:23:15 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 10 rows, 5 columns
+2025-10-13 21:23:15 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:594] - [TABULAR_PIPELINE] Calling LLM for table tbl::a2fe272d-b892-4a84-bef8-4e01ac43e04a::p1::0 (10 rows)
+2025-10-13 21:23:15 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 13359 chars to OpenAI
+2025-10-13 21:23:57 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 5106 chars from OpenAI
+2025-10-13 21:23:57 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-13 21:23:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:657] - [TABULAR_PIPELINE] Table tbl::a2fe272d-b892-4a84-bef8-4e01ac43e04a::p1::0: 9 nodes, 0 edges
+2025-10-13 21:23:57 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 9 rows, 6 columns
+2025-10-13 21:23:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:594] - [TABULAR_PIPELINE] Calling LLM for table tbl::a2fe272d-b892-4a84-bef8-4e01ac43e04a::p1::1 (9 rows)
+2025-10-13 21:23:57 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 13200 chars to OpenAI
+2025-10-13 21:24:06 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 4010 chars from OpenAI
+2025-10-13 21:24:06 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 8 nodes, 0 edges
+2025-10-13 21:24:06 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:657] - [TABULAR_PIPELINE] Table tbl::a2fe272d-b892-4a84-bef8-4e01ac43e04a::p1::1: 8 nodes, 0 edges
+2025-10-13 21:24:06 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:670] - [TABULAR_PIPELINE] Writing to database: 2 chunks, 17 nodes, 0 edges
+2025-10-13 21:24:07 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:695] - [INFO] Upserted 17 vectors to Pinecone
+2025-10-13 21:24:07 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:720] - [TABULAR_PIPELINE] Completed: {'doc_id': 'a2fe272d-b892-4a84-bef8-4e01ac43e04a', 'filename': 'Lemonade_Project_Equipment_and_Materials.pdf', 'file_size': 3839, 'file_sha256': 'a24ad78544e9e06366193f866b6bb1383b7722452d68fe4ab1db14ab5d24412a', 'pages': 1, 'tables_processed': 2, 'rows_processed': 19, 'chunks_written': 2, 'entities_written': 17, 'relations_written': 0, 'vectors_upserted': 17, 'errors': None}
+2025-10-13 21:25:08 - app.costing.api_for_costing - INFO - [api_for_costing.py:44] - [COST_ESTIMATE] Creating estimate for project: 95dad703-4d2c-46e1-b2d9-3596041851ad, scenario: 6c214dcb-c14a-4148-8231-945522d7d6ad
+2025-10-13 21:25:08 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:95] - [COST_ESTIMATOR] Starting estimation: estimate_10b52ef28b85 for scenario: 6c214dcb-c14a-4148-8231-945522d7d6ad
+2025-10-13 21:25:08 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:107] - [COST_ESTIMATOR] Retrieving relevant entities from Pinecone for project: 95dad703-4d2c-46e1-b2d9-3596041851ad, entity_types: ['Equipment', 'Material', 'Process']
+2025-10-13 21:28:36 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:126] - [COST_ESTIMATOR] Vector search retrieved 20 base case and 17 tabular entities
+2025-10-13 21:29:03 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:181] - [COST_ESTIMATOR] After filtering, using 20 base case and 17 tabular entities
+2025-10-13 21:29:03 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:252] - [COST_ESTIMATOR] Estimate stored: estimate_10b52ef28b85
+2025-10-13 21:29:05 - app.costing.api_for_costing - INFO - [api_for_costing.py:78] - [COST_ESTIMATE] Estimate created: estimate_10b52ef28b85
+2025-10-13 21:42:34 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 21:42:51 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 21:58:18 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 21:58:40 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:521] - [TABULAR_PIPELINE] Processed doc_id: ebbe941e-1106-47bb-806f-5eb470f1581b
+2025-10-13 21:58:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:124] - [TABLE_EXTRACT] Extracted 3 tables using cascade
+2025-10-13 21:58:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:529] - [TABULAR_PIPELINE] Extracted 3 tables from PDF
+2025-10-13 21:58:45 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-13 21:58:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:669] - [TABULAR_PIPELINE] Calling LLM for table tbl::ebbe941e-1106-47bb-806f-5eb470f1581b::p1::0 (3 rows)
+2025-10-13 21:58:45 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 12255 chars to OpenAI
+2025-10-13 21:59:34 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 6216 chars from OpenAI
+2025-10-13 21:59:34 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-13 21:59:34 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:760] - [TABULAR_PIPELINE] Table tbl::ebbe941e-1106-47bb-806f-5eb470f1581b::p1::0: 9 nodes, 0 edges (IDs normalized)
+2025-10-13 21:59:34 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-13 21:59:34 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:669] - [TABULAR_PIPELINE] Calling LLM for table tbl::ebbe941e-1106-47bb-806f-5eb470f1581b::p1::1 (3 rows)
+2025-10-13 21:59:34 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 11500 chars to OpenAI
+2025-10-13 21:59:40 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 2956 chars from OpenAI
+2025-10-13 21:59:40 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 6 nodes, 0 edges
+2025-10-13 21:59:40 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:760] - [TABULAR_PIPELINE] Table tbl::ebbe941e-1106-47bb-806f-5eb470f1581b::p1::1: 6 nodes, 0 edges (IDs normalized)
+2025-10-13 21:59:40 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-13 21:59:40 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:669] - [TABULAR_PIPELINE] Calling LLM for table tbl::ebbe941e-1106-47bb-806f-5eb470f1581b::p1::2 (3 rows)
+2025-10-13 21:59:40 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 11950 chars to OpenAI
+2025-10-13 21:59:49 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 4958 chars from OpenAI
+2025-10-13 21:59:49 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-13 21:59:49 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:760] - [TABULAR_PIPELINE] Table tbl::ebbe941e-1106-47bb-806f-5eb470f1581b::p1::2: 9 nodes, 0 edges (IDs normalized)
+2025-10-13 21:59:49 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:773] - [TABULAR_PIPELINE] Writing to database: 3 chunks, 24 nodes, 0 edges
+2025-10-13 21:59:51 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:798] - [INFO] Upserted 24 vectors to Pinecone
+2025-10-13 21:59:51 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:820] - [TABULAR_PIPELINE] Completed: {'doc_id': 'ebbe941e-1106-47bb-806f-5eb470f1581b', 'filename': 'Pg 13 Gyratory Crusher Cost Tables.pdf', 'file_size': 77638, 'file_sha256': 'd9cca90d44e6ee8df668d7773eb95d2c4c91ffffa92a99b310048e25cbab26a1', 'pages': 1, 'tables_processed': 3, 'rows_processed': 9, 'chunks_written': 3, 'entities_written': 24, 'relations_written': 0, 'vectors_upserted': 24, 'errors': None}
+2025-10-13 22:12:19 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 22:13:54 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 22:14:21 - app.costing.api_for_costing - INFO - [api_for_costing.py:44] - [COST_ESTIMATE] Creating estimate for project: 95dad703-4d2c-46e1-b2d9-3596041851ad, scenario: 6c214dcb-c14a-4148-8231-945522d7d6ad
+2025-10-13 22:14:21 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:352] - [COST_ESTIMATOR] Starting estimation: estimate_4b475ee4b1a1 for scenario: 6c214dcb-c14a-4148-8231-945522d7d6ad
+2025-10-13 22:14:21 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:371] - [COST_ESTIMATOR] Retrieving relevant entities from Pinecone for project: 95dad703-4d2c-46e1-b2d9-3596041851ad, entity_types: ['Equipment', 'Material', 'Process']
+2025-10-13 22:14:34 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:390] - [COST_ESTIMATOR] Vector search retrieved 20 base case and 17 tabular entities
+2025-10-13 22:14:34 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:444] - [COST_ESTIMATOR] After filtering, using 20 base case and 17 tabular entities
+2025-10-13 22:17:26 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:461] - [COST_ESTIMATOR] Calling LLM for cost estimation
+2025-10-13 22:17:45 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:238] - [LLM_COST_ESTIMATION] Successfully received response from LLM
+2025-10-13 22:18:07 - app.costing.utils_estimate_cost - ERROR - [utils_estimate_cost.py:546] - [COST_ESTIMATOR] Failed to estimate cost: E11000 duplicate key error collection: AlphaValVault.cost_estimates index: id_1 dup key: { id: null }, full error: {'index': 0, 'code': 11000, 'errmsg': 'E11000 duplicate key error collection: AlphaValVault.cost_estimates index: id_1 dup key: { id: null }', 'keyPattern': {'id': 1}, 'keyValue': {'id': None}}
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/utils_estimate_cost.py", line 539, in estimate_cost
+    db().cost_estimates.insert_one(estimate.copy())
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 891, in insert_one
+    self._insert_one(
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 831, in _insert_one
+    self._database.client._retryable_write(
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2082, in _retryable_write
+    return self._retry_with_session(retryable, func, s, bulk, operation, operation_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 1968, in _retry_with_session
+    return self._retry_internal(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/_csot.py", line 125, in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2014, in _retry_internal
+    ).run()
+      ^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2765, in run
+    return self._read() if self._is_read else self._write()
+                                              ^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2897, in _write
+    return self._func(self._session, conn, self._retryable)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 829, in _insert_command
+    _check_write_command_response(result)
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/helpers_shared.py", line 322, in _check_write_command_response
+    _raise_last_write_error(write_errors)
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/helpers_shared.py", line 292, in _raise_last_write_error
+    raise DuplicateKeyError(error.get("errmsg"), 11000, error)
+pymongo.errors.DuplicateKeyError: E11000 duplicate key error collection: AlphaValVault.cost_estimates index: id_1 dup key: { id: null }, full error: {'index': 0, 'code': 11000, 'errmsg': 'E11000 duplicate key error collection: AlphaValVault.cost_estimates index: id_1 dup key: { id: null }', 'keyPattern': {'id': 1}, 'keyValue': {'id': None}}
+2025-10-13 22:18:07 - app.costing.utils_estimate_cost - ERROR - [utils_estimate_cost.py:565] - [COST_ESTIMATOR] Failed to store error: E11000 duplicate key error collection: AlphaValVault.cost_estimates index: id_1 dup key: { id: null }, full error: {'index': 0, 'code': 11000, 'errmsg': 'E11000 duplicate key error collection: AlphaValVault.cost_estimates index: id_1 dup key: { id: null }', 'keyPattern': {'id': 1}, 'keyValue': {'id': None}}
+2025-10-13 22:18:07 - app.costing.api_for_costing - ERROR - [api_for_costing.py:83] - [COST_ESTIMATE] Failed to create estimate: E11000 duplicate key error collection: AlphaValVault.cost_estimates index: id_1 dup key: { id: null }, full error: {'index': 0, 'code': 11000, 'errmsg': 'E11000 duplicate key error collection: AlphaValVault.cost_estimates index: id_1 dup key: { id: null }', 'keyPattern': {'id': 1}, 'keyValue': {'id': None}}
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/api_for_costing.py", line 64, in create_cost_estimate
+    estimate = estimate_cost(
+               ^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/utils_estimate_cost.py", line 539, in estimate_cost
+    db().cost_estimates.insert_one(estimate.copy())
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 891, in insert_one
+    self._insert_one(
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 831, in _insert_one
+    self._database.client._retryable_write(
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2082, in _retryable_write
+    return self._retry_with_session(retryable, func, s, bulk, operation, operation_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 1968, in _retry_with_session
+    return self._retry_internal(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/_csot.py", line 125, in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2014, in _retry_internal
+    ).run()
+      ^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2765, in run
+    return self._read() if self._is_read else self._write()
+                                              ^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2897, in _write
+    return self._func(self._session, conn, self._retryable)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 829, in _insert_command
+    _check_write_command_response(result)
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/helpers_shared.py", line 322, in _check_write_command_response
+    _raise_last_write_error(write_errors)
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/helpers_shared.py", line 292, in _raise_last_write_error
+    raise DuplicateKeyError(error.get("errmsg"), 11000, error)
+pymongo.errors.DuplicateKeyError: E11000 duplicate key error collection: AlphaValVault.cost_estimates index: id_1 dup key: { id: null }, full error: {'index': 0, 'code': 11000, 'errmsg': 'E11000 duplicate key error collection: AlphaValVault.cost_estimates index: id_1 dup key: { id: null }', 'keyPattern': {'id': 1}, 'keyValue': {'id': None}}
+2025-10-13 22:19:55 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 22:20:08 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 22:22:33 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-13 22:23:32 - app.costing.api_for_costing - INFO - [api_for_costing.py:44] - [COST_ESTIMATE] Creating estimate for project: 95dad703-4d2c-46e1-b2d9-3596041851ad, scenario: 6c214dcb-c14a-4148-8231-945522d7d6ad
+2025-10-13 22:23:32 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:351] - [COST_ESTIMATOR] Starting estimation: estimate_9d1976033417 for scenario: 6c214dcb-c14a-4148-8231-945522d7d6ad
+2025-10-13 22:23:32 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:370] - [COST_ESTIMATOR] Retrieving relevant entities from Pinecone for project: 95dad703-4d2c-46e1-b2d9-3596041851ad, entity_types: ['Equipment', 'Material', 'Process']
+2025-10-13 22:23:35 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:389] - [COST_ESTIMATOR] Vector search retrieved 20 base case and 17 tabular entities
+2025-10-13 22:23:35 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:443] - [COST_ESTIMATOR] After filtering, using 20 base case and 17 tabular entities
+2025-10-13 22:23:45 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:460] - [COST_ESTIMATOR] Calling LLM for cost estimation
+2025-10-13 22:24:15 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:237] - [LLM_COST_ESTIMATION] Successfully received response from LLM
+2025-10-13 22:24:35 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:541] - [COST_ESTIMATOR] Estimate stored: estimate_e8d3cfe19a004362beedf03f2e25e9f8
+2025-10-13 22:24:35 - app.costing.api_for_costing - INFO - [api_for_costing.py:78] - [COST_ESTIMATE] Estimate created: estimate_9d1976033417
+2025-10-14 07:33:53 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 09:10:43 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 09:14:06 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 09:16:01 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 09:18:04 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 13:26:57 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 14:03:11 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 14:03:50 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 14:12:01 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 14:12:54 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 14:13:40 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 14:14:03 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 14:18:29 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 14:19:03 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 14:23:09 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 14:29:37 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 14:31:13 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 95dad703-4d2c-46e1-b2d9-3596041851ad, scenario: b6471d89-bae4-455b-ba92-83ddf73c4375
+2025-10-15 14:33:47 - app.costing.api_for_costing - INFO - [api_for_costing.py:94] - [COST_ESTIMATE] Estimate created: estimate_88ef2b766a1543e6
+2025-10-15 14:42:47 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 14:43:42 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 14:44:50 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 95dad703-4d2c-46e1-b2d9-3596041851ad, scenario: b6471d89-bae4-455b-ba92-83ddf73c4375
+2025-10-15 14:45:14 - app.costing.api_for_costing - INFO - [api_for_costing.py:94] - [COST_ESTIMATE] Estimate created: estimate_08baccbb12754008
+2025-10-15 14:53:18 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 95dad703-4d2c-46e1-b2d9-3596041851ad, scenario: b6471d89-bae4-455b-ba92-83ddf73c4375
+2025-10-15 14:53:34 - app.costing.api_for_costing - INFO - [api_for_costing.py:94] - [COST_ESTIMATE] Estimate created: estimate_90b8961d915241f4
+2025-10-15 14:53:56 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 95dad703-4d2c-46e1-b2d9-3596041851ad, scenario: b6471d89-bae4-455b-ba92-83ddf73c4375
+2025-10-15 14:54:04 - app.costing.api_for_costing - INFO - [api_for_costing.py:94] - [COST_ESTIMATE] Estimate created: estimate_18ebb5efae394911
+2025-10-15 14:55:41 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 95dad703-4d2c-46e1-b2d9-3596041851ad, scenario: b6471d89-bae4-455b-ba92-83ddf73c4375
+2025-10-15 15:22:30 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 15:23:26 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:521] - [TABULAR_PIPELINE] Processed doc_id: 6fa3bb03-3cff-4931-aa0b-8c4eb7d50fe3
+2025-10-15 15:23:34 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:124] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-15 15:23:34 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:529] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-15 15:23:34 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 16 rows, 1 columns
+2025-10-15 15:23:34 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:669] - [TABULAR_PIPELINE] Calling LLM for table tbl::6fa3bb03-3cff-4931-aa0b-8c4eb7d50fe3::p1::0 (16 rows)
+2025-10-15 15:23:34 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 15710 chars to OpenAI
+2025-10-15 15:25:03 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 8565 chars from OpenAI
+2025-10-15 15:25:03 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 16 nodes, 0 edges
+2025-10-15 15:25:03 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:760] - [TABULAR_PIPELINE] Table tbl::6fa3bb03-3cff-4931-aa0b-8c4eb7d50fe3::p1::0: 16 nodes, 0 edges (IDs normalized)
+2025-10-15 15:25:03 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:773] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 16 nodes, 0 edges
+2025-10-15 15:25:04 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:798] - [INFO] Upserted 16 vectors to Pinecone
+2025-10-15 15:25:04 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:820] - [TABULAR_PIPELINE] Completed: {'doc_id': '6fa3bb03-3cff-4931-aa0b-8c4eb7d50fe3', 'filename': 'equipment_variants.pdf', 'file_size': 3586, 'file_sha256': '9b15ab2a87c37625130e7dfa31c8c160ddea8b87c9466c8a4743901a085026ae', 'pages': 1, 'tables_processed': 1, 'rows_processed': 16, 'chunks_written': 1, 'entities_written': 16, 'relations_written': 0, 'vectors_upserted': 16, 'errors': None}
+2025-10-15 15:25:05 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:521] - [TABULAR_PIPELINE] Processed doc_id: f879945a-65fd-4fad-923d-811cb3b5c57b
+2025-10-15 15:25:06 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:124] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-15 15:25:06 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:529] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-15 15:25:06 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 16 rows, 1 columns
+2025-10-15 15:25:06 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:669] - [TABULAR_PIPELINE] Calling LLM for table tbl::f879945a-65fd-4fad-923d-811cb3b5c57b::p1::0 (16 rows)
+2025-10-15 15:25:06 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 15528 chars to OpenAI
+2025-10-15 15:25:32 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 10451 chars from OpenAI
+2025-10-15 15:25:32 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 16 nodes, 0 edges
+2025-10-15 15:25:32 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:760] - [TABULAR_PIPELINE] Table tbl::f879945a-65fd-4fad-923d-811cb3b5c57b::p1::0: 16 nodes, 0 edges (IDs normalized)
+2025-10-15 15:25:32 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:773] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 16 nodes, 0 edges
+2025-10-15 15:25:33 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:798] - [INFO] Upserted 16 vectors to Pinecone
+2025-10-15 15:25:33 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:820] - [TABULAR_PIPELINE] Completed: {'doc_id': 'f879945a-65fd-4fad-923d-811cb3b5c57b', 'filename': 'material_variants.pdf', 'file_size': 3521, 'file_sha256': 'b9d3ffa36527dccb336d24d4e62e061c6a59c9d858d38776c7533236d6f8fd0e', 'pages': 1, 'tables_processed': 1, 'rows_processed': 16, 'chunks_written': 1, 'entities_written': 16, 'relations_written': 0, 'vectors_upserted': 16, 'errors': None}
+2025-10-15 15:30:21 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 8e881292-89cf-480a-b639-da2bfe13525d, scenario: 7ddeda2e-4314-4167-8766-f8b1aee13cd8
+2025-10-15 15:30:34 - app.costing.api_for_costing - INFO - [api_for_costing.py:94] - [COST_ESTIMATE] Estimate created: estimate_63bd45c0bcc14236
+2025-10-15 15:33:27 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 15:33:29 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 8e881292-89cf-480a-b639-da2bfe13525d, scenario: 7ddeda2e-4314-4167-8766-f8b1aee13cd8
+2025-10-15 15:38:01 - app.costing.api_for_costing - INFO - [api_for_costing.py:94] - [COST_ESTIMATE] Estimate created: estimate_c1f25cfd75114ee4
+2025-10-15 15:38:19 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 8e881292-89cf-480a-b639-da2bfe13525d, scenario: 7ddeda2e-4314-4167-8766-f8b1aee13cd8
+2025-10-15 15:38:27 - app.costing.api_for_costing - INFO - [api_for_costing.py:94] - [COST_ESTIMATE] Estimate created: estimate_1f014662663d48fe
+2025-10-15 16:43:26 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 8e881292-89cf-480a-b639-da2bfe13525d, scenario: 7ddeda2e-4314-4167-8766-f8b1aee13cd8
+2025-10-15 16:43:39 - app.costing.api_for_costing - INFO - [api_for_costing.py:94] - [COST_ESTIMATE] Estimate created: estimate_183fe42aa4ca4034
+2025-10-15 16:45:12 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 16:47:40 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 16:50:50 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 8e881292-89cf-480a-b639-da2bfe13525d, scenario: 7ddeda2e-4314-4167-8766-f8b1aee13cd8
+2025-10-15 16:51:25 - app.costing.api_for_costing - INFO - [api_for_costing.py:94] - [COST_ESTIMATE] Estimate created: estimate_6407ed8a2d0f4fa6
+2025-10-15 16:54:24 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 16:54:44 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 16:54:54 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 8e881292-89cf-480a-b639-da2bfe13525d, scenario: 7ddeda2e-4314-4167-8766-f8b1aee13cd8
+2025-10-15 16:55:13 - app.costing.api_for_costing - INFO - [api_for_costing.py:94] - [COST_ESTIMATE] Estimate created: estimate_d531b5521cba45b2
+2025-10-15 17:13:18 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 17:14:37 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 17:14:41 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 49b28924-d789-4df7-854d-d3a177784178, scenario: 4d055306-587c-4877-b520-66f6e4bb10f7
+2025-10-15 17:15:03 - app.costing.api_for_costing - INFO - [api_for_costing.py:95] - [COST_ESTIMATE] Estimate created: estimate_751bcf2a86f44218
+2025-10-15 17:17:34 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 17:19:53 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 17:22:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 17:22:32 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 49b28924-d789-4df7-854d-d3a177784178, scenario: 4d055306-587c-4877-b520-66f6e4bb10f7
+2025-10-15 17:22:46 - app.costing.api_for_costing - ERROR - [api_for_costing.py:102] - [COST_ESTIMATE] Failed to upsert estimate: E11000 duplicate key error collection: AlphaValVault.cost_estimates index: id_1 dup key: { id: null }, full error: {'index': 0, 'code': 11000, 'errmsg': 'E11000 duplicate key error collection: AlphaValVault.cost_estimates index: id_1 dup key: { id: null }', 'keyPattern': {'id': 1}, 'keyValue': {'id': None}}
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/api_for_costing.py", line 96, in create_cost_estimate
+    db().cost_estimates.update_one(
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 1336, in update_one
+    self._update_retryable(
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 1118, in _update_retryable
+    return self._database.client._retryable_write(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2082, in _retryable_write
+    return self._retry_with_session(retryable, func, s, bulk, operation, operation_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 1968, in _retry_with_session
+    return self._retry_internal(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/_csot.py", line 125, in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2014, in _retry_internal
+    ).run()
+      ^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2765, in run
+    return self._read() if self._is_read else self._write()
+                                              ^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2897, in _write
+    return self._func(self._session, conn, self._retryable)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 1098, in _update
+    return self._update(
+           ^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 1059, in _update
+    _check_write_command_response(result)
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/helpers_shared.py", line 322, in _check_write_command_response
+    _raise_last_write_error(write_errors)
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/helpers_shared.py", line 292, in _raise_last_write_error
+    raise DuplicateKeyError(error.get("errmsg"), 11000, error)
+pymongo.errors.DuplicateKeyError: E11000 duplicate key error collection: AlphaValVault.cost_estimates index: id_1 dup key: { id: null }, full error: {'index': 0, 'code': 11000, 'errmsg': 'E11000 duplicate key error collection: AlphaValVault.cost_estimates index: id_1 dup key: { id: null }', 'keyPattern': {'id': 1}, 'keyValue': {'id': None}}
+2025-10-15 17:22:46 - app.costing.api_for_costing - INFO - [api_for_costing.py:106] - [COST_ESTIMATE] Estimate created: 3b275fe4-4c2f-42d8-b22b-a74d62722c69
+2025-10-15 17:30:38 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 18:05:52 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 18:06:16 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 49b28924-d789-4df7-854d-d3a177784178, scenario: 4d055306-587c-4877-b520-66f6e4bb10f7
+2025-10-15 18:06:55 - app.costing.api_for_costing - INFO - [api_for_costing.py:106] - [COST_ESTIMATE] Estimate created: 80ba1c1e-064c-4661-a9b5-72df32e9b35e
+2025-10-15 18:08:04 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 18:08:10 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 49b28924-d789-4df7-854d-d3a177784178, scenario: 4d055306-587c-4877-b520-66f6e4bb10f7
+2025-10-15 18:09:04 - app.costing.api_for_costing - INFO - [api_for_costing.py:106] - [COST_ESTIMATE] Estimate created: c205eb02-b407-4001-8e62-5868b453edef
+2025-10-15 18:09:47 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 95dad703-4d2c-46e1-b2d9-3596041851ad, scenario: b6471d89-bae4-455b-ba92-83ddf73c4375
+2025-10-15 18:10:03 - app.costing.api_for_costing - INFO - [api_for_costing.py:106] - [COST_ESTIMATE] Estimate created: 0389fe25-d08a-4207-b071-dd3024ce4da9
+2025-10-15 18:19:17 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 18:19:55 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 18:20:07 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 95dad703-4d2c-46e1-b2d9-3596041851ad, scenario: b6471d89-bae4-455b-ba92-83ddf73c4375
+2025-10-15 18:21:12 - app.costing.api_for_costing - INFO - [api_for_costing.py:106] - [COST_ESTIMATE] Estimate created: 2af922b1-cff6-4f2e-b1cf-15313fcfa1a0
+2025-10-15 18:23:16 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 18:24:13 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 18:24:15 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 95dad703-4d2c-46e1-b2d9-3596041851ad, scenario: b6471d89-bae4-455b-ba92-83ddf73c4375
+2025-10-15 18:24:42 - app.costing.api_for_costing - INFO - [api_for_costing.py:106] - [COST_ESTIMATE] Estimate created: eb63d49c-b176-41a6-8b3a-134f3efffb8f
+2025-10-15 18:25:59 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 18:26:02 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 95dad703-4d2c-46e1-b2d9-3596041851ad, scenario: b6471d89-bae4-455b-ba92-83ddf73c4375
+2025-10-15 18:30:50 - app.costing.api_for_costing - INFO - [api_for_costing.py:106] - [COST_ESTIMATE] Estimate created: 80dd9ec2-1f8b-4400-b250-3afdfc117337
+2025-10-15 18:34:15 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 18:34:17 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 95dad703-4d2c-46e1-b2d9-3596041851ad, scenario: b6471d89-bae4-455b-ba92-83ddf73c4375
+2025-10-15 18:34:33 - app.costing.api_for_costing - INFO - [api_for_costing.py:106] - [COST_ESTIMATE] Estimate created: 27a39d43-141a-43a0-9211-dce26a700dc2
+2025-10-15 18:39:04 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 18:39:27 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 18:40:59 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:521] - [TABULAR_PIPELINE] Processed doc_id: f7c11cef-3c18-4dfb-b1fb-6ede574a73ba
+2025-10-15 18:41:01 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:124] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-15 18:41:01 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:529] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-15 18:41:01 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 16 rows, 1 columns
+2025-10-15 18:41:01 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:669] - [TABULAR_PIPELINE] Calling LLM for table tbl::f7c11cef-3c18-4dfb-b1fb-6ede574a73ba::p1::0 (16 rows)
+2025-10-15 18:41:01 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 15710 chars to OpenAI
+2025-10-15 18:42:16 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 8981 chars from OpenAI
+2025-10-15 18:42:16 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 16 nodes, 0 edges
+2025-10-15 18:42:16 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:760] - [TABULAR_PIPELINE] Table tbl::f7c11cef-3c18-4dfb-b1fb-6ede574a73ba::p1::0: 16 nodes, 0 edges (IDs normalized)
+2025-10-15 18:42:16 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:773] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 16 nodes, 0 edges
+2025-10-15 18:42:18 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:798] - [INFO] Upserted 16 vectors to Pinecone
+2025-10-15 18:42:18 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:820] - [TABULAR_PIPELINE] Completed: {'doc_id': 'f7c11cef-3c18-4dfb-b1fb-6ede574a73ba', 'filename': 'equipment_variants.pdf', 'file_size': 3586, 'file_sha256': '9b15ab2a87c37625130e7dfa31c8c160ddea8b87c9466c8a4743901a085026ae', 'pages': 1, 'tables_processed': 1, 'rows_processed': 16, 'chunks_written': 1, 'entities_written': 16, 'relations_written': 0, 'vectors_upserted': 16, 'errors': None}
+2025-10-15 18:43:29 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-15 18:43:40 - app.costing.api_for_costing - INFO - [api_for_costing.py:107] - [COST_ESTIMATE] Estimate created: 178b34a7-d79a-4717-af56-8ee88bebbbd3
+2025-10-15 22:52:54 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-15 22:52:56 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-15 23:01:58 - app.costing.api_for_costing - INFO - [api_for_costing.py:107] - [COST_ESTIMATE] Estimate created: 2242f427-f6d1-470b-8626-9659f5c317ac
+2025-10-15 23:02:09 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-15 23:02:43 - app.costing.api_for_costing - INFO - [api_for_costing.py:107] - [COST_ESTIMATE] Estimate created: dc98c558-cd42-4692-84d0-00bdb678e28b
+2025-10-15 23:04:17 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 08:22:07 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 08:27:25 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 08:34:50 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-16 08:35:12 - app.costing.api_for_costing - INFO - [api_for_costing.py:107] - [COST_ESTIMATE] Estimate created: 7fd69dab-6f30-4517-81c2-e9fd0eaa3a0b
+2025-10-16 08:36:59 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-16 08:37:08 - app.costing.api_for_costing - INFO - [api_for_costing.py:107] - [COST_ESTIMATE] Estimate created: 244724bc-8bf9-4fa2-8b46-56cb8fa587e2
+2025-10-16 08:39:19 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 08:39:22 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-16 08:39:29 - app.costing.api_for_costing - INFO - [api_for_costing.py:107] - [COST_ESTIMATE] Estimate created: f82dd487-fb88-4de2-8961-7c7731386805
+2025-10-16 09:09:45 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 09:11:03 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 09:12:31 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 09:12:36 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-16 09:12:39 - app.costing.api_for_costing - INFO - [api_for_costing.py:107] - [COST_ESTIMATE] Estimate created: a2e58421-8958-419c-b66b-954a2c79ed87
+2025-10-16 09:20:47 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:521] - [TABULAR_PIPELINE] Processed doc_id: 2cef2d92-755d-4cfb-a5f3-a098292a6b3e
+2025-10-16 09:20:56 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:124] - [TABLE_EXTRACT] Extracted 3 tables using cascade
+2025-10-16 09:20:56 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:529] - [TABULAR_PIPELINE] Extracted 3 tables from PDF
+2025-10-16 09:20:56 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-16 09:20:56 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:669] - [TABULAR_PIPELINE] Calling LLM for table tbl::2cef2d92-755d-4cfb-a5f3-a098292a6b3e::p1::0 (3 rows)
+2025-10-16 09:20:56 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 13644 chars to OpenAI
+2025-10-16 09:21:35 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 6201 chars from OpenAI
+2025-10-16 09:21:35 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-16 09:21:35 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:760] - [TABULAR_PIPELINE] Table tbl::2cef2d92-755d-4cfb-a5f3-a098292a6b3e::p1::0: 9 nodes, 0 edges (IDs normalized)
+2025-10-16 09:21:35 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-16 09:21:35 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:669] - [TABULAR_PIPELINE] Calling LLM for table tbl::2cef2d92-755d-4cfb-a5f3-a098292a6b3e::p1::1 (3 rows)
+2025-10-16 09:21:35 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 12889 chars to OpenAI
+2025-10-16 09:21:42 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 3481 chars from OpenAI
+2025-10-16 09:21:42 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 6 nodes, 0 edges
+2025-10-16 09:21:42 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:760] - [TABULAR_PIPELINE] Table tbl::2cef2d92-755d-4cfb-a5f3-a098292a6b3e::p1::1: 6 nodes, 0 edges (IDs normalized)
+2025-10-16 09:21:42 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-16 09:21:42 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:669] - [TABULAR_PIPELINE] Calling LLM for table tbl::2cef2d92-755d-4cfb-a5f3-a098292a6b3e::p1::2 (3 rows)
+2025-10-16 09:21:42 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 13339 chars to OpenAI
+2025-10-16 09:21:54 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 5227 chars from OpenAI
+2025-10-16 09:21:54 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-16 09:21:54 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:760] - [TABULAR_PIPELINE] Table tbl::2cef2d92-755d-4cfb-a5f3-a098292a6b3e::p1::2: 9 nodes, 0 edges (IDs normalized)
+2025-10-16 09:21:54 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:773] - [TABULAR_PIPELINE] Writing to database: 3 chunks, 24 nodes, 0 edges
+2025-10-16 09:21:55 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:798] - [INFO] Upserted 24 vectors to Pinecone
+2025-10-16 09:21:55 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:820] - [TABULAR_PIPELINE] Completed: {'doc_id': '2cef2d92-755d-4cfb-a5f3-a098292a6b3e', 'filename': 'Pg 13 Gyratory Crusher Cost Tables.pdf', 'file_size': 77638, 'file_sha256': 'd9cca90d44e6ee8df668d7773eb95d2c4c91ffffa92a99b310048e25cbab26a1', 'pages': 1, 'tables_processed': 3, 'rows_processed': 9, 'chunks_written': 3, 'entities_written': 24, 'relations_written': 0, 'vectors_upserted': 24, 'errors': None}
+2025-10-16 09:24:29 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 5d3eaf18-c3fa-46b0-bee2-7bdd5aafd221, scenario: 6c1afcb3-42da-4ddd-ada4-3f7d8f049a49
+2025-10-16 09:24:30 - app.costing.api_for_costing - INFO - [api_for_costing.py:107] - [COST_ESTIMATE] Estimate created: 345005b0-c763-45f6-93ea-22089da57859
+2025-10-16 11:22:37 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 11:23:22 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 11:23:55 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 11:28:24 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 11:29:25 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 11:35:00 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 12:16:36 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-16 12:16:44 - app.costing.api_for_costing - ERROR - [api_for_costing.py:113] - [COST_ESTIMATE] Failed to create estimate: Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.', 'type': 'insufficient_quota', 'param': None, 'code': 'insufficient_quota'}}
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/api_for_costing.py", line 80, in create_cost_estimate
+    estimate = run_costing_pipeline(
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/utils_estimate_cost.py", line 313, in run_costing_pipeline
+    embedding = get_scenario_embedding(scenario_description, goal, change_type)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/utils_estimate_cost.py", line 65, in get_scenario_embedding
+    embedding_response = client.embeddings.create(
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/openai/resources/embeddings.py", line 132, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/openai/_base_client.py", line 1259, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/openai/_base_client.py", line 1047, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.RateLimitError: Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.', 'type': 'insufficient_quota', 'param': None, 'code': 'insufficient_quota'}}
+2025-10-16 14:36:41 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 14:40:22 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 14:44:05 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 15:12:59 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 5d3eaf18-c3fa-46b0-bee2-7bdd5aafd221, scenario: 6c1afcb3-42da-4ddd-ada4-3f7d8f049a49
+2025-10-16 15:13:32 - app.costing.api_for_costing - ERROR - [api_for_costing.py:110] - [COST_ESTIMATE] Failed to create estimate: 'str' object has no attribute 'get'
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/api_for_costing.py", line 80, in create_cost_estimate
+    estimate = cost_estimation(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/utils_estimate_cost.py", line 457, in cost_estimation
+    tabular_entities = retrieve_tabular_entities_from_database(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/utils_estimate_cost.py", line 176, in retrieve_tabular_entities_from_database
+    name = entity.get("properties", {}).get("name")
+           ^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'get'
+2025-10-16 15:16:55 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 15:31:51 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 15:32:41 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-16 15:33:25 - app.costing.api_for_costing - ERROR - [api_for_costing.py:110] - [COST_ESTIMATE] Failed to create estimate: 'str' object has no attribute 'get'
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/api_for_costing.py", line 80, in create_cost_estimate
+    estimate = cost_estimation(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/utils_estimate_cost.py", line 460, in cost_estimation
+    related = find_related_tabular_entities_by_embedding(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/utils_estimate_cost.py", line 374, in find_related_tabular_entities_by_embedding
+    entity_props = entity.get("properties", {}) or {}
+                   ^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'get'
+2025-10-16 15:35:54 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 15:36:58 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-16 15:37:14 - app.costing.api_for_costing - ERROR - [api_for_costing.py:110] - [COST_ESTIMATE] Failed to create estimate: 'Collection' object is not callable. If you meant to call the 'find_one' method on a 'Database' object it is failing because no such method exists.
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/api_for_costing.py", line 80, in create_cost_estimate
+    estimate = cost_estimation(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/utils_estimate_cost.py", line 465, in cost_estimation
+    related = find_related_tabular_entities_by_embedding(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/utils_estimate_cost.py", line 374, in find_related_tabular_entities_by_embedding
+    entity = db().find_one("entities", {"id": entity_id}, {"_id": 0})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 422, in __call__
+    raise TypeError(
+TypeError: 'Collection' object is not callable. If you meant to call the 'find_one' method on a 'Database' object it is failing because no such method exists.
+2025-10-16 16:39:03 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 16:40:02 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 16:40:55 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-16 16:42:14 - app.costing.api_for_costing - ERROR - [api_for_costing.py:110] - [COST_ESTIMATE] Failed to create estimate: search_entities_by_embedding() got an unexpected keyword argument 'artifact_type'
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/api_for_costing.py", line 80, in create_cost_estimate
+    estimate = cost_estimation(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/utils_estimate_cost.py", line 467, in cost_estimation
+    related = find_related_tabular_entities_by_embedding(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/utils_estimate_cost.py", line 412, in find_related_tabular_entities_by_embedding
+    results = search_entities_by_embedding(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: search_entities_by_embedding() got an unexpected keyword argument 'artifact_type'
+2025-10-16 16:43:02 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 16:45:08 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-16 16:46:22 - app.costing.api_for_costing - INFO - [api_for_costing.py:105] - [COST_ESTIMATE] Estimate created: 4a67d998-d9a7-4831-8d2e-86a925b5a15a
+2025-10-16 16:46:56 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 17:01:38 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-16 17:02:10 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-16 17:02:32 - app.costing.api_for_costing - INFO - [api_for_costing.py:105] - [COST_ESTIMATE] Estimate created: 70e93087-01fd-4e84-ae70-1f916cfe797c
+2025-10-17 08:57:03 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 08:57:20 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-17 08:57:32 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:383] - [EMBEDDING] entity_props: Bottle Capper
+2025-10-17 08:57:47 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Bottle Capper Manual Lever CapMate (ID: 3791eed8-9cf3-41fd-9bb0-7ab5c3eb8961)
+2025-10-17 08:57:47 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Bottle Capper Automatic Rotary CapMate Auto (ID: cbabaa84-3e82-49c7-a801-232b4f5fee49)
+2025-10-17 08:57:47 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 2-nozzle FillRight (ID: 0fd80ebf-8eb0-4732-bae0-3cb32dd127af)
+2025-10-17 08:57:47 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 8-nozzle FillRight Pro (ID: 4fdc92bc-6594-4626-a24c-c068d3eaa74c)
+2025-10-17 08:57:47 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Label Applicator Automatic LabelLine Auto (ID: 19d97dca-0ee1-4efb-a959-dc74cfd56238)
+2025-10-17 08:58:29 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:383] - [EMBEDDING] entity_props: Bottle Rinser & Filler
+2025-10-17 08:58:35 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 2-nozzle FillRight (ID: 0fd80ebf-8eb0-4732-bae0-3cb32dd127af)
+2025-10-17 08:58:35 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 8-nozzle FillRight Pro (ID: 4fdc92bc-6594-4626-a24c-c068d3eaa74c)
+2025-10-17 08:58:35 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Bottle Capper Automatic Rotary CapMate Auto (ID: cbabaa84-3e82-49c7-a801-232b4f5fee49)
+2025-10-17 08:58:35 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Bottle Capper Manual Lever CapMate (ID: 3791eed8-9cf3-41fd-9bb0-7ab5c3eb8961)
+2025-10-17 08:58:35 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Label Applicator Semi-auto LabelLine (ID: d86b1c38-5dc8-49dc-adb3-61d3d5f10661)
+2025-10-17 08:59:32 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:383] - [EMBEDDING] entity_props: Cleaning-in-Place (CIP) Circulation pump
+2025-10-17 08:59:33 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: CIP Kit Compact SanitiPro (ID: 2290b368-99e4-49c1-b341-b06bb288aa57)
+2025-10-17 08:59:33 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: CIP Kit High-flow SanitiPro Max (ID: 4267667c-999d-4386-b117-6cc6dffc5307)
+2025-10-17 08:59:33 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Cold-press Juicer Dual-stage FreshForce Max (ID: 80c2c451-f354-4bc9-bf9b-ed9572d81719)
+2025-10-17 08:59:33 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 2-nozzle FillRight (ID: 0fd80ebf-8eb0-4732-bae0-3cb32dd127af)
+2025-10-17 08:59:33 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Cold-press Juicer Compact Press FreshForce (ID: a4876734-1a04-4d9b-bbb8-0db724cdf2e3)
+2025-10-17 08:59:38 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:383] - [EMBEDDING] entity_props: Cold Press Juicer
+2025-10-17 08:59:39 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Cold-press Juicer Compact Press FreshForce (ID: a4876734-1a04-4d9b-bbb8-0db724cdf2e3)
+2025-10-17 08:59:39 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Cold-press Juicer Dual-stage FreshForce Max (ID: 80c2c451-f354-4bc9-bf9b-ed9572d81719)
+2025-10-17 08:59:39 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Fruit Washer Small Drum CleanFlow (ID: 86c77265-4be7-4151-ba25-c1e7de09bee0)
+2025-10-17 08:59:39 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Fruit Washer Large Drum CleanFlow Pro (ID: 2f2fb1a4-7b86-4d97-905e-9b14294d8f71)
+2025-10-17 08:59:39 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Cold Storage (walk-in) 10x12 CoolKeep Pro (ID: 6f0be09d-2f46-4872-82b3-c87c26d1798d)
+2025-10-17 08:59:41 - app.costing.api_for_costing - INFO - [api_for_costing.py:105] - [COST_ESTIMATE] Estimate created: c9b56cf0-18a7-4a2c-b762-efd2f163db32
+2025-10-17 09:05:12 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 09:05:25 - app.costing.api_for_costing - INFO - [api_for_costing.py:46] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-17 09:05:50 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:383] - [EMBEDDING] entity_props: Bottle Capper
+2025-10-17 09:05:52 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Bottle Capper Manual Lever CapMate (ID: 3791eed8-9cf3-41fd-9bb0-7ab5c3eb8961)
+2025-10-17 09:05:52 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Bottle Capper Automatic Rotary CapMate Auto (ID: cbabaa84-3e82-49c7-a801-232b4f5fee49)
+2025-10-17 09:05:52 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 2-nozzle FillRight (ID: 0fd80ebf-8eb0-4732-bae0-3cb32dd127af)
+2025-10-17 09:05:52 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 8-nozzle FillRight Pro (ID: 4fdc92bc-6594-4626-a24c-c068d3eaa74c)
+2025-10-17 09:05:52 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Label Applicator Automatic LabelLine Auto (ID: 19d97dca-0ee1-4efb-a959-dc74cfd56238)
+2025-10-17 09:06:06 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:383] - [EMBEDDING] entity_props: Bottle Rinser & Filler
+2025-10-17 09:06:07 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 2-nozzle FillRight (ID: 0fd80ebf-8eb0-4732-bae0-3cb32dd127af)
+2025-10-17 09:06:07 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 8-nozzle FillRight Pro (ID: 4fdc92bc-6594-4626-a24c-c068d3eaa74c)
+2025-10-17 09:06:07 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Bottle Capper Automatic Rotary CapMate Auto (ID: cbabaa84-3e82-49c7-a801-232b4f5fee49)
+2025-10-17 09:06:07 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Bottle Capper Manual Lever CapMate (ID: 3791eed8-9cf3-41fd-9bb0-7ab5c3eb8961)
+2025-10-17 09:06:07 - app.costing.utils_estimate_cost - INFO - [utils_estimate_cost.py:439] - [EMBEDDING] Found related tabular entity: Label Applicator Semi-auto LabelLine (ID: d86b1c38-5dc8-49dc-adb3-61d3d5f10661)
+2025-10-17 09:06:18 - app.costing.api_for_costing - INFO - [api_for_costing.py:105] - [COST_ESTIMATE] Estimate created: 51db01f5-6854-49cf-bfc4-f4e1b7d36f17
+2025-10-17 09:09:14 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 09:11:28 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 09:16:08 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 09:41:05 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 09:41:42 - app.costing.api_for_costing - INFO - [api_for_costing.py:47] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-17 09:41:42 - app.costing.api_for_costing - ERROR - [api_for_costing.py:92] - [COST_ESTIMATE] Failed to create estimate: 'str' object has no attribute 'get'
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/api_for_costing.py", line 62, in create_cost_estimate
+    estimate = cost_estimation(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/costing.py", line 278, in cost_estimation
+    entity_id = entity.get("id")
+                ^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'get'
+2025-10-17 09:43:26 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 09:43:33 - app.costing.api_for_costing - INFO - [api_for_costing.py:47] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-17 09:43:48 - app.costing.costing - INFO - [costing.py:178] - [EMBEDDING] entity_props: automatic labeler
+2025-10-17 09:43:51 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Label Applicator Automatic LabelLine Auto (ID: 19d97dca-0ee1-4efb-a959-dc74cfd56238)
+2025-10-17 09:43:51 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Label Applicator Semi-auto LabelLine (ID: d86b1c38-5dc8-49dc-adb3-61d3d5f10661)
+2025-10-17 09:43:51 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Capper Automatic Rotary CapMate Auto (ID: cbabaa84-3e82-49c7-a801-232b4f5fee49)
+2025-10-17 09:43:51 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Capper Manual Lever CapMate (ID: 3791eed8-9cf3-41fd-9bb0-7ab5c3eb8961)
+2025-10-17 09:43:51 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 2-nozzle FillRight (ID: 0fd80ebf-8eb0-4732-bae0-3cb32dd127af)
+2025-10-17 09:43:52 - app.costing.costing - INFO - [costing.py:178] - [EMBEDDING] entity_props: Bottle Capper
+2025-10-17 09:43:53 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Capper Manual Lever CapMate (ID: 3791eed8-9cf3-41fd-9bb0-7ab5c3eb8961)
+2025-10-17 09:43:53 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Capper Automatic Rotary CapMate Auto (ID: cbabaa84-3e82-49c7-a801-232b4f5fee49)
+2025-10-17 09:43:53 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 2-nozzle FillRight (ID: 0fd80ebf-8eb0-4732-bae0-3cb32dd127af)
+2025-10-17 09:43:53 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 8-nozzle FillRight Pro (ID: 4fdc92bc-6594-4626-a24c-c068d3eaa74c)
+2025-10-17 09:43:53 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Label Applicator Automatic LabelLine Auto (ID: 19d97dca-0ee1-4efb-a959-dc74cfd56238)
+2025-10-17 09:43:53 - app.costing.costing - INFO - [costing.py:178] - [EMBEDDING] entity_props: Cold Storage Walk-in cooler
+2025-10-17 09:43:54 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Cold Storage (walk-in) 8x10 CoolKeep (ID: 57a98325-75a9-4e57-a52e-1c0f0d3c27f5)
+2025-10-17 09:43:54 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Cold Storage (walk-in) 10x12 CoolKeep Pro (ID: 6f0be09d-2f46-4872-82b3-c87c26d1798d)
+2025-10-17 09:43:54 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Capper Manual Lever CapMate (ID: 3791eed8-9cf3-41fd-9bb0-7ab5c3eb8961)
+2025-10-17 09:43:54 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Capper Automatic Rotary CapMate Auto (ID: cbabaa84-3e82-49c7-a801-232b4f5fee49)
+2025-10-17 09:43:54 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Cold-press Juicer Dual-stage FreshForce Max (ID: 80c2c451-f354-4bc9-bf9b-ed9572d81719)
+2025-10-17 09:43:54 - app.costing.api_for_costing - INFO - [api_for_costing.py:87] - [COST_ESTIMATE] Estimate created: d84b4e8e-491c-4088-a31c-139d8a1b7c4d
+2025-10-17 10:08:18 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 10:10:45 - app.costing.api_for_costing - INFO - [api_for_costing.py:47] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-17 10:10:45 - app.costing.costing - INFO - [costing.py:178] - [EMBEDDING] entity_props: Bottle Capper
+2025-10-17 10:10:48 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Capper Manual Lever CapMate (ID: 3791eed8-9cf3-41fd-9bb0-7ab5c3eb8961)
+2025-10-17 10:10:48 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Capper Automatic Rotary CapMate Auto (ID: cbabaa84-3e82-49c7-a801-232b4f5fee49)
+2025-10-17 10:10:48 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 2-nozzle FillRight (ID: 0fd80ebf-8eb0-4732-bae0-3cb32dd127af)
+2025-10-17 10:10:48 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 8-nozzle FillRight Pro (ID: 4fdc92bc-6594-4626-a24c-c068d3eaa74c)
+2025-10-17 10:10:48 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Label Applicator Automatic LabelLine Auto (ID: 19d97dca-0ee1-4efb-a959-dc74cfd56238)
+2025-10-17 10:10:48 - app.costing.costing - INFO - [costing.py:178] - [EMBEDDING] entity_props: Bottle Rinser & Filler
+2025-10-17 10:10:49 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 2-nozzle FillRight (ID: 0fd80ebf-8eb0-4732-bae0-3cb32dd127af)
+2025-10-17 10:10:49 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 8-nozzle FillRight Pro (ID: 4fdc92bc-6594-4626-a24c-c068d3eaa74c)
+2025-10-17 10:10:49 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Capper Automatic Rotary CapMate Auto (ID: cbabaa84-3e82-49c7-a801-232b4f5fee49)
+2025-10-17 10:10:49 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Capper Manual Lever CapMate (ID: 3791eed8-9cf3-41fd-9bb0-7ab5c3eb8961)
+2025-10-17 10:10:49 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Label Applicator Semi-auto LabelLine (ID: d86b1c38-5dc8-49dc-adb3-61d3d5f10661)
+2025-10-17 10:10:49 - app.costing.costing - INFO - [costing.py:178] - [EMBEDDING] entity_props: Fruit Washer
+2025-10-17 10:10:51 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Fruit Washer Large Drum CleanFlow Pro (ID: 2f2fb1a4-7b86-4d97-905e-9b14294d8f71)
+2025-10-17 10:10:51 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Fruit Washer Small Drum CleanFlow (ID: 86c77265-4be7-4151-ba25-c1e7de09bee0)
+2025-10-17 10:10:51 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Cold-press Juicer Dual-stage FreshForce Max (ID: 80c2c451-f354-4bc9-bf9b-ed9572d81719)
+2025-10-17 10:10:51 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Cold-press Juicer Compact Press FreshForce (ID: a4876734-1a04-4d9b-bbb8-0db724cdf2e3)
+2025-10-17 10:10:51 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 2-nozzle FillRight (ID: 0fd80ebf-8eb0-4732-bae0-3cb32dd127af)
+2025-10-17 10:10:51 - app.costing.api_for_costing - INFO - [api_for_costing.py:87] - [COST_ESTIMATE] Estimate created: b3d700be-8e29-4de8-84e0-940d2f8919e8
+2025-10-17 10:15:39 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 10:15:46 - app.costing.api_for_costing - INFO - [api_for_costing.py:47] - [COST_ESTIMATE] Creating estimate for project: 532ca0f7-6455-468e-b233-d2a0a55e5b62, scenario: 683d09af-397b-4f11-8bc1-a24f1a32e6a7
+2025-10-17 10:15:46 - app.costing.costing - INFO - [costing.py:178] - [EMBEDDING] entity_props: Bottle Capper
+2025-10-17 10:15:49 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Capper Manual Lever CapMate (ID: 3791eed8-9cf3-41fd-9bb0-7ab5c3eb8961)
+2025-10-17 10:15:49 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Capper Automatic Rotary CapMate Auto (ID: cbabaa84-3e82-49c7-a801-232b4f5fee49)
+2025-10-17 10:15:49 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 2-nozzle FillRight (ID: 0fd80ebf-8eb0-4732-bae0-3cb32dd127af)
+2025-10-17 10:15:49 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Bottle Rinser & Filler 8-nozzle FillRight Pro (ID: 4fdc92bc-6594-4626-a24c-c068d3eaa74c)
+2025-10-17 10:15:49 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Label Applicator Automatic LabelLine Auto (ID: 19d97dca-0ee1-4efb-a959-dc74cfd56238)
+2025-10-17 10:15:49 - app.costing.costing - INFO - [costing.py:178] - [EMBEDDING] entity_props: Cold Press Juicer
+2025-10-17 10:15:50 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Cold-press Juicer Compact Press FreshForce (ID: a4876734-1a04-4d9b-bbb8-0db724cdf2e3)
+2025-10-17 10:15:50 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Cold-press Juicer Dual-stage FreshForce Max (ID: 80c2c451-f354-4bc9-bf9b-ed9572d81719)
+2025-10-17 10:15:50 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Fruit Washer Small Drum CleanFlow (ID: 86c77265-4be7-4151-ba25-c1e7de09bee0)
+2025-10-17 10:15:50 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Fruit Washer Large Drum CleanFlow Pro (ID: 2f2fb1a4-7b86-4d97-905e-9b14294d8f71)
+2025-10-17 10:15:50 - app.costing.costing - INFO - [costing.py:234] - [EMBEDDING] Found related tabular entity: Cold Storage (walk-in) 10x12 CoolKeep Pro (ID: 6f0be09d-2f46-4872-82b3-c87c26d1798d)
+2025-10-17 10:15:51 - app.costing.api_for_costing - INFO - [api_for_costing.py:87] - [COST_ESTIMATE] Estimate created: 9dbeec5a-60f6-4f0f-96da-72c588afa054
+2025-10-17 10:26:25 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully

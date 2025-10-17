@@ -23,14 +23,17 @@ import {
   Speed,
   NavigateNext as NavigateNextIcon,
 } from "@mui/icons-material";
+import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import CreateScenarioDialog from "./CreateScenarioDialog";
 import ScenarioDetail from "./ScenarioDetails";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchScenarios, deleteScenario } from "../../../redux/scenarioSlice";
+import { useDialogs } from "../../../hooks/useDialogs/useDialogs";
 
 const Scenarios = () => {
   const { projectId } = useParams();
   const dispatch = useDispatch();
+  const dialogs = useDialogs();
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState(null);
@@ -66,13 +69,51 @@ const Scenarios = () => {
     setSelectedScenario(null);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (selectedScenario) {
-      dispatch(deleteScenario(selectedScenario.id));
-      handleMenuClose();
-      if (activeScenarioId === selectedScenario.id) {
-        setActiveScenarioId(null);
+      const confirmed = await dialogs.confirm(
+        `Are you sure you want to delete scenario "${selectedScenario.name}"? This action cannot be undone.`,
+        {
+          title: "Delete Scenario",
+          okText: "Delete",
+          cancelText: "Cancel",
+          severity: "error",
+          warningMsg:
+            "Deleting a scenario will remove all associated data and cannot be undone.",
+        }
+      );
+
+      if (confirmed) {
+        try {
+          await dispatch(deleteScenario(selectedScenario.id)).unwrap();
+
+          // Clear active scenario if it was deleted
+          if (activeScenarioId === selectedScenario.id) {
+            setActiveScenarioId(null);
+          }
+
+          console.log(
+            "[ScenarioDashboard] Scenario deleted:",
+            selectedScenario.id
+          );
+        } catch (error) {
+          console.error(
+            "[ScenarioDashboard] Failed to delete scenario:",
+            error
+          );
+
+          // Show error message
+          await dialogs.alert(
+            `Failed to delete scenario: ${error.message || "Unknown error"}`,
+            {
+              title: "Delete Failed",
+              okText: "OK",
+            }
+          );
+        }
       }
+
+      handleMenuClose();
     }
   };
 
@@ -113,9 +154,9 @@ const Scenarios = () => {
   // Show scenario detail view
   if (activeScenarioId) {
     return (
-      <Box sx={{ p: 0 }}>
+      <Box sx={{ p: 0, minHeight: "100%" }}>
         {/* Breadcrumb Navigation */}
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{ mb: 3, display:"flex", justifyContent:"start", alignItems:"center", gap:2 }}>
           <Breadcrumbs
             separator={<NavigateNextIcon fontSize="small" />}
             aria-label="breadcrumb"
@@ -133,10 +174,25 @@ const Scenarios = () => {
             >
               All Scenarios
             </Link>
-            <Typography variant="h6" color="text.primary">
-              {activeScenario?.name || "Loading..."}
-            </Typography>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+              }}
+            >
+              <AssignmentOutlinedIcon fontSize="small" color="action" />
+              <Typography variant="h6" color="text.primary">
+                {activeScenario?.name || "Loading..."}
+              </Typography>
+            </Box>
           </Breadcrumbs>
+          <Box>
+            <Typography variant="body2" color="text.secondary">
+              Updated {" "}
+              {new Date(activeScenario?.updated_at).toLocaleDateString()}
+            </Typography>
+          </Box>
         </Box>
 
         {/* Scenario Detail Component */}

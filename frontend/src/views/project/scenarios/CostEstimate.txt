@@ -1,0 +1,488 @@
+{
+  "estimate_id": "f82dd487-fb88-4de2-8961-7c7731386805",
+  "scenario_id": "683d09af-397b-4f11-8bc1-a24f1a32e6a7",
+  "project_id": "532ca0f7-6455-468e-b233-d2a0a55e5b62",
+  "scenario_description": "Increase production by taking into account all equipment and material",
+  "status": "completed",
+  "metadata": {
+    "cost_breakdown": {
+      "base_case_total": {
+        "base_total": 63500,
+        "cost_calculation_details": "Base case total is the sum of costs from base case entities. Proposed scenario costs are calculated as follows:\n- Capital cost: sum of costs from selected tabular entities.\n"
+      },
+      "proposed_total": {
+        "proposed_total": 48500,
+        "cost_calculation_details": "Base case total is the sum of costs from base case entities. Proposed scenario costs are calculated as follows:\n- Capital cost: sum of costs from selected tabular entities.\n"
+      }
+    },
+    "confidence": "medium",
+    "base_entities": [
+      {
+        "created_at": "2025-10-15T22:40:31.790000",
+        "id": "f659f50b-ba12-5a8c-9bd9-4f3837b4e59f",
+        "properties": {
+          "name": "Fruit Washer",
+          "short_description": "Automated rotating drum washer",
+          "capacity": "250 lbs/hr",
+          "cost_value": "6000",
+          "currency": "USD",
+          "extracted_from": "Equipment Details",
+          "confidence": "1.0",
+          "canonical_key": "equipment|fruit washer|4",
+          "artifact_type": "base_case",
+          "project_id": "532ca0f7-6455-468e-b233-d2a0a55e5b62",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+        },
+        "sources": [
+          {
+            "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-15T22:40:31.790000",
+        "relevance_score": 0.431508094
+      },
+      {
+        "created_at": "2025-10-15T22:40:31.790000",
+        "id": "284e6c9c-f8de-533b-b514-f157956cacbf",
+        "properties": {
+          "name": "Bottle Capper",
+          "short_description": "Pneumatic capper",
+          "capacity": "500 bottles/hr",
+          "cost_value": "4000",
+          "currency": "USD",
+          "extracted_from": "Equipment Details",
+          "confidence": "1.0",
+          "canonical_key": "equipment|bottle capper|8",
+          "artifact_type": "base_case",
+          "project_id": "532ca0f7-6455-468e-b233-d2a0a55e5b62",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+        },
+        "sources": [
+          {
+            "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-15T22:40:31.790000",
+        "relevance_score": 0.411727905
+      },
+      {
+        "created_at": "2025-10-15T22:40:31.790000",
+        "id": "9237e3d7-2946-5c38-8d6f-b9a21dee7830",
+        "properties": {
+          "name": "Bottle Rinser & Filler",
+          "short_description": "4-nozzle filler, semi-automatic",
+          "capacity": "400 bottles/hr",
+          "cost_value": "9000",
+          "currency": "USD",
+          "extracted_from": "Equipment Details",
+          "confidence": "1.0",
+          "canonical_key": "equipment|bottle rinser & filler|7",
+          "artifact_type": "base_case",
+          "project_id": "532ca0f7-6455-468e-b233-d2a0a55e5b62",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+        },
+        "sources": [
+          {
+            "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-15T22:40:31.790000",
+        "relevance_score": 0.397117615
+      },
+      {
+        "created_at": "2025-10-15T22:40:31.790000",
+        "id": "9acca1f1-9b19-5fc7-b850-5d36dffa5fdc",
+        "properties": {
+          "name": "Cold Press Juicer",
+          "short_description": "Hydraulic press for raw juice",
+          "capacity": "30 gallons/hr",
+          "cost_value": "18000",
+          "currency": "USD",
+          "extracted_from": "Equipment Details",
+          "confidence": "1.0",
+          "canonical_key": "equipment|cold press juicer|5",
+          "artifact_type": "base_case",
+          "project_id": "532ca0f7-6455-468e-b233-d2a0a55e5b62",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+        },
+        "sources": [
+          {
+            "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-15T22:40:31.790000",
+        "relevance_score": 0.392158508
+      },
+      {
+        "created_at": "2025-10-15T22:40:31.790000",
+        "id": "2b3ea77e-63a6-561e-abba-902fa4c2fa1d",
+        "properties": {
+          "name": "Mixing Tank",
+          "short_description": "For blending juice with flavors/syrups",
+          "capacity": "100 gallons",
+          "cost_value": "12000",
+          "currency": "USD",
+          "extracted_from": "Equipment Details",
+          "confidence": "1.0",
+          "canonical_key": "equipment|mixing tank|6",
+          "artifact_type": "base_case",
+          "project_id": "532ca0f7-6455-468e-b233-d2a0a55e5b62",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+        },
+        "sources": [
+          {
+            "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-15T22:40:31.790000",
+        "relevance_score": 0.391637832
+      },
+      {
+        "created_at": "2025-10-15T22:40:31.790000",
+        "id": "b1354417-76da-5104-a979-224c6400b4c6",
+        "properties": {
+          "name": "Label Applicator",
+          "short_description": "Manual-assisted, roll-feed",
+          "capacity": "600 bottles/hr",
+          "cost_value": "2500",
+          "currency": "USD",
+          "extracted_from": "Equipment Details",
+          "confidence": "1.0",
+          "canonical_key": "equipment|label applicator|9",
+          "artifact_type": "base_case",
+          "project_id": "532ca0f7-6455-468e-b233-d2a0a55e5b62",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+        },
+        "sources": [
+          {
+            "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-15T22:40:31.790000",
+        "relevance_score": 0.390598297
+      },
+      {
+        "created_at": "2025-10-15T22:40:31.791000",
+        "id": "995fac6e-c79d-57dc-aaa0-517e3b0a7ca5",
+        "properties": {
+          "name": "modular equipment (press, filler)",
+          "extracted_from": "Use modular equipment (press, filler) to ease future upgrades",
+          "confidence": "0.9",
+          "canonical_key": "equipment|modular equipment (press, filler)|6",
+          "artifact_type": "base_case",
+          "project_id": "532ca0f7-6455-468e-b233-d2a0a55e5b62",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+        },
+        "sources": [
+          {
+            "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-15T22:40:31.791000",
+        "relevance_score": 0.363986969
+      },
+      {
+        "created_at": "2025-10-15T22:40:31.791000",
+        "id": "144413be-ab39-51e8-b1ad-6d066b22a362",
+        "properties": {
+          "name": "Cold Storage Walk-in cooler",
+          "capacity_value": "1200",
+          "capacity_unit": "bottles",
+          "cost_value": "10000",
+          "currency": "USD",
+          "extracted_from": "text",
+          "confidence": "1.0",
+          "canonical_key": "equipment|cold storage walk-in cooler|1",
+          "artifact_type": "base_case",
+          "project_id": "532ca0f7-6455-468e-b233-d2a0a55e5b62",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+        },
+        "sources": [
+          {
+            "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-15T22:40:31.791000",
+        "relevance_score": 0.354050636
+      },
+      {
+        "created_at": "2025-10-15T22:40:31.791000",
+        "id": "fcd5be87-954e-5bf8-8d80-424cbb81d93d",
+        "properties": {
+          "name": "Cleaning-in-Place (CIP) Circulation pump",
+          "capacity_value": "20",
+          "capacity_unit": "gallons/min",
+          "cost_value": "2000",
+          "currency": "USD",
+          "extracted_from": "text",
+          "confidence": "1.0",
+          "canonical_key": "equipment|cleaning-in-place (cip) circulation pump|2",
+          "artifact_type": "base_case",
+          "project_id": "532ca0f7-6455-468e-b233-d2a0a55e5b62",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+        },
+        "sources": [
+          {
+            "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-15T22:40:31.791000",
+        "relevance_score": 0.349102944
+      },
+      {
+        "created_at": "2025-10-15T22:40:31.791000",
+        "id": "b5101c45-e4bb-5f37-b527-660959a3812c",
+        "properties": {
+          "name": "Walk-in cooler",
+          "short_description": "Must maintain <40°F for safety",
+          "confidence": "0.9",
+          "extracted_from": "text",
+          "extraction_method": "manual",
+          "canonical_key": "equipment|walk-in cooler|1",
+          "artifact_type": "base_case",
+          "project_id": "532ca0f7-6455-468e-b233-d2a0a55e5b62",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+        },
+        "sources": [
+          {
+            "doc_id": "3ff56cf3-5c0f-46eb-a4b6-a23cd5e6ccdf"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-15T22:40:31.791000",
+        "relevance_score": 0.341752052
+      }
+    ],
+    "tabular_entities": [
+      {
+        "_id": "86c77265-4be7-4151-ba25-c1e7de09bee0",
+        "created_at": "2025-10-15T22:42:16.828000",
+        "id": "86c77265-4be7-4151-ba25-c1e7de09bee0",
+        "name": "Fruit Washer Small Drum CleanFlow",
+        "properties": {
+          "capacity": "100 lbs/hr",
+          "cost_value": 3500,
+          "currency": "USD",
+          "vendor": "CleanFlow",
+          "notes": "Entry craft scale",
+          "extracted_from": "table",
+          "confidence": 1,
+          "table_id": "tbl::f7c11cef-3c18-4dfb-b1fb-6ede574a73ba::p1::0",
+          "row_index": 0,
+          "col_index": 0,
+          "original_id": "fruit_washer_small_drum_cleanflow",
+          "artifact_type": "tabular_data",
+          "project_id": "532ca0f7-6455-468e-b233-d2a0a55e5b62",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "f7c11cef-3c18-4dfb-b1fb-6ede574a73ba"
+        },
+        "sources": [
+          {
+            "doc_id": "f7c11cef-3c18-4dfb-b1fb-6ede574a73ba"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-15T22:42:16.828000"
+      },
+      {
+        "_id": "3791eed8-9cf3-41fd-9bb0-7ab5c3eb8961",
+        "created_at": "2025-10-15T22:42:16.828000",
+        "id": "3791eed8-9cf3-41fd-9bb0-7ab5c3eb8961",
+        "name": "Bottle Capper Manual Lever CapMate",
+        "properties": {
+          "capacity": "200 bph",
+          "cost_value": 1500,
+          "currency": "USD",
+          "vendor": "CapMate",
+          "notes": "Low cost",
+          "extracted_from": "table",
+          "confidence": 1,
+          "table_id": "tbl::f7c11cef-3c18-4dfb-b1fb-6ede574a73ba::p1::0",
+          "row_index": 8,
+          "col_index": 0,
+          "original_id": "bottle_capper_manual_lever_capmate",
+          "artifact_type": "tabular_data",
+          "project_id": "532ca0f7-6455-468e-b233-d2a0a55e5b62",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "f7c11cef-3c18-4dfb-b1fb-6ede574a73ba"
+        },
+        "sources": [
+          {
+            "doc_id": "f7c11cef-3c18-4dfb-b1fb-6ede574a73ba"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-15T22:42:16.828000"
+      },
+      {
+        "_id": "0fd80ebf-8eb0-4732-bae0-3cb32dd127af",
+        "created_at": "2025-10-15T22:42:16.828000",
+        "id": "0fd80ebf-8eb0-4732-bae0-3cb32dd127af",
+        "name": "Bottle Rinser & Filler 2-nozzle FillRight",
+        "properties": {
+          "capacity": "200 bph",
+          "cost_value": 6000,
+          "currency": "USD",
+          "vendor": "FillRight",
+          "notes": "Micro scale",
+          "extracted_from": "table",
+          "confidence": 1,
+          "table_id": "tbl::f7c11cef-3c18-4dfb-b1fb-6ede574a73ba::p1::0",
+          "row_index": 6,
+          "col_index": 0,
+          "original_id": "bottle_rinser_&_filler_2-nozzle_fillright",
+          "artifact_type": "tabular_data",
+          "project_id": "532ca0f7-6455-468e-b233-d2a0a55e5b62",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "f7c11cef-3c18-4dfb-b1fb-6ede574a73ba"
+        },
+        "sources": [
+          {
+            "doc_id": "f7c11cef-3c18-4dfb-b1fb-6ede574a73ba"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-15T22:42:16.828000"
+      },
+      {
+        "_id": "a4876734-1a04-4d9b-bbb8-0db724cdf2e3",
+        "created_at": "2025-10-15T22:42:16.828000",
+        "id": "a4876734-1a04-4d9b-bbb8-0db724cdf2e3",
+        "name": "Cold-press Juicer Compact Press FreshForce",
+        "properties": {
+          "capacity": "15 gal/hr",
+          "cost_value": 10000,
+          "currency": "USD",
+          "vendor": "FreshForce",
+          "notes": "Starter",
+          "extracted_from": "table",
+          "confidence": 1,
+          "table_id": "tbl::f7c11cef-3c18-4dfb-b1fb-6ede574a73ba::p1::0",
+          "row_index": 2,
+          "col_index": 0,
+          "original_id": "cold-press_juicer_compact_press_freshforce",
+          "artifact_type": "tabular_data",
+          "project_id": "532ca0f7-6455-468e-b233-d2a0a55e5b62",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "f7c11cef-3c18-4dfb-b1fb-6ede574a73ba"
+        },
+        "sources": [
+          {
+            "doc_id": "f7c11cef-3c18-4dfb-b1fb-6ede574a73ba"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-15T22:42:16.828000"
+      },
+      {
+        "_id": "be2989a5-8cbb-4892-b698-258d8fd00609",
+        "created_at": "2025-10-15T22:42:16.828000",
+        "id": "be2989a5-8cbb-4892-b698-258d8fd00609",
+        "name": "Mixing Tank (SS) 50-gal SteelCraft",
+        "properties": {
+          "capacity": "50 gal",
+          "cost_value": 8000,
+          "currency": "USD",
+          "vendor": "SteelCraft",
+          "notes": "Half-batch",
+          "extracted_from": "table",
+          "confidence": 1,
+          "table_id": "tbl::f7c11cef-3c18-4dfb-b1fb-6ede574a73ba::p1::0",
+          "row_index": 4,
+          "col_index": 0,
+          "original_id": "mixing_tank_(ss)_50-gal_steelcraft",
+          "artifact_type": "tabular_data",
+          "project_id": "532ca0f7-6455-468e-b233-d2a0a55e5b62",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "f7c11cef-3c18-4dfb-b1fb-6ede574a73ba"
+        },
+        "sources": [
+          {
+            "doc_id": "f7c11cef-3c18-4dfb-b1fb-6ede574a73ba"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-15T22:42:16.828000"
+      },
+      {
+        "_id": "d86b1c38-5dc8-49dc-adb3-61d3d5f10661",
+        "created_at": "2025-10-15T22:42:16.828000",
+        "id": "d86b1c38-5dc8-49dc-adb3-61d3d5f10661",
+        "name": "Label Applicator Semi-auto LabelLine",
+        "properties": {
+          "capacity": "900 bph",
+          "cost_value": 5500,
+          "currency": "USD",
+          "vendor": "LabelLine",
+          "notes": "Saves labor",
+          "extracted_from": "table",
+          "confidence": 1,
+          "table_id": "tbl::f7c11cef-3c18-4dfb-b1fb-6ede574a73ba::p1::0",
+          "row_index": 10,
+          "col_index": 0,
+          "original_id": "label_applicator_semi-auto_labelline",
+          "artifact_type": "tabular_data",
+          "project_id": "532ca0f7-6455-468e-b233-d2a0a55e5b62",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "f7c11cef-3c18-4dfb-b1fb-6ede574a73ba"
+        },
+        "sources": [
+          {
+            "doc_id": "f7c11cef-3c18-4dfb-b1fb-6ede574a73ba"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-15T22:42:16.828000"
+      },
+      {
+        "_id": "57a98325-75a9-4e57-a52e-1c0f0d3c27f5",
+        "created_at": "2025-10-15T22:42:16.828000",
+        "id": "57a98325-75a9-4e57-a52e-1c0f0d3c27f5",
+        "name": "Cold Storage (walk-in) 8x10 CoolKeep",
+        "properties": {
+          "capacity": "2,400 bottles",
+          "cost_value": 14000,
+          "currency": "USD",
+          "vendor": "CoolKeep",
+          "notes": "Doubles hold",
+          "extracted_from": "table",
+          "confidence": 1,
+          "table_id": "tbl::f7c11cef-3c18-4dfb-b1fb-6ede574a73ba::p1::0",
+          "row_index": 12,
+          "col_index": 0,
+          "original_id": "cold_storage_(walk-in)_8x10_coolkeep",
+          "artifact_type": "tabular_data",
+          "project_id": "532ca0f7-6455-468e-b233-d2a0a55e5b62",
+          "user_id": "0d249345-350a-4a09-9bd1-0dcd79723919",
+          "doc_id": "f7c11cef-3c18-4dfb-b1fb-6ede574a73ba"
+        },
+        "sources": [
+          {
+            "doc_id": "f7c11cef-3c18-4dfb-b1fb-6ede574a73ba"
+          }
+        ],
+        "type": "Equipment",
+        "updated_at": "2025-10-15T22:42:16.828000"
+      }
+    ]
+  }
+}

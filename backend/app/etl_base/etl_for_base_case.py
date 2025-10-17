@@ -10,19 +10,20 @@ from ..bronze_store import (
     bulk_upsert_entities,
     bulk_upsert_relations,
 )
+from app.vector_db.vector_operations import upsert_entities_to_pinecone
+from .extract_with_openai import openai_extract_nodes_rels
 
 
-# Use your OpenAI extractor
-def _extract_entities_mentions(
-    chunks: List[Dict[str, Any]],
-) -> Dict[str, List[Dict[str, Any]]]:
-    from .extract_with_openai import (
-        openai_extract_nodes_rels_mentions,
-        openai_extract_nodes_rels,
-    )
+# # Use your OpenAI extractor
+# def _extract_entities_mentions(
+#     chunks: List[Dict[str, Any]],
+# ) -> Dict[str, List[Dict[str, Any]]]:
+#     from .extract_with_openai import (
+#         openai_extract_nodes_rels_mentions,
+#         openai_extract_nodes_rels,
+#     )
 
-    return openai_extract_nodes_rels(chunks)
-    # return openai_extract_nodes_rels_mentions(chunks)
+#     return openai_extract_nodes_rels(chunks)
 
 
 def etl_base_case(
@@ -58,12 +59,12 @@ def etl_base_case(
         c["properties"]["doc_id"] = doc_id
 
     # 3) Entities/relations/mentions from free text (Bronze)
-    kg = _extract_entities_mentions(chunks)
+    # kg = _extract_entities_mentions(chunks)
+    kg = openai_extract_nodes_rels(chunks)
     nodes = list(kg.get("nodes", []) or [])
     edges = list(kg.get("edges", []) or [])
-    # mentions = list(kg.get("mentions", []) or [])
 
-    # Attach simple source back-pointer to each node; ensure deterministic mention IDs
+    # Attach simple source back-pointer to each node
     for n in nodes:
         srcs = n.get("sources") or []
         if not any(isinstance(s, dict) and s.get("doc_id") == doc_id for s in srcs):
@@ -86,10 +87,23 @@ def etl_base_case(
         e["properties"]["user_id"] = user_id
         e["properties"]["doc_id"] = doc_id
 
+    # 4) Store in MongoDB
     bulk_upsert_chunks(chunks)
     bulk_upsert_entities(nodes)
     bulk_upsert_relations(edges)
-    # bulk_upsert_mentions(mentions)
+
+    # ========== NEW: Store in Vector Database ==========
+    vectors_upserted = 0
+    try:
+        vectors_upserted = upsert_entities_to_pinecone(
+            entities=nodes, project_id=project_id, artifact_type=artifact_type
+        )
+        print(f"[INFO] Upserted {vectors_upserted} vectors to Pinecone")
+    except Exception as e:
+        print(f"[ERROR] Failed to upsert to Pinecone: {e}")
+        # Don't fail the entire ETL if vector upsert fails
+        # Vector DB can be rebuilt later from MongoDB
+    # ===================================================
 
     return {
         "filename": filename,
@@ -99,4 +113,5 @@ def etl_base_case(
         "chunks_written": len(chunks),
         "entities_written": len(nodes),
         "relations_written": len(edges),
+        "vectors_upserted": vectors_upserted,  # NEW: Return vector count
     }
