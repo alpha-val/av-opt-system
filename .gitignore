@@ -16,3 +16,4 @@ frontend/package-lock.json
 
 # debug
 npm-debug.log*
+backend/logs/*

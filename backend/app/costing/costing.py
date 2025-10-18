@@ -9,6 +9,8 @@ from openai import OpenAI
 
 from ..bronze_store import db
 from ..vector_db.vector_operations import (
+    build_text_for_embedding,
+    normalize_entity_for_vector_db,
     search_entities_by_embedding,
 )
 
@@ -148,7 +150,6 @@ def _equipment_nodes_linked_to_project(
 
 # # # # # # # # # # # # # # # # # # # # # # # #
 
-
 def find_related_tabular_entities_by_embedding(
     entity: Dict[str, Any],
     project_id: str,
@@ -166,32 +167,9 @@ def find_related_tabular_entities_by_embedding(
         Ranked list of related tabular_data entities.
     """
 
-    # Flatten the entity properties into a string (excluding ids/dates)
-    entity_props = entity.get("properties", {}) or {}
-    props_text = ""
-    if entity_props:
-        logger.info(f"[EMBEDDING] entity_props: {entity_props['name']}")
-        props_text = " ".join(
-            f"{k}: {v}"
-            for k, v in entity_props.items()
-            if isinstance(v, (str, int, float))
-            and not (
-                "id" in k.lower()
-                or "created" in k.lower()
-                or "updated" in k.lower()
-                or "date" in k.lower()
-                or "time" in k.lower()
-            )
-        )
-        entity_type = entity.get("type", "")
-        props_text = f"{entity_type} {props_text}"
-    else:
-        # Fallback to name/type
-        name = (
-            (entity.get("properties", {}) or {}).get("name") or entity.get("name") or ""
-        )
-        entity_type = entity.get("type", "")
-        props_text = f"{name} {entity_type}"
+    # Normalize the entity for vector DB operations
+    normalized_entity = normalize_entity_for_vector_db(entity, project_id, artifact_type="tabular_data")
+    props_text = normalized_entity["text_content"]
 
     try:
         # Get embedding for the entity text
@@ -216,19 +194,12 @@ def find_related_tabular_entities_by_embedding(
         logger.error(f"[VECTOR_SEARCH] Failed to search for related entities: {e}")
         return []
 
-    # Ensure returned items are tabular_data
+    # # Ensure returned items are tabular_data
     filtered = [
         e
         for e in results
         if (e.get("properties", {}) or {}).get("artifact_type") == "tabular_data"
     ]
-
-    # Print names of entities found
-    for e in filtered:
-        name = (e.get("properties", {}) or {}).get("name") or e.get("name") or ""
-        logger.info(
-            f"[EMBEDDING] Found related tabular entity: {name} (ID: {e.get('id')})"
-        )
 
     return filtered[:top_k]
 
@@ -241,7 +212,7 @@ def cost_estimation(
     change_type: Optional[str] = None,
     uncertainties: Optional[Dict[str, Any]] = None,
     user_id: Optional[str] = None,
-    selected_entities: Optional[List[Dict[str, Any]]] = None,
+    selected_entities: Optional[List[str]] = None,  # Now explicitly a list of IDs
 ):
     """
     Perform cost estimation based on scenario description and other parameters.
@@ -254,7 +225,7 @@ def cost_estimation(
         change_type: Type of change (e.g., "Equipment", "Material", "Process")
         uncertainties: Uncertainty parameters
         user_id: ID of the user requesting the estimation
-        selected_entities: Optional list of pre-selected entities to consider
+        selected_entities: List of entity IDs to consider
     """
     if (
         not scenario_description
@@ -266,23 +237,24 @@ def cost_estimation(
             "scenario_description, project_id, scenario_id, and selected_entities are required."
         )
 
+    # Fetch the entity documents from the entities collection
+    reference_entities = db().entities.find({"id": {"$in": selected_entities}}, {"_id": 0})
 
-    # Fetch the entity document from the entities collection
-    base_entities = []
+    base_entities = list(reference_entities)
 
     # Retrieve tabular entities based on selected entities using embedding
     tabular_entities = []
     
+    # Keep track of matched entities for reporting
     matched_entities = []
 
     # Keep track of ids we've already added so we only add unique tabular entities
     seen_tabular_ids = set()
 
-    for entity_id in selected_entities:
-        entity = db().entities.find_one({"id": id}, {"_id": 0})
+    for entity in base_entities:
+        entity_id = entity.get("id")
         if entity:
             matches = {"base_entity": entity, "tabular_entities": []}
-            base_entities.append(entity)
             related = find_related_tabular_entities_by_embedding(
                 entity, project_id, top_k=5
             )

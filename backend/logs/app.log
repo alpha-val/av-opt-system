@@ -636,3 +636,58 @@ ValueError: Selected entity with id 90895e9f-ed1d-5b71-b7de-f8512d2e5abc not fou
 2025-10-17 20:37:53 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:773] - [TABULAR_PIPELINE] Writing to database: 3 chunks, 24 nodes, 0 edges
 2025-10-17 20:40:41 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:798] - [INFO] Upserted 24 vectors to Pinecone
 2025-10-17 20:40:41 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:820] - [TABULAR_PIPELINE] Completed: {'doc_id': '7b68c018-7932-4f8d-a4cc-2c1e775c9b90', 'filename': 'Pg 13 Gyratory Crusher Cost Tables.pdf', 'file_size': 77638, 'file_sha256': 'd9cca90d44e6ee8df668d7773eb95d2c4c91ffffa92a99b310048e25cbab26a1', 'pages': 1, 'tables_processed': 3, 'rows_processed': 9, 'chunks_written': 3, 'entities_written': 24, 'relations_written': 0, 'vectors_upserted': 24, 'errors': None}
+2025-10-17 20:56:53 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 20:57:27 - app.costing.api_for_costing - INFO - [api_for_costing.py:47] - [COST_ESTIMATE] Creating estimate for project: c096c158-64a3-4ab4-93de-0be86aaf1810, scenario: 9fbe1655-9d4e-4b0b-8124-25e6643beefc
+2025-10-17 20:57:31 - app.costing.api_for_costing - ERROR - [api_for_costing.py:92] - [COST_ESTIMATE] Failed to create estimate: string indices must be integers, not 'str'
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/api_for_costing.py", line 62, in create_cost_estimate
+    estimate = cost_estimation(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/costing.py", line 250, in cost_estimation
+    reference_entities = db().entities.find({"id": {"$in": [e["id"] for e in selected_entities]}}, {"_id": 0})
+                                                            ~^^^^^^
+TypeError: string indices must be integers, not 'str'
+2025-10-17 21:00:02 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 21:00:38 - app.costing.api_for_costing - INFO - [api_for_costing.py:47] - [COST_ESTIMATE] Creating estimate for project: c096c158-64a3-4ab4-93de-0be86aaf1810, scenario: 9fbe1655-9d4e-4b0b-8124-25e6643beefc
+2025-10-17 21:01:19 - app.costing.api_for_costing - INFO - [api_for_costing.py:87] - [COST_ESTIMATE] Estimate created: 6d5d0821-fae9-4ff9-a8ca-383782206377
+2025-10-17 21:03:53 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 21:04:14 - app.costing.api_for_costing - INFO - [api_for_costing.py:47] - [COST_ESTIMATE] Creating estimate for project: c096c158-64a3-4ab4-93de-0be86aaf1810, scenario: 9fbe1655-9d4e-4b0b-8124-25e6643beefc
+2025-10-17 21:04:52 - app.costing.api_for_costing - ERROR - [api_for_costing.py:92] - [COST_ESTIMATE] Failed to create estimate: normalize_entity_for_vector_db() missing 2 required positional arguments: 'project_id' and 'artifact_type'
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/api_for_costing.py", line 62, in create_cost_estimate
+    estimate = cost_estimation(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/costing.py", line 265, in cost_estimation
+    related = find_related_tabular_entities_by_embedding(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/costing.py", line 171, in find_related_tabular_entities_by_embedding
+    normalized_entity = normalize_entity_for_vector_db(entity)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: normalize_entity_for_vector_db() missing 2 required positional arguments: 'project_id' and 'artifact_type'
+2025-10-17 21:05:22 - app.costing.api_for_costing - INFO - [api_for_costing.py:47] - [COST_ESTIMATE] Creating estimate for project: c096c158-64a3-4ab4-93de-0be86aaf1810, scenario: 9fbe1655-9d4e-4b0b-8124-25e6643beefc
+2025-10-17 21:05:56 - app.costing.api_for_costing - ERROR - [api_for_costing.py:92] - [COST_ESTIMATE] Failed to create estimate: normalize_entity_for_vector_db() missing 2 required positional arguments: 'project_id' and 'artifact_type'
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/api_for_costing.py", line 62, in create_cost_estimate
+    estimate = cost_estimation(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/costing.py", line 265, in cost_estimation
+    related = find_related_tabular_entities_by_embedding(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/costing.py", line 171, in find_related_tabular_entities_by_embedding
+    normalized_entity = normalize_entity_for_vector_db(entity)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: normalize_entity_for_vector_db() missing 2 required positional arguments: 'project_id' and 'artifact_type'
+2025-10-17 21:07:49 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 21:07:54 - app.costing.api_for_costing - INFO - [api_for_costing.py:47] - [COST_ESTIMATE] Creating estimate for project: c096c158-64a3-4ab4-93de-0be86aaf1810, scenario: 9fbe1655-9d4e-4b0b-8124-25e6643beefc
+2025-10-17 21:11:37 - app.costing.costing - INFO - [costing.py:207] - [EMBEDDING] Found related tabular entity: Equipment 72 in x 124 in (ID: ab49741f-60c9-4ab0-83d0-022b15c5c96e)
+2025-10-17 21:11:45 - app.costing.costing - INFO - [costing.py:207] - [EMBEDDING] Found related tabular entity: Single Stage 250 stph (ID: 86fc1bd3-a822-4293-9bd7-05c9e5aa3088)
+2025-10-17 21:11:53 - app.costing.costing - INFO - [costing.py:207] - [EMBEDDING] Found related tabular entity: Equipment 42 in x 65 in (ID: 2ead1253-8a74-413d-aceb-84b0947ac735)
+2025-10-17 21:11:53 - app.costing.costing - INFO - [costing.py:207] - [EMBEDDING] Found related tabular entity: Equipment 60 in x 110 in (ID: 128bc912-a2be-4347-9e4f-672400b73942)
+2025-10-17 21:11:53 - app.costing.costing - INFO - [costing.py:207] - [EMBEDDING] Found related tabular entity: Equipment 30 in x 60 in (ID: c85966b6-20d1-4bf3-8969-c5be84875bb2)
+2025-10-17 21:12:18 - app.costing.costing - INFO - [costing.py:207] - [EMBEDDING] Found related tabular entity: Single Stage 250 stph (ID: 86fc1bd3-a822-4293-9bd7-05c9e5aa3088)
+2025-10-17 21:12:18 - app.costing.costing - INFO - [costing.py:207] - [EMBEDDING] Found related tabular entity: Double Stage 2500 stph (ID: 820faf4b-c99f-41e4-8a4d-d51ee4b9ea7d)
+2025-10-17 21:12:18 - app.costing.costing - INFO - [costing.py:207] - [EMBEDDING] Found related tabular entity: Single Stage 6 stph (ID: 3a570706-5bca-4960-b045-f1e4d715ec69)
+2025-10-17 21:12:18 - app.costing.costing - INFO - [costing.py:207] - [EMBEDDING] Found related tabular entity: Double Stage 1000 stph (ID: f235e1b4-da52-43ab-ac36-5bbec46a9284)
+2025-10-17 21:12:18 - app.costing.costing - INFO - [costing.py:207] - [EMBEDDING] Found related tabular entity: Single Stage 3600 tph (ID: f8dcf58a-12c3-43b5-8539-63ddc64358fd)
+2025-10-17 21:12:40 - app.costing.api_for_costing - INFO - [api_for_costing.py:87] - [COST_ESTIMATE] Estimate created: 5849d97b-54b3-4105-942e-f8d24fafa3c3
+2025-10-17 21:14:12 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
