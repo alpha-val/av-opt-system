@@ -4,8 +4,8 @@ from typing import Optional, Dict, Any, List
 import os, tempfile, uuid, datetime
 import pandas as pd
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from .text_clean import extract_and_clean, chunk_by_page, NAMESPACE
-from ..bronze_store import (
+from app.text_clean import extract_and_clean, chunk_by_page, process_extracted_nodes, NAMESPACE
+from app.bronze_store import (
     bulk_upsert_chunks,
     bulk_upsert_entities,
     bulk_upsert_relations,
@@ -31,7 +31,7 @@ def etl_base_case(
     file_size = len(pdf_bytes)
 
     # 1) Text extract + clean
-    file_sha, pages_raw, pages_clean = extract_and_clean(pdf_bytes, filename)
+    some_id, file_sha, pages_raw, pages_clean = extract_and_clean(pdf_bytes, filename)
 
     # 2) Build page chunks (Bronze)
     chunks = chunk_by_page(pages_clean, doc_id)
@@ -65,6 +65,9 @@ def etl_base_case(
         n["properties"]["project_id"] = project_id
         n["properties"]["user_id"] = user_id
         n["properties"]["doc_id"] = doc_id
+        
+    # Apply additional processing to nodes if needed
+    nodes = process_extracted_nodes(nodes)
 
     for e in edges:
         # Add artifact_type, project_id, user_id to properties

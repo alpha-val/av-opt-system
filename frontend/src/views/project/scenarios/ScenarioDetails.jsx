@@ -44,7 +44,7 @@ import {
 } from "../../../redux/dataSlice";
 import CostEstimateJSON from "./CostEstimateJSON";
 import CostDetails from "./CostDetails";
-import CostEstimateMatches from "./CostEstimateMatches";
+import CostBasisOptions from "./CostBasisOptions";
 
 const ScenarioDetail = ({
   scenarioId,
@@ -96,7 +96,7 @@ const ScenarioDetail = ({
 
   // Track selected entities from BaseCaseTable
   const [selectedEntities, setSelectedEntities] = useState([]);
-  
+
   useEffect(() => {
     if (scenarioId) {
       dispatch(fetchScenario(scenarioId));
@@ -220,123 +220,6 @@ const ScenarioDetail = ({
       {/* Main Content */}
       <Box sx={{ flex: 1, p: 0 }}>
         <Grid container spacing={3} sx={{ height: "100%" }}>
-          {/* Column 1: Scenario Form (20% width) */}
-          <Grid item xs={12} md={2.4}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 3,
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                backgroundColor: "#f9f9f9",
-              }}
-            >
-              <Typography variant="h6" gutterBottom>
-                Scenario Settings
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-
-              <Box
-                sx={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 2,
-                }}
-              >
-                <TextField
-                  fullWidth
-                  label="Scenario Name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  size="small"
-                />
-
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={6}
-                  label="Description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  size="small"
-                  helperText="Describe what you want to change"
-                />
-
-                <FormControl fullWidth size="small">
-                  <InputLabel>Goal</InputLabel>
-                  <Select
-                    value={goal}
-                    onChange={(e) => setGoal(e.target.value)}
-                    label="Goal"
-                  >
-                    <MenuItem value="increase_production">
-                      Increase Production
-                    </MenuItem>
-                    <MenuItem value="reduce_cost">Reduce Cost</MenuItem>
-                    <MenuItem value="improve_quality">Improve Quality</MenuItem>
-                    <MenuItem value="change_technology">
-                      Change Technology
-                    </MenuItem>
-                  </Select>
-                </FormControl>
-
-                <FormControl fullWidth size="small">
-                  <InputLabel>Change Type</InputLabel>
-                  <Select
-                    value={changeType}
-                    onChange={(e) => setChangeType(e.target.value)}
-                    label="Change Type"
-                  >
-                    <MenuItem value="equipment">Equipment</MenuItem>
-                    <MenuItem value="process">Process</MenuItem>
-                    <MenuItem value="capacity">Capacity</MenuItem>
-                    <MenuItem value="location">Location</MenuItem>
-                  </Select>
-                </FormControl>
-
-                <Box>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    gutterBottom
-                  >
-                    Status
-                  </Typography>
-                  <Box sx={{ mt: 0.5 }}>
-                    <Chip
-                      label={scenario.status}
-                      color={
-                        scenario.status === "ready" ? "success" : "default"
-                      }
-                      size="small"
-                    />
-                  </Box>
-                </Box>
-
-                {/* Run Analysis Button */}
-                <Button
-                  fullWidth
-                  variant="contained"
-                  size="large"
-                  startIcon={
-                    analyzing ? (
-                      <CircularProgress size={20} color="inherit" />
-                    ) : (
-                      <PlayArrow />
-                    )
-                  }
-                  onClick={handleRunAnalysis}
-                  disabled={analyzing || selectedEntities.length === 0}
-                  sx={{ mt: 1 }}
-                >
-                  {analyzing ? "Analyzing..." : "Run Analysis"}
-                </Button>
-              </Box>
-            </Paper>
-          </Grid>
-
           {/* Column 2: Tabs for Base Case and Cost Estimates */}
           <Grid item xs={12} md={9.6}>
             <Paper sx={{ p: 3, height: "100%" }}>
@@ -346,33 +229,153 @@ const ScenarioDetail = ({
                 sx={{ mb: 2 }}
               >
                 <Tab label="Base Case" />
-                <Tab label="Cost Estimates" />
+                <Tab label="Options" />
               </Tabs>
 
               {/* Tab 1: Base Case */}
               {tabIndex === 0 && (
-                <Box>
-                  <Typography variant="h6" gutterBottom>
-                    Base Case Entities & Costs
-                  </Typography>
-                  <Divider sx={{ mb: 2 }} />
-                  <BaseCaseDetails
-                    entities={entities || []}
-                    cbEntitySelection={handleEntitySelection}
-                  />
-                </Box>
+                <Grid xs={12} md={2.4}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 3,
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "row",
+                      gap: 3,
+                      backgroundColor: "#f9f9f9",
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="h6" gutterBottom>
+                        Scenario Settings
+                      </Typography>
+                      <Divider sx={{ mb: 2 }} />
+
+                      <Box
+                        sx={{
+                          flex: 1,
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 2,
+                        }}
+                      >
+                        <TextField
+                          fullWidth
+                          label="Scenario Name"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          size="small"
+                        />
+
+                        <TextField
+                          fullWidth
+                          multiline
+                          rows={3}
+                          label="Description"
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          size="small"
+                          helperText="Describe what you want to change"
+                        />
+
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Goal</InputLabel>
+                          <Select
+                            value={goal}
+                            onChange={(e) => setGoal(e.target.value)}
+                            label="Goal"
+                          >
+                            <MenuItem value="increase_production">
+                              Increase Production
+                            </MenuItem>
+                            <MenuItem value="reduce_cost">Reduce Cost</MenuItem>
+                            <MenuItem value="improve_quality">
+                              Improve Quality
+                            </MenuItem>
+                            <MenuItem value="change_technology">
+                              Change Technology
+                            </MenuItem>
+                          </Select>
+                        </FormControl>
+
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Change Type</InputLabel>
+                          <Select
+                            value={changeType}
+                            onChange={(e) => setChangeType(e.target.value)}
+                            label="Change Type"
+                          >
+                            <MenuItem value="equipment">Equipment</MenuItem>
+                            <MenuItem value="process">Process</MenuItem>
+                            <MenuItem value="capacity">Capacity</MenuItem>
+                            <MenuItem value="location">Location</MenuItem>
+                          </Select>
+                        </FormControl>
+
+                        <Box>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            gutterBottom
+                          >
+                            Status
+                          </Typography>
+                          <Box sx={{ mt: 0.5 }}>
+                            <Chip
+                              label={scenario.status}
+                              color={
+                                scenario.status === "ready"
+                                  ? "success"
+                                  : "default"
+                              }
+                              size="small"
+                            />
+                          </Box>
+                        </Box>
+
+                        {/* Run Analysis Button */}
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          size="large"
+                          startIcon={
+                            analyzing ? (
+                              <CircularProgress size={20} color="inherit" />
+                            ) : (
+                              <PlayArrow />
+                            )
+                          }
+                          onClick={handleRunAnalysis}
+                          disabled={analyzing || selectedEntities.length === 0}
+                          sx={{ mt: 1 }}
+                        >
+                          {analyzing ? "Analyzing..." : "Run Analysis"}
+                        </Button>
+                      </Box>
+                    </Box>
+                    <Box>
+                      <Typography variant="h6" gutterBottom>
+                        Base Case Entities
+                      </Typography>
+                      <Divider sx={{ mb: 2 }} />
+                      <BaseCaseDetails
+                        entities={entities || []}
+                        cbEntitySelection={handleEntitySelection}
+                      />
+                    </Box>
+                  </Paper>
+                </Grid>
               )}
 
               {/* Tab 2: Cost Estimates */}
               {tabIndex === 1 && (
                 <Box>
-                  <Typography variant="h6" gutterBottom>
-                    Cost Estimate
+                  {/* <Typography variant="h6" gutterBottom>
+                    Matched Entities
                   </Typography>
-                  <Divider sx={{ mb: 2 }} />
-                  <CostEstimateMatches data={costEstimate} />
-                  <Divider sx={{ mb: 2 }} />
-                  <CostEstimateJSON data={costEstimate} />
+                  <Divider sx={{ mb: 2 }} /> */}
+                  <CostBasisOptions data={costEstimate} />
                 </Box>
               )}
             </Paper>

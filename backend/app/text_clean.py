@@ -110,3 +110,82 @@ def extract_and_clean(pdf_bytes: bytes, filename: str):
     pages_no_hf = _strip_repeating_header_footer(pages_raw)
     pages_clean = [(p, clean_text(t)) for p, t in pages_no_hf]
     return doc_id, file_sha, pages_raw, pages_clean
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+
+# List of attribute names to process for value/unit extraction
+ATTRIBUTE_NAMES_WITH_UNITS = [
+    "amount",
+    "capacity",
+    "flow_rate",
+    "output_rate",
+    "processing_rate",
+    "production_rate",
+    "size_capacity",
+    "speed",
+    "throughput",
+    "volume",
+]
+
+
+def _parse_attribute_with_capacity(attribute: str) -> Dict[str, Any]:
+    """
+    Parse an attribute-value pair like "flow_rate:500 gals/hr" and convert it
+    to "capacity_value:500" and "capacity_unit:gals/hr".
+    Retains the original attribute in the output.
+
+    Args:
+        attribute: A string in the format "key:value unit".
+
+    Returns:
+        A dictionary with the original attribute, "key_value", and "key_unit".
+    """
+    if ":" not in attribute:
+        raise ValueError(f"Invalid attribute format: {attribute}")
+
+    # Split the attribute into key and value
+    key, value = attribute.split(":", 1)
+    key = key.strip()
+
+    # Parse the value and unit
+    match = re.match(r"([\d,.]+)\s*([^\d\s]+)", value.strip())
+    if match:
+        value_part, unit_part = match.group(1), match.group(2)
+        return {
+            f"{key}": attribute,  # Retain the original attribute
+            f"capacity_value": value_part,
+            f"capacity_unit": unit_part,
+        }
+
+    # If no match, return the original value with empty unit
+    return {
+        f"{key}": attribute,  # Retain the original attribute
+        f"{key}_value": value.strip(),
+        f"{key}_unit": "",
+    }
+
+
+# Process extracted nodes
+def process_extracted_nodes(nodes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Attach source back-pointer and doc metadata to each node."""
+    for n in nodes:
+        # Process capacity attributes
+        properties = n.get("properties", {})
+        new_properties = {}
+
+        # Check if properties already have 'capacity_value' and 'capacity_unit'
+        if "capacity_value" in properties and "capacity_unit" in properties:
+            new_properties = properties  # Already processed
+            n["properties"] = new_properties
+            continue
+
+        for k, v in properties.items():
+            if k in ATTRIBUTE_NAMES_WITH_UNITS:
+                parsed = _parse_attribute_with_capacity(f"{k}:{v}")
+                new_properties.update(parsed)
+            else:
+                new_properties[k] = v
+
+        n["properties"] = new_properties
+    return nodes

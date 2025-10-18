@@ -67,11 +67,11 @@ const EntityDetailsRow = ({ entity, index }) => {
     // Extract amount/quantity properties
     const extractAmountData = useMemo(() => {
         const allProperties = { ...entity.properties, ...entity };
-        const amountKeywords = [
-            'flow_rate', 'throughput', 'capacity', 'volume', 'quantity',
-            'amount', 'size', 'weight', 'mass', 'count', 'number', 'rate'
-        ];
-
+        // const amountKeywords = [
+        //     'flow_rate', 'throughput', 'capacity', 'volume', 'quantity',
+        //     'amount', 'size', 'weight', 'mass', 'count', 'number', 'rate'
+        // ];
+        const amountKeywords = ["capacity_value", "amount", "quantity", "volume", "capacity", "flow_rate", "throughput", "size", "weight", "mass", "count", "number", "rate"];
         const amounts = Object.entries(allProperties)
             .filter(([key, value]) => {
                 const keyLower = key.toLowerCase();
@@ -81,6 +81,20 @@ const EntityDetailsRow = ({ entity, index }) => {
             .map(([key, value]) => ({ key, value: String(value) }));
 
         return amounts.length > 0 ? amounts[0] : null;
+    }, [entity]);
+
+    const extractedAmountUnit = useMemo(() => {
+        const allProperties = { ...entity.properties, ...entity };
+        const unitKeywords = ["capacity_unit", "amount_unit", "unit", "volume_unit"];
+        const units = Object.entries(allProperties)
+            .filter(([key, value]) => {
+                const keyLower = key.toLowerCase();
+                return unitKeywords.some(keyword => keyLower.includes(keyword)) &&
+                    value != null && value !== '' && typeof value !== 'object';
+            })
+            .map(([key, value]) => ({ key, value: String(value) }));
+
+        return units.length > 0 ? units[0] : null;
     }, [entity]);
 
     // Extract other relevant properties (excluding cost, amount, and metadata)
@@ -94,7 +108,7 @@ const EntityDetailsRow = ({ entity, index }) => {
         // Also exclude cost and amount fields we already extracted
         if (extractCostData) excludeFields.add(extractCostData.key);
         if (extractAmountData) excludeFields.add(extractAmountData.key);
-
+        if (extractedAmountUnit) excludeFields.add(extractedAmountUnit.key);
         const allProperties = { ...entity.properties, ...entity };
         const otherProps = Object.entries(allProperties)
             .filter(([key, value]) =>
@@ -107,7 +121,7 @@ const EntityDetailsRow = ({ entity, index }) => {
             .sort((a, b) => a.key.localeCompare(b.key));
         
         return otherProps;
-    }, [entity, extractCostData, extractAmountData]);
+    }, [entity, extractCostData, extractAmountData, extractedAmountUnit]);
 
     // Format property names for display
     const formatPropertyName = (key) => {
@@ -182,7 +196,7 @@ const EntityDetailsRow = ({ entity, index }) => {
                 )}
             </TableCell>
 
-            {/* Amount/Quantity Column */}
+            {/* Amount Column */}
             <TableCell sx={{ minWidth: 140 }}>
                 {extractAmountData ? (
                     <Box>
@@ -191,6 +205,24 @@ const EntityDetailsRow = ({ entity, index }) => {
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                             {formatPropertyName(extractAmountData.key)}
+                        </Typography>
+                    </Box>
+                ) : (
+                    <Typography variant="body2" color="text.secondary">
+                        -
+                    </Typography>
+                )}
+            </TableCell>
+
+            {/* Amount Unit Column */}
+            <TableCell sx={{ minWidth: 140 }}>
+                {extractedAmountUnit ? (
+                    <Box>
+                        <Typography variant="body2" fontWeight="medium">
+                            {extractedAmountUnit.value}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                            {formatPropertyName(extractedAmountUnit.key)}
                         </Typography>
                     </Box>
                 ) : (

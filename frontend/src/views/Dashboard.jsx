@@ -141,7 +141,7 @@ const Dashboard = ({ onOpenProject }) => {
     { key: "status", display_value: "Status" },
     { key: "created", display_value: "Created" },
     { key: "lastUpdated", display_value: "Updated" },
-    { key: "estimateReports", display_value: "Estimate Reports" },
+    // { key: "estimateReports", display_value: "Estimate Reports" },
     { key: "options", display_value: "Options" },
   ];
 
@@ -274,7 +274,7 @@ const Dashboard = ({ onOpenProject }) => {
       ),
       lastUpdated: new Date(project.updated_at).toLocaleDateString(),
       created: new Date(project.created_at).toLocaleDateString(),
-      estimateReports: ["0 completed", "0 pending review"],
+      // estimateReports: ["0 completed", "0 pending review"],
       options: (
         <IconButton
           size="small"

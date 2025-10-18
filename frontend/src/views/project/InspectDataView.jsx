@@ -73,7 +73,7 @@ const InspectDataView = () => {
       (entity) => entity.properties?.artifact_type === "tabular_data"
     );
   }, [entities]);
-
+  console.log("[InspectDataView] tabularDataEntities:", tabularDataEntities);
   // Get relations
   const relations =
     useSelector((state) => selectRelationsByProject(state, projectId)) || [];

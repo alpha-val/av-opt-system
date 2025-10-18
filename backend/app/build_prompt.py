@@ -45,6 +45,64 @@ COST POLICY (Ontology has no 'CostRule')
 """
     )
 
+    units_normalization_block = """
+--------------------------------------------------------------------------------
+UNITS NORMALIZATION & DEDUPLICATION POLICY
+--------------------------------------------------------------------------------
+* When extracting attributes with units (e.g., "flow_rate:500 gals/hr"):
+  - Parse and store the numeric value in a property called "flow_rate_value".
+  - Parse and store the unit in a property called "flow_rate_unit".
+  - Normalize units to a consistent format (e.g., "gallons per hour" → "gals/hr").
+* Attribute policy
+** Create the attribute "capacity_value" for values representing capacity
+** Create the attribute "capacity_unit" for the corresponding unit.
+** Keep the original attribute (e.g., "flow_rate:500 gals/hr") in the node properties for provenance.
+* Deduplicate entities with equivalent normalized values and units.
+* Store original text in metadata for provenance.
+
+* Normalization rules
+** Prefer SI units where sensible, but retain original in auxiliary fields if helpful.
+** Map the following 
+*** gallons/hour, gallons per hour, gal/hr, gph → gals/hr
+*** gallons/min, gals/min, gpm → gals/min
+*** cubic meters/hour, cubic meters per hour, m3/hr, m3h → m3/hr
+*** barrels/day, barrels per day, bbl/day, bpd → bbl/day
+*** liters/minute, liters per minute, L/min, Lpm → L/min
+*** tons/day, tons per day, tpd → tons/day
+*** pounds/hour, pounds per hour, lb/hr, lbs/hr, pph → lb/hr
+*** kilograms/hour, kilograms per hour, kg/hr, kph → kg/hr
+** If units are not provided then use appropriate placeholders or null values.
+*** E.g., "capacity_value": "1000", "capacity_unit": null
+** Map common abbreviations to standard forms.
+*** E.g., "TPH" → "tons/hr", "gals" → "gallons"
+*** pounds → lbs, kilograms → kg, liters → L, cubic meters → m3
+* When both imperial and metric units are provided, store both as separate properties.
+* For ranges or dual units (e.g., "10-20 TPH" or "500 gals/hr (metric: 1892 L/hr)"):
+  - Extract min/max values into separate properties (e.g., "capacity_value_min", "capacity_value_max").
+  - Store each unit variant in its own property (e.g., "capacity_unit_imperial", "capacity_unit_metric").
+* For compound values (e.g., "5 @ 80% efficiency"), separate the main value from conditions.
+* Always retain the original text attribute for provenance.
+
+
+# Evidence for variations in capacity:
+* Extracting factors or variations of entities due increase or decrease in capacity:
+** You must do the following if entity name consists of a base capacity plus an adjustment (e.g., "250 (base)", "125 (-50%)", "500 (2x)"), e.g., 250 (base) -> baseline value, 125 (-50%) -> lowered by 50%, 375 (+50%) -> increased by 50%, 500 (2x) -> doubled
+** Handle the variations:
+*** Percentages: "-50%", "+25%"
+*** Multipliers: "2x", "0.5x"
+*** Absolute changes: "-100", "+200"
+** Store the adjusted value in "capacity_value" and the adjustment method in a separate property (e.g., "capacity_adjustment": "-50%").
+** * Example:
+Fruit Washer Cost Estimates table:
+Capacity (lbs/hr),	Spec / Notes,	Base Domestic, Cost Estimate,	Freight & Delivery Buffer,	"All-in to Charlotte" Estimate
+125 (−50%),	Compact drum,	$5,000,	+10%,	$5,500
+250 (base),	Standard auto rotating drum,	$9,000,	+10%,	$9,900
+500 (2×),	Larger drum, motorized feed,	$15,000,	+12%,	$16,800
+1,000 (4×),	Dual-drum continuous,	$25,000,	+15%,	$28,750
+2,500 (10×),	Industrial flume / continuous,	$45,000,	+15%,	$51,750
+
+"""
+
     table_extraction_block = """
 --------------------------------------------------------------------------------
 TABLE EXTRACTION POLICY
@@ -143,6 +201,7 @@ QUALITY REQUIREMENTS FOR TABLE EXTRACTION:
 ✓ Respect table boundaries (no bleeding across tables)
 ✓ Set confidence=1.0 for direct table values
 ✓ Create meaningful entity names
+✓ Add table name in properties for context
 ✗ Never merge distinct rows into one entity
 ✗ Never split one row into multiple entities (unless clearly composite)
 ✗ No hallucinated values for empty cells
@@ -224,7 +283,7 @@ Edge object (each item in extract_edges.edges) MUST have:
 
 
 --------------------------------------------------------------------------------
-NORMALIZATION & DEDUP
+NORMALIZATION & DEDUPLICATION RULES
 --------------------------------------------------------------------------------
 - Canonicalize names for comparison: lowercase; strip punctuation/underscores/dashes/spaces.
 - Merge if (same type) AND (canonical names match). Otherwise keep separate but
@@ -246,6 +305,11 @@ Confidence scoring (guideline):
 Evidence:
 - Keep excerpts short (≤250 chars). Populate the appropriate meta fields strictly
   from NODE_PROPERTIES / EDGE_PROPERTIES (e.g., 'source_doc', 'extracted_from', etc.).
+
+--------------------------------------------------------------------------------
+NORMALIZATION & DEDUPLICATION POLICY
+{units_normalization_block}
+--------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
 QUALITY GATE (pre-return)

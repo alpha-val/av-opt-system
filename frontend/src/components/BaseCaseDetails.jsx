@@ -41,32 +41,9 @@ const BaseCaseDetails = ({ entities = [], cbEntitySelection }) => {
     (e) => e?.properties?.artifact_type === "base_case"
   );
 
-  const entitiesWithCost = baseCaseEntities.filter(hasCost);
-  const entitiesWithoutCost = baseCaseEntities.filter((e) => !hasCost(e));
-
   return (
     <Box>
       <BaseCaseTable entities={baseCaseEntities} onSelectionChange={cbEntitySelection} />
-      {/* <Accordion defaultExpanded>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography fontWeight="bold">
-            Entities With Cost ({entitiesWithCost.length})
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          <BaseCaseTable entities={entitiesWithCost} />
-        </AccordionDetails>
-      </Accordion>
-      <Accordion defaultExpanded>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography fontWeight="bold">
-            Entities Without Cost ({entitiesWithoutCost.length})
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          <BaseCaseTable entities={entitiesWithoutCost} />
-        </AccordionDetails>
-      </Accordion> */}
     </Box>
   );
 };

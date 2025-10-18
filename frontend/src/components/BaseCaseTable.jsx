@@ -39,7 +39,7 @@ function getCost(entity) {
 function getAmount(entity) {
   const props = entity.properties || {};
   return (
-    entity.amount ||
+    props.capacity_value ||
     props.amount ||
     props.quantity ||
     props.volume ||
@@ -51,6 +51,7 @@ function getAmount(entity) {
 function getAmountUnit(entity) {
   const props = entity.properties || {};
   return (
+    props.capacity_unit ||
     props.amount_unit ||
     props.unit ||
     props.capacity_unit ||
@@ -81,7 +82,8 @@ const columns = [
   { id: "select", label: "" },
   { id: "name", label: "Name" },
   { id: "type", label: "Type" },
-  { id: "amount", label: "Amount/Quantity/Volume" },
+  { id: "capacity_value", label: "Capacity" },
+  { id: "capacity_unit", label: "Unit" },
   { id: "cost", label: "Cost", align: "right" },
 ];
 
@@ -119,7 +121,7 @@ const BaseCaseTable = ({ entities, onSelectionChange }) => {
   const [selected, setSelected] = useState([]);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("All");
-
+  
   // Get unique entity types for filtering
   const entityTypes = [
     "All",
@@ -138,11 +140,6 @@ const BaseCaseTable = ({ entities, onSelectionChange }) => {
   const sortedEntities = React.useMemo(() => {
     return [...filteredEntities].sort(getComparator(order, orderBy));
   }, [filteredEntities, order, orderBy]);
-
-  const totalCost = sortedEntities.reduce((sum, entity) => {
-    const cost = Number(getCost(entity)) || 0;
-    return sum + cost;
-  }, 0);
 
   // Checkbox logic
   const allSelected =
@@ -220,12 +217,13 @@ const BaseCaseTable = ({ entities, onSelectionChange }) => {
       <TableContainer component={Paper} variant="outlined">
         <Table size="small">
           <TableHead>
-            <TableRow>
+            <TableRow sx={{ borderBottom: "1px solid gray" }}>
               <TableCell padding="checkbox">
                 <Checkbox
                   checked={allSelected}
                   indeterminate={
-                    selected.length > 0 && selected.length < sortedEntities.length
+                    selected.length > 0 &&
+                    selected.length < sortedEntities.length
                   }
                   onChange={handleSelectAll}
                   inputProps={{ "aria-label": "select all entities" }}
@@ -264,34 +262,21 @@ const BaseCaseTable = ({ entities, onSelectionChange }) => {
                     <Checkbox
                       checked={selected.includes(id)}
                       onChange={handleSelect(id)}
-                      inputProps={{ "aria-label": `select entity ${getName(entity)}` }}
+                      inputProps={{
+                        "aria-label": `select entity ${getName(entity)}`,
+                      }}
                     />
                   </TableCell>
                   <TableCell>{getName(entity)}</TableCell>
                   <TableCell>{getType(entity)}</TableCell>
-                  <TableCell align="left">
-                    {getAmount(entity)}
-                    {getAmountUnit(entity) ? ` ${getAmountUnit(entity)}` : ""}
-                  </TableCell>
+                  <TableCell align="left">{getAmount(entity)}</TableCell>
+                  <TableCell align="left">{getAmountUnit(entity)}</TableCell>
                   <TableCell align="right">
                     {formatCurrency(getCost(entity))}
                   </TableCell>
                 </TableRow>
               );
             })}
-            <TableRow>
-              <TableCell />
-              <TableCell />
-              <TableCell />
-              <TableCell align="right">
-                <Typography fontWeight="bold">Total:</Typography>
-              </TableCell>
-              <TableCell align="right">
-                <Typography fontWeight="bold">
-                  {formatCurrency(totalCost)}
-                </Typography>
-              </TableCell>
-            </TableRow>
           </TableBody>
         </Table>
       </TableContainer>

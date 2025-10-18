@@ -6,7 +6,7 @@ import pandas as pd
 import datetime
 import uuid
 
-from ..text_clean import extract_and_clean, chunk_by_page, NAMESPACE
+from app.text_clean import extract_and_clean, chunk_by_page, process_extracted_nodes, NAMESPACE
 from ..ontology import load_ontology
 from ..build_prompt import gen_prompt
 from .tabular_rules import TABULAR_RULES
@@ -533,6 +533,7 @@ def map_tables_to_entities(
         logger.error(f"[TABULAR_PIPELINE] Table extraction failed: {e}")
         raise HTTPException(500, f"Table extraction failed: {str(e)}")
 
+    # If no tables found, fallback to text extraction only
     if not table_results:
         logger.warning(f"[TABULAR_PIPELINE] No tables found in {filename}")
 
@@ -567,6 +568,9 @@ def map_tables_to_entities(
             n["properties"]["project_id"] = project_id
             n["properties"]["user_id"] = user_id
             n["properties"]["doc_id"] = doc_id
+
+        # Apply additional processing to nodes if needed
+        nodes = process_extracted_nodes(nodes)
 
         for e in edges:
             # Add artifact_type, project_id, user_id to properties
@@ -603,219 +607,224 @@ def map_tables_to_entities(
             "relations_written": len(edges),
             "vectors_upserted": vectors_upserted,  # NEW
         }
+    
+    # Process tables with LLM extraction
+    else:
+        # Load ontology and build prompt
+        ontology = load_ontology()
+        base_prompt = gen_prompt(ontology)
+        full_prompt = base_prompt
 
-    # Load ontology and build prompt
-    ontology = load_ontology()
-    base_prompt = gen_prompt(ontology)
-    full_prompt = base_prompt
+        # Accumulators for all tables
+        all_chunks = []
+        all_nodes = []
+        all_edges = []
+        all_errors = []
+        total_rows_processed = 0
 
-    # Accumulators for all tables
-    all_chunks = []
-    all_nodes = []
-    all_edges = []
-    all_errors = []
-    total_rows_processed = 0
+        # Process each extracted table
+        for table_result in table_results:
+            df = table_result["df"]
+            meta = table_result.get("meta", {})
 
-    # Process each extracted table
-    for table_result in table_results:
-        df = table_result["df"]
-        meta = table_result.get("meta", {})
-
-        # Prepare table metadata
-        table_meta = _prepare_table_metadata(
-            df=df,
-            meta=meta,
-            doc_id=doc_id,
-            project_id=project_id,
-            user_id=user_id,
-            filename=filename,
-        )
-
-        table_id = table_meta["table_id"]
-
-        try:
-            # Prepare row documents
-            rows = _prepare_row_documents(df, table_id)
-
-            if not rows:
-                logger.warning(f"[TABULAR_PIPELINE] No rows in table {table_id}")
-                continue
-
-            # Create chunks from table rows
-            table_chunks = _prepare_table_chunks(
+            # Prepare table metadata
+            table_meta = _prepare_table_metadata(
                 df=df,
-                table_meta=table_meta,
-                rows=rows,
+                meta=meta,
                 doc_id=doc_id,
                 project_id=project_id,
                 user_id=user_id,
-                artifact_type=artifact_type,
+                filename=filename,
             )
 
-            all_chunks.extend(table_chunks)
+            table_id = table_meta["table_id"]
 
-            # Limit rows for this batch
-            rows_batch = rows[:batch_size]
-            payload = build_llm_payload(table_meta, rows_batch, max_rows=batch_size)
+            try:
+                # Prepare row documents
+                rows = _prepare_row_documents(df, table_id)
 
-            # Construct prompt with payload
-            input_text = (
-                f"{full_prompt}\n\n"
-                f"INPUT TABLE DATA (JSON):\n"
-                f"{json.dumps(payload, indent=2, ensure_ascii=False)}"
-            )
+                if not rows:
+                    logger.warning(f"[TABULAR_PIPELINE] No rows in table {table_id}")
+                    continue
 
-            # Call LLM
-            logger.info(
-                f"[TABULAR_PIPELINE] Calling LLM for table {table_id} ({len(rows_batch)} rows)"
-            )
-            kg_data = call_llm_for_tables(input_text, ontology)
-
-            # Check for errors in response
-            if "error" in kg_data:
-                logger.error(
-                    f"[TABULAR_PIPELINE] LLM extraction failed for {table_id}: {kg_data['error']}"
+                # Create chunks from table rows
+                table_chunks = _prepare_table_chunks(
+                    df=df,
+                    table_meta=table_meta,
+                    rows=rows,
+                    doc_id=doc_id,
+                    project_id=project_id,
+                    user_id=user_id,
+                    artifact_type=artifact_type,
                 )
-                all_errors.append({"table_id": table_id, "error": kg_data["error"]})
+
+                all_chunks.extend(table_chunks)
+
+                # Limit rows for this batch
+                rows_batch = rows[:batch_size]
+                payload = build_llm_payload(table_meta, rows_batch, max_rows=batch_size)
+
+                # Construct prompt with payload
+                input_text = (
+                    f"{full_prompt}\n\n"
+                    f"INPUT TABLE DATA (JSON):\n"
+                    f"{json.dumps(payload, indent=2, ensure_ascii=False)}"
+                )
+
+                # Call LLM
+                logger.info(
+                    f"[TABULAR_PIPELINE] Calling LLM for table {table_id} ({len(rows_batch)} rows)"
+                )
+                kg_data = call_llm_for_tables(input_text, ontology)
+
+                # Check for errors in response
+                if "error" in kg_data:
+                    logger.error(
+                        f"[TABULAR_PIPELINE] LLM extraction failed for {table_id}: {kg_data['error']}"
+                    )
+                    all_errors.append({"table_id": table_id, "error": kg_data["error"]})
+                    continue
+
+                nodes = list(kg_data.get("nodes", []) or [])
+                edges = list(kg_data.get("edges", []) or [])
+
+                # Filter out invalid nodes (must be dicts)
+                nodes = [n for n in nodes if isinstance(n, dict)]
+                edges = [e for e in edges if isinstance(e, dict)]
+
+                if not nodes and not edges:
+                    logger.warning(
+                        f"[TABULAR_PIPELINE] No valid nodes or edges returned for {table_id}"
+                    )
+                    all_errors.append(
+                        {
+                            "table_id": table_id,
+                            "error": "LLM returned invalid response format",
+                        }
+                    )
+                    continue
+
+                # Create mapping from old text IDs to new UUIDs
+                node_id_map = {}
+                normalized_nodes = []
+
+                for n in nodes:
+                    # Store original ID before normalization
+                    original_id = (
+                        n.get("id")
+                        or n.get("_id")
+                        or n.get("name", "").lower().replace(" ", "_")
+                    )
+
+                    # Normalize to UUID
+                    n = _normalize_entity_id(n)
+
+                    # Map old ID to new UUID
+                    if original_id:
+                        node_id_map[original_id] = n["_id"]
+
+                    # Attach metadata
+                    srcs = n.get("sources") or []
+                    if not any(
+                        isinstance(s, dict) and s.get("doc_id") == doc_id for s in srcs
+                    ):
+                        srcs.append({"doc_id": doc_id})
+                    n["sources"] = srcs
+
+                    if "properties" not in n or not isinstance(n["properties"], dict):
+                        n["properties"] = {}
+                    n["properties"]["artifact_type"] = artifact_type
+                    n["properties"]["project_id"] = project_id
+                    n["properties"]["user_id"] = user_id
+                    n["properties"]["doc_id"] = doc_id
+                    n["properties"]["table_id"] = table_id
+
+                    normalized_nodes.append(n)
+
+                # Apply additional processing to nodes if needed
+                normalized_nodes = process_extracted_nodes(normalized_nodes)
+
+                # Normalize edges with ID remapping
+                normalized_edges = []
+                for e in edges:
+                    # Remap source/target from text IDs to UUIDs
+                    e = _normalize_edge_id(e, node_id_map)
+
+                    # Attach metadata
+                    if "properties" not in e or not isinstance(e["properties"], dict):
+                        e["properties"] = {}
+                    e["properties"]["artifact_type"] = artifact_type
+                    e["properties"]["project_id"] = project_id
+                    e["properties"]["user_id"] = user_id
+                    e["properties"]["doc_id"] = doc_id
+                    e["properties"]["table_id"] = table_id
+
+                    normalized_edges.append(e)
+
+                # Use normalized entities
+                all_nodes.extend(normalized_nodes)
+                all_edges.extend(normalized_edges)
+                total_rows_processed += len(rows_batch)
+
+                logger.info(
+                    f"[TABULAR_PIPELINE] Table {table_id}: {len(normalized_nodes)} nodes, {len(normalized_edges)} edges (IDs normalized)"
+                )
+
+            except Exception as e:
+                logger.error(f"[TABULAR_PIPELINE] Failed to process table {table_id}: {e}")
+                import traceback
+
+                traceback.print_exc()
+                all_errors.append({"table_id": table_id, "error": str(e)})
                 continue
 
-            nodes = list(kg_data.get("nodes", []) or [])
-            edges = list(kg_data.get("edges", []) or [])
+        # Bulk insert all accumulated data
+        logger.info(
+            f"[TABULAR_PIPELINE] Writing to database: "
+            f"{len(all_chunks)} chunks, {len(all_nodes)} nodes, {len(all_edges)} edges"
+        )
 
-            # Filter out invalid nodes (must be dicts)
-            nodes = [n for n in nodes if isinstance(n, dict)]
-            edges = [e for e in edges if isinstance(e, dict)]
-
-            if not nodes and not edges:
-                logger.warning(
-                    f"[TABULAR_PIPELINE] No valid nodes or edges returned for {table_id}"
-                )
-                all_errors.append(
-                    {
-                        "table_id": table_id,
-                        "error": "LLM returned invalid response format",
-                    }
-                )
-                continue
-
-            # Create mapping from old text IDs to new UUIDs
-            node_id_map = {}
-            normalized_nodes = []
-
-            for n in nodes:
-                # Store original ID before normalization
-                original_id = (
-                    n.get("id")
-                    or n.get("_id")
-                    or n.get("name", "").lower().replace(" ", "_")
-                )
-
-                # Normalize to UUID
-                n = _normalize_entity_id(n)
-
-                # Map old ID to new UUID
-                if original_id:
-                    node_id_map[original_id] = n["_id"]
-
-                # Attach metadata
-                srcs = n.get("sources") or []
-                if not any(
-                    isinstance(s, dict) and s.get("doc_id") == doc_id for s in srcs
-                ):
-                    srcs.append({"doc_id": doc_id})
-                n["sources"] = srcs
-
-                if "properties" not in n or not isinstance(n["properties"], dict):
-                    n["properties"] = {}
-                n["properties"]["artifact_type"] = artifact_type
-                n["properties"]["project_id"] = project_id
-                n["properties"]["user_id"] = user_id
-                n["properties"]["doc_id"] = doc_id
-                n["properties"]["table_id"] = table_id
-
-                normalized_nodes.append(n)
-
-            # Normalize edges with ID remapping
-            normalized_edges = []
-            for e in edges:
-                # Remap source/target from text IDs to UUIDs
-                e = _normalize_edge_id(e, node_id_map)
-
-                # Attach metadata
-                if "properties" not in e or not isinstance(e["properties"], dict):
-                    e["properties"] = {}
-                e["properties"]["artifact_type"] = artifact_type
-                e["properties"]["project_id"] = project_id
-                e["properties"]["user_id"] = user_id
-                e["properties"]["doc_id"] = doc_id
-                e["properties"]["table_id"] = table_id
-
-                normalized_edges.append(e)
-
-            # Use normalized entities
-            all_nodes.extend(normalized_nodes)
-            all_edges.extend(normalized_edges)
-            total_rows_processed += len(rows_batch)
-
-            logger.info(
-                f"[TABULAR_PIPELINE] Table {table_id}: {len(normalized_nodes)} nodes, {len(normalized_edges)} edges (IDs normalized)"
-            )
-
+        try:
+            if all_chunks:
+                bulk_upsert_chunks(all_chunks)
+            if all_nodes:
+                bulk_upsert_entities(all_nodes)
+            if all_edges:
+                bulk_upsert_relations(all_edges)
         except Exception as e:
-            logger.error(f"[TABULAR_PIPELINE] Failed to process table {table_id}: {e}")
+            logger.error(f"[TABULAR_PIPELINE] Database write failed: {e}")
             import traceback
 
             traceback.print_exc()
-            all_errors.append({"table_id": table_id, "error": str(e)})
-            continue
+            raise HTTPException(500, f"Database write failed: {str(e)}")
 
-    # Bulk insert all accumulated data
-    logger.info(
-        f"[TABULAR_PIPELINE] Writing to database: "
-        f"{len(all_chunks)} chunks, {len(all_nodes)} nodes, {len(all_edges)} edges"
-    )
+        # Store in Vector Database
+        vectors_upserted = 0
+        try:
+            vectors_upserted = upsert_entities_to_pinecone(
+                entities=all_nodes, project_id=project_id, artifact_type=artifact_type
+            )
+            logger.info(f"[INFO] Upserted {vectors_upserted} vectors to Pinecone")
+        except Exception as e:
+            logger.error(f"[ERROR] Failed to upsert to Pinecone: {e}")
+            import traceback
 
-    try:
-        if all_chunks:
-            bulk_upsert_chunks(all_chunks)
-        if all_nodes:
-            bulk_upsert_entities(all_nodes)
-        if all_edges:
-            bulk_upsert_relations(all_edges)
-    except Exception as e:
-        logger.error(f"[TABULAR_PIPELINE] Database write failed: {e}")
-        import traceback
+            traceback.print_exc()
 
-        traceback.print_exc()
-        raise HTTPException(500, f"Database write failed: {str(e)}")
+        results = {
+            "doc_id": doc_id,
+            "filename": filename,
+            "file_size": file_size,
+            "file_sha256": file_sha,
+            "pages": len(pages_clean),
+            "tables_processed": len(table_results),
+            "rows_processed": total_rows_processed,
+            "chunks_written": len(all_chunks),
+            "entities_written": len(all_nodes),
+            "relations_written": len(all_edges),
+            "vectors_upserted": vectors_upserted,
+            "errors": all_errors if all_errors else None,
+        }
 
-    # Store in Vector Database
-    vectors_upserted = 0
-    try:
-        vectors_upserted = upsert_entities_to_pinecone(
-            entities=all_nodes, project_id=project_id, artifact_type=artifact_type
-        )
-        logger.info(f"[INFO] Upserted {vectors_upserted} vectors to Pinecone")
-    except Exception as e:
-        logger.error(f"[ERROR] Failed to upsert to Pinecone: {e}")
-        import traceback
-
-        traceback.print_exc()
-
-    results = {
-        "doc_id": doc_id,
-        "filename": filename,
-        "file_size": file_size,
-        "file_sha256": file_sha,
-        "pages": len(pages_clean),
-        "tables_processed": len(table_results),
-        "rows_processed": total_rows_processed,
-        "chunks_written": len(all_chunks),
-        "entities_written": len(all_nodes),
-        "relations_written": len(all_edges),
-        "vectors_upserted": vectors_upserted,
-        "errors": all_errors if all_errors else None,
-    }
-
-    logger.info(f"[TABULAR_PIPELINE] Completed: {results}")
-    return results
+        logger.info(f"[TABULAR_PIPELINE] Completed: {results}")
+        return results

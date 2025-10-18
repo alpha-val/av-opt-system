@@ -174,7 +174,8 @@ const EntityDetailsTable = ({ entities = [], title = "Entities" }) => {
                                 <TableCell sx={{ fontWeight: 'bold', minWidth: 200 }}>Name</TableCell>
                                 <TableCell sx={{ fontWeight: 'bold', minWidth: 100 }}>Type</TableCell>
                                 <TableCell sx={{ fontWeight: 'bold', minWidth: 120 }}>Cost</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold', minWidth: 140 }}>Amount/Quantity</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', minWidth: 140 }}>Capacity Value</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', minWidth: 140 }}>Capacity Unit</TableCell>
                                 <TableCell sx={{ fontWeight: 'bold', minWidth: 300, maxWidth: 300 }}>Other Properties</TableCell>
                                 <TableCell sx={{ fontWeight: 'bold', minWidth: 180 }}>Sources</TableCell>
                                 <TableCell sx={{ fontWeight: 'bold', minWidth: 100 }} align="center">Confidence</TableCell>

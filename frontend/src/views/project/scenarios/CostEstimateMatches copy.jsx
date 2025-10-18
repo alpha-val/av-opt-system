@@ -105,15 +105,11 @@ const CostEstimateMatches = ({ data }) => {
   const costDetails = data.metadata.cost_details || {};
   const matched =
     costDetails.matched_entities || costDetails.matched_data || [];
-
+  console.log("[CostEstimateMatches] matched data:", data); // Debug log
   if (!Array.isArray(matched) || matched.length === 0) return null;
 
   return (
     <Box sx={{ mt: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        Matched Entities
-      </Typography>
-      <Divider sx={{ mb: 2 }} />
       <TableContainer component={Paper} variant="outlined">
         <Table size="small">
           <TableHead>
