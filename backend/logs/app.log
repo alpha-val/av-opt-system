@@ -566,3 +566,73 @@
 2025-10-12 22:17:12 - app.scenarios.scenario_estimate - INFO - [scenario_estimate.py:121] - [COST ESTIMATION] Completed for scenario b1794508-2f14-4cdf-8db8-2774a1fc9c9b. Delta: {'capital': -6632542, 'installation': -23210000, 'operating_annual': 0, 'maintenance_annual': 0, 'total': -29842542}
 2025-10-17 17:21:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
 2025-10-17 17:28:02 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 17:37:37 - app.costing.api_for_costing - INFO - [api_for_costing.py:47] - [COST_ESTIMATE] Creating estimate for project: 82b2d10f-b6c8-4d30-9650-5c5e0a2c462b, scenario: b62ce9cc-b11c-45b0-bbc6-eb690d76240a
+2025-10-17 17:37:37 - app.costing.api_for_costing - ERROR - [api_for_costing.py:92] - [COST_ESTIMATE] Failed to create estimate: Selected entity with id 90895e9f-ed1d-5b71-b7de-f8512d2e5abc not found.
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/api_for_costing.py", line 62, in create_cost_estimate
+    estimate = cost_estimation(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/costing.py", line 301, in cost_estimation
+    raise ValueError(f"Selected entity with id {entity_id} not found.")
+ValueError: Selected entity with id 90895e9f-ed1d-5b71-b7de-f8512d2e5abc not found.
+2025-10-17 17:39:33 - app.costing.api_for_costing - INFO - [api_for_costing.py:47] - [COST_ESTIMATE] Creating estimate for project: 82b2d10f-b6c8-4d30-9650-5c5e0a2c462b, scenario: b62ce9cc-b11c-45b0-bbc6-eb690d76240a
+2025-10-17 17:40:03 - app.costing.api_for_costing - ERROR - [api_for_costing.py:92] - [COST_ESTIMATE] Failed to create estimate: Selected entity with id 90895e9f-ed1d-5b71-b7de-f8512d2e5abc not found.
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/api_for_costing.py", line 62, in create_cost_estimate
+    estimate = cost_estimation(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/costing.py", line 301, in cost_estimation
+    raise ValueError(f"Selected entity with id {entity_id} not found.")
+ValueError: Selected entity with id 90895e9f-ed1d-5b71-b7de-f8512d2e5abc not found.
+2025-10-17 17:40:28 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 17:42:26 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 17:50:38 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 17:51:16 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 17:53:27 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 17:53:42 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 17:56:01 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 17:58:39 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 17:59:56 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 18:00:15 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 18:02:24 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 18:02:42 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 18:04:48 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 19:08:23 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 19:08:36 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 19:31:00 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 19:31:15 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 19:44:00 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 19:46:35 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 19:49:23 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 19:50:16 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 19:54:04 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 20:02:36 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 20:02:57 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 20:03:11 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 20:10:17 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 20:32:48 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 20:33:44 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-17 20:36:42 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:521] - [TABULAR_PIPELINE] Processed doc_id: 7b68c018-7932-4f8d-a4cc-2c1e775c9b90
+2025-10-17 20:36:46 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:124] - [TABLE_EXTRACT] Extracted 3 tables using cascade
+2025-10-17 20:36:46 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:529] - [TABULAR_PIPELINE] Extracted 3 tables from PDF
+2025-10-17 20:36:46 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-17 20:36:46 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:669] - [TABULAR_PIPELINE] Calling LLM for table tbl::7b68c018-7932-4f8d-a4cc-2c1e775c9b90::p1::0 (3 rows)
+2025-10-17 20:36:46 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 13644 chars to OpenAI
+2025-10-17 20:37:35 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 6295 chars from OpenAI
+2025-10-17 20:37:35 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-17 20:37:35 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:760] - [TABULAR_PIPELINE] Table tbl::7b68c018-7932-4f8d-a4cc-2c1e775c9b90::p1::0: 9 nodes, 0 edges (IDs normalized)
+2025-10-17 20:37:35 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-17 20:37:35 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:669] - [TABULAR_PIPELINE] Calling LLM for table tbl::7b68c018-7932-4f8d-a4cc-2c1e775c9b90::p1::1 (3 rows)
+2025-10-17 20:37:35 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 12889 chars to OpenAI
+2025-10-17 20:37:43 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 3481 chars from OpenAI
+2025-10-17 20:37:43 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 6 nodes, 0 edges
+2025-10-17 20:37:43 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:760] - [TABULAR_PIPELINE] Table tbl::7b68c018-7932-4f8d-a4cc-2c1e775c9b90::p1::1: 6 nodes, 0 edges (IDs normalized)
+2025-10-17 20:37:43 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 3 rows, 2 columns
+2025-10-17 20:37:43 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:669] - [TABULAR_PIPELINE] Calling LLM for table tbl::7b68c018-7932-4f8d-a4cc-2c1e775c9b90::p1::2 (3 rows)
+2025-10-17 20:37:43 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 13339 chars to OpenAI
+2025-10-17 20:37:53 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 5325 chars from OpenAI
+2025-10-17 20:37:53 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 9 nodes, 0 edges
+2025-10-17 20:37:53 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:760] - [TABULAR_PIPELINE] Table tbl::7b68c018-7932-4f8d-a4cc-2c1e775c9b90::p1::2: 9 nodes, 0 edges (IDs normalized)
+2025-10-17 20:37:53 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:773] - [TABULAR_PIPELINE] Writing to database: 3 chunks, 24 nodes, 0 edges
+2025-10-17 20:40:41 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:798] - [INFO] Upserted 24 vectors to Pinecone
+2025-10-17 20:40:41 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:820] - [TABULAR_PIPELINE] Completed: {'doc_id': '7b68c018-7932-4f8d-a4cc-2c1e775c9b90', 'filename': 'Pg 13 Gyratory Crusher Cost Tables.pdf', 'file_size': 77638, 'file_sha256': 'd9cca90d44e6ee8df668d7773eb95d2c4c91ffffa92a99b310048e25cbab26a1', 'pages': 1, 'tables_processed': 3, 'rows_processed': 9, 'chunks_written': 3, 'entities_written': 24, 'relations_written': 0, 'vectors_upserted': 24, 'errors': None}

@@ -9,7 +9,9 @@ from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, EmailStr
 from werkzeug.security import generate_password_hash, check_password_hash
 from .bronze_store import db
-
+from app.vector_db.vector_operations import pc
+from app.vector_db.vector_operations import index as pinecone_index
+from app.vector_db.vector_operations import index_name
 # Create API router
 router_admin = APIRouter()
 
@@ -100,7 +102,6 @@ async def clear_all_data(current_user: dict = Depends(get_current_user)):
     relations_result = db().relations.delete_many({"properties.user_id": user_id})
     collections_cleared.append(f"relations: {relations_result.deleted_count}")
     
-   
     # Clear rows belonging to this user
     rows_result = db().rows.delete_many({"properties.user_id": user_id})
     collections_cleared.append(f"rows: {rows_result.deleted_count}")
@@ -124,6 +125,23 @@ async def clear_all_data(current_user: dict = Depends(get_current_user)):
     # Clear projects belonging to this user
     projects_result = db().projects.delete_many({"user_id": user_id})
     collections_cleared.append(f"projects: {projects_result.deleted_count}")
+
+    # Clear vectors from Pinecone index
+    try:
+        # Initialize the Pinecone index
+        pinecone_index = pc.Index(index_name)
+
+        # Get all namespaces from the Pinecone index
+        index_stats = pinecone_index.describe_index_stats()
+        namespaces = index_stats["namespaces"].keys()
+
+        # Delete vectors for each namespace
+        for namespace in namespaces:
+            pinecone_index.delete(filter={"user_id": user_id}, namespace=namespace)
+            collections_cleared.append(f"vectors: all vectors deleted from namespace '{namespace}'")
+
+    except Exception as e:
+        collections_cleared.append(f"vectors: failed to delete vectors from Pinecone - {e}")
 
     print(f"[ADMIN] User {user_id} cleared their data: {collections_cleared}")
 

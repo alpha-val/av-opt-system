@@ -17,29 +17,29 @@ def db():
     return _db
 
 
-def clear_all_collections():
-    """
-    Clears all collections in the MongoDB database except users.
-    WARNING: Use this only in development or testing environments.
-    """
-    D = db()  # Get the database instance
-    try:
-        collections = D.list_collection_names()
+# def clear_all_collections():
+#     """
+#     Clears all collections in the MongoDB database except users.
+#     WARNING: Use this only in development or testing environments.
+#     """
+#     D = db()  # Get the database instance
+#     try:
+#         collections = D.list_collection_names()
 
-        # Collections to skip (preserve users)
-        skip_collections = ["users", "projects", "orgs"]
+#         # Collections to skip (preserve users)
+#         skip_collections = ["users", "projects", "orgs"]
 
-        for collection in collections:
-            if collection not in skip_collections:
-                D[collection].delete_many({})  # Clear all documents in the collection
-                print(f"[CLEAR] Cleared all documents from collection: {collection}")
-            else:
-                print(f"[SKIP] Preserved collection: {collection}")
+#         for collection in collections:
+#             if collection not in skip_collections:
+#                 D[collection].delete_many({})  # Clear all documents in the collection
+#                 print(f"[CLEAR] Cleared all documents from collection: {collection}")
+#             else:
+#                 print(f"[SKIP] Preserved collection: {collection}")
 
-        return {"status": "success", "message": "All collections cleared except users."}
-    except Exception as e:
-        print(f"[CLEAR:ERROR] Failed to clear collections: {e}")
-        return {"status": "error", "message": str(e)}
+#         return {"status": "success", "message": "All collections cleared except users."}
+#     except Exception as e:
+#         print(f"[CLEAR:ERROR] Failed to clear collections: {e}")
+#         return {"status": "error", "message": str(e)}
 
 
 def ensure_bronze_indexes():

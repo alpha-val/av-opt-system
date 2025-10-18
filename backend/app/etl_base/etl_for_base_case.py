@@ -14,18 +14,6 @@ from app.vector_db.vector_operations import upsert_entities_to_pinecone
 from .extract_with_openai import openai_extract_nodes_rels
 
 
-# # Use your OpenAI extractor
-# def _extract_entities_mentions(
-#     chunks: List[Dict[str, Any]],
-# ) -> Dict[str, List[Dict[str, Any]]]:
-#     from .extract_with_openai import (
-#         openai_extract_nodes_rels_mentions,
-#         openai_extract_nodes_rels,
-#     )
-
-#     return openai_extract_nodes_rels(chunks)
-
-
 def etl_base_case(
     file: UploadFile = File(...),
     pages: Optional[str] = Form(None),

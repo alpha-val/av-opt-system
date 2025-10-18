@@ -6,6 +6,8 @@ from datetime import datetime
 from ..bronze_store import db
 from ..pipeline_users import get_current_user
 from .schemas_for_project import ProjectCreate, ProjectUpdate, ProjectResponse
+from app.vector_db.vector_operations import pc
+from app.vector_db.vector_operations import index_name
 
 router_for_projects = APIRouter()
 
@@ -241,11 +243,40 @@ def delete_project(project_id: str, current_user: dict = Depends(get_current_use
 
         scenarios_deleted = db().scenarios.delete_many(base_filter).deleted_count
 
+        cost_estimates_deleted = (
+            db().cost_estimates.delete_many(base_filter).deleted_count
+        )
+
         # Delete tables by doc_id
         tables_deleted = 0
         if doc_ids:
             tables_deleted = (
                 db().tables.delete_many({"doc_id": {"$in": doc_ids}}).deleted_count
+            )
+
+        # Clear vectors from Pinecone index for the specific project namespace
+        try:
+            # Initialize the Pinecone index
+            pinecone_index = pc.Index(index_name)
+
+            # Check if the namespace exists
+            index_stats = pinecone_index.describe_index_stats()
+            namespaces = index_stats.get("namespaces", {}).keys()
+
+            if project_id not in namespaces:
+                print(
+                    f"[WARN] Namespace '{project_id}' does not exist in Pinecone. Skipping deletion."
+                )
+            else:
+                # Delete all vectors for the namespace corresponding to the project_id
+                pinecone_index.delete(namespace=project_id)
+                print(
+                    f"[INFO] Successfully deleted vectors from Pinecone for namespace '{project_id}'"
+                )
+
+        except Exception as e:
+            print(
+                f"[ERROR] Failed to delete vectors from Pinecone for namespace '{project_id}' - {e}"
             )
 
         # Finally, delete the project itself
@@ -264,6 +295,7 @@ def delete_project(project_id: str, current_user: dict = Depends(get_current_use
             + relations_deleted
             + tables_deleted
             + scenarios_deleted
+            + cost_estimates_deleted
             + 1  # The project itself
         )
 
@@ -370,6 +402,34 @@ def delete_project_data(
         relations_deleted = db().relations.delete_many(base_filter).deleted_count
 
         scenarios_deleted = db().scenarios.delete_many(base_filter).deleted_count
+        cost_estimates_deleted = (
+            db().cost_estimates.delete_many(base_filter).deleted_count
+        )
+
+        # Clear vectors from Pinecone index for the specific project namespace
+        try:
+            # Initialize the Pinecone index
+            pinecone_index = pc.Index(index_name)
+
+            # Check if the namespace exists
+            index_stats = pinecone_index.describe_index_stats()
+            namespaces = index_stats.get("namespaces", {}).keys()
+
+            if project_id not in namespaces:
+                print(
+                    f"[WARN] Namespace '{project_id}' does not exist in Pinecone. Skipping deletion."
+                )
+            else:
+                # Delete all vectors for the namespace corresponding to the project_id
+                pinecone_index.delete(delete_all=True, namespace=project_id)
+                print(
+                    f"[INFO] Successfully deleted vectors from Pinecone for namespace '{project_id}'"
+                )
+
+        except Exception as e:
+            print(
+                f"[ERROR] Failed to delete vectors from Pinecone for namespace '{project_id}' - {e}"
+            )
 
         # Delete tables by doc_id (if tables don't have project_id)
         tables_deleted = 0
@@ -385,6 +445,7 @@ def delete_project_data(
             + relations_deleted
             + tables_deleted
             + scenarios_deleted
+            + cost_estimates_deleted
         )
 
         print(
@@ -394,7 +455,8 @@ def delete_project_data(
             f"{entities_deleted} entities, "
             f"{relations_deleted} relations, "
             f"{tables_deleted} tables, "
-            f"{scenarios_deleted} scenarios"
+            f"{scenarios_deleted} scenarios, "
+            f"{cost_estimates_deleted} cost estimates"
         )
 
         return {
@@ -462,6 +524,9 @@ def clear_all_projects(current_user: dict = Depends(get_current_user)):
         entities_deleted = db().entities.delete_many(base_filter).deleted_count
         relations_deleted = db().relations.delete_many(base_filter).deleted_count
         scenarios_deleted = db().scenarios.delete_many(base_filter).deleted_count
+        cost_estimates_deleted = (
+            db().cost_estimates.delete_many(base_filter).deleted_count
+        )
 
         # Delete tables by project_id (if tables have project_id field)
         tables_deleted = 0
@@ -483,6 +548,7 @@ def clear_all_projects(current_user: dict = Depends(get_current_user)):
             + tables_deleted
             + scenarios_deleted
             + projects_deleted
+            + cost_estimates_deleted
         )
 
         print(

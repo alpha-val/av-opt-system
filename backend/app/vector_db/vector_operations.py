@@ -9,8 +9,8 @@ from app.bronze_store import db
 
 # Initialize Pinecone (do this once at startup)
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
-index = pc.Index(os.getenv("PINECONE_INDEX_NAME", "av-opt-entities"))
-
+index = pc.Index(os.getenv("PINECONE_INDEX_NAME", "alphval-pro"))
+index_name = os.getenv("PINECONE_INDEX_NAME", "alphaval-pro")
 # Initialize OpenAI
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -233,7 +233,8 @@ def generate_embeddings(texts: List[str]) -> List[List[float]]:
 def build_text_for_embedding(entity: Dict[str, Any]) -> str:
     """
     Build text representation of entity for embedding.
-    Concatenate key fields that define the entity.
+    Dynamically flatten all properties and concatenate key fields.
+    Excludes keys that are IDs (contain "_id") or "confidence".
     """
     parts = []
 
@@ -244,48 +245,14 @@ def build_text_for_embedding(entity: Dict[str, Any]) -> str:
     entity_type = entity.get("type", "unknown")
     parts.append(f"Type: {entity_type}")
 
-    # Properties
+    # Flatten all properties dynamically
     props = entity.get("properties", {})
+    for key, value in props.items():
+        if value is not None and not key.lower().endswith("_id") and key != "confidence" and key != "status":
+            # Format key-value pairs into "Key: Value" strings
+            parts.append(f"{key.replace('_', ' ').capitalize()}: {value}")
 
-    if props.get("category"):
-        parts.append(f"Category: {props['category']}")
-
-    if props.get("description"):
-        parts.append(f"Description: {props['description']}")
-
-    # Cost fields
-    if props.get("capital_cost"):
-        parts.append(f"Capital Cost: ${props['capital_cost']}")
-
-    if props.get("installation_cost"):
-        parts.append(f"Installation Cost: ${props['installation_cost']}")
-
-    if props.get("operating_cost_annual"):
-        parts.append(f"Operating Cost (Annual): ${props['operating_cost_annual']}")
-
-    # Capacity fields
-    if props.get("capacity"):
-        unit = props.get("capacity_unit", "")
-        parts.append(f"Capacity: {props['capacity']} {unit}".strip())
-
-    if props.get("power_rating"):
-        parts.append(f"Power Rating: {props['power_rating']} kW")
-
-    # Location
-    if props.get("location"):
-        parts.append(f"Location: {props['location']}")
-
-    if props.get("process_area"):
-        parts.append(f"Process Area: {props['process_area']}")
-
-    # Manufacturer/Model
-    if props.get("manufacturer"):
-        parts.append(f"Manufacturer: {props['manufacturer']}")
-
-    if props.get("model"):
-        parts.append(f"Model: {props['model']}")
-
-    # Join all parts
+    # Join all parts into a single text string
     text = ". ".join(parts)
     return text if text else name
 
@@ -295,55 +262,42 @@ def normalize_entity_for_vector_db(
 ) -> Dict[str, Any]:
     """
     Normalize entity from MongoDB format to vector DB metadata format.
-    Maps field names and extracts filterable fields to root level.
+    Retains key attributes and flattens the rest from entity["properties"].
+    Excludes any keys that are IDs (contain "_id") or "confidence".
 
-    NOTE: Pinecone metadata only supports primitives (string, number, boolean, list of strings).
-    Nested objects are NOT supported, so we don't include the full 'properties' dict.
+    Args:
+        entity: The raw entity data from MongoDB.
+        project_id: The ID of the project the entity belongs to.
+        artifact_type: The type of artifact (e.g., "base_case", "tabular_data").
+
+    Returns:
+        A dictionary containing normalized metadata for Pinecone.
     """
     props = entity.get("properties", {})
 
-    # Build metadata with correct field names
+    # Retain key attributes
     metadata = {
-        # Map id -> entity_id
         "entity_id": entity.get("id"),
-        # Core identifiers
         "project_id": project_id,
-        "user_id": props.get("user_id"),
-        "artifact_id": props.get("doc_id"),  # Map doc_id -> artifact_id
         "artifact_type": artifact_type,
-        # Map type -> entity_type
         "entity_type": entity.get("type", "unknown"),
-        # Name
         "name": entity.get("name", entity.get("id", "Unknown")),
-        "status": "active",
-        # Timestamps
         "created_at": datetime.utcnow().isoformat(),
         "updated_at": datetime.utcnow().isoformat(),
-        # Extract filterable cost fields to root
-        "capital_cost": props.get("capital_cost"),
-        "installation_cost": props.get("installation_cost"),
-        "operating_cost_annual": props.get("operating_cost_annual"),
-        "currency": props.get("currency", "USD"),
-        # Extract filterable capacity fields to root
-        "capacity": props.get("capacity"),
-        "capacity_unit": props.get("capacity_unit"),
-        "power_rating": props.get("power_rating"),
-        # Extract filterable location fields to root
-        "location": props.get("location"),
-        "process_area": props.get("process_area"),
-        # Extract category to root
-        "category": props.get("category"),
-        # "properties": props,  # This causes the error!
-        # Generate text content for embedding
-        "text_content": build_text_for_embedding(entity),
-        # === Additional commonly used fields (flatten important ones) ===
-        "manufacturer": props.get("manufacturer"),
-        "model": props.get("model"),
-        "description": props.get("description"),
     }
 
-    # Remove None values to save space
-    metadata = {k: v for k, v in metadata.items() if v is not None}
+    # Flatten properties, excluding any IDs or "confidence"
+    flattened_props = {
+        k: v
+        for k, v in props.items()
+        if v is not None and not k.lower().endswith("_id") and k != "confidence" and k != "status"
+    }
+
+    # Merge flattened properties into metadata
+    metadata.update(flattened_props)
+
+    # Generate text content for embedding
+    metadata["text_content"] = build_text_for_embedding(entity)
 
     return metadata
 
@@ -379,9 +333,6 @@ def upsert_entities_to_pinecone(
         print("[WARN] No entities to upsert after normalization")
         return 0
 
-    print(f"[INFO] Normalized {len(normalized_entities)} entities")
-    print(f"[INFO] Generating embeddings for {len(texts)} texts...")
-
     # Generate embeddings in batches (OpenAI has a limit)
     batch_size = 100
     all_embeddings = []
@@ -391,15 +342,15 @@ def upsert_entities_to_pinecone(
         try:
             batch_embeddings = generate_embeddings(batch_texts)
             all_embeddings.extend(batch_embeddings)
-            print(
-                f"[INFO] Generated embeddings for batch {i//batch_size + 1}/{(len(texts)-1)//batch_size + 1}"
-            )
+            # print(
+            #     f"[INFO] Generated embeddings for batch {i//batch_size + 1}/{(len(texts)-1)//batch_size + 1}"
+            # )
         except Exception as e:
             print(f"[ERROR] Failed to generate embeddings for batch {i}: {e}")
             # Fill with dummy embeddings to maintain alignment
             all_embeddings.extend([[0.0] * 1536] * len(batch_texts))
 
-    print(f"[INFO] Generated {len(all_embeddings)} embeddings")
+    # print(f"[INFO] Generated {len(all_embeddings)} embeddings")
 
     # Prepare vectors for Pinecone
     vectors = []
@@ -417,8 +368,6 @@ def upsert_entities_to_pinecone(
         return 0
 
     # Upsert to Pinecone in batches
-    print(f"[INFO] Upserting {len(vectors)} vectors to Pinecone...")
-
     batch_size = 100
     upserted_count = 0
 
@@ -427,9 +376,9 @@ def upsert_entities_to_pinecone(
         try:
             index.upsert(vectors=batch, namespace=project_id)
             upserted_count += len(batch)
-            print(
-                f"[INFO] Upserted batch {i//batch_size + 1}/{(len(vectors)-1)//batch_size + 1}"
-            )
+            # print(
+            #     f"[INFO] Upserted batch {i//batch_size + 1}/{(len(vectors)-1)//batch_size + 1}"
+            # )
         except Exception as e:
             print(f"[ERROR] Failed to upsert batch {i}: {e}")
 

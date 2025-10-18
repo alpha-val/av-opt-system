@@ -279,7 +279,7 @@ def cost_estimation(
     seen_tabular_ids = set()
 
     for entity_id in selected_entities:
-        entity = db().entities.find_one({"id": entity_id}, {"_id": 0})
+        entity = db().entities.find_one({"id": id}, {"_id": 0})
         if entity:
             matches = {"base_entity": entity, "tabular_entities": []}
             base_entities.append(entity)
