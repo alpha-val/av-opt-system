@@ -49,10 +49,6 @@ const Scenarios = () => {
   );
 
   useEffect(() => {
-    console.log(
-      "[ScenarioDashboard] Fetching scenarios for project:",
-      projectId
-    );
     if (projectId) {
       dispatch(fetchScenarios(projectId));
     }
@@ -156,7 +152,15 @@ const Scenarios = () => {
     return (
       <Box sx={{ p: 0, minHeight: "100%" }}>
         {/* Breadcrumb Navigation */}
-        <Box sx={{ mb: 3, display:"flex", justifyContent:"start", alignItems:"center", gap:2 }}>
+        <Box
+          sx={{
+            mb: 3,
+            display: "flex",
+            justifyContent: "start",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
           <Breadcrumbs
             separator={<NavigateNextIcon fontSize="small" />}
             aria-label="breadcrumb"
@@ -189,7 +193,7 @@ const Scenarios = () => {
           </Breadcrumbs>
           <Box>
             <Typography variant="body2" color="text.secondary">
-              Updated {" "}
+              Updated{" "}
               {new Date(activeScenario?.updated_at).toLocaleDateString()}
             </Typography>
           </Box>
@@ -205,7 +209,7 @@ const Scenarios = () => {
       </Box>
     );
   }
-  console.log("[ScenarioDashboard] Rendering scenario list: ", scenarios);
+
   // Show scenario list view (default)
   return (
     <Box sx={{ p: 0 }}>
@@ -213,19 +217,22 @@ const Scenarios = () => {
       <Box
         sx={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: "flex-start",
           alignItems: "center",
+          gap: 2,
           mb: 3,
         }}
       >
         <Typography variant="h4">Scenarios</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setCreateDialogOpen(true)}
-        >
-          Add Scenario
-        </Button>
+        {scenarios.length > 0 && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setCreateDialogOpen(true)}
+          >
+            Add Scenario
+          </Button>
+        )}
       </Box>
 
       {/* Empty State */}

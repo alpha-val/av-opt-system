@@ -100,13 +100,18 @@ function renderEntityTooltip(entity) {
 }
 
 const CostBasisOptions = ({ data }) => {
-  if (!data || !data.metadata) return null;
-
-  const costDetails = data.metadata.cost_details || {};
+  const costDetails = data?.metadata?.cost_details || {};
   const matched =
-    costDetails.matched_entities || costDetails.matched_data || [];
-  console.log("[CostBasisOptions] matched data:", data); // Debug log
-  if (!Array.isArray(matched) || matched.length === 0) return null;
+    costDetails?.matched_entities || costDetails?.matched_data || [];
+
+  // Empty state handling
+  if (Object.keys(costDetails).length === 0) {
+    return (
+      <Typography variant="body2" sx={{ color: "text.secondary" }}>
+        No options available for cost basis estimation.
+      </Typography>
+    );
+  }
 
   return (
     <Box sx={{ mt: 2 }}>
@@ -235,7 +240,8 @@ const CostBasisOptions = ({ data }) => {
                   <TableCell>
                     {tabular.length === 0 ? (
                       <Typography variant="body2" color="textSecondary">
-                        No matches
+                        No matches (zero matches or score below relevance
+                        cutoff)
                       </Typography>
                     ) : (
                       <Table size="small" aria-label="matches-mini-table">

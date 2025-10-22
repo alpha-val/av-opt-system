@@ -310,7 +310,7 @@ function ProjectPromptDialog({ open, payload, onClose }) {
                         variant="outlined"
                         multiline
                         rows={3}
-                        value={description}
+                        value={description || ""}
                         onChange={(event) => {
                             const value = event.target.value;
                             if (value.length <= DESCRIPTION_LIMIT) {

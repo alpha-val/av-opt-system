@@ -57,75 +57,69 @@ const Dashboard = ({ onOpenProject }) => {
     };
   }, [error, dispatch]);
 
-  // Mock data - replace with actual data from your state/API
-  const userName = "Sid";
-  const currentDate = new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZoneName: "short",
-  });
-
-  // Replace the hardcoded userStats with dynamic calculation
+  // Calculate user stats
   const userStats = useMemo(() => {
-    // Calculate totals from all projects
+    if (!projects || projects.length === 0) {
+      return {
+        lastModified: "No projects yet",
+        storageUsed: "0%",
+        storageDetail: "(0 MB of 5 GB)",
+        documentsIngested: 0,
+        projectsCreated: 0,
+        scenariosCreated: 0,
+        baseCaseDocuments: 0,
+        activeProjects: 0,
+        projectsWithData: 0,
+      };
+    }
+
     const totals = projects.reduce(
-      (acc, project) => ({
-        documents: acc.documents + (project.total_documents || 0),
-        baseCaseDocuments:
-          acc.baseCaseDocuments + (project.base_case_documents || 0),
-        scenarioDocuments:
-          acc.scenarioDocuments + (project.tabular_documents || 0),
-        scenariosCreated: acc.scenariosCreated + (project.scenarios || 0),
-        entities: acc.entities + (project.entities || 0),
-        relations: acc.relations + (project.relations || 0),
-        tables: acc.tables + (project.tables || 0),
-        rows: acc.rows + (project.rows || 0),
-        chunks: acc.chunks + (project.chunks || 0),
-      }),
+      (acc, project) => {
+        const stats = project.metadata?.stats || {};
+        return {
+          documents: acc.documents + (stats.number_of_documents || 0),
+          baseCaseDocuments:
+            acc.baseCaseDocuments + (project.base_case_documents || 0),
+          scenarioDocuments:
+            acc.scenarioDocuments + (project.tabular_documents || 0),
+          scenariosCreated:
+            acc.scenariosCreated + (stats.number_of_scenarios || 0),
+          document_size: acc.document_size + (stats.total_document_size || 0),
+        };
+      },
       {
         documents: 0,
         baseCaseDocuments: 0,
         scenarioDocuments: 0,
-        entities: 0,
-        relations: 0,
-        tables: 0,
-        rows: 0,
-        chunks: 0,
+        scenariosCreated: 0,
+        document_size: 0,
       }
     );
 
-    // Find the most recently updated project
     const lastModifiedProject = projects.reduce((latest, project) => {
       const projectDate = new Date(project.updated_at);
       const latestDate = latest ? new Date(latest.updated_at) : new Date(0);
       return projectDate > latestDate ? project : latest;
     }, null);
 
-    // Format last modified date
     const lastModified = lastModifiedProject
-      ? new Date(lastModifiedProject.updated_at)
-          .toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "short",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            timeZoneName: "short",
-          })
-          .replace(",", "\n")
+      ? new Date(lastModifiedProject.updated_at).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZoneName: "short",
+        })
       : "No projects yet";
 
-    // Calculate approximate storage (rough estimate based on document count)
-    const estimatedStorageMB = totals.documents * 2.5; // Assume ~2.5MB per document average
+    const estimatedStorageMB = (totals.document_size || 0) / (1024 * 1024); // Convert bytes to MB
     const storagePercentage = Math.min((estimatedStorageMB / 5120) * 100, 100); // Out of 5GB
 
     return {
       lastModified,
-      storageUsed: `${storagePercentage.toFixed(1)}%`,
-      storageDetail: `(${estimatedStorageMB.toFixed(0)} MB of 5 GB)`,
+      storageUsed: `${storagePercentage.toFixed(2)}%`,
+      storageDetail: `(${estimatedStorageMB.toFixed(2)} MB of 5 GB)`,
       documentsIngested: totals.documents,
       projectsCreated: projects.length,
       scenariosCreated: totals.scenarioDocuments,
@@ -135,56 +129,84 @@ const Dashboard = ({ onOpenProject }) => {
     };
   }, [projects]);
 
-  // Updated headers format - array of objects with key and display_value
-  const projectHeaders = [
-    { key: "name", display_value: "Project" },
-    { key: "status", display_value: "Status" },
-    { key: "created", display_value: "Created" },
-    { key: "lastUpdated", display_value: "Updated" },
-    // { key: "estimateReports", display_value: "Estimate Reports" },
-    { key: "options", display_value: "Options" },
-  ];
+  // Format projects for the table
+  const projectData = useMemo(() => {
+    return projects.map((project) => ({
+      name: project.name,
+      status: (
+        <Chip
+          label={project.status}
+          color={project.status === "active" ? "success" : "default"}
+          size="small"
+          variant="outlined"
+        />
+      ),
+      lastUpdated: new Date(project.updated_at).toLocaleDateString(),
+      created: new Date(project.created_at).toLocaleDateString(),
+      options: (
+        <IconButton
+          size="small"
+          onClick={(event) => handleOptionsClick(event, project)}
+          disabled={loading.delete}
+        >
+          <MoreVertIcon />
+        </IconButton>
+      ),
+    }));
+  }, [projects, loading.delete]);
 
-  // Helper function for status colors
-  const getStatusColor = useCallback((status) => {
-    switch (status.toLowerCase()) {
-      case "active":
-        return "success";
-      case "archived":
-        return "default";
-      default:
-        return "default";
+  // Handle create project
+  const handleCreateProject = useCallback(async () => {
+    try {
+      const projectData = await dialogs.projectPrompt("Create New Project");
+      console.log("Project name received from dialog:", projectData);
+      if (projectData) {
+        const resultAction = await dispatch(
+          createProject(projectData) // Send projectData directly
+        );
+        if (createProject.fulfilled.match(resultAction)) {
+          const newProjectId = resultAction.payload.id;
+          if (onOpenProject) {
+            onOpenProject(newProjectId);
+          }
+        } else {
+          const errorMessage =
+            resultAction.payload || "Failed to create project";
+          await dialogs.alert(`Error creating project: ${errorMessage}`, {
+            title: "Error",
+            okText: "OK",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Unexpected error during project creation:", error);
+      await dialogs.alert(
+        "An unexpected error occurred while creating the project.",
+        {
+          title: "Error",
+          okText: "OK",
+        }
+      );
     }
-  }, []);
+  }, [dispatch, dialogs, onOpenProject]);
 
   // Context menu handlers
-  const handleOptionsClick = useCallback(
-    (event, project) => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      setSelectedProject(project);
-      setContextMenu(
-        contextMenu === null
-          ? {
-              mouseX: event.clientX + 2,
-              mouseY: event.clientY - 6,
-            }
-          : null
-      );
-    },
-    [contextMenu]
-  );
+  const handleOptionsClick = useCallback((event, project) => {
+    event.preventDefault();
+    setSelectedProject(project);
+    setContextMenu({
+      mouseX: event.clientX + 2,
+      mouseY: event.clientY - 6,
+    });
+  }, []);
 
   const handleContextMenuClose = useCallback(() => {
     setContextMenu(null);
     setSelectedProject(null);
   }, []);
 
-  // Updated handleOpenProject to use callback prop instead of navigation
   const handleOpenProject = useCallback(() => {
     if (selectedProject && onOpenProject) {
-      console.log("Opening project:", selectedProject);
       onOpenProject(selectedProject.id);
     }
     handleContextMenuClose();
@@ -253,100 +275,11 @@ const Dashboard = ({ onOpenProject }) => {
       // Get the original project data from the projects array using the row index
       const project = projects[rowIndex];
       if (project && onOpenProject) {
-        console.log("Opening project from row click:", project);
         onOpenProject(project.id);
       }
     },
     [projects, onOpenProject]
   );
-
-  // Convert Redux projects data to table format
-  const formatProjectsForTable = (projects) => {
-    return projects.map((project) => ({
-      name: project.name,
-      status: (
-        <Chip
-          label={project.status}
-          color={getStatusColor(project.status)}
-          size="small"
-          variant="outlined"
-        />
-      ),
-      lastUpdated: new Date(project.updated_at).toLocaleDateString(),
-      created: new Date(project.created_at).toLocaleDateString(),
-      // estimateReports: ["0 completed", "0 pending review"],
-      options: (
-        <IconButton
-          size="small"
-          onClick={(event) => handleOptionsClick(event, project)}
-          disabled={loading.delete}
-        >
-          <MoreVertIcon />
-        </IconButton>
-      ),
-    }));
-  };
-
-  const projectData = formatProjectsForTable(projects);
-
-  const handleCreateProject = async () => {
-    try {
-      // Use the new projectPrompt method instead of regular prompt
-      const projectData = await dialogs.projectPrompt(
-        "Enter details for your new project:",
-        {
-          title: "Create New Project",
-          okText: "Create Project",
-          cancelText: "Cancel",
-        }
-      );
-
-      if (projectData && projectData.name) {
-        // Dispatch the createProject action with the collected data
-        const resultAction = await dispatch(
-          createProject({
-            name: projectData.name,
-            description:
-              projectData.description || `New project: ${projectData.name}`,
-            project_type: "mining",
-            status: "active",
-            tags: ["new", "mining"],
-            metadata: {
-              created_via: "web_interface",
-            },
-          })
-        );
-
-        // Check if creation was successful
-        if (createProject.fulfilled.match(resultAction)) {
-          // Use callback to open the newly created project
-          const newProject = resultAction.payload;
-          if (onOpenProject) {
-            onOpenProject(newProject.id);
-          }
-        } else {
-          // Handle creation error
-          const errorMessage =
-            resultAction.payload || "Failed to create project";
-          await dialogs.alert(`Error creating project: ${errorMessage}`, {
-            title: "Error",
-            okText: "OK",
-          });
-        }
-      } else {
-        console.log("Project creation cancelled or no name provided");
-      }
-    } catch (error) {
-      console.error("Error in project creation flow:", error);
-      await dialogs.alert(
-        "An unexpected error occurred while creating the project.",
-        {
-          title: "Error",
-          okText: "OK",
-        }
-      );
-    }
-  };
 
   // Show loading state
   if (loading.fetch) {
@@ -382,10 +315,17 @@ const Dashboard = ({ onOpenProject }) => {
         }}
       >
         <Typography variant="h4" fontWeight="bold">
-          Welcome, {userName}
+          Welcome, User
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          {currentDate}
+          {new Date().toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZoneName: "short",
+          })}
         </Typography>
       </Box>
 
@@ -398,7 +338,7 @@ const Dashboard = ({ onOpenProject }) => {
         </Box>
       )}
 
-      {/* Enhanced User Data Summary Section */}
+      {/* User Stats */}
       <Box
         sx={{
           display: "grid",
@@ -419,7 +359,6 @@ const Dashboard = ({ onOpenProject }) => {
             {userStats.lastModified}
           </Typography>
         </Box>
-
         <Box>
           <Typography variant="subtitle2" color="text.secondary">
             Projects Created
@@ -427,37 +366,15 @@ const Dashboard = ({ onOpenProject }) => {
           <Typography variant="h6" color="secondary">
             {userStats.projectsCreated}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {userStats.activeProjects} active, {userStats.projectsWithData} with
-            data
-          </Typography>
         </Box>
-
-        {/* <Box>
-          <Typography variant="subtitle2" color="text.secondary">
-            Documents Ingested
-          </Typography>
-          <Typography variant="h6" color="primary">
-            {userStats.documentsIngested}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {userStats.baseCaseDocuments} base case,{" "}
-            {userStats.scenariosCreated} scenarios
-          </Typography>
-        </Box>
-
         <Box>
           <Typography variant="subtitle2" color="text.secondary">
-            Scenarios Created
+            Total Documents Ingested
           </Typography>
-          <Typography variant="h6" color="success.main">
-            {userStats.scenariosCreated}
+          <Typography variant="h6" color="secondary">
+            {userStats.documentsIngested}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            scenarios
-          </Typography>
-        </Box> */}
-
+        </Box>
         <Box>
           <Typography variant="subtitle2" color="text.secondary">
             Storage Used
@@ -471,49 +388,40 @@ const Dashboard = ({ onOpenProject }) => {
         </Box>
       </Box>
 
-      {/* Projects Section */}
+      {/* Projects Table */}
       <Box>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 3,
-          }}
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
+          Your Projects
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleCreateProject}
+          size="small"
+          sx={{ mb: 2 }}
         >
-          <Typography variant="h5" fontWeight="bold">
-            Your Projects
-          </Typography>
-          {projects.length > 0 && (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                {projects.length} projects
-              </Typography>
-              <Button
-                variant="contained"
-                size="medium"
-                startIcon={
-                  loading.create ? <CircularProgress size={20} /> : <AddIcon />
-                }
-                sx={{ ml: 2 }}
-                onClick={handleCreateProject}
-                disabled={loading.create}
-              >
-                {loading.create ? "Creating..." : "New Project"}
-              </Button>
-            </Box>
-          )}
+          Create New Project
+        </Button>
         </Box>
-
         {projectData.length > 0 ? (
-          <>
-            <DataTable
-              headers={projectHeaders}
-              data={projectData}
-              onRowClick={handleRowClick}
-              containerSx={{ borderRadius: 2 }}
-            />
-          </>
+          <DataTable
+            headers={[
+              { key: "name", display_value: "Project" },
+              { key: "status", display_value: "Status" },
+              { key: "created", display_value: "Created" },
+              { key: "lastUpdated", display_value: "Updated" },
+              { key: "options", display_value: "Options" },
+            ]}
+            data={projectData}
+            onRowClick={(row, rowIndex) => {
+              const project = projects[rowIndex];
+              if (project && onOpenProject) {
+                onOpenProject(project.id);
+              }
+            }}
+            containerSx={{ borderRadius: 2 }}
+          />
         ) : (
           <Box
             sx={{
@@ -527,14 +435,10 @@ const Dashboard = ({ onOpenProject }) => {
             <Typography variant="h6" color="text.secondary" gutterBottom>
               No projects yet
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Create your first project to get started
-            </Typography>
             <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={handleCreateProject}
-              disabled={loading.create}
             >
               Create First Project
             </Button>

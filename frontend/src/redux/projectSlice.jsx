@@ -31,10 +31,11 @@ export const createProject = createAsyncThunk(
         throw new Error("No authentication token found");
       }
 
+      console.log("[projectSlice] Project data being sent:", projectData);
       const response = await fetch(`${API_BASE_URL}/projects`, {
         method: "POST",
         headers: getAuthHeaders(),
-        body: JSON.stringify(projectData),
+        body: JSON.stringify(projectData), // Send projectData directly
       });
 
       if (!response.ok) {

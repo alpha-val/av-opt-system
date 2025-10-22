@@ -147,9 +147,9 @@ export const uploadStructuredData = createAsyncThunk(
         "application/vnd.ms-excel",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "text/csv",
-        ".xlsx",
-        ".xls",
-        ".csv",
+        // ".xlsx",
+        // ".xls",
+        // ".csv",
       ];
 
       const isValidType = allowedTypes.some(
@@ -158,7 +158,8 @@ export const uploadStructuredData = createAsyncThunk(
 
       if (!isValidType) {
         throw new Error(
-          "Only PDF, Excel (.xlsx, .xls), and CSV files are allowed for structured data"
+          // "Only PDF, Excel (.xlsx, .xls), and CSV files are allowed for structured data"
+          "Only PDF files are allowed for structured data"
         );
       }
 
@@ -203,10 +204,10 @@ export const uploadStructuredData = createAsyncThunk(
         originalName: file.name,
         fileSize: file.size,
         fileType: file.name.toLowerCase().endsWith(".pdf")
-          ? "pdf"
-          : file.name.toLowerCase().includes(".xls")
-          ? "xls"
-          : "csv",
+          ? "pdf" : "pdf",
+          // : file.name.toLowerCase().includes(".xls")
+          // ? "xls"
+          // : "csv",
         artifact_type: "scenario",
         processing_status: "completed",
         project_id: projectId,
@@ -377,8 +378,6 @@ export const fetchProjectEntitiesRelations = createAsyncThunk(
           },
         };
       }
-
-      // console.log(`Fetched ${data.summary?.entity_count || 0} entities and ${data.summary?.relation_count || 0} relations`);
 
       return {
         projectId,

@@ -48,7 +48,7 @@ def etl_base_case(
 
     # 3) Entities/relations/mentions from free text (Bronze)
     # kg = _extract_entities_mentions(chunks)
-    kg = openai_extract_nodes_rels(chunks)
+    kg = openai_extract_nodes_rels(chunks, rules=["Units_Normalization", "Cost_Rule"])
     nodes = list(kg.get("nodes", []) or [])
     edges = list(kg.get("edges", []) or [])
 

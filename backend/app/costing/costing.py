@@ -154,6 +154,7 @@ def find_related_tabular_entities_by_embedding(
     entity: Dict[str, Any],
     project_id: str,
     top_k: int = 10,
+    cutoff: Optional[float] = 0.25,
 ) -> List[Dict[str, Any]]:
     """
     Given a base_case entity id, find related tabular_data entities using embedding similarity.
@@ -188,6 +189,7 @@ def find_related_tabular_entities_by_embedding(
             project_id=project_id,
             entity_types=["Material", "Equipment"],
             top_k=top_k,
+            cutoff=cutoff,
             artifact_type="tabular_data",
         )
     except Exception as e:
@@ -212,6 +214,7 @@ def cost_estimation(
     change_type: Optional[str] = None,
     uncertainties: Optional[Dict[str, Any]] = None,
     user_id: Optional[str] = None,
+    cutoff: Optional[float] = 0.5,
     selected_entities: Optional[List[str]] = None,  # Now explicitly a list of IDs
 ):
     """
@@ -256,7 +259,7 @@ def cost_estimation(
         if entity:
             matches = {"base_entity": entity, "tabular_entities": []}
             related = find_related_tabular_entities_by_embedding(
-                entity, project_id, top_k=5
+                entity, project_id, top_k=5, cutoff=cutoff
             )
             # only extend with unique entities (by id)
             for r in related:

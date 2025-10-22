@@ -6,7 +6,7 @@ def _bulleted(items: List[str]) -> str:
     return "\n".join(f"- {x}" for x in items)
 
 
-def gen_prompt(ontology) -> str:
+def gen_prompt(ontology, rules: List[str]) -> str:
     has_costrule = "CostRule" in ontology["NODE_TYPES"]
 
     costrule_block = (
@@ -153,6 +153,8 @@ ENTITY CONSTRUCTION FROM TABLES:
   - Column names suggest type: "Model" + "Capacity" → Equipment
   - Use ontology NODE_TYPES as targets
   - Default to most specific applicable type
+  - If no obvious or explicit name column, use context or table title for naming; create descriptive names; else use enumerated generic names
+  - IMPORTANT: For each column in the table, create an attribute in the node properties; for example, if the first column is not name or equipment information, then create a property in the node properties with the column name and value from that cell
   
 * **Property mapping**:
   - Map column names to NODE_PROPERTIES
@@ -245,13 +247,13 @@ Allowed edge types (EDGE_TYPES):
 TABLES
 --------------------------------------------------------------------------------
 Table extraction policy
-{table_extraction_block}
+{table_extraction_block if 'Table_Extraction' in rules else ''}
 
 --------------------------------------------------------------------------------
 COST EXTRACTION POLICIES
 --------------------------------------------------------------------------------
 Cost & Method policy
-{costrule_block}
+{costrule_block if 'Cost_Rule' in rules else ''}
 
 --------------------------------------------------------------------------------
 OUTPUT CONTRACT (strict)
@@ -308,7 +310,7 @@ Evidence:
 
 --------------------------------------------------------------------------------
 NORMALIZATION & DEDUPLICATION POLICY
-{units_normalization_block}
+{units_normalization_block if 'Units_Normalization' in rules else ''}
 --------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------

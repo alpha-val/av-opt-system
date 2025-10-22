@@ -143,7 +143,7 @@ const Sources = () => {
       const confirmed = await clearData(
         `Are you sure you want to delete "${fileName}"?\nAll data items associated with this file will be deleted. This action cannot be undone.`,
         {
-          title: "Delete Document",
+          title: "Delete Document" + docId,
           okText: "Delete",
           cancelText: "Cancel",
           severity: "warning",
@@ -199,7 +199,7 @@ const Sources = () => {
   const handleClearAllData = async () => {
     try {
       const confirmed = await clearData(
-        `This will permanently delete all data for this project including:\n\n• All uploaded documents\n• All extracted tables and data\n• All entities and relationships\n• All scenarios\n\nThe project itself will remain, but all its data will be gone.\n\nThis action cannot be undone. Are you absolutely sure?`,
+        `This will permanently delete all data for this project including all: uploaded documents, extracted tables and data, and scenarios. This action cannot be undone. Are you absolutely sure?`,
         {
           title: "Clear All Project Data",
           okText: "Yes, Clear All Data",
@@ -248,16 +248,17 @@ const Sources = () => {
 
     if (type.includes("pdf") || name.endsWith(".pdf")) {
       return <PdfIcon sx={{ color: "#d32f2f" }} />;
-    } else if (
-      type.includes("excel") ||
-      type.includes("spreadsheet") ||
-      name.endsWith(".xlsx") ||
-      name.endsWith(".xls")
-    ) {
-      return <XlsIcon sx={{ color: "#2e7d32" }} />;
-    } else if (type.includes("csv") || name.endsWith(".csv")) {
-      return <CsvIcon sx={{ color: "#1976d2" }} />;
-    }
+    } 
+    // else if (
+    //   type.includes("excel") ||
+    //   type.includes("spreadsheet") ||
+    //   name.endsWith(".xlsx") ||
+    //   name.endsWith(".xls")
+    // ) {
+    //   return <XlsIcon sx={{ color: "#2e7d32" }} />;
+    // } else if (type.includes("csv") || name.endsWith(".csv")) {
+    //   return <CsvIcon sx={{ color: "#1976d2" }} />;
+    // }
     return <CsvIcon sx={{ color: "#666" }} />;
   };
 
@@ -275,8 +276,8 @@ const Sources = () => {
   const getFileTypeLabel = (fileName) => {
     const name = fileName?.toLowerCase() || "";
     if (name.endsWith(".pdf")) return "PDF";
-    if (name.endsWith(".xlsx") || name.endsWith(".xls")) return "XLS";
-    if (name.endsWith(".csv")) return "CSV";
+    // if (name.endsWith(".xlsx") || name.endsWith(".xls")) return "XLS";
+    // if (name.endsWith(".csv")) return "CSV";
     return "Unknown";
   };
 
@@ -419,16 +420,16 @@ const Sources = () => {
                           />
                         </TableCell>
                         <TableCell align="right">
-                          <IconButton
+                          {/* <IconButton
                             size="small"
                             onClick={() =>
-                              handleDeleteFile(doc.doc_id, doc.fileName)
+                              handleDeleteFile(doc.id, doc.fileName)
                             }
                             disabled={loading.deleteDocument}
                             sx={{ color: "error.main" }}
                           >
                             <DeleteIcon />
-                          </IconButton>
+                          </IconButton> */}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -490,8 +491,8 @@ const Sources = () => {
               <Paper sx={{ p: 2, height: "fit-content" }}>
                 <FileUpload
                   title="Upload Tabular Data Files"
-                  description="Upload PDF, Excel, or CSV files with structured data."
-                  supportedTypes={["PDF", "XLS", "CSV"]}
+                  description="Upload PDF files with tabular data." //, Excel, or CSV files with structured data."
+                  supportedTypes={["PDF"]} //, "XLS", "CSV"]}
                   multiple={true}
                   maxFiles={20}
                   maxSizeInMB={200}

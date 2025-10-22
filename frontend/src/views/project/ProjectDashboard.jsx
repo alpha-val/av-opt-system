@@ -22,6 +22,7 @@ import {
   Divider,
 } from "@mui/material";
 import {
+  WarningAmber as AIIcons,
   NavigateNext as NavigateNextIcon,
   ArrowBack as ArrowBackIcon,
   Folder as FolderIcon,
@@ -160,7 +161,6 @@ const ProjectDashboard = () => {
   // Handle breadcrumb navigation
   const handleProjectsClick = useCallback(
     (event) => {
-      console.log("Navigating to all projects", event);
       event.preventDefault();
       navigate("/");
     },
@@ -289,11 +289,16 @@ const ProjectDashboard = () => {
           <Breadcrumbs
             aria-label="breadcrumb"
             separator={<NavigateNextIcon fontSize="small" />}
-            sx={{ flexGrow: 1 }}
+            sx={{
+              flexGrow: 1,
+              padding: 0,
+              margin: 0,
+              "& .MuiBreadcrumbs-ol": { alignItems: "center", gap: 1 },
+            }}
           >
             <Link
               underline="none"
-              color={theme => theme.palette.primary.main}
+              color={(theme) => theme.palette.primary.main}
               href="/"
               onClick={handleProjectsClick}
               sx={{
@@ -306,7 +311,7 @@ const ProjectDashboard = () => {
             </Link>
             <Link
               underline="none"
-              color={theme => theme.palette.primary.main}
+              color={(theme) => theme.palette.primary.main}
               href="/"
               onMouseEnter={handleProjectMenuOpen}
               onClick={handleProjectsClick}
@@ -453,7 +458,7 @@ const ProjectDashboard = () => {
                 }}
               />
             </MenuItem>
-          ))
+          )),
         ]}
 
         {/* Show All Projects */}
@@ -501,6 +506,11 @@ const ProjectDashboard = () => {
             borderRight: 1,
             borderColor: "divider",
             borderRadius: 0,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            backgroundColor: "background.paper",
+            p: 2,
           }}
         >
           <Tabs
@@ -549,6 +559,21 @@ const ProjectDashboard = () => {
               />
             ))}
           </Tabs>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              alignItems: "center",
+              justifyContent: "flex-start",
+              color: "text.secondary",
+            }}
+          >
+            <AIIcons sx={{}} />
+            <Typography variant="body3" sx={{ color: "text.secondary" }}>
+              AI can make mistakes. Please verify all data before making any
+              decisions.
+            </Typography>
+          </Box>
         </Paper>
 
         {/* Tab Content Area */}

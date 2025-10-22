@@ -27,8 +27,7 @@ const EntityDetails = ({ entity, compact = false }) => {
 
     // Get base case documents using the selector
     const baseCaseDocuments = useSelector(selectBaseCaseDocuments);
-    // console.log("[DEBUG] Entity doc_id: ", entity);
-    // console.log("[DEBUG] Base case documents: ", baseCaseDocuments);
+
     const handleExpandClick = () => {
         setExpanded(!expanded);
     };

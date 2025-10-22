@@ -8,6 +8,7 @@ from ..pipeline_users import get_current_user
 from .schemas_for_project import ProjectCreate, ProjectUpdate, ProjectResponse
 from app.vector_db.vector_operations import pc
 from app.vector_db.vector_operations import index_name
+from .helper_funcs_for_projects import get_project_details
 
 router_for_projects = APIRouter()
 
@@ -69,8 +70,15 @@ def create_project(
 
         print(f"[DEBUG] project_dict before insert: {project_dict}")
 
-        # Insert into database
-        result = db().projects.insert_one(project_dict)
+        try:
+            # Insert into database
+            result = db().projects.insert_one(project_dict)
+        except Exception as db_exception:
+            print(f"[ERROR] Database insertion failed: {db_exception}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Database insertion error",
+            )
 
         if not result.inserted_id:
             raise HTTPException(
@@ -126,6 +134,23 @@ def list_projects(
 
         projects_cursor = db().projects.find(query, {"_id": 0}).skip(skip).limit(limit)
         projects = list(projects_cursor)
+        
+        # Retrieve project stats from other collections (documents, scenarios, cost_estimates, entities)
+        for proj in projects:
+            proj_id = proj.get("id")
+            if proj_id:
+                try:
+                    # Fetch stats and add to metadata
+                    stats = get_project_details(proj_id)
+                    proj["metadata"] = proj.get("metadata", {})  # Ensure metadata exists
+                    proj["metadata"]["stats"] = stats
+                except Exception as e:
+                    print(f"[ERROR] Failed to fetch stats for project {proj_id}: {e}")
+                    proj["metadata"] = proj.get("metadata", {})
+                    proj["metadata"]["stats"] = {
+                        "error": "Failed to fetch stats",
+                        "details": str(e),
+                    }
 
         return [ProjectResponse(**proj) for proj in projects]
 
@@ -682,6 +707,67 @@ def get_entities_relations_for_project(
         raise
     except Exception as e:
         print(f"[ERROR] Fetch entities and relations failed: {e}")
+        import traceback
+
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}",
+        )
+
+
+# Delete a document 
+@router_for_projects.delete("/projects/{projectId}/documents/{docId}", status_code=status.HTTP_200_OK)
+def delete_document_from_project(current_user: dict = Depends(get_current_user), projectId: str = "", docId: str = ""):
+    """Delete a document from a project by document ID"""
+    try:
+        user_id = (
+            current_user.get("user_id")
+            or current_user.get("sub")
+            or current_user.get("id")
+        )
+
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not extract user_id from authentication token",
+            )
+
+        # First, verify the document exists and belongs to the user and project
+        document = db().documents.find_one(
+            {"doc_id": docId, "project_id": projectId, "user_id": user_id}, {"_id": 0, "file_name": 1}
+        )
+
+        if not document:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Document {docId} not found in project {projectId}",
+            )
+
+        base_filter = {"properties.project_id": projectId, "properties.user_id": user_id, "properties.doc_id": docId}
+
+        # Delete the document
+        result = db().documents.delete_one(
+            {"doc_id": docId, "project_id": projectId, "user_id": user_id}
+        )
+
+        if result.deleted_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to delete document {docId} from project {projectId}",
+            )
+
+        return {
+            "message": f"Document '{document.get('file_name', docId)}' deleted successfully from project '{projectId}'",
+            "doc_id": docId,
+            "project_id": projectId,
+            "deleted_at": datetime.now().isoformat(),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Delete document failed: {e}")
         import traceback
 
         traceback.print_exc()

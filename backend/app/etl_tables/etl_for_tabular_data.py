@@ -6,14 +6,16 @@ import pandas as pd
 import datetime
 import uuid
 
-from app.text_clean import extract_and_clean, chunk_by_page, process_extracted_nodes, NAMESPACE
+from app.text_clean import (
+    extract_and_clean,
+    chunk_by_page,
+    process_extracted_nodes,
+    NAMESPACE,
+)
 from ..ontology import load_ontology
 from ..build_prompt import gen_prompt
 from .tabular_rules import TABULAR_RULES
 from .table_payload import build_llm_payload
-from .table_extract_with_openai import call_llm_for_tables
-from .validator import validate_kg_structure
-from .silver_store import store_silver_nodes, store_silver_edges
 from ..bronze_store import (
     bulk_upsert_chunks,
     bulk_upsert_entities,
@@ -551,7 +553,9 @@ def map_tables_to_entities(
             c["properties"]["doc_id"] = doc_id
 
         # 3) Entities/relations/mentions from free text (Bronze)
-        kg = openai_extract_nodes_rels(chunks)
+        kg = openai_extract_nodes_rels(
+            chunks, rules=["Units_Normalization", "Table_Extraction"]
+        )
         nodes = list(kg.get("nodes", []) or [])
         edges = list(kg.get("edges", []) or [])
 
@@ -607,12 +611,12 @@ def map_tables_to_entities(
             "relations_written": len(edges),
             "vectors_upserted": vectors_upserted,  # NEW
         }
-    
+
     # Process tables with LLM extraction
     else:
         # Load ontology and build prompt
         ontology = load_ontology()
-        base_prompt = gen_prompt(ontology)
+        base_prompt = gen_prompt(ontology, rules=["Units_Normalization", "Table_Extraction"])
         full_prompt = base_prompt
 
         # Accumulators for all tables
@@ -623,7 +627,7 @@ def map_tables_to_entities(
         total_rows_processed = 0
 
         # Process each extracted table
-        for table_result in table_results:
+        for seq, table_result in enumerate(table_results):
             df = table_result["df"]
             meta = table_result.get("meta", {})
 
@@ -665,17 +669,29 @@ def map_tables_to_entities(
                 payload = build_llm_payload(table_meta, rows_batch, max_rows=batch_size)
 
                 # Construct prompt with payload
-                input_text = (
-                    f"{full_prompt}\n\n"
-                    f"INPUT TABLE DATA (JSON):\n"
-                    f"{json.dumps(payload, indent=2, ensure_ascii=False)}"
+                # input_text = (
+                #     f"{full_prompt}\n\n"
+                #     f"INPUT TABLE DATA (JSON):\n"
+                #     f"{json.dumps(payload, indent=2, ensure_ascii=False)}"
+                # )
+                chunks: List[Dict[str, Any]] = []
+                chunk_id = str(uuid.uuid5(NAMESPACE, f"{doc_id}|{seq}"))
+                chunks.append(
+                    {
+                        "chunk_id": chunk_id,
+                        "doc_id": doc_id,
+                        "seq": seq,
+                        "page": 0,
+                        "text": json.dumps(payload, indent=2, ensure_ascii=False),
+                    }
                 )
 
                 # Call LLM
                 logger.info(
                     f"[TABULAR_PIPELINE] Calling LLM for table {table_id} ({len(rows_batch)} rows)"
                 )
-                kg_data = call_llm_for_tables(input_text, ontology)
+                # kg_data = call_llm_for_tables(input_text, ontology)
+                kg_data = openai_extract_nodes_rels(chunks, rules=["Units_Normalization", "Table_Extraction"])
 
                 # Check for errors in response
                 if "error" in kg_data:
@@ -771,7 +787,9 @@ def map_tables_to_entities(
                 )
 
             except Exception as e:
-                logger.error(f"[TABULAR_PIPELINE] Failed to process table {table_id}: {e}")
+                logger.error(
+                    f"[TABULAR_PIPELINE] Failed to process table {table_id}: {e}"
+                )
                 import traceback
 
                 traceback.print_exc()

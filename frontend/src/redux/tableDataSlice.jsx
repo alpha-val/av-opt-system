@@ -90,8 +90,6 @@ export const fetchProjectTableEntities = createAsyncThunk(
         };
       }
 
-      console.log(`Fetched ${data.entities?.length || 0} table entities`);
-
       return {
         projectId,
         tableEntities: data.entities || [],
@@ -170,8 +168,6 @@ export const fetchProjectTableEdges = createAsyncThunk(
           },
         };
       }
-
-      console.log(`Fetched ${data.edges?.length || 0} table edges`);
 
       return {
         projectId,
@@ -325,8 +321,6 @@ export const fetchProjectTables = createAsyncThunk(
         };
       }
 
-      console.log(`Fetched ${data.tables?.length || 0} tables`);
-
       return {
         projectId,
         tables: data.tables || [],
@@ -372,8 +366,6 @@ export const fetchTableById = createAsyncThunk(
         throw new Error("Table not found");
       }
 
-      console.log(`Fetched table ${tableId}`);
-
       return {
         projectId,
         table: data,
@@ -413,8 +405,6 @@ export const deleteProjectTableData = createAsyncThunk(
       }
 
       const data = await response.json();
-
-      console.log(`Deleted table data for project ${projectId}:`, data);
 
       return {
         projectId,

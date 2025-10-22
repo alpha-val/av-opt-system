@@ -338,7 +338,7 @@ const ScenarioDetail = ({
                         <Button
                           fullWidth
                           variant="contained"
-                          size="large"
+                          size="medium"
                           startIcon={
                             analyzing ? (
                               <CircularProgress size={20} color="inherit" />
@@ -368,13 +368,9 @@ const ScenarioDetail = ({
                 </Grid>
               )}
 
-              {/* Tab 2: Cost Estimates */}
+              {/* Tab 2: Options */}
               {tabIndex === 1 && (
                 <Box>
-                  {/* <Typography variant="h6" gutterBottom>
-                    Matched Entities
-                  </Typography>
-                  <Divider sx={{ mb: 2 }} /> */}
                   <CostBasisOptions data={costEstimate} />
                 </Box>
               )}

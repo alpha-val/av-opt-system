@@ -64,7 +64,6 @@ const Nav = () => {
 
     // Add menu item click handler
     const handleMenuItemClick = (path) => {
-        console.log("Path: ", path);
         navigate(path);
         // Close mobile drawer when item is clicked
         if (isMobile) {

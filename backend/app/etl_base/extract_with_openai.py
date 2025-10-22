@@ -107,6 +107,16 @@ TOOLS = [
 # ------------------------------------------------------------------ #
 # Helpers                                                            #
 # ------------------------------------------------------------------ #
+
+
+def is_valid_json(json_string: str) -> bool:
+    try:
+        json.loads(json_string)
+        return True
+    except ValueError:
+        return False
+
+
 def _to_document(payload: Union[str, bytes]) -> Document:
     """Normalise text / bytes to a langchain Document."""
     if isinstance(payload, bytes):
@@ -190,6 +200,7 @@ NAMESPACE = uuid.UUID("6d978d8b-9e1b-4d3e-9f0a-2cfd5f9a9d9a")  # any constant
 
 def openai_extract_nodes_rels(
     chunks: List[Dict[str, Any]],
+    rules: List[str] = [],
 ) -> Dict[str, List[Dict[str, Any]]]:
     """
     2. Run the function-calling LLM on each chunk.
@@ -206,13 +217,17 @@ def openai_extract_nodes_rels(
         api_key=SETTINGS.openai_api_key,
         temperature=0,
         timeout=60,
-        model_kwargs={"tools": TOOLS, "tool_choice": "auto"},
+        max_tokens=4096,
+        model_kwargs={
+            "tools": TOOLS,
+            "tool_choice": "auto",
+        },
     )
 
     # ── 2. Iterate through chunks & collect calls ───────────
     all_nodes, all_edges, all_mentions = [], [], []
 
-    user_prompt = gen_prompt(ontology=ont)
+    user_prompt = gen_prompt(ontology=ont, rules=rules)
 
     SYSTEM_PROMPT = SystemMessage(content=(user_prompt))
 
@@ -233,11 +248,23 @@ def openai_extract_nodes_rels(
         for call in resp.additional_kwargs.get("tool_calls", []):
             fn = call.get("function", {})
             name = fn.get("name")
-            payload = json.loads(fn.get("arguments", "{}"))
-            if name == "extract_nodes":
-                all_nodes.extend(payload.get("nodes", []))
-            elif name == "extract_edges":
-                all_edges.extend(payload.get("edges", []))
+            try:
+                # payload = json.loads(fn.get("arguments", "{}"))
+                arguments = fn.get("arguments", "{}")
+                if not is_valid_json(arguments):
+                    logger.error(f"Invalid JSON received: {arguments}")
+                    continue
+                payload = json.loads(arguments)
+                if name == "extract_nodes":
+                    all_nodes.extend(payload.get("nodes", []))
+                elif name == "extract_edges":
+                    all_edges.extend(payload.get("edges", []))
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse LLM JSON: {e}")
+                logger.error(f"Raw function arguments: {fn.get('arguments')}")
+                continue
+
+    logger.info(f"[DEBUG] ⇒ Finished processing {len(chunks)} chunks")
 
     # --- 3. Normalize, generate UUID5, then DEDUPE by new id -----------------
     def canonical_key(n: dict) -> str:
@@ -271,7 +298,7 @@ def openai_extract_nodes_rels(
         else:
             by_id[nid] = n
     all_nodes = list(by_id.values())
-    
+
     # DEDUPE by name
     all_nodes = dedupe_nodes_by_name(all_nodes)
 

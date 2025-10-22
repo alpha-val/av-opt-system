@@ -36,6 +36,11 @@ const createAppTheme = (mode = "light") => {
       },
       error: {
         main: "#ee3333",
+        light: "#ff6666",
+        lighter: "#ff9999",
+        veryLight: mode === "light" ? "#ffe5e5" : "#3a1a1a",
+        dark: "#cc0000",
+        contrastText: "#ffffff",
       },
       background: {
         default: mode === "light" ? "#f6fafd" : "#121212",
@@ -90,6 +95,12 @@ const createAppTheme = (mode = "light") => {
       body2: {
         fontSize: "0.75rem",
         "@media (max-width:600px)": { fontSize: "0.775rem" },
+      },
+      body3: {
+        fontSize: "0.6rem",
+        lineHeight: 1,
+        color: mode === "light" ? "#3a3a3a" : "#c0c0c0",
+        "@media (max-width:600px)": { fontSize: "0.6rem" },
       },
     },
     spacing: 8,

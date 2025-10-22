@@ -792,3 +792,176 @@ TypeError: normalize_entity_for_vector_db() missing 2 required positional argume
 2025-10-18 15:00:28 - app.costing.api_for_costing - INFO - [api_for_costing.py:47] - [COST_ESTIMATE] Creating estimate for project: b39a468a-d2a3-4340-9031-2bfc9e806e09, scenario: f2f6edf8-31ee-4bd1-a0a5-bd3a061e9a3a
 2025-10-18 15:00:31 - app.costing.api_for_costing - INFO - [api_for_costing.py:87] - [COST_ESTIMATE] Estimate created: 9fbfd82b-30e4-4841-9f8b-83688b0296d2
 2025-10-18 17:05:45 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-18 17:10:42 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-18 17:16:38 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-18 17:26:23 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-18 17:31:03 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-18 17:31:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-18 17:32:18 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-18 17:33:44 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-18 17:36:13 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-18 18:26:45 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-18 18:38:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-18 18:38:39 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-20 10:04:15 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-20 10:40:25 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-20 10:47:53 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-20 12:57:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:521] - [TABULAR_PIPELINE] Processed doc_id: 0fa1c0d8-5a56-4ec5-879c-f3e1a94fb0f2
+2025-10-20 12:58:06 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:132] - [TABLE_EXTRACT] Cascade extraction failed: Unable to get page count. Is poppler installed and in PATH?, falling back to Camelot
+2025-10-20 12:58:10 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:180] - [TABLE_EXTRACT] Extracted 0 tables using Camelot
+2025-10-20 12:58:10 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:529] - [TABULAR_PIPELINE] Extracted 0 tables from PDF
+2025-10-20 12:58:10 - app.etl_tables.etl_for_tabular_data - WARNING - [etl_for_tabular_data.py:538] - [TABULAR_PIPELINE] No tables found in Lemonade Equip Tables.docx.pdf
+2025-10-20 12:59:11 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:594] - [INFO] Upserted 40 vectors to Pinecone
+2025-10-20 13:15:23 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-20 13:26:11 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-20 14:36:33 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:521] - [TABULAR_PIPELINE] Processed doc_id: 68b06208-56d8-43c1-88e5-1cf6fc39b254
+2025-10-20 14:36:40 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:132] - [TABLE_EXTRACT] Cascade extraction failed: Unable to get page count. Is poppler installed and in PATH?, falling back to Camelot
+2025-10-20 14:36:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:180] - [TABLE_EXTRACT] Extracted 0 tables using Camelot
+2025-10-20 14:36:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:529] - [TABULAR_PIPELINE] Extracted 0 tables from PDF
+2025-10-20 14:36:45 - app.etl_tables.etl_for_tabular_data - WARNING - [etl_for_tabular_data.py:538] - [TABULAR_PIPELINE] No tables found in Lemonade Equip Tables.docx.pdf
+2025-10-20 14:37:30 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:594] - [INFO] Upserted 40 vectors to Pinecone
+2025-10-20 18:02:44 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:521] - [TABULAR_PIPELINE] Processed doc_id: 36f8ff1e-b254-4015-a67f-962cf92eb990
+2025-10-20 18:02:51 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:124] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-20 18:02:51 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:529] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-20 18:02:52 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 16 rows, 1 columns
+2025-10-20 18:02:52 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:675] - [TABULAR_PIPELINE] Calling LLM for table tbl::36f8ff1e-b254-4015-a67f-962cf92eb990::p1::0 (16 rows)
+2025-10-20 18:02:52 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 19372 chars to OpenAI
+2025-10-20 18:04:07 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 8329 chars from OpenAI
+2025-10-20 18:04:07 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 16 nodes, 0 edges
+2025-10-20 18:04:07 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:769] - [TABULAR_PIPELINE] Table tbl::36f8ff1e-b254-4015-a67f-962cf92eb990::p1::0: 16 nodes, 0 edges (IDs normalized)
+2025-10-20 18:04:07 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:782] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 16 nodes, 0 edges
+2025-10-20 18:04:12 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:807] - [INFO] Upserted 16 vectors to Pinecone
+2025-10-20 18:04:12 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:829] - [TABULAR_PIPELINE] Completed: {'doc_id': '36f8ff1e-b254-4015-a67f-962cf92eb990', 'filename': 'equipment_variants.pdf', 'file_size': 3586, 'file_sha256': '9b15ab2a87c37625130e7dfa31c8c160ddea8b87c9466c8a4743901a085026ae', 'pages': 1, 'tables_processed': 1, 'rows_processed': 16, 'chunks_written': 1, 'entities_written': 16, 'relations_written': 0, 'vectors_upserted': 16, 'errors': None}
+2025-10-20 18:09:55 - app.costing.api_for_costing - INFO - [api_for_costing.py:47] - [COST_ESTIMATE] Creating estimate for project: a4cc63b7-51d4-4bf5-b341-dd6b749a11c2, scenario: 5044cb63-c881-4cee-b99d-99e96d38d293
+2025-10-20 18:10:04 - app.costing.api_for_costing - INFO - [api_for_costing.py:87] - [COST_ESTIMATE] Estimate created: 3b5e64be-c4fd-440e-8f31-fa42ac077a58
+2025-10-20 21:20:32 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-20 21:21:17 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-20 21:23:30 - app.costing.api_for_costing - INFO - [api_for_costing.py:47] - [COST_ESTIMATE] Creating estimate for project: a4cc63b7-51d4-4bf5-b341-dd6b749a11c2, scenario: 5044cb63-c881-4cee-b99d-99e96d38d293
+2025-10-20 21:23:37 - app.costing.api_for_costing - INFO - [api_for_costing.py:87] - [COST_ESTIMATE] Estimate created: f637a9ef-d629-4a5f-9495-c5fd9b41cdd9
+2025-10-20 22:56:42 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-20 23:27:12 - app.costing.api_for_costing - INFO - [api_for_costing.py:47] - [COST_ESTIMATE] Creating estimate for project: 262a297c-6a0f-4858-971f-77fc6a1eb9a8, scenario: b2a16d2f-0490-47db-b623-be405c8e1af2
+2025-10-20 23:27:18 - app.costing.api_for_costing - INFO - [api_for_costing.py:87] - [COST_ESTIMATE] Estimate created: 8f842320-5321-44af-82b4-8317bf63d1c7
+2025-10-20 23:29:55 - app.costing.api_for_costing - INFO - [api_for_costing.py:47] - [COST_ESTIMATE] Creating estimate for project: a4cc63b7-51d4-4bf5-b341-dd6b749a11c2, scenario: fd922a66-956f-405d-9c15-9999b6e68bd0
+2025-10-20 23:30:01 - app.costing.api_for_costing - INFO - [api_for_costing.py:87] - [COST_ESTIMATE] Estimate created: 9e464828-fbcc-47c6-ade6-aeff5fc7a001
+2025-10-22 09:07:55 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 10:00:38 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 11:13:03 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:521] - [TABULAR_PIPELINE] Processed doc_id: 9e7cbef9-003c-4451-8d25-1e0dc3322eb6
+2025-10-22 11:13:13 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:124] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-22 11:13:13 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:529] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-22 11:13:13 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 23 rows, 8 columns
+2025-10-22 11:13:13 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:675] - [TABULAR_PIPELINE] Calling LLM for table tbl::9e7cbef9-003c-4451-8d25-1e0dc3322eb6::p1::0 (23 rows)
+2025-10-22 11:13:13 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 25864 chars to OpenAI
+2025-10-22 11:15:18 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 12706 chars from OpenAI
+2025-10-22 11:15:18 - app.etl_tables.table_extract_with_openai - ERROR - [table_extract_with_openai.py:81] - Failed to parse LLM JSON: Expecting value: line 342 column 25 (char 12706)
+2025-10-22 11:15:18 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:682] - [TABULAR_PIPELINE] LLM extraction failed for tbl::9e7cbef9-003c-4451-8d25-1e0dc3322eb6::p1::0: JSON parse error: Expecting value: line 342 column 25 (char 12706)
+2025-10-22 11:15:18 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:782] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 0 nodes, 0 edges
+2025-10-22 11:15:18 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:807] - [INFO] Upserted 0 vectors to Pinecone
+2025-10-22 11:15:18 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:829] - [TABULAR_PIPELINE] Completed: {'doc_id': '9e7cbef9-003c-4451-8d25-1e0dc3322eb6', 'filename': '1_Tank_and_Pump_Sizing_and_Costing.xlsx - Tank_Costing.pdf', 'file_size': 30181, 'file_sha256': '1676a7fbd314f826865be9dc91950a41d58fc95015d944a0d46e4533ae9046dd', 'pages': 1, 'tables_processed': 1, 'rows_processed': 0, 'chunks_written': 1, 'entities_written': 0, 'relations_written': 0, 'vectors_upserted': 0, 'errors': [{'table_id': 'tbl::9e7cbef9-003c-4451-8d25-1e0dc3322eb6::p1::0', 'error': 'JSON parse error: Expecting value: line 342 column 25 (char 12706)'}]}
+2025-10-22 11:37:22 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 11:38:00 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 12:06:10 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 12:17:10 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:521] - [TABULAR_PIPELINE] Processed doc_id: f3f673e4-7e38-4067-9fc7-49c257018bcf
+2025-10-22 12:17:21 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:124] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-22 12:17:21 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:529] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-22 12:17:21 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 23 rows, 8 columns
+2025-10-22 12:17:21 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:675] - [TABULAR_PIPELINE] Calling LLM for table tbl::f3f673e4-7e38-4067-9fc7-49c257018bcf::p1::0 (23 rows)
+2025-10-22 12:17:21 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 25864 chars to OpenAI
+2025-10-22 12:18:18 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 4392 chars from OpenAI
+2025-10-22 12:18:26 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:74] - Extracted 6 nodes, 0 edges
+2025-10-22 12:18:26 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:769] - [TABULAR_PIPELINE] Table tbl::f3f673e4-7e38-4067-9fc7-49c257018bcf::p1::0: 6 nodes, 0 edges (IDs normalized)
+2025-10-22 12:18:26 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:782] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 6 nodes, 0 edges
+2025-10-22 12:18:28 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:807] - [INFO] Upserted 6 vectors to Pinecone
+2025-10-22 12:18:28 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:829] - [TABULAR_PIPELINE] Completed: {'doc_id': 'f3f673e4-7e38-4067-9fc7-49c257018bcf', 'filename': '1_Tank_and_Pump_Sizing_and_Costing.xlsx - Tank_Costing.pdf', 'file_size': 30181, 'file_sha256': '1676a7fbd314f826865be9dc91950a41d58fc95015d944a0d46e4533ae9046dd', 'pages': 1, 'tables_processed': 1, 'rows_processed': 23, 'chunks_written': 1, 'entities_written': 6, 'relations_written': 0, 'vectors_upserted': 6, 'errors': None}
+2025-10-22 12:22:27 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 12:24:04 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:521] - [TABULAR_PIPELINE] Processed doc_id: 7b958765-79f0-4886-8a1d-aba84f1ba01b
+2025-10-22 12:24:07 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:124] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-22 12:24:07 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:529] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-22 12:24:07 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 23 rows, 8 columns
+2025-10-22 12:24:07 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:675] - [TABULAR_PIPELINE] Calling LLM for table tbl::7b958765-79f0-4886-8a1d-aba84f1ba01b::p1::0 (23 rows)
+2025-10-22 12:24:07 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:32] - [TABULAR DATA] Sending 26006 chars to OpenAI
+2025-10-22 13:02:57 - app.etl_tables.table_extract_with_openai - INFO - [table_extract_with_openai.py:49] - Received 13682 chars from OpenAI
+2025-10-22 13:02:57 - app.etl_tables.table_extract_with_openai - ERROR - [table_extract_with_openai.py:81] - Failed to parse LLM JSON: Unterminated string starting at: line 399 column 23 (char 13675)
+2025-10-22 13:02:57 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:682] - [TABULAR_PIPELINE] LLM extraction failed for tbl::7b958765-79f0-4886-8a1d-aba84f1ba01b::p1::0: JSON parse error: Unterminated string starting at: line 399 column 23 (char 13675)
+2025-10-22 13:02:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:782] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 0 nodes, 0 edges
+2025-10-22 13:02:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:807] - [INFO] Upserted 0 vectors to Pinecone
+2025-10-22 13:02:57 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:829] - [TABULAR_PIPELINE] Completed: {'doc_id': '7b958765-79f0-4886-8a1d-aba84f1ba01b', 'filename': '1_Tank_and_Pump_Sizing_and_Costing.xlsx - Tank_Costing.pdf', 'file_size': 30181, 'file_sha256': '1676a7fbd314f826865be9dc91950a41d58fc95015d944a0d46e4533ae9046dd', 'pages': 1, 'tables_processed': 1, 'rows_processed': 0, 'chunks_written': 1, 'entities_written': 0, 'relations_written': 0, 'vectors_upserted': 0, 'errors': [{'table_id': 'tbl::7b958765-79f0-4886-8a1d-aba84f1ba01b::p1::0', 'error': 'JSON parse error: Unterminated string starting at: line 399 column 23 (char 13675)'}]}
+2025-10-22 13:07:34 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 13:07:54 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:521] - [TABULAR_PIPELINE] Processed doc_id: 43174331-d791-4391-9c33-3db6f6fc0704
+2025-10-22 13:07:56 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:124] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-22 13:07:56 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:529] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-22 13:07:56 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 23 rows, 8 columns
+2025-10-22 13:07:56 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:675] - [TABULAR_PIPELINE] Calling LLM for table tbl::43174331-d791-4391-9c33-3db6f6fc0704::p1::0 (23 rows)
+2025-10-22 13:08:32 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:775] - [TABULAR_PIPELINE] Failed to process table tbl::43174331-d791-4391-9c33-3db6f6fc0704::p1::0: 'str' object has no attribute 'get'
+2025-10-22 13:08:32 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:783] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 0 nodes, 0 edges
+2025-10-22 13:08:32 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:808] - [INFO] Upserted 0 vectors to Pinecone
+2025-10-22 13:08:32 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:830] - [TABULAR_PIPELINE] Completed: {'doc_id': '43174331-d791-4391-9c33-3db6f6fc0704', 'filename': '1_Tank_and_Pump_Sizing_and_Costing.xlsx - Tank_Costing.pdf', 'file_size': 30181, 'file_sha256': '1676a7fbd314f826865be9dc91950a41d58fc95015d944a0d46e4533ae9046dd', 'pages': 1, 'tables_processed': 1, 'rows_processed': 0, 'chunks_written': 1, 'entities_written': 0, 'relations_written': 0, 'vectors_upserted': 0, 'errors': [{'table_id': 'tbl::43174331-d791-4391-9c33-3db6f6fc0704::p1::0', 'error': "'str' object has no attribute 'get'"}]}
+2025-10-22 13:09:22 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 13:09:43 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:521] - [TABULAR_PIPELINE] Processed doc_id: 4375c6e5-cb84-4f91-979d-05ee18f1fe07
+2025-10-22 13:09:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:124] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-22 13:09:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:529] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-22 13:09:45 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 23 rows, 8 columns
+2025-10-22 13:09:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:675] - [TABULAR_PIPELINE] Calling LLM for table tbl::4375c6e5-cb84-4f91-979d-05ee18f1fe07::p1::0 (23 rows)
+2025-10-22 13:10:54 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:775] - [TABULAR_PIPELINE] Failed to process table tbl::4375c6e5-cb84-4f91-979d-05ee18f1fe07::p1::0: 'str' object has no attribute 'get'
+2025-10-22 13:10:54 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:783] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 0 nodes, 0 edges
+2025-10-22 13:10:54 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:808] - [INFO] Upserted 0 vectors to Pinecone
+2025-10-22 13:10:54 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:830] - [TABULAR_PIPELINE] Completed: {'doc_id': '4375c6e5-cb84-4f91-979d-05ee18f1fe07', 'filename': '1_Tank_and_Pump_Sizing_and_Costing.xlsx - Tank_Costing.pdf', 'file_size': 30181, 'file_sha256': '1676a7fbd314f826865be9dc91950a41d58fc95015d944a0d46e4533ae9046dd', 'pages': 1, 'tables_processed': 1, 'rows_processed': 0, 'chunks_written': 1, 'entities_written': 0, 'relations_written': 0, 'vectors_upserted': 0, 'errors': [{'table_id': 'tbl::4375c6e5-cb84-4f91-979d-05ee18f1fe07::p1::0', 'error': "'str' object has no attribute 'get'"}]}
+2025-10-22 13:12:19 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 13:12:32 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:526] - [TABULAR_PIPELINE] Processed doc_id: 8e316d07-4ffd-426e-bdcb-681965e6688c
+2025-10-22 13:12:35 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:129] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-22 13:12:35 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:534] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-22 13:12:35 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 23 rows, 8 columns
+2025-10-22 13:12:35 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:682] - [TABULAR_PIPELINE] Calling LLM for table tbl::8e316d07-4ffd-426e-bdcb-681965e6688c::p1::0 (23 rows)
+2025-10-22 13:12:49 - app.etl_tables.etl_for_tabular_data - ERROR - [etl_for_tabular_data.py:782] - [TABULAR_PIPELINE] Failed to process table tbl::8e316d07-4ffd-426e-bdcb-681965e6688c::p1::0: 'str' object has no attribute 'get'
+2025-10-22 13:12:49 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:792] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 0 nodes, 0 edges
+2025-10-22 13:12:49 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:817] - [INFO] Upserted 0 vectors to Pinecone
+2025-10-22 13:12:49 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:839] - [TABULAR_PIPELINE] Completed: {'doc_id': '8e316d07-4ffd-426e-bdcb-681965e6688c', 'filename': '1_Tank_and_Pump_Sizing_and_Costing.xlsx - Tank_Costing.pdf', 'file_size': 30181, 'file_sha256': '1676a7fbd314f826865be9dc91950a41d58fc95015d944a0d46e4533ae9046dd', 'pages': 1, 'tables_processed': 1, 'rows_processed': 0, 'chunks_written': 1, 'entities_written': 0, 'relations_written': 0, 'vectors_upserted': 0, 'errors': [{'table_id': 'tbl::8e316d07-4ffd-426e-bdcb-681965e6688c::p1::0', 'error': "'str' object has no attribute 'get'"}]}
+2025-10-22 13:16:45 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 13:17:02 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:526] - [TABULAR_PIPELINE] Processed doc_id: f0dd403f-0a26-4993-acac-59f9192aaa3c
+2025-10-22 13:17:04 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:129] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-22 13:17:04 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:534] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-22 13:17:08 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 23 rows, 8 columns
+2025-10-22 13:17:52 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:691] - [TABULAR_PIPELINE] Calling LLM for table tbl::f0dd403f-0a26-4993-acac-59f9192aaa3c::p1::0 (23 rows)
+2025-10-22 13:20:21 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:786] - [TABULAR_PIPELINE] Table tbl::f0dd403f-0a26-4993-acac-59f9192aaa3c::p1::0: 22 nodes, 21 edges (IDs normalized)
+2025-10-22 13:20:21 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:801] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 22 nodes, 21 edges
+2025-10-22 13:20:28 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:826] - [INFO] Upserted 22 vectors to Pinecone
+2025-10-22 13:20:28 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:848] - [TABULAR_PIPELINE] Completed: {'doc_id': 'f0dd403f-0a26-4993-acac-59f9192aaa3c', 'filename': '1_Tank_and_Pump_Sizing_and_Costing.xlsx - Tank_Costing.pdf', 'file_size': 30181, 'file_sha256': '1676a7fbd314f826865be9dc91950a41d58fc95015d944a0d46e4533ae9046dd', 'pages': 1, 'tables_processed': 1, 'rows_processed': 23, 'chunks_written': 1, 'entities_written': 22, 'relations_written': 21, 'vectors_upserted': 22, 'errors': None}
+2025-10-22 14:02:05 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 14:03:04 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 14:04:36 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 14:05:34 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 14:09:26 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 14:25:33 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 14:32:14 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 14:34:21 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:523] - [TABULAR_PIPELINE] Processed doc_id: a8d81ba5-adfb-4210-93b2-1332a0a1d1f3
+2025-10-22 14:34:24 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:126] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-22 14:34:24 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:531] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-22 14:35:43 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 14:35:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:523] - [TABULAR_PIPELINE] Processed doc_id: c4a18a4f-ad4e-41c7-aa43-25a1a0bde159
+2025-10-22 14:35:47 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:126] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-22 14:35:47 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:531] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-22 14:35:50 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 8 rows, 8 columns
+2025-10-22 14:35:58 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:690] - [TABULAR_PIPELINE] Calling LLM for table tbl::c4a18a4f-ad4e-41c7-aa43-25a1a0bde159::p1::0 (8 rows)
+2025-10-22 14:37:46 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:785] - [TABULAR_PIPELINE] Table tbl::c4a18a4f-ad4e-41c7-aa43-25a1a0bde159::p1::0: 3 nodes, 0 edges (IDs normalized)
+2025-10-22 14:37:46 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:800] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 3 nodes, 0 edges
+2025-10-22 14:37:47 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:825] - [INFO] Upserted 3 vectors to Pinecone
+2025-10-22 14:37:47 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:847] - [TABULAR_PIPELINE] Completed: {'doc_id': 'c4a18a4f-ad4e-41c7-aa43-25a1a0bde159', 'filename': '1_(Shortened) Tank_and_Pump_Sizing_and_Costing.xlsx - Tank_Costing.pdf', 'file_size': 27502, 'file_sha256': '1b61961f6a861f3d9d3858489444ba15d83d4af6a73e06e713e1d3df82009cdd', 'pages': 1, 'tables_processed': 1, 'rows_processed': 8, 'chunks_written': 1, 'entities_written': 3, 'relations_written': 0, 'vectors_upserted': 3, 'errors': None}
+2025-10-22 14:39:11 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 14:39:17 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:523] - [TABULAR_PIPELINE] Processed doc_id: dfbfb628-6794-4f69-86ff-922d9655274d
+2025-10-22 14:39:19 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:126] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-22 14:39:19 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:531] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-22 14:40:24 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 8 rows, 8 columns
+2025-10-22 14:40:24 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:690] - [TABULAR_PIPELINE] Calling LLM for table tbl::dfbfb628-6794-4f69-86ff-922d9655274d::p1::0 (8 rows)
+2025-10-22 14:41:31 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:785] - [TABULAR_PIPELINE] Table tbl::dfbfb628-6794-4f69-86ff-922d9655274d::p1::0: 3 nodes, 3 edges (IDs normalized)
+2025-10-22 14:41:31 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:800] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 3 nodes, 3 edges
+2025-10-22 14:41:36 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:825] - [INFO] Upserted 3 vectors to Pinecone
+2025-10-22 14:41:36 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:847] - [TABULAR_PIPELINE] Completed: {'doc_id': 'dfbfb628-6794-4f69-86ff-922d9655274d', 'filename': '1_(Shortened) Tank_and_Pump_Sizing_and_Costing.xlsx - Tank_Costing.pdf', 'file_size': 27502, 'file_sha256': '1b61961f6a861f3d9d3858489444ba15d83d4af6a73e06e713e1d3df82009cdd', 'pages': 1, 'tables_processed': 1, 'rows_processed': 8, 'chunks_written': 1, 'entities_written': 3, 'relations_written': 3, 'vectors_upserted': 3, 'errors': None}
+2025-10-22 14:42:02 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 14:42:56 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:523] - [TABULAR_PIPELINE] Processed doc_id: c982e8c6-3b16-4724-afdb-d6bdf9cb7426
+2025-10-22 14:42:58 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:126] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-22 14:42:58 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:531] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-22 14:42:58 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 8 rows, 8 columns
+2025-10-22 14:42:58 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:690] - [TABULAR_PIPELINE] Calling LLM for table tbl::c982e8c6-3b16-4724-afdb-d6bdf9cb7426::p1::0 (8 rows)
+2025-10-22 14:43:37 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:785] - [TABULAR_PIPELINE] Table tbl::c982e8c6-3b16-4724-afdb-d6bdf9cb7426::p1::0: 7 nodes, 6 edges (IDs normalized)
+2025-10-22 14:43:37 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:800] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 7 nodes, 6 edges
+2025-10-22 14:43:40 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:825] - [INFO] Upserted 7 vectors to Pinecone
+2025-10-22 14:43:40 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:847] - [TABULAR_PIPELINE] Completed: {'doc_id': 'c982e8c6-3b16-4724-afdb-d6bdf9cb7426', 'filename': '1_(Shortened) Tank_and_Pump_Sizing_and_Costing.xlsx - Tank_Costing.pdf', 'file_size': 27502, 'file_sha256': '1b61961f6a861f3d9d3858489444ba15d83d4af6a73e06e713e1d3df82009cdd', 'pages': 1, 'tables_processed': 1, 'rows_processed': 8, 'chunks_written': 1, 'entities_written': 7, 'relations_written': 6, 'vectors_upserted': 7, 'errors': None}

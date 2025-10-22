@@ -30,7 +30,7 @@ import {
 
 const RelationRow = ({ relation, index, entityMap }) => {
   const [open, setOpen] = useState(false);
-  console.log("Rendering RelationRow for relation:", relation, entityMap);
+  
   // Extract properties safely
   const properties = relation.properties || {};
   const hasProperties = Object.keys(properties).length > 0;

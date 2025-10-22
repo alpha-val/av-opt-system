@@ -20,6 +20,7 @@ def search_entities_by_embedding(
     project_id: str,
     entity_types: list,
     top_k: int = 20,
+    cutoff: Optional[float] = 0.25,
     artifact_type: str = "base_case",
 ) -> list:
     """
@@ -42,8 +43,13 @@ def search_entities_by_embedding(
         include_metadata=True,
     )
 
-    # Extract entity IDs
-    entity_ids = [match.metadata["entity_id"] for match in results.matches]
+    # Filter matches based on the cutoff score
+    filtered_matches = [
+        match for match in results.matches if match.score >= cutoff
+    ]
+
+    # Extract entity IDs from filtered matches
+    entity_ids = [match.metadata["entity_id"] for match in filtered_matches]
 
     # Fetch full entities from MongoDB
     entities = (
@@ -58,7 +64,7 @@ def search_entities_by_embedding(
     )
 
     # Add relevance scores
-    scores = {m.metadata["entity_id"]: m.score for m in results.matches}
+    scores = {m.metadata["entity_id"]: m.score for m in filtered_matches}
     for entity in entities:
         entity["relevance_score"] = scores.get(entity["id"], 0.0)
 
