@@ -965,3 +965,60 @@ TypeError: normalize_entity_for_vector_db() missing 2 required positional argume
 2025-10-22 14:43:37 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:800] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 7 nodes, 6 edges
 2025-10-22 14:43:40 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:825] - [INFO] Upserted 7 vectors to Pinecone
 2025-10-22 14:43:40 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:847] - [TABULAR_PIPELINE] Completed: {'doc_id': 'c982e8c6-3b16-4724-afdb-d6bdf9cb7426', 'filename': '1_(Shortened) Tank_and_Pump_Sizing_and_Costing.xlsx - Tank_Costing.pdf', 'file_size': 27502, 'file_sha256': '1b61961f6a861f3d9d3858489444ba15d83d4af6a73e06e713e1d3df82009cdd', 'pages': 1, 'tables_processed': 1, 'rows_processed': 8, 'chunks_written': 1, 'entities_written': 7, 'relations_written': 6, 'vectors_upserted': 7, 'errors': None}
+2025-10-22 14:46:47 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 14:47:07 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-22 14:51:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:523] - [TABULAR_PIPELINE] Processed doc_id: da189d1e-06bf-4684-82b5-1a0cf8819002
+2025-10-22 14:51:47 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:126] - [TABLE_EXTRACT] Extracted 1 tables using cascade
+2025-10-22 14:51:47 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:531] - [TABULAR_PIPELINE] Extracted 1 tables from PDF
+2025-10-22 14:51:47 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 23 rows, 8 columns
+2025-10-22 14:51:47 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:690] - [TABULAR_PIPELINE] Calling LLM for table tbl::da189d1e-06bf-4684-82b5-1a0cf8819002::p1::0 (23 rows)
+2025-10-22 14:52:42 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:785] - [TABULAR_PIPELINE] Table tbl::da189d1e-06bf-4684-82b5-1a0cf8819002::p1::0: 22 nodes, 0 edges (IDs normalized)
+2025-10-22 14:52:42 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:800] - [TABULAR_PIPELINE] Writing to database: 1 chunks, 22 nodes, 0 edges
+2025-10-22 14:52:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:825] - [INFO] Upserted 22 vectors to Pinecone
+2025-10-22 14:52:45 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:847] - [TABULAR_PIPELINE] Completed: {'doc_id': 'da189d1e-06bf-4684-82b5-1a0cf8819002', 'filename': '1_Tank_and_Pump_Sizing_and_Costing.xlsx - Tank_Costing.pdf', 'file_size': 30181, 'file_sha256': '1676a7fbd314f826865be9dc91950a41d58fc95015d944a0d46e4533ae9046dd', 'pages': 1, 'tables_processed': 1, 'rows_processed': 23, 'chunks_written': 1, 'entities_written': 22, 'relations_written': 0, 'vectors_upserted': 22, 'errors': None}
+2025-10-22 15:08:14 - app.costing.api_for_costing - INFO - [api_for_costing.py:47] - [COST_ESTIMATE] Creating estimate for project: fcb435a7-96a6-4c5b-bed9-7936ff55aaec, scenario: 4c7c55b2-db31-4fac-8894-f2321e612a62
+2025-10-22 15:08:16 - app.costing.api_for_costing - INFO - [api_for_costing.py:87] - [COST_ESTIMATE] Estimate created: 7f1a701e-fe48-4b7f-8421-6b42fba0beb8
+2025-10-22 22:48:50 - app.costing.api_for_costing - ERROR - [api_for_costing.py:158] - [COST_ESTIMATE] Failed to list estimates: SSL handshake failed: ac-ovjstn4-shard-00-00.rjvnjyo.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms),SSL handshake failed: ac-ovjstn4-shard-00-01.rjvnjyo.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms),SSL handshake failed: ac-ovjstn4-shard-00-02.rjvnjyo.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 30s, Topology Description: <TopologyDescription id: 68f9269d31f2a3d33c55ceff, topology_type: ReplicaSetNoPrimary, servers: [<ServerDescription ('ac-ovjstn4-shard-00-00.rjvnjyo.mongodb.net', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: ac-ovjstn4-shard-00-00.rjvnjyo.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>, <ServerDescription ('ac-ovjstn4-shard-00-01.rjvnjyo.mongodb.net', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: ac-ovjstn4-shard-00-01.rjvnjyo.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>, <ServerDescription ('ac-ovjstn4-shard-00-02.rjvnjyo.mongodb.net', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: ac-ovjstn4-shard-00-02.rjvnjyo.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/costing/api_for_costing.py", line 144, in list_cost_estimates
+    total = db().cost_estimates.count_documents(query_filter)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 2163, in count_documents
+    return self._retryable_non_cursor_read(_cmd, session, _Op.COUNT)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 2177, in _retryable_non_cursor_read
+    return client._retryable_read(func, self._read_preference_for(s), s, operation)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2047, in _retryable_read
+    return self._retry_internal(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/_csot.py", line 125, in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2014, in _retry_internal
+    ).run()
+      ^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2765, in run
+    return self._read() if self._is_read else self._write()
+           ^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2910, in _read
+    self._server = self._get_server()
+                   ^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2858, in _get_server
+    return self._client._select_server(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 1833, in _select_server
+    server = topology.select_server(
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/topology.py", line 409, in select_server
+    server = self._select_server(
+             ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/topology.py", line 387, in _select_server
+    servers = self.select_servers(
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/topology.py", line 294, in select_servers
+    server_descriptions = self._select_servers_loop(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/topology.py", line 344, in _select_servers_loop
+    raise ServerSelectionTimeoutError(
+pymongo.errors.ServerSelectionTimeoutError: SSL handshake failed: ac-ovjstn4-shard-00-00.rjvnjyo.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms),SSL handshake failed: ac-ovjstn4-shard-00-01.rjvnjyo.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms),SSL handshake failed: ac-ovjstn4-shard-00-02.rjvnjyo.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 30s, Topology Description: <TopologyDescription id: 68f9269d31f2a3d33c55ceff, topology_type: ReplicaSetNoPrimary, servers: [<ServerDescription ('ac-ovjstn4-shard-00-00.rjvnjyo.mongodb.net', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: ac-ovjstn4-shard-00-00.rjvnjyo.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>, <ServerDescription ('ac-ovjstn4-shard-00-01.rjvnjyo.mongodb.net', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: ac-ovjstn4-shard-00-01.rjvnjyo.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>, <ServerDescription ('ac-ovjstn4-shard-00-02.rjvnjyo.mongodb.net', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: ac-ovjstn4-shard-00-02.rjvnjyo.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
