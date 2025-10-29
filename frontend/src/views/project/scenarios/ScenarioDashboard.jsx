@@ -45,7 +45,7 @@ const Scenarios = () => {
   const scenarios = useSelector(
     (state) => state.scenarios.byProject[projectId] || []
   );
-  
+
   const loading = useSelector((state) => state.scenarios.loading);
   const activeScenario = useSelector(
     (state) => state.scenarios?.byId?.[activeScenarioId]
@@ -71,7 +71,7 @@ const Scenarios = () => {
   const handleDelete = async () => {
     if (selectedScenario) {
       const confirmed = await dialogs.confirm(
-        `Are you sure you want to delete scenario "${selectedScenario.name}"? This action cannot be undone.`,
+        `Are you sure you want to delete scenario "${selectedScenario.properties.name}"? This action cannot be undone.`,
         {
           title: "Delete Scenario",
           okText: "Delete",
@@ -203,10 +203,7 @@ const Scenarios = () => {
         </Box>
 
         {/* Scenario Detail Component */}
-        <ScenarioDetails
-          scenario={activeScenario}
-          onClose={handleBackToList}
-        />
+        <ScenarioDetails scenario={activeScenario} onClose={handleBackToList} />
       </Box>
     );
   }
@@ -305,9 +302,9 @@ const Scenarios = () => {
                     }}
                   >
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      {getGoalIcon(scenario.goal)}
+                      {getGoalIcon(scenario.properties.goal)}
                       <Typography variant="h6" component="div">
-                        {scenario.name}
+                        {scenario.properties.name}
                       </Typography>
                     </Box>
                     <IconButton
@@ -318,6 +315,20 @@ const Scenarios = () => {
                     </IconButton>
                   </Box>
 
+                  <Box sx={{ mb: 2 }}>
+                    <Chip
+                      label={scenario.properties.status}
+                      color={getStatusColor(scenario.properties.status)}
+                      size="small"
+                      sx={{ mr: 1 }}
+                    />
+                    <Chip
+                      label={scenario.properties.change_type}
+                      variant="outlined"
+                      size="small"
+                    />
+                  </Box>
+
                   <Typography
                     variant="body2"
                     color="text.secondary"
@@ -326,23 +337,9 @@ const Scenarios = () => {
                     {scenario.description || "No description"}
                   </Typography>
 
-                  <Box sx={{ mb: 2 }}>
-                    <Chip
-                      label={scenario.status}
-                      color={getStatusColor(scenario.status)}
-                      size="small"
-                      sx={{ mr: 1 }}
-                    />
-                    <Chip
-                      label={scenario.change_type}
-                      variant="outlined"
-                      size="small"
-                    />
-                  </Box>
-
-                  {scenario.target && (
+                  {scenario.properties.target && (
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                      <strong>Target:</strong> {getGoalText(scenario.goal)}
+                      <strong>Target:</strong> {getGoalText(scenario.properties.goal)}
                     </Typography>
                   )}
                 </CardContent>

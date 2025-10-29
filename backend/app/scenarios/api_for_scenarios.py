@@ -23,10 +23,12 @@ from .schemas_for_scenario import (
     ScenarioUpdate,
     ScenarioResponse,
 )
+from .utils_for_scenarios import extract_scenario_entities
 from app.text_clean import (
     extract_and_clean,
     chunk_by_page,
     chunk_by_character_limit,
+    extract_fulltext,
     NAMESPACE,
 )
 
@@ -135,47 +137,26 @@ async def create_scenario(
             )
 
         scenarios = []
-        # if file:
-        #     try:
-        #         scenarios = _analyze_scenarios_in_base_report(
-        #             scenario=json.dumps(
-        #                 {
-        #                     "project_id": project_id,
-        #                     "name": name,
-        #                     "description": description,
-        #                     "goal": goal,
-        #                     "change_type": change_type,
-        #                 }
-        #             ),
-        #             file=file,
-        #             doc_id=str(uuid.uuid4()),
-        #             artifact_type="scenario_report",
-        #             project_id=project_id,
-        #             user_id=user_id,
-        #         )
-        #     except HTTPException as e:
-        #         logger.error(f"[DEBUG] Failed to analyze scenarios: {e.detail}")
-        #         scenarios = []  # Default to an empty list if analysis fails
-
-        scenarios = []  # Default to empty list for now
-
         # Create scenario dictionary
         scenario_dict = {
             "id": str(uuid.uuid4()),
-            "project_id": project_id,
-            "name": name,
-            "description": description,
-            "goal": goal,
-            "change_type": change_type,
-            "status": status,
-            "user_id": user_id,
-            "created_by": user_id,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
-            "scenarios": scenarios,  # Default to an empty list
-            "compute_state": "idle",  # Default value for compute_state
-            "target": {},  # Default value for target
-            "constraints": {},  # Default value for constraints
+            "properties": {
+                "project_id": project_id,
+                "doc_id": "None",
+                "name": name,
+                "description": description,
+                "goal": goal,
+                "change_type": change_type,
+                "status": status,
+                "user_id": user_id,
+                "created_by": user_id,
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow(),
+                "scenarios": scenarios,  # Default to an empty list
+                "compute_state": "idle",  # Default value for compute_state
+                "target": {},  # Default value for target
+                "constraints": {},  # Default value for constraints
+            },
         }
         logger.debug(f"[DEBUG] scenario_dict before insert: {scenario_dict}")
 
@@ -236,7 +217,7 @@ def list_scenarios(
                 detail="Could not extract user_id from authentication token",
             )
 
-        query = {"project_id": project_id, "created_by": user_id}
+        query = {"properties.project_id": project_id, "properties.created_by": user_id}
 
         scenarios_cursor = (
             db().scenarios.find(query, {"_id": 0}).skip(skip).limit(limit)
@@ -245,10 +226,13 @@ def list_scenarios(
 
         # Ensure default values for missing fields
         for scenario in scenarios:
-            scenario.setdefault("compute_state", "idle")
-            scenario.setdefault("target", {})
-            scenario.setdefault("constraints", {})
-            scenario.setdefault("scenarios", [])
+            props = scenario.get("properties", {})
+            props.setdefault("compute_state", "idle")
+            props.setdefault("target", {})
+            props.setdefault("constraints", {})
+            props.setdefault("scenarios", [])
+            props.setdefault("relevant_entities", [])
+            scenario["properties"] = props
 
         return [ScenarioResponse(**scenario) for scenario in scenarios]
 
@@ -342,15 +326,15 @@ def update_scenario(
         # Build update dict
         update_dict = update_data.model_dump(exclude_unset=True, exclude_none=True)
 
-        # Ensure required fields are not removed
-        if "compute_state" not in update_dict:
-            update_dict["compute_state"] = existing.get("compute_state", "idle")
-        if "target" not in update_dict:
-            update_dict["target"] = existing.get("target", {})
-        if "constraints" not in update_dict:
-            update_dict["constraints"] = existing.get("constraints", {})
+        # # Ensure required fields are not removed
+        # if "compute_state" not in update_dict:
+        #     update_dict["compute_state"] = existing.get("compute_state", "idle")
+        # if "target" not in update_dict:
+        #     update_dict["target"] = existing.get("target", {})
+        # if "constraints" not in update_dict:
+        #     update_dict["constraints"] = existing.get("constraints", {})
 
-        update_dict["updated_at"] = datetime.utcnow()
+        update_dict["properties"]["updated_at"] = datetime.utcnow()
 
         # Update in database
         result = db().scenarios.update_one(
@@ -460,22 +444,13 @@ def convert_objectid_to_str(data):
         return data
 
 
-def extract_fulltext(pages_clean: list[tuple[int, str]]) -> str:
-    # pages_clean is [(page_num, text), ...]
-    pages_clean_sorted = sorted(pages_clean, key=lambda x: x[0])
-    full_text = "\n\n".join(
-        [f"[Page {p}]\n{t}" for p, t in pages_clean_sorted if t and t.strip()]
-    )
-    return full_text
-
-
 @router_scenarios.post("/scenarios/extract-scenario-data")
 async def extract_scenario_data(
     file: UploadFile = File(...),
     project_id: str = Form(...),
     artifact_type: str = Form(...),
     user_id: str = Form(...),
-    scenario: str = Form(...),  # Accept scenario as a string
+    scenario: str = Form(...),
 ):
     """
     Extract scenario data from chunks using OpenAI.
@@ -514,50 +489,58 @@ async def extract_scenario_data(
 
     # ----- Extract full text for logging or other purposes -----
     full_text = extract_fulltext(pages_clean)
-    # chunks: List[Dict[str, Any]] = []
-    # chunk_id = str(uuid.uuid5(NAMESPACE, f"{project_id}|{1}"))
-    # chunks.append(
-    #     {
-    #         "chunk_id": chunk_id,
-    #         "doc_id": found_doc_id,
-    #         "seq": 1,
-    #         "page": 0,
-    #         "text": full_text,
-    #         "properties": {
-    #             "artifact_type": "base_case_full_text",
-    #             "project_id": project_id,
-    #             "user_id": user_id,
-    #             "doc_id": found_doc_id
-    #         },
-    #     }
-    # )
-    # ----- End full text extraction -----
 
-    # 2) Build page chunks (Bronze)
-    # chunks = chunk_by_page(pages_clean, found_doc_id)
-    chunks = chunk_by_character_limit(full_text, found_doc_id, char_limit=5000)
-    for c in chunks:
-        c["text_raw"] = c.get(c["text"])
-        # Add artifact_type, project_id, user_id to properties
-        if "properties" not in c or not isinstance(c["properties"], dict):
-            c["properties"] = {}
-        c["properties"]["artifact_type"] = artifact_type
-        c["properties"]["project_id"] = project_id
-        c["properties"]["user_id"] = user_id
-        c["properties"]["doc_id"] = found_doc_id
+    process_full_text = scenario_dict.get("process_full_text", False)
+
+    if process_full_text:
+        logger.debug("[SCENARIO EXTRACTION] Processing full text only as per flag.")
+        chunks: List[Dict[str, Any]] = []
+        chunk_id = str(uuid.uuid5(NAMESPACE, f"{project_id}|{1}"))
+        chunks.append(
+            {
+                "chunk_id": chunk_id,
+                "doc_id": found_doc_id,
+                "seq": 1,
+                "page": 0,
+                "text": full_text,
+                "properties": {
+                    "artifact_type": "base_case_full_text",
+                    "project_id": project_id,
+                    "user_id": user_id,
+                    "doc_id": found_doc_id,
+                },
+            }
+        )
+        # ----- End full text extraction -----
+    else:
+        logger.debug("[SCENARIO EXTRACTION] Processing by character limit as per flag.")
+        # Chunk by character limit
+        chunks = chunk_by_character_limit(full_text, found_doc_id, char_limit=5000)
+        for c in chunks:
+            c["text_raw"] = c.get(c["text"])
+            # Add artifact_type, project_id, user_id to properties
+            if "properties" not in c or not isinstance(c["properties"], dict):
+                c["properties"] = {}
+            c["properties"]["artifact_type"] = artifact_type
+            c["properties"]["project_id"] = project_id
+            c["properties"]["user_id"] = user_id
+            c["properties"]["doc_id"] = found_doc_id
 
     try:
         # Use OpenAI to extract scenario mapping from the base case document
         scenarios = openai_extract_scenario_data(chunks, scenario=scenario_dict)
 
+        all_entities = extract_scenario_entities(scenarios)
+
         # Set all required fields
-        scenario_dict["doc_id"] = found_doc_id
-        scenario_dict["updated_at"] = datetime.utcnow()
-        scenario_dict["scenarios"] = scenarios
-        scenario_dict["doc_name"] = filename
-        scenario_dict["doc_size"] = len(pdf_bytes)
-        scenario_dict["status"] = "ready"
-        scenario_dict["file_sha256"] = file_sha
+        scenario_dict["properties"]["doc_id"] = found_doc_id
+        scenario_dict["properties"]["updated_at"] = datetime.utcnow()
+        scenario_dict["properties"]["scenarios"] = scenarios
+        scenario_dict["properties"]["doc_name"] = filename
+        scenario_dict["properties"]["doc_size"] = len(pdf_bytes)
+        scenario_dict["properties"]["status"] = "ready"
+        scenario_dict["properties"]["file_sha256"] = file_sha
+        scenario_dict["properties"]["relevant_entities"] = all_entities
 
         # Update the existing scenario in the database
         if scenario_id:

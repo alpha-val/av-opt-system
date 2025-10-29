@@ -187,7 +187,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "extract_scenarios",
-            "description": "Extract scenario data including header, approach options, relevant entities, assumptions, policies, constraints, cost guidelines, and uncertainties. Extract from two general situations: (1) Production change (increase or decrease), and (2) Cost reduction (capex or opex).",
+            "description": "Extract scenario data including header, approach options, relevant entities, assumptions, policies, constraints, cost guidelines, and uncertainties.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -211,84 +211,15 @@ TOOLS = [
                                             "type": "array",
                                             "items": {"type": "string"},
                                         },
+                                        "scenario_summary": {"type": "string"},
                                     },
                                     "required": [
                                         "target",
                                         "change_type",
                                         "description",
                                         "confidence",
+                                        "scenario_summary",
                                     ],
-                                },
-                                "approach_options": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "option_id": {"type": "string"},
-                                            "title": {"type": "string"},
-                                            "rationale": {"type": "string"},
-                                            "expected_effects": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "throughput": {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "direction": {
-                                                                "type": "string"
-                                                            },
-                                                            "estimate_pct": {
-                                                                "type": [
-                                                                    "string",
-                                                                    "null",
-                                                                ]
-                                                            },
-                                                        },
-                                                    },
-                                                    "capex": {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "direction": {
-                                                                "type": "string"
-                                                            },
-                                                            "notes": {"type": "string"},
-                                                        },
-                                                    },
-                                                    "opex": {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "direction": {
-                                                                "type": "string"
-                                                            },
-                                                            "notes": {"type": "string"},
-                                                        },
-                                                    },
-                                                    "quality": {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "direction": {
-                                                                "type": "string"
-                                                            },
-                                                            "notes": {"type": "string"},
-                                                        },
-                                                    },
-                                                },
-                                            },
-                                            "dependencies": {
-                                                "type": "array",
-                                                "items": {"type": "string"},
-                                            },
-                                            "refs": {
-                                                "type": "array",
-                                                "items": {"type": "string"},
-                                            },
-                                        },
-                                        "required": [
-                                            "option_id",
-                                            "title",
-                                            "rationale",
-                                            "expected_effects",
-                                        ],
-                                    },
                                 },
                                 "relevant_entities": {
                                     "type": "array",
@@ -351,92 +282,25 @@ TOOLS = [
                                                     },
                                                 },
                                             },
-                                            "cost_role": {"type": "string"},
-                                            "refs": {
+                                            "evidence": {
                                                 "type": "array",
                                                 "items": {"type": "string"},
                                             },
+                                            "rationale": {"type": "string"},
                                         },
                                         "required": [
                                             "name",
                                             "entity_type",
                                             "base_values",
+                                            "proposed_modifications",
+                                            "expected_impacts",
+                                            "evidence",
+                                            "rationale",
                                         ],
                                     },
                                 },
-                                "assumptions": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "text": {"type": "string"},
-                                            "type": {"type": "string"},
-                                            "refs": {
-                                                "type": "array",
-                                                "items": {"type": "string"},
-                                            },
-                                        },
-                                    },
-                                },
-                                "policies": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "text": {"type": "string"},
-                                            "domain": {"type": "string"},
-                                            "refs": {
-                                                "type": "array",
-                                                "items": {"type": "string"},
-                                            },
-                                        },
-                                    },
-                                },
-                                "constraints": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "constraint": {"type": "string"},
-                                            "basis": {"type": "string"},
-                                            "refs": {
-                                                "type": "array",
-                                                "items": {"type": "string"},
-                                            },
-                                        },
-                                    },
-                                },
-                                "cost_guidelines": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "item": {"type": "string"},
-                                            "base_cost_value": {
-                                                "type": ["number", "null"]
-                                            },
-                                            "currency": {"type": "string"},
-                                            "basis_year": {"type": "integer"},
-                                            "cost_class": {"type": "string"},
-                                            "scaling_rule": {"type": "string"},
-                                            "risk_notes": {"type": "string"},
-                                            "estimation_note": {"type": "string"},
-                                        },
-                                    },
-                                },
-                                "uncertainties": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "gap": {"type": "string"},
-                                            "impact": {"type": "string"},
-                                            "action": {"type": "string"},
-                                        },
-                                    },
-                                },
                             },
-                            "required": ["scenario_header"],
+                            "required": ["scenario_header", "relevant_entities"],
                         },
                     }
                 },
@@ -719,7 +583,6 @@ TOOLS_SCENARIO_EXTRACTION_v2 = [
     # -------------------------------------------------------------------------
     # 3. Scenario extraction
     # -------------------------------------------------------------------------
-    # ...existing code...
     {
         "type": "function",
         "function": {
@@ -1173,7 +1036,18 @@ def openai_extract_scenario_data(
     all_scenario_data = []
     print(f"[DEBUG] Scenario context: {scenario}")
     scenario_target = scenario.get("goal", "N/A")
-    scenario_change_type = ", ".join(["Capacity", "Equipment", "Material", "Process", "Quality", "Quantity", "Technology", "Other"])
+    scenario_change_type = ", ".join(
+        [
+            "Capacity",
+            "Equipment",
+            "Material",
+            "Process",
+            "Quality",
+            "Quantity",
+            "Technology",
+            "Other",
+        ]
+    )
     scenario_description = scenario.get("description", "N/A")
 
     user_prompt = (

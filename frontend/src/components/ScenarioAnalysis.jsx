@@ -10,6 +10,7 @@ import {
   Select,
   MenuItem,
   CircularProgress,
+  Grid,
 } from "@mui/material";
 import ReactJson from "react-json-view";
 import { extractScenarioData } from "../redux/scenarioSlice";
@@ -26,9 +27,11 @@ const ScenarioAnalysis = ({ scenario, onClose }) => {
     }
   );
 
-  const projectId = scenario?.project_id || "";
+console.log("Initial scenarioDetails:", scenarioDetails);
+
+  const projectId = scenario?.properties.project_id || "";
   const artifactType = "scenario_analysis";
-  const userId = scenario?.user_id || "";
+  const userId = scenario?.properties.user_id || "";
 
   const [file, setFile] = useState(null); // Separate state for the file
   const [submitted, setSubmitted] = useState(false);
@@ -52,10 +55,15 @@ const ScenarioAnalysis = ({ scenario, onClose }) => {
 
   const handleSubmit = async () => {
     setSubmitted(true);
-    // Make a copy of scenarioDetails to avoid direct state mutation
-    var scenarioDetailsCopy = { ...scenarioDetails };
 
-    delete scenarioDetailsCopy.scenarios;
+    // Create a copy of scenarioDetails without the "scenarios" property
+    const { properties, ...rest } = scenarioDetails;
+    const { scenarios, ...propertiesWithoutScenarios } = properties || {};
+
+    const scenarioDetailsCopy = {
+      ...rest,
+      properties: propertiesWithoutScenarios,
+    };
 
     dispatch(
       extractScenarioData({
@@ -92,7 +100,7 @@ const ScenarioAnalysis = ({ scenario, onClose }) => {
           <InputLabel>Target or Goal</InputLabel>
           <Select
             name="goal"
-            value={scenarioDetails.goal} // Use scenarioDetails state
+            value={scenarioDetails.properties.goal} // Use scenarioDetails state
             onChange={handleChange}
             label="Target or Goal"
           >
@@ -107,7 +115,7 @@ const ScenarioAnalysis = ({ scenario, onClose }) => {
           rows={3}
           label="Description"
           name="description"
-          value={scenarioDetails.description} // Use scenarioDetails state
+          value={scenarioDetails.properties.description} // Use scenarioDetails state
           onChange={handleChange}
           size="small"
           helperText="Describe the scenario you want to analyze"
@@ -135,7 +143,7 @@ const ScenarioAnalysis = ({ scenario, onClose }) => {
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={loading || !scenarioDetails.description}
+          disabled={loading || !scenarioDetails.properties.description}
           startIcon={loading && <CircularProgress size={20} color="inherit" />}
         >
           {loading ? "Analyzing..." : "Submit"}
@@ -153,8 +161,8 @@ const ScenarioAnalysis = ({ scenario, onClose }) => {
         ) : (
           <ReactJson
             src={
-              scenarioDetails.scenarios.length > 0
-                ? scenarioDetails.scenarios
+              scenarioDetails.properties.scenarios.length > 0
+                ? scenarioDetails.properties.scenarios
                 : result || { result: "No data available" }
             }
             name={false}
@@ -162,6 +170,32 @@ const ScenarioAnalysis = ({ scenario, onClose }) => {
             collapsed={false}
           />
         )}
+      </Box>
+
+      <Box>
+        <Grid container spacing={2} justifyContent="flex-end">
+          {scenarioDetails.properties.relevant_entities &&
+            scenarioDetails.properties.relevant_entities.length > 0 && (
+              <Grid item sx={{ mt: 2 }}>
+                <div>
+                  <strong>Relevant Entities:</strong>
+                  <ul>
+                    {scenarioDetails.properties.relevant_entities.map((entity, idx) => (
+                      <li key={idx}>
+                        {entity.entity_name}
+                        <br />
+                        Base values: {JSON.stringify(entity.base_values)},
+                        <br />
+                        Proposed:{" "}
+                        {JSON.stringify(entity.proposed_modifications)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </Grid>
+            )}
+
+        </Grid>
       </Box>
     </Box>
   );

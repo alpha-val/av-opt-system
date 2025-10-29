@@ -91,15 +91,17 @@ class ScenarioInDB(ScenarioBase):
 
 class ScenarioResponse(BaseModel):
     id: str
-    name: str
-    project_id: str
-    goal: str
-    description: Optional[str]
-    change_type: str
-    status: Optional[str]
-    compute_state: Optional[str] = "idle"  # Default to "idle"
-    target: Optional[Dict[str, Any]] = {}  # Default to an empty dictionary
-    constraints: Optional[Dict[str, Any]] = {}  # Default to an empty dictionary
-    created_at: datetime
-    updated_at: datetime
-    scenarios: List[Dict[str, Any]] = []  # Default to an empty list
+    properties: Dict[str, Any]
+    # name: str
+    # project_id: str
+    # goal: str
+    # description: Optional[str]
+    # change_type: str
+    # status: Optional[str]
+    # compute_state: Optional[str] = "idle"  # Default to "idle"
+    # target: Optional[Dict[str, Any]] = {}  # Default to an empty dictionary
+    # constraints: Optional[Dict[str, Any]] = {}  # Default to an empty dictionary
+    # created_at: datetime
+    # updated_at: datetime
+    # scenarios: List[Dict[str, Any]] = []  # Default to an empty list
+    # relevant_entities: List[Dict[str, Any]] = []  # Default to an empty list

@@ -7,6 +7,8 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from app.text_clean import (
     extract_and_clean,
     chunk_by_page,
+    chunk_by_character_limit,
+    extract_fulltext,
     process_extracted_nodes,
     NAMESPACE,
 )
@@ -37,19 +39,34 @@ def etl_base_case(
 
     # 1) Text extract + clean
     some_id, file_sha, pages_raw, pages_clean = extract_and_clean(pdf_bytes, filename)
+    
+    chunk_by_chars = True
+    if chunk_by_chars:
+        full_text = extract_fulltext(pages_clean)
 
-    # 2) Build page chunks (Bronze)
-    chunks = chunk_by_page(pages_clean, doc_id)
-    raw_by_page = {p: t for p, t in pages_raw}
-    for c in chunks:
-        c["text_raw"] = raw_by_page.get(c["page"])
-        # Add artifact_type, project_id, user_id to properties
-        if "properties" not in c or not isinstance(c["properties"], dict):
-            c["properties"] = {}
-        c["properties"]["artifact_type"] = artifact_type
-        c["properties"]["project_id"] = project_id
-        c["properties"]["user_id"] = user_id
-        c["properties"]["doc_id"] = doc_id
+        chunks = chunk_by_character_limit(full_text, doc_id, char_limit=5000)
+        for c in chunks:
+            c["text_raw"] = c.get(c["text"])
+            # Add artifact_type, project_id, user_id to properties
+            if "properties" not in c or not isinstance(c["properties"], dict):
+                c["properties"] = {}
+            c["properties"]["artifact_type"] = artifact_type
+            c["properties"]["project_id"] = project_id
+            c["properties"]["user_id"] = user_id
+            c["properties"]["doc_id"] = doc_id
+    else:
+        # 2) Build page chunks (Bronze)
+        chunks = chunk_by_page(pages_clean, doc_id)
+        raw_by_page = {p: t for p, t in pages_raw}
+        for c in chunks:
+            c["text_raw"] = raw_by_page.get(c["page"])
+            # Add artifact_type, project_id, user_id to properties
+            if "properties" not in c or not isinstance(c["properties"], dict):
+                c["properties"] = {}
+            c["properties"]["artifact_type"] = artifact_type
+            c["properties"]["project_id"] = project_id
+            c["properties"]["user_id"] = user_id
+            c["properties"]["doc_id"] = doc_id
 
 
     # ========== ENTITY EXTRACTION ==========

@@ -589,24 +589,22 @@ SCENARIO TYPES TO EXTRACT
    - Policy or procurement constraints (codes, standards, local sourcing)
    - Recommended estimation methods or scaling rules (e.g., cost exponent)
 
---------------------------------------------------------------------------------
-GENERAL INPUTS
---------------------------------------------------------------------------------
-1) base_case_text: <<INSERT BASE CASE TEXT HERE>>
 
-2) scenario_request (user intent):
+--------------------------------------------------------------------------------
+INPUTS
+--------------------------------------------------------------------------------
+1) BASE CASE TEXT: see below
+
+2) SCENARIO REQUEST:
    {
-     "target": ["Increase production"] | ["Reduce Capex"],
+     "goal": ["Increase production"] | ["Reduce Capex"],
      "change_type": ["Equipment","Material","Quality","Quantity"],
-     "description": "Increase production by 8%"
+     "description": "Increase production by 8%" | "Reduce Capex by 5%"
    }
 
-3) ontology (optional):
-   {
-     "NODE_TYPES": [...],
-     "EDGE_TYPES": [...],
-     "COST_POLICY": "CostRule vs CostItem"
-   }
+3) ONTOLOGY
+Use ontology terms to classify and standardize all extracted
+entities, parameters, relationships, and cost roles.
 
 --------------------------------------------------------------------------------
 QUALITY & STYLE
@@ -615,7 +613,8 @@ QUALITY & STYLE
 - Keep terms consistent with ontology (if provided).
 - Use SI/US units exactly as in the base case; include units on all numeric values.
 - Use explicit references to section headers, tables, or page anchors (e.g., "§2 Major Equipment").
-- Ensure both scenario types (Production Change, Capex Change) are populated when relevant data exists.
+- Avoid narrative or commentary outside the JSON.
+- Do not include emojis or special characters.
 
 --------------------------------------------------------------------------------
 OUTPUT — STRICT JSON FORMAT
@@ -633,96 +632,43 @@ Each scenario MUST conform to the following schema:
         "change_type": ["Equipment","Material","Quality","Quantity"],
         "description": "<free text summary>",
         "confidence": 0.0,
-        "related_sections": ["§2 Major Equipment", "§3 Design Criteria"]
+        "related_sections": ["§2 Major Equipment", "§3 Design Criteria"],
+        "scenario_summary": "<-- summary of the base case text relevant to this scenario; include as much detail as possible; limit the length to 3000 words; -->"
       },
-
-      "template_parameters": {
-        "change_direction": "increase | decrease",
-        "change_magnitude": "<percent or unit value, e.g., 5%, 2 gpm>",
-        "baseline_metric": "<production rate, flow, capacity, cost, etc.>",
-        "baseline_value": "<numeric + units>",
-        "target_metric": "<same as baseline_metric>",
-        "target_value": "<numeric + units>",
-        "measurement_basis": "<steady-state | design | rated>"
-      },
-
-      "approach_options": [
-        {
-          "option_id": "<slug>",
-          "title": "<short label>",
-          "rationale": "<why this option helps achieve the goal>",
-          "expected_effects": {
-            "throughput": {"direction": "increase|decrease|neutral", "estimate_pct": "<string|null>"},
-            "capex":      {"direction": "increase|decrease|neutral", "notes": "<string>"},
-            "opex":       {"direction": "increase|decrease|neutral", "notes": "<string>"},
-            "quality":    {"direction": "increase|decrease|neutral", "notes": "<string>"}
-          },
-          "dependencies": ["<e.g., TDH validation, electrical capacity>"],
-          "refs": ["<anchors>"]
-        }
-      ],
 
       "relevant_entities": [
         {
-          "entity_name": "<Pump, Tank, System>",
+          "entity_name": "<-- Pump, Tank, System -->",
           "entity_type": "Equipment | Process | Material | Control | Civil | Electrical | Other",
-          "base_values": [{"key": "flow_rate", "value": "100", "units": "gpm"}],
+          "base_values": [{"key": "flow_rate", "value": "100", "units": "gpm", "discipline": "Piping", "category": "Hydraulic", "subcategory": "Flow Rate"}],
           "proposed_modifications": [
-            {"parameter": "flow_rate", "change": "increase", "suggested_value": "108", "units": "gpm"}
+            {"parameter": "flow_rate", "change": "increase", "suggested_value": "108", "units": "gpm", "discipline": "Piping", "category": "Hydraulic", "subcategory": "Flow Rate"}
           ],
           "expected_impacts": {
             "capex": {"direction": "increase", "magnitude_note": "+5%"},
             "opex": {"direction": "increase", "magnitude_note": "+2%"}
           },
-          "cost_role": "CostItem | CostRule | None",
-          "refs": ["§2 Major Equipment"]
+          "evidence": ["§2 Major Equipment <-- include relevant excerpts from the base case text that support this entity extraction -->"]
+          "rationale": "<-- explain why this entity is relevant to the scenario; include as much detail as possible; limit the length to 1000 words; -->"
         }
       ],
-
-      "assumptions": [
-        {"text": "<design or operational assumption>", "type": "Design | Operational | Market | Environmental"}
-      ],
-
-      "policies": [
-        {"text": "<policy or code>", "domain": "Safety | Code | Cost | Procurement | Quality | Environmental"}
-      ],
-
-      "constraints": [
-        {"constraint": "<limitation>", "basis": "Physical | Regulatory | Budgetary | Schedule | Availability"}
-      ],
-
-      "cost_guidelines": [
-        {
-          "item": "<e.g., Tank, Pump, Electrical>",
-          "base_cost_value": 8500,
-          "currency": "USD",
-          "basis_year": 2025,
-          "scaling_rule": "C2 = C1 * (S2/S1)^0.6",
-          "risk_notes": "Vendor price variability, material volatility",
-          "estimation_note": "Use vendor quote if deviation > ±20%"
-        }
-      ],
-
-      "uncertainties": [
-        {"gap": "<missing or estimated data>", "impact": "Low | Med | High", "action": "obtain vendor quote | recalc hydraulics"}
-      ]
     }
   ]
 }
 
 --------------------------------------------------------------------------------
-STRICTNESS
+STRICT REQUIREMENTS
 --------------------------------------------------------------------------------
 - Output MUST be valid JSON with a top-level key `"scenarios"`.
-- Always generate both templates (Production Change, Capex Change) if applicable.
-- Each scenario must be independently analyzable and reusable.
-- Avoid narrative or commentary outside the JSON.
-- Exhaustively find and map ALL POSSIBLE relevant data in the base case text.
-  - For example, if multiple production change options exist, include them all. E.g.,
-    `Pump and motor efficiencies can be improved with minimal cost.` → include as separate entities.
+- Be as prescriptive and detailed as possible in the scenario_summary and rationale fields.
+- The goal is to extract relevant entities that would be modified or impacted
+  by the scenario request. After which, these entities will be used to generate
+  detailed scenario and cost options in subsequent steps.
+- Assess all possible changes and impacts from the scenario request. E.g., "Equipment", "Material", "Process", "Quality", "Quantity", etc.
+- Important: FIND ALL POSSIBLE relevant entities in the base case text.
 --------------------------------------------------------------------------------
-"""
 
+""".strip()
 # Provenance and Confidence block
 prov_conf_block = """
     Provenance & Confidence extraction rules:

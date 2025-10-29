@@ -443,9 +443,9 @@ Each scenario MUST conform to the following schema:
         {
           "entity_name": "<-- Pump, Tank, System -->",
           "entity_type": "Equipment | Process | Material | Control | Civil | Electrical | Other",
-          "base_values": [{"key": "flow_rate", "value": "100", "units": "gpm"}],
+          "base_values": [{"key": "flow_rate", "value": "100", "units": "gpm", "discipline": "Piping", "category": "Hydraulic", "subcategory": "Flow Rate"}],
           "proposed_modifications": [
-            {"parameter": "flow_rate", "change": "increase", "suggested_value": "108", "units": "gpm"}
+            {"parameter": "flow_rate", "change": "increase", "suggested_value": "108", "units": "gpm", "discipline": "Piping", "category": "Hydraulic", "subcategory": "Flow Rate"}
           ],
           "expected_impacts": {
             "capex": {"direction": "increase", "magnitude_note": "+5%"},

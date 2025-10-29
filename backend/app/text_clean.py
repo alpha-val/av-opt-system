@@ -139,6 +139,14 @@ def chunk_by_character_limit(
 
     return chunks
 
+def extract_fulltext(pages_clean: list[tuple[int, str]]) -> str:
+    # pages_clean is [(page_num, text), ...]
+    pages_clean_sorted = sorted(pages_clean, key=lambda x: x[0])
+    full_text = "\n\n".join(
+        [f"[Page {p}]\n{t}" for p, t in pages_clean_sorted if t and t.strip()]
+    )
+    return full_text
+
 
 def extract_and_clean(pdf_bytes: bytes, filename: str):
     """

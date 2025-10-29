@@ -1325,3 +1325,26 @@ Traceback (most recent call last):
                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'list' object has no attribute 'join'
 2025-10-29 12:21:23 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 14:02:25 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 14:02:53 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:191] - [DEBUG] Successfully inserted scenario with id: cd7ec364-4de5-48e1-bea9-6fd501ceb64d
+2025-10-29 14:44:37 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 14:46:20 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:191] - [DEBUG] Successfully inserted scenario with id: a7c041f6-44f3-4c5b-b26f-22ced76d4386
+2025-10-29 15:00:31 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 15:01:56 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 15:03:30 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 15:04:29 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 15:06:53 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 15:12:53 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 16:15:52 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 16:17:44 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 16:18:52 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 16:22:05 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 16:22:49 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 16:27:31 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 16:37:52 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:169] - [DEBUG] Successfully inserted scenario with id: ebb65727-70c4-40c9-a4b7-7999ae8f2c7c
+2025-10-29 16:44:29 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 16:45:25 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 16:48:59 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 16:49:20 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:172] - [DEBUG] Successfully inserted scenario with id: 28b02f7c-5fdc-42b2-899f-49b89d503e6f
+2025-10-29 16:54:59 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 16:56:40 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
