@@ -1,6 +1,7 @@
 # in_pipeline/costing.py
 from __future__ import annotations
 from typing import Dict, Any, List, Optional, Tuple
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 import re
 import uuid
 from datetime import datetime
@@ -150,6 +151,7 @@ def _equipment_nodes_linked_to_project(
 
 # # # # # # # # # # # # # # # # # # # # # # # #
 
+
 def find_related_tabular_entities_by_embedding(
     entity: Dict[str, Any],
     project_id: str,
@@ -169,7 +171,9 @@ def find_related_tabular_entities_by_embedding(
     """
 
     # Normalize the entity for vector DB operations
-    normalized_entity = normalize_entity_for_vector_db(entity, project_id, artifact_type="tabular_data")
+    normalized_entity = normalize_entity_for_vector_db(
+        entity, project_id, artifact_type="tabular_data"
+    )
     props_text = normalized_entity["text_content"]
 
     try:
@@ -179,7 +183,9 @@ def find_related_tabular_entities_by_embedding(
         )
         embedding = embedding_response.data[0].embedding
     except Exception as e:
-        logger.error(f"[EMBEDDING] Failed to get embedding for entity {entity.get('id')}: {e}")
+        logger.error(
+            f"[EMBEDDING] Failed to get embedding for entity {entity.get('id')}: {e}"
+        )
         return []
 
     try:
@@ -241,13 +247,15 @@ def cost_estimation(
         )
 
     # Fetch the entity documents from the entities collection
-    reference_entities = db().entities.find({"id": {"$in": selected_entities}}, {"_id": 0})
+    reference_entities = db().entities.find(
+        {"id": {"$in": selected_entities}}, {"_id": 0}
+    )
 
     base_entities = list(reference_entities)
 
     # Retrieve tabular entities based on selected entities using embedding
     tabular_entities = []
-    
+
     # Keep track of matched entities for reporting
     matched_entities = []
 

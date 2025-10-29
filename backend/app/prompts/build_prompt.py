@@ -1,5 +1,7 @@
 # prompt_rules.py
 from typing import List
+import json
+from app.ontology_msio_v1 import MSIO
 
 
 def _bulleted(items: List[str]) -> str:
@@ -210,6 +212,163 @@ QUALITY REQUIREMENTS FOR TABLE EXTRACTION:
 ✗ No assumptions about missing units
 """
 
+    # --------------------------------------------------------------------------
+    # HIERARCHICAL SYSTEMS & INPUTS EXTRACTION POLICY (BOUND TO MSIO)
+    # --------------------------------------------------------------------------
+    HIERARCHICAL_EXTRACTION_BLOCK = """
+--------------------------------------------------------------------------------
+HIERARCHICAL SYSTEMS & INPUTS EXTRACTION POLICY
+--------------------------------------------------------------------------------
+Goal:
+Identify, extract, and classify all systems, subsystems, packages, equipment, bulks,
+and operating inputs (materials, utilities, labor, and cost basis) described in the
+document, using the hierarchical taxonomy defined in the Mining Systems & Inputs
+Ontology (MSIO).  Preserve normal Alpha-Val JSON structure (`nodes`, `edges`),
+but include explicit ontology mappings for hierarchy and class resolution.
+
+--------------------------------------------------------------------------------
+1. Hierarchy Recognition
+--------------------------------------------------------------------------------
+Recognize hierarchical patterns in text and tables:
+    - System → Subsystem → Package → EquipmentItem → BulkItem
+    - Inputs (MaterialInput, UtilityInput, LaborCategory)
+    - CostBasisItem (CAPEX/OPEX, Direct/Indirect classification)
+
+Typical cues:
+    • Section headings (e.g., “3. Crushing and Conveying System”)
+    • Table titles (“Mechanical Equipment List – Grinding Area”)
+    • Column headers containing scope (e.g., “Package No.”, “Area”)
+    • Indentation, numbering, or “within” language (“within Grinding Area”)
+
+Every extracted node must carry:
+    "ontology_path": <MSIO taxonomy path string>,
+    e.g., "Equipment/Mechanical/Crushing/PrimaryGyratory"
+
+--------------------------------------------------------------------------------
+2. Node Construction & Ontology Mapping
+--------------------------------------------------------------------------------
+For each extracted entity:
+    1. Determine its **entity category** using MSIO.TAXONOMY and SYNONYMS.
+      Examples:
+          "Primary Crusher" → EquipmentItem (Equipment/Mechanical/Crushing/PrimaryGyratory)
+          "Plant MCC"        → EquipmentItem (Equipment/Electrical/MCCsVFDs)
+          "Process Water Line"→ BulkItem (Equipment/Piping/Water)
+          "Flotation Reagent"→ MaterialInput (INPUT/MAT/FlotationReagents)
+          "Power Tariff"     → UtilityInput (INPUT/UTIL/Power)
+          "Installation Labor"→ LaborCategory (INPUT/LAB/Maintenance)
+          "Freight & Duties" → CostBasisItem (COST/CAPEX/DIRECT/FreightDuties)
+
+    2. Create node under top-level key `"nodes"` with:
+          {
+              "id": "<uuid>",
+              "type": "<mapped Alpha-Val node_type>",
+              "ontology_path": "<MSIO taxonomy path>",
+              "category": "<MSIO category, e.g., EquipmentItem>",
+              "properties": { … filled per MSIO.TEMPLATES[...] … },
+              "provenance": {sourceDoc, sourcePage?, extractionMethod?},
+              "confidence": 0.0–1.0
+          }
+
+    3. Add hierarchy linkage edges:
+          Subsystem  —PART_OF→ System
+          Package    —PART_OF→ Subsystem
+          Equipment  —PART_OF→ Package
+          BulkItem   —PART_OF→ Equipment
+          Material/Utility —CONSUMES→ Equipment
+          Equipment —HAS_COST→ CostBasisItem
+
+--------------------------------------------------------------------------------
+3. Property Population
+--------------------------------------------------------------------------------
+Populate all relevant template fields from MSIO.TEMPLATES for the given category:
+    • EquipmentItem → powerKw, capacity_value, throughput_value, manufacturer, model, duty.
+    • BulkItem → bulk_type (Piping/Electrical/etc.) + category-specific attributes.
+    • MaterialInput → material_class, consumption_value/unit, price_amount/currency/year.
+    • UtilityInput → utility_type, rate_value/unit, cost_per_unit, voltage_kV, peak_demand_kW.
+    • CostBasisItem → basis_code, price_amount, currency, estimate_class, costBasis.
+    • LaborCategory → headcount_FTE, hourly_rate, shift_pattern.
+
+Normalize numeric and unit fields per UNITS NORMALIZATION POLICY.
+
+--------------------------------------------------------------------------------
+4. Cost Basis Classification
+--------------------------------------------------------------------------------
+Map each CostBasisItem to its canonical cost path per MSIO.COST_BASIS_TAGS:
+    • Direct CAPEX → COST/CAPEX/DIRECT/*
+    • Indirect CAPEX → COST/CAPEX/INDIRECT/*
+    • OPEX → COST/OPEX/*
+
+Attach cost basis to equipment, bulks, or inputs with :HAS_COST edges.
+
+--------------------------------------------------------------------------------
+5. Provenance, Normalization, and Confidence
+--------------------------------------------------------------------------------
+Every node and edge must include:
+    - provenance: {sourceDoc, sourcePage?, tableRef?, extractionMethod: "LLM"|"tabular"}
+    - ontology_path: the canonical MSIO taxonomy string
+    - confidence: numeric score (0.0–1.0)
+
+Normalize:
+    • Units per UNITS NORMALIZATION & DEDUPLICATION POLICY
+    • Currency to ISO-4217
+    • Estimate classes per AACE reference
+
+--------------------------------------------------------------------------------
+6. Output Requirements
+--------------------------------------------------------------------------------
+All hierarchical extractions must be serialized under the standard Alpha-Val schema:
+{
+  "nodes": [ {…System…}, {…Subsystem…}, {…EquipmentItem…}, {…MaterialInput…}, … ],
+  "edges": [
+    {"source": "equip_12", "target": "pkg_5", "type": "PART_OF"},
+    {"source": "equip_12", "target": "cost_7", "type": "HAS_COST"},
+    {"source": "reagent_3", "target": "equip_12", "type": "CONSUMES"}
+  ],
+  "meta": {
+    "ontology_mapping": "MSIO_v0.9.0",
+    "policyCompliance": {…},
+    "normalization": {…}
+  }
+}
+
+--------------------------------------------------------------------------------
+7. Validation & Completeness
+--------------------------------------------------------------------------------
+✓ Each EquipmentItem must have an ontology_path and category.
+✓ Each node must resolve to one MSIO.TAXONOMY path (no orphan nodes).
+✓ Each Package and Subsystem must have PART_OF edges upwards.
+✓ Each EquipmentItem should have at least one cost, input, or bulk relationship.
+✓ Use MSIO.PATTERNS (SystemBreakdown, PackageEquipment, InputsToProcess, CostAttachment)
+  to verify graph completeness.
+
+✗ Do not invent hierarchy beyond evidence.
+✗ Do not merge distinct physical items into one node.
+✗ Do not assign arbitrary ontology paths—use the closest defined code.
+
+--------------------------------------------------------------------------------
+8. Examples
+--------------------------------------------------------------------------------
+Example 1 — Table snippet: "Primary Crusher, 600 kW, 2500 tph"
+→ Node type: EquipmentItem
+  ontology_path: "Equipment/Mechanical/Crushing/PrimaryGyratory"
+  type: "Equipment"
+  properties: {"powerKw":600, "throughput_value":2500, "throughput_unit":"tph"}
+→ Connect to parent Package "Crushing & Conveying" via PART_OF.
+
+Example 2 — Row: "Flocculant, 0.1 kg/t, USD 2500/t"
+→ Node type: MaterialInput
+  ontology_path: "INPUT/MAT/Flocculant"
+  properties: {"consumption_value":0.1,"consumption_unit":"kg/t","price_amount":2500,"currency":"USD"}
+→ Connect via CONSUMES edge to Thickener Package.
+
+--------------------------------------------------------------------------------
+Compliance
+--------------------------------------------------------------------------------
+All extracted entities must reference a valid MSIO taxonomy path and be mappable
+to Alpha-Val ontology node/edge types through MSIO.MAPPINGS. Include ontology_path
+and category fields in every node for cross-ontology reasoning.
+"""
+
     return f"""
 Extract a knowledge graph from the user's text.
 
@@ -239,6 +398,7 @@ ONTOLOGY (from config.py)
 --------------------------------------------------------------------------------
 Allowed node types (NODE_TYPES):
 {_bulleted(ontology["NODE_TYPES"])}
+{json.dumps(MSIO.get("TAXONOMY"), indent=2)}
 
 Allowed edge types (EDGE_TYPES):
 {_bulleted(ontology["EDGE_TYPES"])}
@@ -283,6 +443,8 @@ Edge object (each item in extract_edges.edges) MUST have:
     • any domain attributes the ontology expects for that edge (if any)
 --------------------------------------------------------------------------------
 
+HIERARCHICAL EXTRACTION POLICY
+{HIERARCHICAL_EXTRACTION_BLOCK}
 
 --------------------------------------------------------------------------------
 NORMALIZATION & DEDUPLICATION RULES
@@ -325,6 +487,7 @@ QUALITY GATE (pre-return)
 - For nodes of type 'CostEstimate' or similar, ensure costing details are present.
 - For node properties that are costs/prices, always extract and store the numeric value and currency as separate properties.
 - For node properties that are costs/prices, include currency and basis_year when available.
+- For every node, strictly follow the hierarchical extraction policy if applicable.
 - Every edge: valid 'source', 'target', 'type', and a 'properties' dict.
 - Every edge property key matches EDGE_PROPERTIES.
 - For node and edge, include evidence; evidence must be present and derived from the text.

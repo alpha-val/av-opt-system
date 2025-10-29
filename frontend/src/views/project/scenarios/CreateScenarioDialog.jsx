@@ -12,51 +12,57 @@ import {
   MenuItem,
   Box,
   Typography,
-  InputAdornment,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
   CircularProgress,
 } from "@mui/material";
 import { useDispatch } from "react-redux";
 import { createScenario } from "../../../redux/scenarioSlice";
 
-const CreateScenarioDialog = ({ open, onClose, projectId }) => {
+const CreateScenarioDialog = ({ open, onClose, projectId, scenarioName }) => {
   const dispatch = useDispatch();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
+    name: scenarioName || "",
+    description: "Increase production by 3%",
     goal: "increase_production",
     change_type: "capacity",
+    file: null, // Add file field to form data
   });
 
   const handleChange = (field) => (event) => {
-    setFormData({ ...formData, [field]: event.target.value });
+    if (field === "file") {
+      setFormData({ ...formData, file: event.target.files[0] }); // Handle file upload
+    } else {
+      setFormData({ ...formData, [field]: event.target.value });
+    }
   };
 
   const handleSubmit = async () => {
-    const scenario = {
+    // if (!formData.file) {
+    //   alert("Please upload a file."); // Alert user if file is missing
+    //   return;
+    // }
+
+    const scenarioData = {
       project_id: projectId,
-      name: formData.name,
+      name: formData.name || scenarioName || "New Scenario",
       description: formData.description,
       goal: formData.goal,
       change_type: formData.change_type,
-      status: "draft",
+      // file: formData.file, // Include the file
     };
 
-    console.log("Submitting new scenario:", scenario);
+    console.log("Submitting new scenario:", scenarioData);
     setIsSubmitting(true);
 
     try {
-      await dispatch(createScenario(scenario)).unwrap();
+      await dispatch(createScenario(scenarioData)).unwrap();
 
       setFormData({
         name: "",
         description: "",
         goal: "increase_production",
         change_type: "capacity",
+        // file: null,
       });
 
       onClose();
@@ -72,6 +78,15 @@ const CreateScenarioDialog = ({ open, onClose, projectId }) => {
       <DialogTitle>Create New Scenario</DialogTitle>
       <DialogContent>
         <Box sx={{ pt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* Name */}
+          <TextField
+            label="Scenario Name"
+            fullWidth
+            required
+            value={formData.name || scenarioName || ""}
+            onChange={handleChange("name")}
+            placeholder="e.g., Increase production by 10%"
+          />
           {/* Goal Selection */}
           <FormControl fullWidth>
             <InputLabel>What are you trying to achieve?</InputLabel>
@@ -84,23 +99,12 @@ const CreateScenarioDialog = ({ open, onClose, projectId }) => {
               <MenuItem value="increase_production">
                 Increase Production
               </MenuItem>
-              <MenuItem value="reduce_cost">Reduce Cost</MenuItem>
+              <MenuItem value="reduce_capex">Reduce Cost</MenuItem>
               <MenuItem value="improve_quality">Improve Quality</MenuItem>
               <MenuItem value="change_technology">Change Technology</MenuItem>
               <MenuItem value="other">Other</MenuItem>
             </Select>
           </FormControl>
-
-          {/* Name */}
-          <TextField
-            label="Scenario Name"
-            fullWidth
-            required
-            value={formData.name}
-            onChange={handleChange("name")}
-            placeholder="e.g., Increase production by 10%"
-            disabled={isSubmitting}
-          />
 
           {/* Description */}
           <TextField
@@ -108,7 +112,10 @@ const CreateScenarioDialog = ({ open, onClose, projectId }) => {
             fullWidth
             multiline
             rows={2}
-            value={formData.description}
+            value={
+              formData.description ||
+              "Increase production of the unit by 5%; analyze all impacts."
+            }
             onChange={handleChange("description")}
             placeholder="Optional description"
             disabled={isSubmitting}
@@ -130,6 +137,17 @@ const CreateScenarioDialog = ({ open, onClose, projectId }) => {
               <MenuItem value="technology">Technology</MenuItem>
             </Select>
           </FormControl>
+
+          {/* File Upload */}
+          {/* <TextField
+            type="file"
+            label="Upload File"
+            fullWidth
+            InputLabelProps={{ shrink: true }}
+            onChange={handleChange("file")}
+            disabled={isSubmitting}
+            required // Mark the file field as required
+          /> */}
         </Box>
       </DialogContent>
       <DialogActions>
@@ -139,7 +157,7 @@ const CreateScenarioDialog = ({ open, onClose, projectId }) => {
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={!formData.name || isSubmitting}
+          disabled={formData.name === "" || isSubmitting} // Ensure file is required
           startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
         >
           {isSubmitting ? "Creating..." : "Create Scenario"}

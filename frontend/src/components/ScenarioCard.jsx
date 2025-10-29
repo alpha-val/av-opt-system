@@ -21,7 +21,7 @@ const ScenarioCard = ({ scenario, onClick, onMenuClick }) => {
     switch (goal) {
       case "increase_production":
         return <TrendingUp />;
-      case "reduce_cost":
+      case "reduce_capex":
         return <AttachMoney />;
       default:
         return <Speed />;

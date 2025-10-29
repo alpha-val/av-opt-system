@@ -48,6 +48,7 @@ export const uploadProjectDescription = createAsyncThunk(
   "data/uploadProjectDescription",
   async ({ projectId, file, metadata = {} }, { rejectWithValue }) => {
     try {
+      console.log("Uploading project description:", { projectId, file, metadata });
       const token = getAuthToken();
       if (!token) {
         throw new Error("No authentication token found");
@@ -103,7 +104,7 @@ export const uploadProjectDescription = createAsyncThunk(
       }
 
       const data = await response.json();
-
+      console.log("Upload response data:", data);
       return {
         active: true,
         artifact_type: data.artifact_type || "",
@@ -986,6 +987,12 @@ export const selectDocumentsByStatus = createSelector(
   [selectAllDocuments, (state, status) => status],
   (documents, status) =>
     documents.filter((doc) => doc.processing_status === status)
+);
+
+export const selectBaseCaseDocumentsByProjectId = createSelector(
+  [selectAllDocuments, (state, projectId) => projectId],
+  (documents, projectId) =>
+    documents.filter((doc) => doc.project_id === projectId && doc.artifact_type === "base_case")
 );
 
 // Selector for completed documents only

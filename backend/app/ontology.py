@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import Dict, Any
 
-# Built-in light ontology (can be overridden by a user config import)
-DEFAULT_ONTOLOGY: Dict[str, Any] = {
+# Built-in light ontology for nodes and relations
+ENTITY_ONTOLOGY: Dict[str, Any] = {
     "SCHEMA_VERSION": "0.1.0",
     "NODE_TYPES": [
         "Equipment",
@@ -127,6 +127,7 @@ DEFAULT_ONTOLOGY: Dict[str, Any] = {
         # Identity
         "name": "Jaw Crusher Installation",
         "short_description": "Primary crushing unit installation for processing plant",
+        "ontology_path": "Project > Process > Equipment",
         # Workspace
         "climate": "temperate",
         "electrical_spec": "480V / 60Hz / 3-phase",
@@ -219,6 +220,381 @@ DEFAULT_ONTOLOGY: Dict[str, Any] = {
     },
 }
 
+# Systems ontology for mechanical equipment in mining / industrial settings
+AV_MSIO_ONTOLOGY: Dict[str, Any] = {
+    "ontology_name": "AV_MSIO_ONTOLOGY",
+    "version": "0.1",
+    "disciplines": [
+        {
+            "name": "Mechanical Equipment",
+            "categories": [
+                {
+                    "name": "Pumps",
+                    "subcategories": [
+                        {"name": "Centrifugal", "entities": ["Base pump unit"]},
+                        {
+                            "name": "Positive Displacement",
+                            "entities": ["Gear", "Diaphragm"],
+                        },
+                    ],
+                },
+                {
+                    "name": "Vessels",
+                    "subcategories": [
+                        {
+                            "name": "Pressure Vessel",
+                            "entities": ["Reactors", "Separators"],
+                        }
+                    ],
+                },
+                {
+                    "name": "Tanks",
+                    "subcategories": [
+                        {"name": "Storage Tank", "entities": ["Fixed", "Float Roof"]}
+                    ],
+                },
+                {
+                    "name": "Heat Exchangers",
+                    "subcategories": [
+                        {"name": "Shell-and-tube", "entities": ["Shell-tube unit"]}
+                    ],
+                },
+                {
+                    "name": "Compressors/Blowers",
+                    "subcategories": [
+                        {"name": "Centrifugal/Turbo", "entities": ["Compressors"]}
+                    ],
+                },
+                {
+                    "name": "Material Handling",
+                    "subcategories": [
+                        {"name": "Conveyors/Hoists", "entities": ["Belt", "Screw"]}
+                    ],
+                },
+                {
+                    "name": "Utilities",
+                    "subcategories": [
+                        {"name": "Cooling Tower", "entities": ["Open", "Closed"]}
+                    ],
+                },
+                {
+                    "name": "Specialty",
+                    "subcategories": [
+                        {"name": "Agitators", "entities": ["Top", "Side Entry"]}
+                    ],
+                },
+                {
+                    "name": "Process Equipment",
+                    "subcategories": [
+                        {"name": "Grinding Mill", "entities": ["Ball", "Rod", "Mill"]}
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Civil",
+            "categories": [
+                {
+                    "name": "Site Works",
+                    "subcategories": [{"name": "Grading", "entities": ["Cut", "fill"]}],
+                },
+                {
+                    "name": "Access",
+                    "subcategories": [
+                        {"name": "Roads/Paving", "entities": ["Site roads"]}
+                    ],
+                },
+                {
+                    "name": "Stormwater",
+                    "subcategories": [
+                        {"name": "Retention", "entities": ["Basins", "Channels"]}
+                    ],
+                },
+                {
+                    "name": "Utilities - Site",
+                    "subcategories": [
+                        {"name": "Duct banks", "entities": ["Electrical ductbank"]}
+                    ],
+                },
+                {
+                    "name": "Hydrology",
+                    "subcategories": [
+                        {"name": "Culverts/Drainage", "entities": ["Culverts"]}
+                    ],
+                },
+                {
+                    "name": "Survey",
+                    "subcategories": [
+                        {"name": "Topography", "entities": ["Benchmarking"]}
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Structural",
+            "categories": [
+                {
+                    "name": "Steelwork",
+                    "subcategories": [
+                        {"name": "Platforms/Walkways", "entities": ["Access platform"]}
+                    ],
+                },
+                {
+                    "name": "Pipe Support",
+                    "subcategories": [
+                        {"name": "Racks & Supports", "entities": ["Pipe rack"]}
+                    ],
+                },
+                {
+                    "name": "Buildings",
+                    "subcategories": [
+                        {
+                            "name": "Enclosures",
+                            "entities": ["Control room", "MCC building"],
+                        }
+                    ],
+                },
+                {
+                    "name": "Foundations Interface",
+                    "subcategories": [
+                        {"name": "Anchor/Embed Plates", "entities": ["Embed plate"]}
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Concrete",
+            "categories": [
+                {
+                    "name": "Foundations",
+                    "subcategories": [
+                        {"name": "Footings", "entities": ["Spread footings"]}
+                    ],
+                },
+                {
+                    "name": "Slabs",
+                    "subcategories": [
+                        {"name": "Slab on grade", "entities": ["Equipment plinths"]}
+                    ],
+                },
+                {
+                    "name": "Retaining",
+                    "subcategories": [
+                        {
+                            "name": "Retaining walls",
+                            "entities": ["Gravity", "Sheet pile"],
+                        }
+                    ],
+                },
+                {
+                    "name": "Precast",
+                    "subcategories": [
+                        {"name": "Manholes/Precast", "entities": ["Manhole chamber"]}
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Piping",
+            "categories": [
+                {
+                    "name": "Process Lines",
+                    "subcategories": [
+                        {"name": "Large Bore", "entities": ["Slurry", "Main headers"]},
+                        {
+                            "name": "Small Bore",
+                            "entities": ['Instrument & Utility lines (<2")'],
+                        },
+                    ],
+                },
+                {
+                    "name": "Materials",
+                    "subcategories": [
+                        {
+                            "name": "Carbon steel / SS / HDPE / FRP",
+                            "entities": ["Material selection"],
+                        }
+                    ],
+                },
+                {
+                    "name": "Insulation",
+                    "subcategories": [
+                        {"name": "Heat tracing", "entities": ["Insulation & HT"]}
+                    ],
+                },
+                {
+                    "name": "Testing",
+                    "subcategories": [
+                        {
+                            "name": "Hydrotest & Pneumatic",
+                            "entities": ["Pressure testing"],
+                        }
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Instrumentation",
+            "categories": [
+                {
+                    "name": "Flow / Level",
+                    "subcategories": [
+                        {"name": "Flow meters", "entities": ["Coriolis", "Ultrasonic"]}
+                    ],
+                },
+                {
+                    "name": "Temperature & Pressure",
+                    "subcategories": [
+                        {"name": "Transmitters", "entities": ["Temp & Pressure TX"]}
+                    ],
+                },
+                {
+                    "name": "Analyzers & Safety",
+                    "subcategories": [
+                        {"name": "Gas detectors, pH", "entities": ["Analyzers"]}
+                    ],
+                },
+                {
+                    "name": "Cabling & Termination",
+                    "subcategories": [
+                        {"name": "Junction Boxes", "entities": ["Field junctions"]}
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Control",
+            "categories": [
+                {
+                    "name": "Control Systems",
+                    "subcategories": [
+                        {"name": "PLC / DCS / SCADA", "entities": ["Control platform"]}
+                    ],
+                },
+                {
+                    "name": "Interfaces",
+                    "subcategories": [
+                        {"name": "HMI / Historian", "entities": ["Operator stations"]}
+                    ],
+                },
+                {
+                    "name": "Network & Cyber",
+                    "subcategories": [
+                        {
+                            "name": "Network switches / Firewalls",
+                            "entities": ["Industrial network"],
+                        }
+                    ],
+                },
+                {
+                    "name": "I/O",
+                    "subcategories": [
+                        {"name": "Remote I/O panels", "entities": ["Field I", "O"]}
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Electrical",
+            "categories": [
+                {
+                    "name": "Distribution",
+                    "subcategories": [
+                        {"name": "Transformers", "entities": ["Step-down", "step-up"]}
+                    ],
+                },
+                {
+                    "name": "Switchgear",
+                    "subcategories": [
+                        {"name": "MCC / SWGR", "entities": ["Motor control center"]}
+                    ],
+                },
+                {
+                    "name": "Cabling",
+                    "subcategories": [
+                        {
+                            "name": "Power & Control cable",
+                            "entities": ["Tray and routing"],
+                        }
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Safety/Environment",
+            "categories": [
+                {
+                    "name": "Fire Protection",
+                    "subcategories": [
+                        {"name": "Sprinkler / Hydrants", "entities": ["FP systems"]}
+                    ],
+                },
+                {
+                    "name": "Containment",
+                    "subcategories": [{"name": "Spill bunding", "entities": ["Bunds"]}],
+                },
+                {
+                    "name": "Ventilation",
+                    "subcategories": [
+                        {
+                            "name": "Fume / Dust extraction",
+                            "entities": ["Ducting & fans"],
+                        }
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Utilities",
+            "categories": [
+                {
+                    "name": "Compressed Air",
+                    "subcategories": [
+                        {"name": "Air network", "entities": ["Compressors & Piping"]}
+                    ],
+                },
+                {
+                    "name": "Cooling Water",
+                    "subcategories": [
+                        {"name": "CW network", "entities": ["Pumps & Heat exchangers"]}
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Construction/Commissioning",
+            "categories": [
+                {
+                    "name": "QA/QC",
+                    "subcategories": [
+                        {"name": "Inspections & Testing", "entities": ["Quality plan"]}
+                    ],
+                },
+                {
+                    "name": "Commissioning",
+                    "subcategories": [
+                        {
+                            "name": "Pre-startup Safety Reviews",
+                            "entities": ["Commissioning plan"],
+                        }
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Cost",
+            "categories": [
+                {
+                    "name": "Capex",
+                    "subcategories": [{"name": "Direct/ Indirect", "entities": []}],
+                },
+                {"name": "Opex", "subcategories": []},
+                {"name": "Contingency", "subcategories": []},
+            ],
+        },
+    ],
+}
+
 
 def load_ontology() -> Dict[str, Any]:
     """
@@ -229,9 +605,9 @@ def load_ontology() -> Dict[str, Any]:
         from user_ontology import ONTOLOGY as USER_ONTOLOGY  # type: ignore
 
         # Simple shallow merge (user overrides built-ins)
-        merged = DEFAULT_ONTOLOGY.copy()
+        merged = ENTITY_ONTOLOGY.copy()
         for k, v in USER_ONTOLOGY.items():
             merged[k] = v
         return merged
     except Exception:
-        return DEFAULT_ONTOLOGY
+        return ENTITY_ONTOLOGY

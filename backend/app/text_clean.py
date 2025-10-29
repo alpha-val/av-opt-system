@@ -1,7 +1,7 @@
 # text_clean.py
 from __future__ import annotations
 from typing import List, Tuple, Dict, Any
-import io, re, hashlib, uuid
+import io, json, re, hashlib, uuid
 import pdfplumber
 
 # Fixed namespace for deterministic UUID5 generation across the app
@@ -97,6 +97,48 @@ def chunk_by_page(
         )
     return chunks
 
+# Chunk by character limit
+def chunk_by_character_limit(
+    full_document_text: str, doc_id: str, char_limit: int = 5000
+) -> List[Dict[str, Any]]:
+    """Chunk the full document text into smaller chunks based on character limit."""
+    chunks: List[Dict[str, Any]] = []
+    current_pos = 0
+    seq = 1
+
+    while current_pos < len(full_document_text):
+        chunk_text = full_document_text[current_pos : current_pos + char_limit]
+        chunk_id = str(uuid.uuid5(NAMESPACE, f"{doc_id}|{seq}"))
+        chunks.append(
+            {
+                "chunk_id": chunk_id,
+                "doc_id": doc_id,
+                "seq": seq,
+                "text": chunk_text,
+            }
+        )
+        current_pos += char_limit
+        seq += 1
+
+    return chunks
+
+
+    while current_pos < len(full_document_text):
+        chunk_text = full_document_text[current_pos : current_pos + char_limit]
+        chunk_id = str(uuid.uuid5(NAMESPACE, f"{doc_id}|{seq}"))
+        chunks.append(
+            {
+                "chunk_id": chunk_id,
+                "doc_id": doc_id,
+                "seq": seq,
+                "text": chunk_text,
+            }
+        )
+        current_pos += char_limit
+        seq += 1
+
+    return chunks
+
 
 def extract_and_clean(pdf_bytes: bytes, filename: str):
     """
@@ -110,6 +152,25 @@ def extract_and_clean(pdf_bytes: bytes, filename: str):
     pages_no_hf = _strip_repeating_header_footer(pages_raw)
     pages_clean = [(p, clean_text(t)) for p, t in pages_no_hf]
     return doc_id, file_sha, pages_raw, pages_clean
+
+
+def sanitize_metadata(metadata: dict) -> dict:
+    """
+    Ensure metadata values are of supported types for Pinecone.
+    Supported types: string, number, boolean, list of strings.
+    """
+    sanitized = {}
+    for key, value in metadata.items():
+        if isinstance(value, (str, int, float, bool)):
+            sanitized[key] = value
+        elif isinstance(value, list) and all(isinstance(v, str) for v in value):
+            sanitized[key] = value
+        else:
+            # Convert unsupported types (e.g., dicts) to strings
+            sanitized[key] = (
+                json.dumps(value) if isinstance(value, dict) else str(value)
+            )
+    return sanitized
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #

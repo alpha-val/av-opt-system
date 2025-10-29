@@ -88,17 +88,30 @@ export const fetchScenario = createAsyncThunk(
 
 export const createScenario = createAsyncThunk(
   "scenarios/create",
-  async (scenario, { rejectWithValue }) => {
+  async (scenarioData, { rejectWithValue }) => {
     try {
       const token = getAuthToken();
       if (!token) {
         throw new Error("No authentication token found");
       }
 
+      const formData = new FormData();
+      formData.append("project_id", scenarioData.project_id);
+      formData.append("name", scenarioData.name);
+      formData.append("description", scenarioData.description);
+      formData.append("goal", scenarioData.goal);
+      formData.append("change_type", scenarioData.change_type);
+      formData.append("status", "draft");
+      // if (scenarioData.file) {
+      //   formData.append("file", scenarioData.file); // Attach the file
+      // }
+
       const response = await fetch(`${API_BASE_URL}/scenarios/add`, {
         method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(scenario),
+        headers: {
+          Authorization: `Bearer ${token}`, // Authorization header
+        },
+        body: formData, // Send FormData as the request body
       });
 
       if (!response.ok) {
@@ -109,7 +122,7 @@ export const createScenario = createAsyncThunk(
       }
 
       const data = await response.json();
-
+      console.log("[scenarioSlice] createScenario result:", data);
       return data;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -306,12 +319,63 @@ export const fetchCostEstimate = createAsyncThunk(
   }
 );
 
+export const extractScenarioData = createAsyncThunk(
+  "scenarios/extractScenarioData",
+  async ({ scenarioDetails, file, projectId, docId, artifactType, userId }, { rejectWithValue }) => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const formData = new FormData();
+      formData.append("scenario", JSON.stringify(scenarioDetails)); // Add scenario details as JSON
+      formData.append("project_id", projectId); // Add project_id
+      formData.append("artifact_type", artifactType); // Add artifact_type
+      formData.append("user_id", userId); // Add user_id
+      if (file) {
+        formData.append("file", file); // Attach the file
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/scenarios/extract-scenario-data`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`, // Authorization header
+          },
+          body: formData, // Send FormData as the request body
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.detail || `HTTP error! status: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+      console.log("[scenarioSlice] extractScenarioData result:", data);
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Add extraction state to the slice
 const scenarioSlice = createSlice({
   name: "scenarios",
   initialState: {
     byProject: {},
     byId: {},
     costEstimates: {},
+    extraction: {
+      loading: false,
+      result: null,
+      error: null,
+    },
     loading: false,
     analyzing: false,
     error: null,
@@ -373,6 +437,7 @@ const scenarioSlice = createSlice({
         state.loading = false;
         const scenario = action.payload;
         state.byId[scenario.id] = scenario;
+        console.log("[scenarioSlice] Adding scenario: ", scenario)
         if (!state.byProject[scenario.project_id]) {
           state.byProject[scenario.project_id] = [];
         }
@@ -482,6 +547,19 @@ const scenarioSlice = createSlice({
       .addCase(fetchCostEstimate.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
+      })
+      .addCase(extractScenarioData.pending, (state) => {
+        state.extraction.loading = true;
+        state.extraction.result = null;
+        state.extraction.error = null;
+      })
+      .addCase(extractScenarioData.fulfilled, (state, action) => {
+        state.extraction.loading = false;
+        state.extraction.result = action.payload;
+      })
+      .addCase(extractScenarioData.rejected, (state, action) => {
+        state.extraction.loading = false;
+        state.extraction.error = action.payload || action.error.message;
       });
   },
 });

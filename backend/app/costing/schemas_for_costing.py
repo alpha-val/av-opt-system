@@ -37,7 +37,7 @@ class CostEstimateRequest(BaseModel):
 
     # Optional fields for enhanced filtering
     goal: Optional[str] = Field(
-        None, description="Scenario goal (increase_production, reduce_cost, etc.)"
+        None, description="Scenario goal (increase_production, reduce_capex, etc.)"
     )
     change_type: Optional[str] = Field(
         None, description="Type of change (equipment, process, etc.)"

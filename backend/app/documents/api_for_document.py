@@ -101,6 +101,7 @@ def create_document(
             "file_size": etl_result.get("file_size"),
             "file_type": file.content_type,
             "file_name": etl_result.get("filename"),
+            "file_sha256": etl_result.get("file_sha256"),
             "title": title,
             "type": type,
             "updated_at": datetime.now(),
@@ -115,6 +116,7 @@ def create_document(
             "num_entities": etl_result.get("entities_written"),
             "num_relations": etl_result.get("relations_written"),
             "pages": etl_result.get("pages"),
+            "scenarios": etl_result.get("scenarios", []),
         }
 
         # Insert into DB

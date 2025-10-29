@@ -1,0 +1,931 @@
+{
+  "scenario_header": {
+    "target": "increase_production",
+    "change_type": ["equipment"],
+    "description": "Increase production by 2%, find all relevant entities",
+    "confidence": 0.9
+  },
+  "relevant_entities": [
+    {
+      "name": "Pump + Motor",
+      "entity_type": "Equipment",
+      "base_values": [
+        {
+          "key": "flow",
+          "value": "100",
+          "units": "gpm"
+        },
+        {
+          "key": "motor_power",
+          "value": "10",
+          "units": "hp"
+        }
+      ],
+      "proposed_modifications": [
+        {
+          "parameter": "motor_power",
+          "change": "increase",
+          "suggested_value": "10.2",
+          "units": "hp",
+          "basis": "2% increase in production"
+        }
+      ],
+      "expected_impacts": {
+        "capex": {
+          "direction": "increase",
+          "magnitude_note": "≈2% increase in motor power"
+        },
+        "opex": {
+          "direction": "increase",
+          "magnitude_note": "slight increase due to higher power consumption"
+        }
+      },
+      "cost_role": "capex",
+      "refs": ["§2 Major Equipment"]
+    },
+    {
+      "name": "Storage Tank",
+      "entity_type": "Equipment",
+      "base_values": [
+        {
+          "key": "capacity",
+          "value": "1,000",
+          "units": "gal @ 80%"
+        }
+      ],
+      "proposed_modifications": [
+        {
+          "parameter": "capacity",
+          "change": "increase",
+          "suggested_value": "1,020",
+          "units": "gal",
+          "basis": "2% increase in production"
+        }
+      ],
+      "expected_impacts": {
+        "capex": {
+          "direction": "increase",
+          "magnitude_note": "≈2% increase in tank capacity"
+        }
+      },
+      "cost_role": "capex",
+      "refs": ["§2 Major Equipment"]
+    },
+    {
+      "name": "Pump + Motor",
+      "entity_type": "Equipment",
+      "base_values": [
+        {
+          "key": "flow",
+          "value": "100",
+          "units": "gpm"
+        },
+        {
+          "key": "motor_power",
+          "value": "10",
+          "units": "hp"
+        }
+      ],
+      "proposed_modifications": [
+        {
+          "parameter": "motor_power",
+          "change": "increase",
+          "suggested_value": "12",
+          "units": "hp",
+          "basis": "To accommodate increased flow"
+        }
+      ],
+      "expected_impacts": {
+        "capex": {
+          "direction": "increase",
+          "magnitude_note": "Larger pump and motor"
+        },
+        "opex": {
+          "direction": "increase",
+          "magnitude_note": "Higher operational costs due to increased power consumption"
+        }
+      },
+      "refs": ["Section 3 – Design Criteria"]
+    },
+    {
+      "name": "Storage Tank",
+      "entity_type": "Equipment",
+      "base_values": [
+        {
+          "key": "capacity",
+          "value": "1000",
+          "units": "gal"
+        }
+      ],
+      "proposed_modifications": [
+        {
+          "parameter": "capacity",
+          "change": "increase",
+          "suggested_value": "1200",
+          "units": "gal",
+          "basis": "To provide additional storage for increased production"
+        }
+      ],
+      "expected_impacts": {
+        "capex": {
+          "direction": "increase",
+          "magnitude_note": "Larger tank size"
+        },
+        "opex": {
+          "direction": "neutral",
+          "magnitude_note": "No significant change expected"
+        }
+      },
+      "refs": ["Section 3 – Design Criteria"]
+    },
+    {
+      "name": "Tank",
+      "entity_type": "Equipment",
+      "base_values": [
+        {
+          "key": "manway",
+          "value": "N/A"
+        },
+        {
+          "key": "handrails",
+          "value": "N/A"
+        },
+        {
+          "key": "access stairs",
+          "value": "N/A"
+        },
+        {
+          "key": "overflow line",
+          "value": "routed to safe location"
+        },
+        {
+          "key": "drain nozzle",
+          "value": "with isolation valve"
+        },
+        {
+          "key": "vent nozzle",
+          "value": "sized appropriately"
+        }
+      ],
+      "proposed_modifications": [
+        {
+          "parameter": "vent nozzle",
+          "change": "size",
+          "suggested_value": "appropriately",
+          "basis": "site practices"
+        }
+      ],
+      "expected_impacts": {
+        "capex": {
+          "direction": "increase",
+          "magnitude_note": "due to additional safety features"
+        },
+        "opex": {
+          "direction": "neutral"
+        }
+      },
+      "refs": ["Safety / access"]
+    },
+    {
+      "name": "Pump + Motor",
+      "entity_type": "Equipment",
+      "base_values": [
+        {
+          "key": "flow",
+          "value": "100",
+          "units": "gpm"
+        },
+        {
+          "key": "motor_power",
+          "value": "10",
+          "units": "hp"
+        }
+      ],
+      "proposed_modifications": [
+        {
+          "parameter": "motor_power",
+          "change": "increase",
+          "suggested_value": "12",
+          "units": "hp",
+          "basis": "To support increased flow"
+        }
+      ],
+      "expected_impacts": {
+        "capex": {
+          "direction": "increase",
+          "magnitude_note": "≈10% increase due to larger pump size"
+        },
+        "opex": {
+          "direction": "neutral",
+          "magnitude_note": "Operational costs remain similar with larger pump"
+        }
+      },
+      "refs": ["§2 Major Equipment", "§6 Process Design Basis"]
+    },
+    {
+      "name": "Storage Tank",
+      "entity_type": "Equipment",
+      "base_values": [
+        {
+          "key": "capacity",
+          "value": "1,000",
+          "units": "gallons"
+        }
+      ],
+      "proposed_modifications": [
+        {
+          "parameter": "capacity",
+          "change": "increase",
+          "suggested_value": "1,250",
+          "units": "gallons",
+          "basis": "To accommodate increased production"
+        }
+      ],
+      "expected_impacts": {
+        "capex": {
+          "direction": "increase",
+          "magnitude_note": "≈5–10% increase due to larger tank size"
+        },
+        "opex": {
+          "direction": "neutral",
+          "magnitude_note": "No significant change expected"
+        }
+      },
+      "refs": ["§6 Process Design Basis"]
+    },
+    {
+      "name": "Pump + Motor",
+      "entity_type": "Equipment",
+      "base_values": [
+        {
+          "key": "flow",
+          "value": "100 gpm",
+          "units": "gpm"
+        },
+        {
+          "key": "motor_power",
+          "value": "10 hp",
+          "units": "hp"
+        }
+      ],
+      "proposed_modifications": [
+        {
+          "parameter": "motor_power",
+          "change": "increase",
+          "suggested_value": "12 hp",
+          "units": "hp",
+          "basis": "To handle increased flow"
+        }
+      ],
+      "expected_impacts": {
+        "capex": {
+          "direction": "increase",
+          "magnitude_note": "≈10% increase due to larger pump size"
+        },
+        "opex": {
+          "direction": "neutral",
+          "magnitude_note": "Operational costs remain similar"
+        }
+      },
+      "cost_role": "capex",
+      "refs": ["§7 Key Design Notes"]
+    },
+    {
+      "name": "Storage Tank",
+      "entity_type": "Equipment",
+      "base_values": [
+        {
+          "key": "capacity",
+          "value": "1,000 gal",
+          "units": "gal"
+        }
+      ],
+      "proposed_modifications": [
+        {
+          "parameter": "capacity",
+          "change": "increase",
+          "suggested_value": "1,250 gal",
+          "units": "gal",
+          "basis": "To accommodate increased production volume"
+        }
+      ],
+      "expected_impacts": {
+        "capex": {
+          "direction": "increase",
+          "magnitude_note": "≈5–10% increase due to additional tank"
+        },
+        "opex": {
+          "direction": "increase",
+          "magnitude_note": "Increased maintenance and inspection costs"
+        }
+      },
+      "cost_role": "capex",
+      "refs": ["§7 Key Design Notes"]
+    },
+    {
+      "name": "Pump + Motor",
+      "entity_type": "Equipment",
+      "base_values": [
+        {
+          "key": "motor_power",
+          "value": "10",
+          "units": "hp"
+        }
+      ],
+      "proposed_modifications": [
+        {
+          "parameter": "motor_power",
+          "change": "increase",
+          "suggested_value": "12",
+          "units": "hp",
+          "basis": "To support increased flow"
+        }
+      ],
+      "expected_impacts": {
+        "capex": {
+          "direction": "increase",
+          "magnitude_note": "Due to larger pump and motor requirements"
+        }
+      },
+      "refs": ["Capex 3"]
+    },
+    {
+      "name": "Storage Tank",
+      "entity_type": "Equipment",
+      "base_values": [
+        {
+          "key": "capacity",
+          "value": "1,250",
+          "units": "gal"
+        }
+      ],
+      "proposed_modifications": [
+        {
+          "parameter": "capacity",
+          "change": "increase",
+          "suggested_value": "1,500",
+          "units": "gal",
+          "basis": "To accommodate increased production"
+        }
+      ],
+      "expected_impacts": {
+        "capex": {
+          "direction": "increase",
+          "magnitude_note": "Due to larger tank size"
+        }
+      },
+      "refs": ["Capex 1"]
+    },
+    {
+      "name": "Pump + Motor",
+      "entity_type": "Equipment",
+      "base_values": [
+        {
+          "key": "flow",
+          "value": "100 gpm",
+          "units": "gpm"
+        },
+        {
+          "key": "motor_power",
+          "value": "10 hp",
+          "units": "hp"
+        }
+      ],
+      "proposed_modifications": [
+        {
+          "parameter": "motor_power",
+          "change": "increase",
+          "suggested_value": "12 hp",
+          "units": "hp",
+          "basis": "To handle increased flow."
+        }
+      ],
+      "expected_impacts": {
+        "capex": {
+          "direction": "increase",
+          "magnitude_note": "≈10%"
+        },
+        "opex": {
+          "direction": "increase",
+          "magnitude_note": "Increased energy consumption."
+        }
+      },
+      "refs": ["§2 Major Equipment"]
+    },
+    {
+      "name": "Storage Tank",
+      "entity_type": "Equipment",
+      "base_values": [
+        {
+          "key": "capacity",
+          "value": "1,000 gal",
+          "units": "gal"
+        }
+      ],
+      "proposed_modifications": [
+        {
+          "parameter": "capacity",
+          "change": "increase",
+          "suggested_value": "1,200 gal",
+          "units": "gal",
+          "basis": "To accommodate increased production."
+        }
+      ],
+      "expected_impacts": {
+        "capex": {
+          "direction": "increase",
+          "magnitude_note": "≈5–10%"
+        }
+      },
+      "refs": ["§2 Major Equipment"]
+    },
+    {
+      "name": "Tank",
+      "entity_type": "Equipment",
+      "base_values": [
+        {
+          "key": "Material",
+          "value": "Stainless Steel",
+          "units": "N/A"
+        }
+      ],
+      "proposed_modifications": [
+        {
+          "parameter": "Material",
+          "change": "Upgrade",
+          "suggested_value": "316L",
+          "units": "N/A",
+          "basis": "High-side budget scenario"
+        }
+      ],
+      "expected_impacts": {
+        "capex": {
+          "direction": "increase",
+          "magnitude_note": "Can double or more the tank cost."
+        }
+      }
+    },
+    {
+      "name": "Control Valve",
+      "entity_type": "Equipment",
+      "base_values": [
+        {
+          "key": "Type",
+          "value": "Modulating",
+          "units": "N/A"
+        }
+      ],
+      "proposed_modifications": [
+        {
+          "parameter": "Type",
+          "change": "Upgrade",
+          "suggested_value": "Higher-end modulating valve & specialty pump materials",
+          "units": "N/A",
+          "basis": "High-side budget scenario"
+        }
+      ],
+      "expected_impacts": {
+        "capex": {
+          "direction": "increase",
+          "magnitude_note": "Major cost item; seller quotes vary widely."
+        }
+      }
+    },
+    {
+      "name": "Utility Service",
+      "entity_type": "Utility",
+      "base_values": [
+        {
+          "key": "Service Type",
+          "value": "Three-phase",
+          "units": "N/A"
+        }
+      ],
+      "proposed_modifications": [
+        {
+          "parameter": "Distance",
+          "change": "Increase",
+          "suggested_value": ">100 ft",
+          "units": "ft",
+          "basis": "If utility run >100 ft, budget separately."
+        }
+      ],
+      "expected_impacts": {
+        "capex": {
+          "direction": "increase",
+          "magnitude_note": "Costs can jump substantially if utility extension is required."
+        }
+      }
+    }
+  ],
+  "assumptions": [
+    {
+      "text": "Steady 100 gpm flow maintained; pump scaled linearly for flow increase",
+      "type": "Design",
+      "refs": ["§1 System Description"]
+    },
+    {
+      "text": "Steady 100 gpm flow maintained; pump scaled linearly for flow increase",
+      "type": "Design",
+      "refs": ["Section 3 – Design Criteria"]
+    },
+    {
+      "text": "Typical mechanical / piping life expectancy ≥ 20-30 years, with corrosion allowance and maintenance.",
+      "type": "Design",
+      "refs": ["Design life"]
+    },
+    {
+      "text": "Steady 100 gpm flow maintained; pump scaled linearly for flow increase",
+      "type": "Design",
+      "refs": ["§6 Process Design Basis"]
+    },
+    {
+      "text": "Steady 100 gpm flow maintained; pump scaled linearly for flow increase",
+      "type": "Design",
+      "refs": ["§7 Key Design Notes"]
+    },
+    {
+      "text": "Pump scaled linearly for flow increase",
+      "type": "Design",
+      "refs": ["Capex 3"]
+    },
+    {
+      "text": "Steady 100 gpm flow maintained; pump scaled linearly for flow increase",
+      "type": "Design",
+      "refs": ["§2 Major Equipment"]
+    },
+    {
+      "text": "Market variability in materials pricing; use mid-range numbers for budgeting.",
+      "type": "Market"
+    }
+  ],
+  "policies": [
+    {
+      "text": "Tank and piping shall remain stainless steel per ASME B31.3",
+      "domain": "Quality",
+      "refs": ["§1 System Description"]
+    },
+    {
+      "text": "Tank and piping shall remain stainless steel per ASME B31.3",
+      "domain": "Quality",
+      "refs": ["Section 3 – Design Criteria"]
+    },
+    {
+      "text": "Signage and labeling per site practices.",
+      "domain": "Safety",
+      "refs": ["Safety / access"]
+    },
+    {
+      "text": "Tank and piping shall remain stainless steel per ASME B31.3",
+      "domain": "Quality",
+      "refs": ["Discipline Reference Standard"]
+    },
+    {
+      "text": "Tank and piping shall remain stainless steel per ASME B31.3",
+      "domain": "Quality",
+      "refs": ["§7 Key Design Notes"]
+    },
+    {
+      "text": "Tank and piping shall remain stainless steel per ASME B31.3",
+      "domain": "Quality",
+      "refs": ["Capex 1"]
+    },
+    {
+      "text": "Tank and piping shall remain stainless steel per ASME B31.3",
+      "domain": "Quality",
+      "refs": ["§2 Major Equipment"]
+    },
+    {
+      "text": "Obtain 3 vendor quotes for procurement budgeting.",
+      "domain": "Procurement"
+    }
+  ],
+  "constraints": [
+    {
+      "constraint": "No pressurization; tank remains atmospheric",
+      "basis": "Safety",
+      "refs": ["§1 System Description"]
+    },
+    {
+      "constraint": "No pressurization; tank remains atmospheric",
+      "basis": "Safety",
+      "refs": ["Section 3 – Design Criteria"]
+    },
+    {
+      "constraint": "Wind load basic wind speed ~90 mph for Risk Category II",
+      "basis": "Physical",
+      "refs": ["Wind load"]
+    },
+    {
+      "constraint": "Ground snow load in Charlotte ~ 0 psf (non-snow region)",
+      "basis": "Physical",
+      "refs": ["Snow load"]
+    },
+    {
+      "constraint": "Seismic design category likely A or B (low seismic hazard)",
+      "basis": "Physical",
+      "refs": ["Seismic load"]
+    },
+    {
+      "constraint": "No pressurization; tank remains atmospheric",
+      "basis": "Safety",
+      "refs": ["Discipline Reference Standard"]
+    },
+    {
+      "constraint": "No pressurization; tank remains atmospheric",
+      "basis": "Safety",
+      "refs": ["§7 Key Design Notes"]
+    },
+    {
+      "constraint": "No pressurization; tank remains atmospheric",
+      "basis": "Safety",
+      "refs": ["Capex 1"]
+    },
+    {
+      "constraint": "No pressurization; tank remains atmospheric",
+      "basis": "Safety",
+      "refs": ["§2 Major Equipment"]
+    },
+    {
+      "constraint": "Utility run distance",
+      "basis": "Physical",
+      "refs": ["If utility run >100 ft, budget separately."]
+    }
+  ],
+  "cost_guidelines": [
+    {
+      "item": "Pump",
+      "base_cost_value": 8500,
+      "currency": "USD",
+      "basis_year": 2025,
+      "cost_class": "Vendor price",
+      "scaling_rule": "Cost ∝ (capacity)^0.6",
+      "risk_notes": "Market volatility, stainless-steel pricing",
+      "estimation_note": "Use vendor quote or scale using cost exponent"
+    },
+    {
+      "item": "Tank",
+      "base_cost_value": 8500,
+      "currency": "USD",
+      "basis_year": 2025,
+      "cost_class": "Vendor price",
+      "scaling_rule": "Cost ∝ (capacity)^0.6",
+      "risk_notes": "Market volatility, stainless-steel pricing",
+      "estimation_note": "Use vendor quote or scale using cost exponent"
+    },
+    {
+      "item": "Tank",
+      "base_cost_value": 15000,
+      "currency": "USD",
+      "basis_year": 2025,
+      "cost_class": "Vendor price",
+      "scaling_rule": "Cost ∝ capacity^0.65",
+      "risk_notes": "Market volatility, stainless-steel pricing",
+      "estimation_note": "Vendor quote ±20%"
+    },
+    {
+      "item": "Concrete",
+      "base_cost_value": 142,
+      "currency": "USD",
+      "basis_year": 2023,
+      "cost_class": "Local range",
+      "scaling_rule": "N/A",
+      "risk_notes": "Market variability",
+      "estimation_note": "Recent local ranges $129–$155 per cubic yard for delivered concrete."
+    },
+    {
+      "item": "Level Instrumentation",
+      "base_cost_value": 2000,
+      "currency": "USD",
+      "basis_year": 2023,
+      "cost_class": "Vendor price",
+      "scaling_rule": "N/A",
+      "risk_notes": "Market variability",
+      "estimation_note": "Used $2,000 for a robust unit."
+    }
+  ],
+  "uncertainties": [
+    {
+      "gap": "Hydraulic TDH not specified for higher flow",
+      "impact": "Potential under-sizing of pump",
+      "action": "Perform hydraulic calc"
+    },
+    {
+      "gap": "Hydraulic TDH not specified for higher flow",
+      "impact": "Potential underestimation of pump size",
+      "action": "Perform hydraulic calc"
+    },
+    {
+      "gap": "Hydraulic TDH not specified for higher flow",
+      "impact": "Potential mismatch in pump sizing",
+      "action": "Perform hydraulic calc"
+    },
+    {
+      "gap": "Hydraulic TDH not specified for higher flow",
+      "impact": "Potential for undersized pump",
+      "action": "Perform hydraulic calc"
+    },
+    {
+      "gap": "Hydraulic TDH not specified for higher flow",
+      "impact": "Potential underperformance of pump",
+      "action": "Perform hydraulic calc"
+    },
+    {
+      "gap": "Tank specification",
+      "impact": "Can double or more the tank cost.",
+      "action": "Obtain actual vendor quotes for stainless tank (specify grade)."
+    },
+    {
+      "gap": "Control valve and instrumentation costs",
+      "impact": "Major cost item; seller quotes vary widely.",
+      "action": "Obtain actual vendor quotes for control valve (size and materials)."
+    },
+    {
+      "gap": "Utility service availability",
+      "impact": "Costs can jump substantially if utility extension is required.",
+      "action": "Confirm utility availability (distance to 3-phase supply, capacity and any transformer/utility fees)."
+    }
+  ],
+  "approach_options": [
+    {
+      "option_id": "1",
+      "title": "Increase Pump Capacity",
+      "rationale": "To handle increased production flow rate",
+      "expected_effects": {
+        "throughput": {
+          "direction": "increase",
+          "estimate_pct": "2%"
+        },
+        "capex": {
+          "direction": "increase",
+          "notes": "Due to larger pump size"
+        },
+        "opex": {
+          "direction": "increase",
+          "notes": "Higher energy consumption due to larger pump"
+        },
+        "quality": {
+          "direction": "neutral",
+          "notes": "No expected change in quality"
+        }
+      },
+      "dependencies": [
+        "Hydraulic calculations for TDH",
+        "Vendor quotes for larger pump"
+      ],
+      "refs": ["Section 3 – Design Criteria"]
+    },
+    {
+      "option_id": "1",
+      "title": "Upsize Pump",
+      "rationale": "Increase flow capacity to meet production target",
+      "expected_effects": {
+        "throughput": {
+          "direction": "increase",
+          "estimate_pct": "2%"
+        },
+        "capex": {
+          "direction": "increase",
+          "notes": "Cost increase due to larger pump size"
+        },
+        "opex": {
+          "direction": "neutral",
+          "notes": "Operational costs remain similar with larger pump"
+        },
+        "quality": {
+          "direction": "neutral",
+          "notes": "No change in product quality expected"
+        }
+      },
+      "dependencies": ["Hydraulic calculations", "Vendor quotes"],
+      "refs": ["§2 Major Equipment", "§6 Process Design Basis"]
+    },
+    {
+      "option_id": "1",
+      "title": "Upsize Pump",
+      "rationale": "To handle increased production flow",
+      "expected_effects": {
+        "throughput": {
+          "direction": "increase",
+          "estimate_pct": "2%"
+        },
+        "capex": {
+          "direction": "increase",
+          "notes": "Cost increase due to larger pump size"
+        },
+        "opex": {
+          "direction": "neutral",
+          "notes": "Operational costs remain similar"
+        },
+        "quality": {
+          "direction": "neutral",
+          "notes": "Quality unaffected by pump size change"
+        }
+      },
+      "dependencies": ["Pump sizing", "Hydraulic calculations"],
+      "refs": ["§7 Key Design Notes"]
+    },
+    {
+      "option_id": "2",
+      "title": "Add Secondary Tank",
+      "rationale": "To accommodate increased production volume",
+      "expected_effects": {
+        "throughput": {
+          "direction": "increase",
+          "estimate_pct": "2%"
+        },
+        "capex": {
+          "direction": "increase",
+          "notes": "Additional tank cost"
+        },
+        "opex": {
+          "direction": "increase",
+          "notes": "Increased maintenance and inspection costs"
+        },
+        "quality": {
+          "direction": "neutral",
+          "notes": "Quality unaffected by additional tank"
+        }
+      },
+      "dependencies": ["Tank volume & head-space", "Support/anchorage"],
+      "refs": ["§7 Key Design Notes"]
+    },
+    {
+      "option_id": "1",
+      "title": "Increase Pump Capacity",
+      "rationale": "To handle increased production flow",
+      "expected_effects": {
+        "throughput": {
+          "direction": "increase",
+          "estimate_pct": "2%"
+        },
+        "capex": {
+          "direction": "increase",
+          "notes": "Due to larger pump and motor requirements"
+        }
+      },
+      "dependencies": ["Pump + Motor", "Storage Tank"],
+      "refs": ["Capex 3"]
+    },
+    {
+      "option_id": "1",
+      "title": "Increase Pump Capacity",
+      "rationale": "To handle increased production, the pump capacity needs to be increased.",
+      "expected_effects": {
+        "throughput": {
+          "direction": "increase",
+          "estimate_pct": "2%"
+        },
+        "capex": {
+          "direction": "increase",
+          "notes": "Upsizing pump and motor will increase capital expenditure."
+        },
+        "opex": {
+          "direction": "increase",
+          "notes": "Increased energy consumption due to larger pump."
+        }
+      },
+      "dependencies": ["Pump capacity", "Motor power"],
+      "refs": ["§2 Major Equipment"]
+    },
+    {
+      "option_id": "2",
+      "title": "Add Secondary Storage Tank",
+      "rationale": "To accommodate increased production, additional storage capacity is required.",
+      "expected_effects": {
+        "throughput": {
+          "direction": "increase",
+          "estimate_pct": "2%"
+        },
+        "capex": {
+          "direction": "increase",
+          "notes": "Additional tank will increase capital expenditure."
+        }
+      },
+      "dependencies": ["Storage capacity"],
+      "refs": ["§2 Major Equipment"]
+    },
+    {
+      "option_id": "1",
+      "title": "Conservative Budget Scenario",
+      "rationale": "Allow for high-side budget if using 316L tank, long utility run, significant rock excavation, higher-end modulating valve & specialty pump materials, heavier foundation.",
+      "expected_effects": {
+        "capex": {
+          "direction": "increase",
+          "notes": "High-side budget allows for premium materials and extensive site work."
+        }
+      }
+    },
+    {
+      "option_id": "2",
+      "title": "Low-Cost Budget Scenario",
+      "rationale": "If competitive procurement and favorable site conditions, use modest tank, short piping runs, existing utility nearby, uncomplicated pad and minimal civil work.",
+      "expected_effects": {
+        "capex": {
+          "direction": "decrease",
+          "notes": "Low-cost scenario leverages existing infrastructure and minimal site work."
+        }
+      }
+    }
+  ]
+}

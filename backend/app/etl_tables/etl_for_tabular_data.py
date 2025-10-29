@@ -13,10 +13,10 @@ from app.text_clean import (
     NAMESPACE,
 )
 from ..ontology import load_ontology
-from ..build_prompt import gen_prompt
+from app.prompts.build_prompt import gen_prompt
 from .tabular_rules import TABULAR_RULES
 from .table_payload import build_llm_payload
-from ..bronze_store import (
+from app.bronze_store import (
     bulk_upsert_chunks,
     bulk_upsert_entities,
     bulk_upsert_relations,

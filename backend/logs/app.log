@@ -1022,3 +1022,306 @@ Traceback (most recent call last):
   File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pymongo/synchronous/topology.py", line 344, in _select_servers_loop
     raise ServerSelectionTimeoutError(
 pymongo.errors.ServerSelectionTimeoutError: SSL handshake failed: ac-ovjstn4-shard-00-00.rjvnjyo.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms),SSL handshake failed: ac-ovjstn4-shard-00-01.rjvnjyo.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms),SSL handshake failed: ac-ovjstn4-shard-00-02.rjvnjyo.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 30s, Topology Description: <TopologyDescription id: 68f9269d31f2a3d33c55ceff, topology_type: ReplicaSetNoPrimary, servers: [<ServerDescription ('ac-ovjstn4-shard-00-00.rjvnjyo.mongodb.net', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: ac-ovjstn4-shard-00-00.rjvnjyo.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>, <ServerDescription ('ac-ovjstn4-shard-00-01.rjvnjyo.mongodb.net', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: ac-ovjstn4-shard-00-01.rjvnjyo.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>, <ServerDescription ('ac-ovjstn4-shard-00-02.rjvnjyo.mongodb.net', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: ac-ovjstn4-shard-00-02.rjvnjyo.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+2025-10-23 13:40:32 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:01:52 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:02:41 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:03:24 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:04:57 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:09:31 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:10:36 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:11:01 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:13:31 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:14:36 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:17:36 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:18:09 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:19:06 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:22:36 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:26:55 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:29:28 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:30:20 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:31:40 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:35:37 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:49:01 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:56:23 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:57:04 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 16:58:47 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 17:00:31 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 17:05:33 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 17:07:46 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 17:08:09 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 17:37:41 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 19:24:23 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 22:00:14 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 22:03:15 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 22:03:46 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 22:28:55 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 22:29:08 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 22:30:49 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 22:33:57 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 22:34:30 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 22:35:49 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 22:40:45 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 22:42:37 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 22:50:09 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 22:52:27 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 22:55:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 22:57:44 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 23:11:30 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-23 23:13:13 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 07:22:06 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 07:25:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 07:30:22 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 07:32:06 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 07:34:48 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 07:38:55 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 07:41:49 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 07:52:28 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 09:06:42 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 09:06:59 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 09:14:42 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 09:22:51 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 09:23:48 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 09:47:08 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 09:47:41 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 09:48:49 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 09:54:50 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 09:58:09 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 10:01:29 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 10:01:42 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 10:51:18 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 10:56:35 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 11:02:00 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 11:07:43 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 11:44:01 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 11:50:45 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 12:19:16 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 12:19:55 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 12:20:18 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 12:40:56 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 12:44:57 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 14:20:01 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 14:23:32 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 14:25:58 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 14:32:02 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 14:34:03 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 14:46:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 14:46:47 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 14:58:31 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 15:06:10 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 15:13:40 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-24 15:15:14 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-25 10:01:02 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-25 10:16:47 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-25 10:22:49 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-25 13:12:19 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-25 13:13:29 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-25 13:14:53 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-25 13:16:18 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-25 13:19:08 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-25 13:22:22 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-25 13:45:30 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-25 13:51:20 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-25 14:20:02 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-25 14:24:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-25 14:36:57 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-25 14:37:15 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-25 18:22:05 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:523] - [TABULAR_PIPELINE] Processed doc_id: e75094b1-b0d3-4b7b-97f6-27cb33bf4955
+2025-10-25 18:22:11 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:126] - [TABLE_EXTRACT] Extracted 2 tables using cascade
+2025-10-25 18:22:11 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:531] - [TABULAR_PIPELINE] Extracted 2 tables from PDF
+2025-10-25 18:22:11 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 10 rows, 5 columns
+2025-10-25 18:22:11 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:690] - [TABULAR_PIPELINE] Calling LLM for table tbl::e75094b1-b0d3-4b7b-97f6-27cb33bf4955::p1::0 (10 rows)
+2025-10-25 18:23:50 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:785] - [TABULAR_PIPELINE] Table tbl::e75094b1-b0d3-4b7b-97f6-27cb33bf4955::p1::0: 9 nodes, 8 edges (IDs normalized)
+2025-10-25 18:23:50 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 9 rows, 6 columns
+2025-10-25 18:23:50 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:690] - [TABULAR_PIPELINE] Calling LLM for table tbl::e75094b1-b0d3-4b7b-97f6-27cb33bf4955::p1::1 (9 rows)
+2025-10-25 18:24:04 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:785] - [TABULAR_PIPELINE] Table tbl::e75094b1-b0d3-4b7b-97f6-27cb33bf4955::p1::1: 8 nodes, 8 edges (IDs normalized)
+2025-10-25 18:24:04 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:800] - [TABULAR_PIPELINE] Writing to database: 2 chunks, 17 nodes, 16 edges
+2025-10-25 18:24:07 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:825] - [INFO] Upserted 17 vectors to Pinecone
+2025-10-25 18:24:07 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:847] - [TABULAR_PIPELINE] Completed: {'doc_id': 'e75094b1-b0d3-4b7b-97f6-27cb33bf4955', 'filename': 'Lemonade_Project_Equipment_and_Materials.pdf', 'file_size': 3839, 'file_sha256': 'a24ad78544e9e06366193f866b6bb1383b7722452d68fe4ab1db14ab5d24412a', 'pages': 1, 'tables_processed': 2, 'rows_processed': 19, 'chunks_written': 2, 'entities_written': 17, 'relations_written': 16, 'vectors_upserted': 17, 'errors': None}
+2025-10-25 19:43:57 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-25 21:30:35 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-25 23:32:06 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-26 09:25:49 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-26 09:26:18 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-26 09:29:16 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-26 09:31:08 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-26 09:31:58 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-26 09:35:05 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-26 09:41:56 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-26 09:49:22 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-26 09:50:16 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-26 09:52:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-26 09:55:08 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-26 15:59:11 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-26 17:01:58 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-26 18:46:39 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-26 18:47:01 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 09:15:57 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 09:27:03 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 09:32:12 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 09:38:20 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 09:40:09 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 09:43:17 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 09:53:02 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 09:53:54 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 10:02:44 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 10:10:23 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 10:26:50 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 10:29:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 10:29:38 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 10:32:36 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 10:39:02 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 10:40:30 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 10:45:11 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 10:47:36 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 10:49:06 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 10:52:19 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 10:57:13 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 11:14:31 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 11:17:52 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 11:21:53 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 12:20:47 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 12:36:50 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 14:05:14 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 14:12:52 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 14:14:25 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 14:14:49 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 14:53:10 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 14:59:08 - app.scenarios.api_for_scenarios - ERROR - [api_for_scenarios.py:450] - [COST_ESTIMATE] Failed to extract scenario data: 3 validation errors for ScenarioResponse
+name
+  Field required [type=missing, input_value={'scenario_type': 'increa...: {}, 'constraints': {}}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+project_id
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/string_type
+goal
+  Field required [type=missing, input_value={'scenario_type': 'increa...: {}, 'constraints': {}}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/api_for_scenarios.py", line 446, in extract_scenario_data
+    return ScenarioResponse(**scenario_dict)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pydantic/main.py", line 253, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 3 validation errors for ScenarioResponse
+name
+  Field required [type=missing, input_value={'scenario_type': 'increa...: {}, 'constraints': {}}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+project_id
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/string_type
+goal
+  Field required [type=missing, input_value={'scenario_type': 'increa...: {}, 'constraints': {}}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+2025-10-27 15:01:37 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 15:04:57 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 15:14:49 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 15:23:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 15:23:42 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 15:27:32 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 15:28:33 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 15:29:12 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 15:31:02 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 15:33:20 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 15:42:22 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 15:42:43 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 16:10:58 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 16:24:04 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 16:24:23 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 16:25:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 16:25:37 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 16:44:54 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 16:49:42 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 16:50:10 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 16:50:28 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 16:53:26 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 16:53:44 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 16:54:53 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 17:02:35 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 17:03:36 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 17:10:26 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 19:57:08 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 20:01:01 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:191] - [DEBUG] Successfully inserted scenario with id: d79f60a7-a9bf-42a8-b108-44881f8f3025
+2025-10-27 20:04:21 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:191] - [DEBUG] Successfully inserted scenario with id: adc0b871-bf6f-4f3d-a183-7a4ea5146514
+2025-10-27 21:43:55 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-27 21:47:10 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-28 08:45:54 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-28 08:59:20 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-28 09:00:26 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-28 09:02:57 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-28 09:04:19 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-28 09:08:22 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-28 09:09:24 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-28 09:30:07 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-28 09:31:53 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-28 09:33:58 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-28 09:37:53 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-28 09:38:08 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:191] - [DEBUG] Successfully inserted scenario with id: 2d4b4c93-f4d7-4a99-bcdc-ac200d595ad7
+2025-10-28 10:02:37 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-28 12:33:35 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-28 12:34:00 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-28 12:34:39 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:191] - [DEBUG] Successfully inserted scenario with id: e33f1c1a-3e86-4bd5-94e8-ec3b878f5c1b
+2025-10-28 12:50:14 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-28 12:50:31 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:191] - [DEBUG] Successfully inserted scenario with id: d19d80d1-7b63-49b8-a7e0-a9ce58b4100a
+2025-10-28 13:04:04 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-28 14:35:09 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:191] - [DEBUG] Successfully inserted scenario with id: 7ea51311-e4cf-4073-900f-c84830381a48
+2025-10-28 15:13:19 - app.scenarios.api_for_scenarios - ERROR - [api_for_scenarios.py:572] - [COST_ESTIMATE] Failed to extract scenario data: 1 validation error for ScenarioResponse
+change_type
+  Input should be a valid string [type=string_type, input_value=[], input_type=list]
+    For further information visit https://errors.pydantic.dev/2.11/v/string_type
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/api_for_scenarios.py", line 569, in extract_scenario_data
+    return ScenarioResponse(**scenario_dict)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/venv_3.12/lib/python3.12/site-packages/pydantic/main.py", line 253, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for ScenarioResponse
+change_type
+  Input should be a valid string [type=string_type, input_value=[], input_type=list]
+    For further information visit https://errors.pydantic.dev/2.11/v/string_type
+2025-10-28 15:31:20 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 08:42:13 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 08:46:39 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 08:48:49 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 08:56:28 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 08:59:02 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 09:02:13 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 09:06:01 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 09:08:00 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 09:11:30 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:191] - [DEBUG] Successfully inserted scenario with id: eb8da211-b5a6-45a7-9072-ccf229b65b4b
+2025-10-29 09:15:38 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 09:31:28 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 09:36:17 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:06:31 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:09:46 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:14:06 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:15:16 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:17:25 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:19:24 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:19:44 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:22:06 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:24:27 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:39:01 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:39:46 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:40:59 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:41:12 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:41:24 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:44:14 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:49:09 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:191] - [DEBUG] Successfully inserted scenario with id: c088c671-b4a9-49e7-9a7e-5fe27037b3da
+2025-10-29 10:57:39 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:58:16 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:58:46 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 10:59:33 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 11:54:13 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 11:56:27 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 12:18:32 - app.scenarios.api_for_scenarios - ERROR - [api_for_scenarios.py:589] - [COST_ESTIMATE] Failed to extract scenario data: 'list' object has no attribute 'join'
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/api_for_scenarios.py", line 551, in extract_scenario_data
+    scenarios = openai_extract_scenario_data(chunks, scenario=scenario_dict)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/etl_base/extract_with_openai.py", line 1176, in openai_extract_scenario_data
+    scenario_change_type = ["Equipment", "Material", "Process", "Quality", "Quantity"].join(", ") # + scenario.get("change_type", "N/A")
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'join'
+2025-10-29 12:21:23 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully

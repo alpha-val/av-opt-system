@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File, Form
+
 from typing import Optional, List
 import logging
 from datetime import datetime
@@ -58,7 +59,7 @@ async def create_cost_estimate(
         if not user_id:
             raise HTTPException(400, "User ID not found in authentication token")
 
-        # Run cost estimation        
+        # Run cost estimation
         estimate = cost_estimation(
             scenario_description=request.scenario_description,
             project_id=request.project_id,
@@ -69,7 +70,7 @@ async def create_cost_estimate(
             selected_entities=request.selected_entities,
             user_id=user_id,
         )
-        
+
         estimate["created_at"] = datetime.utcnow()
         estimate["user_id"] = user_id
         try:

@@ -43,23 +43,12 @@ class DocumentResponse(BaseModel):
     artifact_type: Optional[str]
     tags: List[str]
     metadata: Dict[str, Any]
+    scenarios: List[Dict[str, Any]]
     file_size: Optional[int] = None
     file_length: Optional[int] = None
     created_at: datetime
     status: str
     updated_at: datetime
-    # return {
-    #     "doc_id": doc_id,
-    #     "filename": filename,
-    #     "pages": len(pages_clean),
-    #     "chunks_written": len(chunks),
-    #     "entities_written": len(nodes),
-    #     "relations_written": len(edges),
-    #     # "mentions_written": len(mentions),
-    #     "user_id": user_id,
-    #     "project_id": project_id,
-    #     "document_metadata": doc_metadata,
-    # }
 
     class Config:
         from_attributes = True  # For Pydantic v2 (was orm_mode in v1)
@@ -75,6 +64,7 @@ class DocumentResponse(BaseModel):
                 "created_at": "2024-01-15T10:30:00Z",
                 "updated_at": "2024-01-15T10:30:00Z",
                 "tags": ["sample", "document"],
+                "scenarios": [{"scenario_1": {"description": "Base case scenario", "status": "active"}}],
                 "metadata": {"source": "user_upload", "format": "text"},
                 "file_size": 1024,
                 "file_length": 250,

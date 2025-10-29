@@ -390,19 +390,27 @@ const Dashboard = ({ onOpenProject }) => {
 
       {/* Projects Table */}
       <Box>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
-          Your Projects
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleCreateProject}
-          size="small"
-          sx={{ mb: 2 }}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
         >
-          Create New Project
-        </Button>
+          <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
+            Your Projects
+          </Typography>
+          {projectData.length > 0 && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleCreateProject}
+              // size="small"
+              sx={{ mb: 2 }}
+            >
+              Create New Project
+            </Button>
+          )}
         </Box>
         {projectData.length > 0 ? (
           <DataTable

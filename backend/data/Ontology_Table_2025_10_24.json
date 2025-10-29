@@ -1,0 +1,546 @@
+[
+  {
+    "Discipline": "Mechanical Equipment",
+    "Category": "Pumps",
+    "Subcategory": "Centrifugal",
+    "Element": "Base pump unit",
+    "Attributes": "Design flowrate, Head, NPSH, Speed, Materials, Seal type",
+    "Notes": "Include datasheet, vendor, tag"
+  },
+  {
+    "Discipline": "Mechanical Equipment",
+    "Category": "Pumps",
+    "Subcategory": "Positive Displacement",
+    "Element": "Gear",
+    "Attributes": "Displacement, Max pressure, Viscosity limits, Materials",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Mechanical Equipment",
+    "Category": "Pumps",
+    "Subcategory": "Positive Displacement",
+    "Element": "Diaphragm",
+    "Attributes": "Displacement, Max pressure, Viscosity limits, Materials",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Mechanical Equipment",
+    "Category": "Vessels",
+    "Subcategory": "Pressure Vessel",
+    "Element": "Reactors",
+    "Attributes": "Design pressure/temp, MAWP, materials, relief device",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Mechanical Equipment",
+    "Category": "Vessels",
+    "Subcategory": "Pressure Vessel",
+    "Element": "Separators",
+    "Attributes": "Design pressure/temp, MAWP, materials, relief device",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Mechanical Equipment",
+    "Category": "Tanks",
+    "Subcategory": "Storage Tank",
+    "Element": "Fixed",
+    "Attributes": "Capacity, material, coating, bunding/containment",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Mechanical Equipment",
+    "Category": "Tanks",
+    "Subcategory": "Storage Tank",
+    "Element": "Float Roof",
+    "Attributes": "Capacity, material, coating, bunding/containment",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Mechanical Equipment",
+    "Category": "Heat Exchangers",
+    "Subcategory": "Shell-and-tube",
+    "Element": "Shell-tube unit",
+    "Attributes": "Heat duty, LMTD, materials, fouling factor, U-value",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Mechanical Equipment",
+    "Category": "Compressors/Blowers",
+    "Subcategory": "Centrifugal/Turbo",
+    "Element": "Compressors",
+    "Attributes": "Flow, pressure ratio, driver type, lubrication, interstage cooling",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Mechanical Equipment",
+    "Category": "Material Handling",
+    "Subcategory": "Conveyors/Hoists",
+    "Element": "Belt",
+    "Attributes": "Capacity, speed, drive, guards, throughput",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Mechanical Equipment",
+    "Category": "Material Handling",
+    "Subcategory": "Conveyors/Hoists",
+    "Element": "Screw",
+    "Attributes": "Capacity, speed, drive, guards, throughput",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Mechanical Equipment",
+    "Category": "Utilities",
+    "Subcategory": "Cooling Tower",
+    "Element": "Open",
+    "Attributes": "Cooling duty, cycles of concentration, blowdown",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Mechanical Equipment",
+    "Category": "Utilities",
+    "Subcategory": "Cooling Tower",
+    "Element": "Closed",
+    "Attributes": "Cooling duty, cycles of concentration, blowdown",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Mechanical Equipment",
+    "Category": "Specialty",
+    "Subcategory": "Agitators",
+    "Element": "Top",
+    "Attributes": "Power, tip speed, seal type, shaft material",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Mechanical Equipment",
+    "Category": "Specialty",
+    "Subcategory": "Agitators",
+    "Element": "Side Entry",
+    "Attributes": "Power, tip speed, seal type, shaft material",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Mechanical Equipment",
+    "Category": "Process Equipment",
+    "Subcategory": "Grinding Mill",
+    "Element": "Ball",
+    "Attributes": "Power, throughput, liner material, grinding media",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Mechanical Equipment",
+    "Category": "Process Equipment",
+    "Subcategory": "Grinding Mill",
+    "Element": "Rod",
+    "Attributes": "Power, throughput, liner material, grinding media",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Mechanical Equipment",
+    "Category": "Process Equipment",
+    "Subcategory": "Grinding Mill",
+    "Element": "Mill",
+    "Attributes": "Power, throughput, liner material, grinding media",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Civil",
+    "Category": "Site Works",
+    "Subcategory": "Grading",
+    "Element": "Cut",
+    "Attributes": "Finished grade, slopes, erosion control, topsoil",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Civil",
+    "Category": "Site Works",
+    "Subcategory": "Grading",
+    "Element": "fill",
+    "Attributes": "Finished grade, slopes, erosion control, topsoil",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Civil",
+    "Category": "Access",
+    "Subcategory": "Roads/Paving",
+    "Element": "Site roads",
+    "Attributes": "Pavement type, width, drainage, loading",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Civil",
+    "Category": "Stormwater",
+    "Subcategory": "Retention",
+    "Element": "Basins",
+    "Attributes": "Detention volume, outlet controls, SWPPP",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Civil",
+    "Category": "Stormwater",
+    "Subcategory": "Retention",
+    "Element": "Channels",
+    "Attributes": "Detention volume, outlet controls, SWPPP",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Civil",
+    "Category": "Utilities - Site",
+    "Subcategory": "Duct banks",
+    "Element": "Electrical ductbank",
+    "Attributes": "Conduit size, cover depth, pull chambers",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Civil",
+    "Category": "Hydrology",
+    "Subcategory": "Culverts/Drainage",
+    "Element": "Culverts",
+    "Attributes": "Size, invert, headwall, scour protection",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Civil",
+    "Category": "Survey",
+    "Subcategory": "Topography",
+    "Element": "Benchmarking",
+    "Attributes": "Datum, coordinate system, control points",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Structural",
+    "Category": "Steelwork",
+    "Subcategory": "Platforms/Walkways",
+    "Element": "Access platform",
+    "Attributes": "Loading criteria, handrails, gratings, access points",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Structural",
+    "Category": "Pipe Support",
+    "Subcategory": "Racks & Supports",
+    "Element": "Pipe rack",
+    "Attributes": "Span, load rating, thermal movement allowances",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Structural",
+    "Category": "Buildings",
+    "Subcategory": "Enclosures",
+    "Element": "Control room",
+    "Attributes": "Occupancy type, fire rating, service penetrations",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Structural",
+    "Category": "Buildings",
+    "Subcategory": "Enclosures",
+    "Element": "MCC building",
+    "Attributes": "Occupancy type, fire rating, service penetrations",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Structural",
+    "Category": "Foundations Interface",
+    "Subcategory": "Anchor/Embed Plates",
+    "Element": "Embed plate",
+    "Attributes": "Plate size, anchor bolt layout, concrete strength",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Concrete",
+    "Category": "Foundations",
+    "Subcategory": "Footings",
+    "Element": "Spread footings",
+    "Attributes": "Concrete class, reinforcement, bearing capacity",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Concrete",
+    "Category": "Slabs",
+    "Subcategory": "Slab on grade",
+    "Element": "Equipment plinths",
+    "Attributes": "Thickness, joints, surface finish, load",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Concrete",
+    "Category": "Retaining",
+    "Subcategory": "Retaining walls",
+    "Element": "Gravity",
+    "Attributes": "Height, surcharge, drainage, waterproofing",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Concrete",
+    "Category": "Retaining",
+    "Subcategory": "Retaining walls",
+    "Element": "Sheet pile",
+    "Attributes": "Height, surcharge, drainage, waterproofing",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Concrete",
+    "Category": "Precast",
+    "Subcategory": "Manholes/Precast",
+    "Element": "Manhole chamber",
+    "Attributes": "Design load, gasket, access cover",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Piping",
+    "Category": "Process Lines",
+    "Subcategory": "Large Bore",
+    "Element": "Slurry",
+    "Attributes": "Diameter, schedule, lining/lining material, expansion allowances",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Piping",
+    "Category": "Process Lines",
+    "Subcategory": "Large Bore",
+    "Element": "Main headers",
+    "Attributes": "Diameter, schedule, lining/lining material, expansion allowances",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Piping",
+    "Category": "Process Lines",
+    "Subcategory": "Small Bore",
+    "Element": "Instrument & Utility lines (<2\")",
+    "Attributes": "Material spec, isolation valves, tagging, support spacing",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Piping",
+    "Category": "Materials",
+    "Subcategory": "Carbon steel / SS / HDPE / FRP",
+    "Element": "Material selection",
+    "Attributes": "Specification (ASTM/ASME), corrosion allowance, coating",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Piping",
+    "Category": "Insulation",
+    "Subcategory": "Heat tracing",
+    "Element": "Insulation & HT",
+    "Attributes": "Insulation type, thickness, heat tracing circuits, control",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Piping",
+    "Category": "Testing",
+    "Subcategory": "Hydrotest & Pneumatic",
+    "Element": "Pressure testing",
+    "Attributes": "Test pressure, acceptance criteria, duration",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Instrumentation",
+    "Category": "Flow / Level",
+    "Subcategory": "Flow meters",
+    "Element": "Coriolis",
+    "Attributes": "Accuracy, range, mounting, straight-run requirements",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Instrumentation",
+    "Category": "Flow / Level",
+    "Subcategory": "Flow meters",
+    "Element": "Ultrasonic",
+    "Attributes": "Accuracy, range, mounting, straight-run requirements",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Instrumentation",
+    "Category": "Temperature & Pressure",
+    "Subcategory": "Transmitters",
+    "Element": "Temp & Pressure TX",
+    "Attributes": "Range, accuracy, material, isolation",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Instrumentation",
+    "Category": "Analyzers & Safety",
+    "Subcategory": "Gas detectors, pH",
+    "Element": "Analyzers",
+    "Attributes": "Calibration, sample conditioning, response time",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Instrumentation",
+    "Category": "Cabling & Termination",
+    "Subcategory": "Junction Boxes",
+    "Element": "Field junctions",
+    "Attributes": "Cable types, gland sizes, NEMA/Ingress rating",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Control",
+    "Category": "Control Systems",
+    "Subcategory": "PLC / DCS / SCADA",
+    "Element": "Control platform",
+    "Attributes": "I/O count, redundancy, vendor, programming language",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Control",
+    "Category": "Interfaces",
+    "Subcategory": "HMI / Historian",
+    "Element": "Operator stations",
+    "Attributes": "Screens, alarm philosophy, trend requirements",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Control",
+    "Category": "Network & Cyber",
+    "Subcategory": "Network switches / Firewalls",
+    "Element": "Industrial network",
+    "Attributes": "Architecture, VLANs, cybersecurity controls",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Control",
+    "Category": "I/O",
+    "Subcategory": "Remote I/O panels",
+    "Element": "Field I",
+    "Attributes": "Location, IP/analog, termination, power supply",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Control",
+    "Category": "I/O",
+    "Subcategory": "Remote I/O panels",
+    "Element": "O",
+    "Attributes": "Location, IP/analog, termination, power supply",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Electrical",
+    "Category": "Distribution",
+    "Subcategory": "Transformers",
+    "Element": "Step-down",
+    "Attributes": "kVA rating, cooling type, grounding",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Electrical",
+    "Category": "Distribution",
+    "Subcategory": "Transformers",
+    "Element": "step-up",
+    "Attributes": "kVA rating, cooling type, grounding",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Electrical",
+    "Category": "Switchgear",
+    "Subcategory": "MCC / SWGR",
+    "Element": "Motor control center",
+    "Attributes": "AIC rating, upstream protection, TB layouts",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Electrical",
+    "Category": "Cabling",
+    "Subcategory": "Power & Control cable",
+    "Element": "Tray and routing",
+    "Attributes": "Tray fill, segregation, derating",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Safety/Environment",
+    "Category": "Fire Protection",
+    "Subcategory": "Sprinkler / Hydrants",
+    "Element": "FP systems",
+    "Attributes": "Design density, hydrant spacing, deluge zones",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Safety/Environment",
+    "Category": "Containment",
+    "Subcategory": "Spill bunding",
+    "Element": "Bunds",
+    "Attributes": "Capacity, drainage, liners",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Safety/Environment",
+    "Category": "Ventilation",
+    "Subcategory": "Fume / Dust extraction",
+    "Element": "Ducting & fans",
+    "Attributes": "Air changes, filtration, duct sizing",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Utilities",
+    "Category": "Compressed Air",
+    "Subcategory": "Air network",
+    "Element": "Compressors & Piping",
+    "Attributes": "Pressure, dewpoint, receiver sizing",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Utilities",
+    "Category": "Cooling Water",
+    "Subcategory": "CW network",
+    "Element": "Pumps & Heat exchangers",
+    "Attributes": "Flow, temperature, water treatment requirements",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Construction/Commissioning",
+    "Category": "QA/QC",
+    "Subcategory": "Inspections & Testing",
+    "Element": "Quality plan",
+    "Attributes": "Hold points, test records, certificates",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Construction/Commissioning",
+    "Category": "Commissioning",
+    "Subcategory": "Pre-startup Safety Reviews",
+    "Element": "Commissioning plan",
+    "Attributes": "Loop checks, SAT, punchlists",
+    "Notes": ""
+  },
+  {
+    "Discipline": "",
+    "Category": "",
+    "Subcategory": "",
+    "Element": "",
+    "Attributes": "",
+    "Notes": ""
+  },
+  {
+    "Discipline": "",
+    "Category": "",
+    "Subcategory": "",
+    "Element": "",
+    "Attributes": "",
+    "Notes": ""
+  },
+  {
+    "Discipline": "Cost",
+    "Category": "Capex",
+    "Subcategory": "Direct/ Indirect",
+    "Element": "",
+    "Attributes": "",
+    "Notes": ""
+  },
+  {
+    "Discipline": "",
+    "Category": "opex",
+    "Subcategory": "",
+    "Element": "",
+    "Attributes": "",
+    "Notes": ""
+  },
+  {
+    "Discipline": "",
+    "Category": "Contingency",
+    "Subcategory": "",
+    "Element": "",
+    "Attributes": "",
+    "Notes": ""
+  }
+]

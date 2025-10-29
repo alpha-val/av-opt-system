@@ -4,14 +4,19 @@ from typing import Optional, Dict, Any, List
 import os, tempfile, uuid, datetime
 import pandas as pd
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from app.text_clean import extract_and_clean, chunk_by_page, process_extracted_nodes, NAMESPACE
+from app.text_clean import (
+    extract_and_clean,
+    chunk_by_page,
+    process_extracted_nodes,
+    NAMESPACE,
+)
 from app.bronze_store import (
     bulk_upsert_chunks,
     bulk_upsert_entities,
     bulk_upsert_relations,
 )
 from app.vector_db.vector_operations import upsert_entities_to_pinecone
-from .extract_with_openai import openai_extract_nodes_rels
+from .extract_with_openai import openai_extract_nodes_rels, openai_extract_scenario_data
 
 
 def etl_base_case(
@@ -46,12 +51,22 @@ def etl_base_case(
         c["properties"]["user_id"] = user_id
         c["properties"]["doc_id"] = doc_id
 
-    # 3) Entities/relations/mentions from free text (Bronze)
-    # kg = _extract_entities_mentions(chunks)
-    kg = openai_extract_nodes_rels(chunks, rules=["Units_Normalization", "Cost_Rule"])
+
+    # ========== ENTITY EXTRACTION ==========
+    kg = openai_extract_nodes_rels(
+        chunks,
+        rules=[
+            "MSIO_ONTOLOGY",
+            "NODES_AND_RELATIONS",
+            "PROVENANCE_AND_CONFIDENCE",
+            # "SCENARIO_EXTRACTION",
+            "UNITS_NORMALIZATION",
+        ],
+    )
     nodes = list(kg.get("nodes", []) or [])
     edges = list(kg.get("edges", []) or [])
-
+    scenarios = list(kg.get("scenarios", []) or [])
+    
     # Attach simple source back-pointer to each node
     for n in nodes:
         srcs = n.get("sources") or []
@@ -65,7 +80,7 @@ def etl_base_case(
         n["properties"]["project_id"] = project_id
         n["properties"]["user_id"] = user_id
         n["properties"]["doc_id"] = doc_id
-        
+
     # Apply additional processing to nodes if needed
     nodes = process_extracted_nodes(nodes)
 
@@ -78,12 +93,12 @@ def etl_base_case(
         e["properties"]["user_id"] = user_id
         e["properties"]["doc_id"] = doc_id
 
-    # 4) Store in MongoDB
+    # Store entities and relations in MongoDB
     bulk_upsert_chunks(chunks)
     bulk_upsert_entities(nodes)
     bulk_upsert_relations(edges)
 
-    # ========== NEW: Store in Vector Database ==========
+    # Store vectors in Pinecone
     vectors_upserted = 0
     try:
         vectors_upserted = upsert_entities_to_pinecone(
@@ -92,10 +107,8 @@ def etl_base_case(
         print(f"[INFO] Upserted {vectors_upserted} vectors to Pinecone")
     except Exception as e:
         print(f"[ERROR] Failed to upsert to Pinecone: {e}")
-        # Don't fail the entire ETL if vector upsert fails
-        # Vector DB can be rebuilt later from MongoDB
-    # ===================================================
 
+    # =========================================
     return {
         "filename": filename,
         "file_size": file_size,
@@ -104,5 +117,6 @@ def etl_base_case(
         "chunks_written": len(chunks),
         "entities_written": len(nodes),
         "relations_written": len(edges),
+        "scenarios": scenarios,
         "vectors_upserted": vectors_upserted,  # NEW: Return vector count
     }

@@ -2,6 +2,7 @@ from typing import List, Dict, Optional
 import os
 import openai
 from app.config_adapter import SETTINGS
+from app.text_clean import sanitize_metadata
 from pinecone import Pinecone
 from typing import List, Dict, Any
 from datetime import datetime
@@ -361,11 +362,12 @@ def upsert_entities_to_pinecone(
     # Prepare vectors for Pinecone
     vectors = []
     for entity_meta, embedding in zip(normalized_entities, all_embeddings):
+        sanitized_metadata = sanitize_metadata(entity_meta)
         vectors.append(
             {
                 "id": entity_meta["entity_id"],
                 "values": embedding,
-                "metadata": entity_meta,
+                "metadata": sanitized_metadata,
             }
         )
 
@@ -387,6 +389,7 @@ def upsert_entities_to_pinecone(
             # )
         except Exception as e:
             print(f"[ERROR] Failed to upsert batch {i}: {e}")
+            return 0
 
     print(f"[INFO] Successfully upserted {upserted_count}/{len(vectors)} vectors")
 

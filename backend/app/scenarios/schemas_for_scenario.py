@@ -40,7 +40,7 @@ class ScenarioBase(BaseModel):
     change_type: Literal["equipment", "process", "capacity", "location", "technology"]
     goal: Literal[
         "increase_production",
-        "reduce_cost",
+        "reduce_capex",
         "improve_quality",
         "change_technology",
         "other",
@@ -89,7 +89,17 @@ class ScenarioInDB(ScenarioBase):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
-class ScenarioResponse(ScenarioInDB):
-    """Scenario model for API responses"""
-
-    pass
+class ScenarioResponse(BaseModel):
+    id: str
+    name: str
+    project_id: str
+    goal: str
+    description: Optional[str]
+    change_type: str
+    status: Optional[str]
+    compute_state: Optional[str] = "idle"  # Default to "idle"
+    target: Optional[Dict[str, Any]] = {}  # Default to an empty dictionary
+    constraints: Optional[Dict[str, Any]] = {}  # Default to an empty dictionary
+    created_at: datetime
+    updated_at: datetime
+    scenarios: List[Dict[str, Any]] = []  # Default to an empty list

@@ -25,11 +25,13 @@ import {
   selectDataLoading,
   selectDataError,
   selectBaseCaseDocuments,
+  selectBaseCaseDocumentsByProjectId,
 } from "../../redux/dataSlice";
 
 import EntityDetailsTable from "../../components/EntityDetailsTable";
 import RelationsDetailsView from "../../components/RelationsDetailsView";
 import TableEntityDetailsTable from "../../components/TableEntityDetailsTable";
+import DocumentDetailsView from "../../components/DocumentsMetaDataView";
 
 const InspectDataView = () => {
   const { projectId } = useParams();
@@ -37,6 +39,11 @@ const InspectDataView = () => {
 
   // Tab state
   const [tabValue, setTabValue] = useState(0);
+
+  // Get base case documents for the project
+  const baseCaseDocsByProjectId = useSelector((state) =>
+    selectBaseCaseDocumentsByProjectId(state, projectId)
+  ) || [];
 
   // Get raw entities data
   const rawEntities =
@@ -267,6 +274,11 @@ const InspectDataView = () => {
             id="tab-2"
             aria-controls="tabpanel-2"
           />
+          <Tab
+            label={`Documents Meta Data (${baseCaseDocsByProjectId.length})`}
+            id="tab-3"
+            aria-controls="tabpanel-3"
+          />
         </Tabs>
 
         {/* Base Case Entities Tab */}
@@ -314,6 +326,22 @@ const InspectDataView = () => {
             <EntityDetailsTable
               entities={tabularDataEntities}
               title="Tabular Data Entities"
+            />
+          )}
+        </Box>
+
+        {/* Documents Meta Data Tab */}
+        <Box
+          role="tabpanel"
+          hidden={tabValue !== 3}
+          id="tabpanel-3"
+          aria-labelledby="tab-3"
+          sx={{ p: 0 }}
+        >
+          {tabValue === 3 && (
+            <DocumentDetailsView
+              documents={baseCaseDocsByProjectId}
+              title="Documents Meta Data"
             />
           )}
         </Box>

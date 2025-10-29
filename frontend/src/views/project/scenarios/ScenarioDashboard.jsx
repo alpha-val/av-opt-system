@@ -25,7 +25,7 @@ import {
 } from "@mui/icons-material";
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import CreateScenarioDialog from "./CreateScenarioDialog";
-import ScenarioDetail from "./ScenarioDetails";
+import ScenarioDetails from "./ScenarioDetails";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchScenarios, deleteScenario } from "../../../redux/scenarioSlice";
 import { useDialogs } from "../../../hooks/useDialogs/useDialogs";
@@ -40,14 +40,17 @@ const Scenarios = () => {
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [activeScenarioId, setActiveScenarioId] = useState(null);
 
+  // Get documents for projectId
+
   const scenarios = useSelector(
     (state) => state.scenarios.byProject[projectId] || []
   );
+  
   const loading = useSelector((state) => state.scenarios.loading);
   const activeScenario = useSelector(
     (state) => state.scenarios?.byId?.[activeScenarioId]
   );
-
+  console.log("Active Scenario: ", activeScenario);
   useEffect(() => {
     if (projectId) {
       dispatch(fetchScenarios(projectId));
@@ -125,7 +128,7 @@ const Scenarios = () => {
     switch (goal) {
       case "increase_production":
         return <TrendingUp />;
-      case "reduce_cost":
+      case "reduce_capex":
         return <AttachMoney />;
       default:
         return <Speed />;
@@ -200,15 +203,28 @@ const Scenarios = () => {
         </Box>
 
         {/* Scenario Detail Component */}
-        <ScenarioDetail
-          scenarioId={activeScenarioId}
+        <ScenarioDetails
           scenario={activeScenario}
-          projectId={projectId}
           onClose={handleBackToList}
         />
       </Box>
     );
   }
+  console.log("Scenarios: ", scenarios);
+  const getGoalText = (goal) => {
+    switch (goal) {
+      case "increase_production":
+        return "Increase Production";
+      case "reduce_capex":
+        return "Reduce Cost";
+      case "improve_quality":
+        return "Improve Quality";
+      case "change_technology":
+        return "Change Technology";
+      default:
+        return "Other";
+    }
+  };
 
   // Show scenario list view (default)
   return (
@@ -274,6 +290,8 @@ const Scenarios = () => {
                   height: "100%",
                   display: "flex",
                   flexDirection: "column",
+                  justifyContent: "space-between",
+                  maxWidth: 300,
                 }}
                 onClick={() => handleCardClick(scenario.id)}
               >
@@ -324,10 +342,7 @@ const Scenarios = () => {
 
                   {scenario.target && (
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                      <strong>Target:</strong> {scenario.target.metric}{" "}
-                      {scenario.target.value > 0 ? "+" : ""}
-                      {scenario.target.value}
-                      {scenario.target.unit}
+                      <strong>Target:</strong> {getGoalText(scenario.goal)}
                     </Typography>
                   )}
                 </CardContent>
@@ -345,7 +360,7 @@ const Scenarios = () => {
                 </CardActions>
               </Card>
             </Grid>
-          ))}
+          ))}{" "}
         </Grid>
       )}
 
@@ -379,6 +394,7 @@ const Scenarios = () => {
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
         projectId={projectId}
+        scenarioName={"New Scenario"}
       />
     </Box>
   );
