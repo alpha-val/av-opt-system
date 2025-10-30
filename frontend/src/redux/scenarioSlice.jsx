@@ -184,7 +184,7 @@ export const analyzeScenario = createAsyncThunk(
 
       // Build cost estimate request payload matching CostEstimateRequest schema
       const costEstimateRequest = {
-        project_id: scenario.project_id,
+        project_id: scenario.properties.project_id,
         scenario_id: scenario.id,
         cost_id: null, // Auto-generate
         scenario_description: scenario.description,
@@ -413,14 +413,14 @@ const scenarioSlice = createSlice({
         const scenario = action.payload;
         state.byId[scenario.id] = scenario;
 
-        if (state.byProject[scenario.project_id]) {
-          const index = state.byProject[scenario.project_id].findIndex(
+        if (state.byProject[scenario.properties.project_id]) {
+          const index = state.byProject[scenario.properties.project_id].findIndex(
             (s) => s.id === scenario.id
           );
           if (index !== -1) {
-            state.byProject[scenario.project_id][index] = scenario;
+            state.byProject[scenario.properties.project_id][index] = scenario;
           } else {
-            state.byProject[scenario.project_id].push(scenario);
+            state.byProject[scenario.properties.project_id].push(scenario);
           }
         }
       })
@@ -438,10 +438,10 @@ const scenarioSlice = createSlice({
         const scenario = action.payload;
         state.byId[scenario.id] = scenario;
         console.log("[scenarioSlice] Adding scenario: ", scenario)
-        if (!state.byProject[scenario.project_id]) {
-          state.byProject[scenario.project_id] = [];
+        if (!state.byProject[scenario.properties.project_id]) {
+          state.byProject[scenario.properties.project_id] = [];
         }
-        state.byProject[scenario.project_id].push(scenario);
+        state.byProject[scenario.properties.project_id].push(scenario);
       })
       .addCase(createScenario.rejected, (state, action) => {
         state.loading = false;
@@ -457,12 +457,12 @@ const scenarioSlice = createSlice({
         const scenario = action.payload;
         state.byId[scenario.id] = scenario;
 
-        if (state.byProject[scenario.project_id]) {
-          const index = state.byProject[scenario.project_id].findIndex(
+        if (state.byProject[scenario.properties.project_id]) {
+          const index = state.byProject[scenario.properties.project_id].findIndex(
             (s) => s.id === scenario.id
           );
           if (index !== -1) {
-            state.byProject[scenario.project_id][index] = scenario;
+            state.byProject[scenario.properties.project_id][index] = scenario;
           }
         }
       })
@@ -488,12 +488,12 @@ const scenarioSlice = createSlice({
 
         // Update scenario
         state.byId[scenario.id] = scenario;
-        if (state.byProject[scenario.project_id]) {
-          const index = state.byProject[scenario.project_id].findIndex(
+        if (state.byProject[scenario.properties.project_id]) {
+          const index = state.byProject[scenario.properties.project_id].findIndex(
             (s) => s.id === scenario.id
           );
           if (index !== -1) {
-            state.byProject[scenario.project_id][index] = scenario;
+            state.byProject[scenario.properties.project_id][index] = scenario;
           }
         }
 
@@ -521,8 +521,8 @@ const scenarioSlice = createSlice({
         const scenarioId = action.payload;
         const scenario = state.byId[scenarioId];
         if (scenario) {
-          state.byProject[scenario.project_id] = state.byProject[
-            scenario.project_id
+          state.byProject[scenario.properties.project_id] = state.byProject[
+            scenario.properties.project_id
           ].filter((s) => s.id !== scenarioId);
           delete state.byId[scenarioId];
           delete state.costEstimates[scenarioId];

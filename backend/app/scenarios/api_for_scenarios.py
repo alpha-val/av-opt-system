@@ -387,9 +387,14 @@ def delete_scenario(scenario_id: str, current_user: dict = Depends(get_current_u
                 detail="Could not extract user_id from authentication token",
             )
 
+
         # Verify scenario exists and belongs to user
         scenario = db().scenarios.find_one(
-            {"id": scenario_id, "created_by": user_id}, {"_id": 0, "name": 1}
+            {
+                "id": scenario_id,
+                "properties.created_by": user_id,
+            },
+            {"_id": 0, "properties.name": 1},
         )
 
         if not scenario:
@@ -399,7 +404,9 @@ def delete_scenario(scenario_id: str, current_user: dict = Depends(get_current_u
             )
 
         # Delete scenario
-        result = db().scenarios.delete_one({"id": scenario_id, "created_by": user_id})
+        result = db().scenarios.delete_one(
+            {"id": scenario_id, "properties.created_by": user_id}
+        )
 
         if result.deleted_count == 0:
             raise HTTPException(
@@ -410,9 +417,9 @@ def delete_scenario(scenario_id: str, current_user: dict = Depends(get_current_u
         print(f"[DEBUG] Deleted scenario {scenario_id}")
 
         return {
-            "message": f"Scenario '{scenario.get('name', scenario_id)}' deleted successfully",
+            "message": f"Scenario '{scenario.get('properties', {}).get('name', scenario_id)}' deleted successfully",
             "scenario_id": scenario_id,
-            "scenario_name": scenario.get("name"),
+            "scenario_name": scenario.get("properties", {}).get("name"),
             "deleted_at": datetime.utcnow().isoformat(),
         }
 
@@ -470,6 +477,7 @@ async def extract_scenario_data(
     filename = file.filename or "uploaded.pdf"
     project_id = scenario_dict.get("project_id", project_id)
     scenario_id = scenario_dict.get("id")
+    print(f"[DEBUG] Received scenario: {scenario_dict}")
     if scenario_id is not None and not isinstance(scenario_id, str):
         raise Exception("scenario id is missing or not a string")
         return {"error": "scenario id is missing or not a string"}
@@ -528,19 +536,19 @@ async def extract_scenario_data(
 
     try:
         # Use OpenAI to extract scenario mapping from the base case document
-        scenarios = openai_extract_scenario_data(chunks, scenario=scenario_dict)
+        local_objectives = openai_extract_scenario_data(chunks, scenario=scenario_dict)
 
-        all_entities = extract_scenario_entities(scenarios)
+        # all_entities = extract_scenario_entities(scenarios)
 
         # Set all required fields
         scenario_dict["properties"]["doc_id"] = found_doc_id
         scenario_dict["properties"]["updated_at"] = datetime.utcnow()
-        scenario_dict["properties"]["scenarios"] = scenarios
+        scenario_dict["properties"]["local_objectives"] = local_objectives
         scenario_dict["properties"]["doc_name"] = filename
         scenario_dict["properties"]["doc_size"] = len(pdf_bytes)
         scenario_dict["properties"]["status"] = "ready"
         scenario_dict["properties"]["file_sha256"] = file_sha
-        scenario_dict["properties"]["relevant_entities"] = all_entities
+        # scenario_dict["properties"]["relevant_entities"] = local_objectives
 
         # Update the existing scenario in the database
         if scenario_id:

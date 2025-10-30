@@ -27,13 +27,11 @@ const ScenarioAnalysis = ({ scenario, onClose }) => {
     }
   );
 
-console.log("Initial scenarioDetails:", scenarioDetails);
-
   const projectId = scenario?.properties.project_id || "";
   const artifactType = "scenario_analysis";
   const userId = scenario?.properties.user_id || "";
 
-  const [file, setFile] = useState(null); // Separate state for the file
+  const [file, setFile] = useState(null);
   const [submitted, setSubmitted] = useState(false);
 
   const { loading, result, error } = useSelector(
@@ -43,10 +41,20 @@ console.log("Initial scenarioDetails:", scenarioDetails);
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setScenarioDetails((prev) => ({
-      ...prev,
-      [name]: Array.isArray(value) ? value : value, // Ensure multi-select fields are updated as arrays
-    }));
+    // Handle nested properties immutably
+    setScenarioDetails((prev) => {
+      const keys = name.split(".");
+      const updatedDetails = { ...prev };
+
+      let current = updatedDetails;
+      for (let i = 0; i < keys.length - 1; i++) {
+        current[keys[i]] = { ...current[keys[i]] };
+        current = current[keys[i]];
+      }
+      current[keys[keys.length - 1]] = value;
+
+      return updatedDetails;
+    });
   };
 
   const handleFileChange = (e) => {
@@ -56,13 +64,13 @@ console.log("Initial scenarioDetails:", scenarioDetails);
   const handleSubmit = async () => {
     setSubmitted(true);
 
-    // Create a copy of scenarioDetails without the "scenarios" property
+    // Create a copy of scenarioDetails without the "local_objectives" property
     const { properties, ...rest } = scenarioDetails;
-    const { scenarios, ...propertiesWithoutScenarios } = properties || {};
-
+    const { local_objectives, ...purgedScenario } = properties || {};
+    
     const scenarioDetailsCopy = {
       ...rest,
-      properties: propertiesWithoutScenarios,
+      properties: purgedScenario,
     };
 
     dispatch(
@@ -76,18 +84,19 @@ console.log("Initial scenarioDetails:", scenarioDetails);
     );
   };
 
-  // Handle the "fulfilled" state
+  // Update scenarioDetails state when extraction result changes
   useEffect(() => {
     if (result && submitted) {
-      // Perform additional actions if needed, e.g., logging or triggering other updates
+      setScenarioDetails((prev) => ({
+        ...prev,
+        properties: {
+          ...prev.properties,
+          ...result.properties, // Merge new properties from the extraction result
+        },
+      }));
     }
   }, [result, submitted]);
-  console.log(
-    "Rendering ScenarioAnalysis with scenarioDetails:",
-    scenarioDetails,
-    "and result:",
-    result
-  );
+
   return (
     <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
       <Typography variant="h5" fontWeight="bold">
@@ -99,8 +108,8 @@ console.log("Initial scenarioDetails:", scenarioDetails);
         <FormControl fullWidth size="small">
           <InputLabel>Target or Goal</InputLabel>
           <Select
-            name="goal"
-            value={scenarioDetails.properties.goal} // Use scenarioDetails state
+            name="properties.goal" // Match the structure of scenarioDetails
+            value={scenarioDetails.properties.goal}
             onChange={handleChange}
             label="Target or Goal"
           >
@@ -114,26 +123,12 @@ console.log("Initial scenarioDetails:", scenarioDetails);
           multiline
           rows={3}
           label="Description"
-          name="description"
-          value={scenarioDetails.properties.description} // Use scenarioDetails state
+          name="properties.description" // Match the structure of scenarioDetails
+          value={scenarioDetails.properties.description}
           onChange={handleChange}
           size="small"
           helperText="Describe the scenario you want to analyze"
         />
-
-        {/* <FormControl fullWidth size="small">
-          <InputLabel>Change Type</InputLabel>
-          <Select
-            name="change_type"
-            value={scenarioDetails.change_type} // Use scenarioDetails state
-            onChange={handleChange}
-            label="Change Type"
-          >
-            <MenuItem value="equipment">Equipment</MenuItem>
-            <MenuItem value="process">Process</MenuItem>
-            <MenuItem value="capacity">Capacity</MenuItem>
-          </Select>
-        </FormControl> */}
 
         {/* File Upload */}
         <Box>
@@ -151,7 +146,6 @@ console.log("Initial scenarioDetails:", scenarioDetails);
       </Box>
 
       {/* Result View */}
-
       <Box>
         <Typography variant="h6" gutterBottom>
           Analysis Result
@@ -161,8 +155,8 @@ console.log("Initial scenarioDetails:", scenarioDetails);
         ) : (
           <ReactJson
             src={
-              scenarioDetails.properties.scenarios.length > 0
-                ? scenarioDetails.properties.scenarios
+              scenarioDetails.properties?.local_objectives?.length > 0
+                ? scenarioDetails.properties?.local_objectives
                 : result || { result: "No data available" }
             }
             name={false}
@@ -173,28 +167,31 @@ console.log("Initial scenarioDetails:", scenarioDetails);
       </Box>
 
       <Box>
-        <Grid container spacing={2} justifyContent="flex-end">
-          {scenarioDetails.properties.relevant_entities &&
-            scenarioDetails.properties.relevant_entities.length > 0 && (
-              <Grid item sx={{ mt: 2 }}>
+        <Grid container spacing={2} justifyContent="flex-start">
+          {scenarioDetails.properties?.local_objectives &&
+            scenarioDetails.properties?.local_objectives.length > 0 && (
+              <Grid item sx={{ mt: 2, mb: 2 }}>
                 <div>
                   <strong>Relevant Entities:</strong>
                   <ul>
-                    {scenarioDetails.properties.relevant_entities.map((entity, idx) => (
-                      <li key={idx}>
-                        {entity.entity_name}
-                        <br />
-                        Base values: {JSON.stringify(entity.base_values)},
-                        <br />
-                        Proposed:{" "}
-                        {JSON.stringify(entity.proposed_modifications)}
-                      </li>
-                    ))}
+                    {scenarioDetails.properties?.local_objectives?.map(
+                      (entity, idx) => (
+                        <li key={idx}>
+                          <strong>{entity.name}</strong>
+                          <br />
+                          Base values: {JSON.stringify(entity.base_values)},
+                          <br />
+                          Proposed:{" "}
+                          {JSON.stringify(entity.proposed_modifications)}
+                          <br />
+                          Rationale: {entity.rationale}
+                        </li>
+                      )
+                    )}
                   </ul>
                 </div>
               </Grid>
             )}
-
         </Grid>
       </Box>
     </Box>

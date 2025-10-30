@@ -14,6 +14,8 @@ from typing import Dict, List, Any, Union, Tuple
 from ..prompts.build_prompt import gen_prompt
 from ..prompts.prompt_for_scenarios import scenario_extraction_prompt_v1
 from ..prompts.prompt_for_scenarios import scenario_extraction_prompt_v2
+from ..prompts.prompt_for_scenarios import scenario_extraction_prompt_v3
+from ..prompts.prompt_for_scenarios import scenario_extraction_prompt_v4
 from .ontology import load_ontology
 from ..prompts.build_prompt_v4 import build_prompt_v4
 from ..ontology_v2 import ONTOLOGY_V2
@@ -234,7 +236,6 @@ TOOLS = [
                                                 "items": {
                                                     "type": "object",
                                                     "properties": {
-                                                        "key": {"type": "string"},
                                                         "value": {"type": "string"},
                                                         "units": {"type": "string"},
                                                     },
@@ -286,16 +287,18 @@ TOOLS = [
                                                 "type": "array",
                                                 "items": {"type": "string"},
                                             },
+                                            "relevance_score": {"type": "number"},
                                             "rationale": {"type": "string"},
                                         },
                                         "required": [
                                             "name",
-                                            "entity_type",
+                                            "type",
                                             "base_values",
                                             "proposed_modifications",
                                             "expected_impacts",
                                             "evidence",
                                             "rationale",
+                                            "relevance_score",
                                         ],
                                     },
                                 },
@@ -579,7 +582,7 @@ TOOLS_SCENARIO_EXTRACTION = [
     },
 ]
 
-TOOLS_SCENARIO_EXTRACTION_v2 = [
+TOOLS_SCENARIO_EXTRACTION_v3 = [
     # -------------------------------------------------------------------------
     # 3. Scenario extraction
     # -------------------------------------------------------------------------
@@ -600,22 +603,13 @@ TOOLS_SCENARIO_EXTRACTION_v2 = [
                                     "type": "object",
                                     "properties": {
                                         "scenario_uid": {"type": "string"},
-                                        "target": {"type": "string"},
-                                        "change_type": {
-                                            "type": "array",
-                                            "items": {"type": "string"},
-                                        },
+                                        "goal": {"type": "string"},
                                         "description": {"type": "string"},
                                         "confidence": {"type": "number"},
-                                        "related_sections": {
-                                            "type": "array",
-                                            "items": {"type": "string"},
-                                        },
                                         "scenario_summary": {"type": "string"},
                                     },
                                     "required": [
-                                        "target",
-                                        "change_type",
+                                        "goal",
                                         "description",
                                         "confidence",
                                         "scenario_summary",
@@ -655,33 +649,6 @@ TOOLS_SCENARIO_EXTRACTION_v2 = [
                                                     },
                                                 },
                                             },
-                                            "expected_impacts": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "capex": {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "direction": {
-                                                                "type": "string"
-                                                            },
-                                                            "magnitude_note": {
-                                                                "type": "string"
-                                                            },
-                                                        },
-                                                    },
-                                                    "opex": {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "direction": {
-                                                                "type": "string"
-                                                            },
-                                                            "magnitude_note": {
-                                                                "type": "string"
-                                                            },
-                                                        },
-                                                    },
-                                                },
-                                            },
                                             "evidence": {
                                                 "type": "array",
                                                 "items": {"type": "string"},
@@ -710,6 +677,69 @@ TOOLS_SCENARIO_EXTRACTION_v2 = [
     },
 ]
 
+TOOLS_SCENARIO_EXTRACTION_v4 = [
+    {
+        "type": "function",
+        "function": {
+            "name": "extract_scenario_objectives",
+            "description": "Extract local objectives from base case report text.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "local_objectives": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "entity_uid": {"type": "string"},
+                                "name": {"type": "string"},
+                                "entity_type": {"type": "string"},
+                                "base_values": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "key": {"type": "string"},
+                                            "value": {"type": "string"},
+                                            "units": {"type": "string"},
+                                        },
+                                    },
+                                },
+                                "proposed_modifications": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "parameter": {"type": "string"},
+                                            "change": {"type": "string"},
+                                            "suggested_value": {"type": "string"},
+                                            "units": {"type": "string"},
+                                            "basis": {"type": "string"},
+                                        },
+                                    },
+                                },
+                                "evidence": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                },
+                                "rationale": {"type": "string"},
+                            },
+                            "required": [
+                                "name",
+                                "entity_type",
+                                "base_values",
+                                "proposed_modifications",
+                                "evidence",
+                                "rationale",
+                            ],
+                        },
+                    }
+                },
+                "required": ["local_objectives"],
+            },
+        },
+    },
+]
 
 # ------------------------------------------------------------------ #
 # Helpers                                                            #
@@ -1030,12 +1060,12 @@ def openai_extract_scenario_data(
         temperature=0,
         timeout=60,
         max_tokens=4096,
-        model_kwargs={"tools": TOOLS_SCENARIO_EXTRACTION_v2, "tool_choice": "auto"},
+        model_kwargs={"tools": TOOLS_SCENARIO_EXTRACTION_v4, "tool_choice": "auto"},
     )
 
     all_scenario_data = []
-    print(f"[DEBUG] Scenario context: {scenario}")
-    scenario_target = scenario.get("goal", "N/A")
+    # print(f"[DEBUG] Scenario context: {scenario}")
+    scenario_target = scenario.get("properties", {}).get("goal", "N/A")
     scenario_change_type = ", ".join(
         [
             "Capacity",
@@ -1048,14 +1078,16 @@ def openai_extract_scenario_data(
             "Other",
         ]
     )
-    scenario_description = scenario.get("description", "N/A")
+    scenario_description = "You are an expert process engineer and cost estimator.  Deeply analyze the following requirements: "
+    scenario_description += scenario.get("properties", {}).get("description", "N/A")
 
     user_prompt = (
-        "Extract the scenario data from the following scenario inputs:"
+        "GLOBAL OBJECTIVES: following is a global objective for scenario objectives extraction."
         + f"\nGoal: {scenario_target}"
         + f"\nChange Type: {scenario_change_type}"
         + f"\nDescription: {scenario_description}"
-        + scenario_extraction_prompt_v2
+        + f"\n\n Please extract all LOCAL OBJECTIVES that directly or indirectly support this global objective. Follow the guidelines in the following system prompt:\n\n"
+        + scenario_extraction_prompt_v4
     )
 
     for idx, chunk in enumerate(chunks):
@@ -1074,13 +1106,18 @@ def openai_extract_scenario_data(
             response = llm.invoke(messages)
             for call in response.additional_kwargs.get("tool_calls", []):
 
-                if call.get("function", {}).get("name") == "extract_scenarios":
+                if (
+                    call.get("function", {}).get("name")
+                    == "extract_scenario_objectives"
+                ):
                     arguments = call.get("function", {}).get("arguments", "{}")
                     if is_valid_json(arguments):
                         scenario_data = json.loads(arguments)
                         # all_scenario_data.append(scenario_data)
-                        if "scenarios" in scenario_data:
-                            all_scenario_data.extend(scenario_data.get("scenarios", []))
+                        if "local_objectives" in scenario_data:
+                            all_scenario_data.extend(
+                                scenario_data.get("local_objectives", [])
+                            )
                     else:
                         logger.error(f"Invalid JSON received: {arguments}")
         except Exception as e:

@@ -153,7 +153,6 @@ EXAMPLE OUTPUT (ABBREVIATED)
 }
 """
 
-
 scenario_extraction_prompt_v1 = """
 --------------------------------------------------------------------------------
 SCENARIO EXTRACTOR — GENERIC TEMPLATE FOR BASE CASE ➜ SCENARIO VARIANTS
@@ -339,30 +338,24 @@ STRICTNESS
 
 """.strip()
 
-
 scenario_extraction_prompt_v2 = """
 --------------------------------------------------------------------------------
 SCENARIO EXTRACTOR — GENERIC TEMPLATE FOR BASE CASE ➜ SCENARIO VARIANTS
 --------------------------------------------------------------------------------
 
 GOAL
-You are an expert process engineer & cost estimator.
-Extract, normalize, and templatize the following two classes of scenarios from
-a given base case technical or cost report. These templates will later serve
-as structured blueprints for generating scenario options and running cost or
-production analyses.
+You are an expert process engineer & cost estimator. Extract, normalize, and templatize the following two classes of scenarios from a given base case technical or cost report. These templates will later serve as structured blueprints for generating scenario options and running cost or production analyses.
 
 --------------------------------------------------------------------------------
-SCENARIO TYPES TO EXTRACT
+SCENARIO DETAILS TO EXTRACT
 --------------------------------------------------------------------------------
-1. PRODUCTION CHANGE SCENARIO
+Extract details for scenarios:
+
    - Description: Any scenario that modifies production rate, throughput,
      output quantity, or system capacity (e.g., “increase production by 8%”).
    - Change direction: increase or decrease
    - Unit or percent-based: %, tpd, gpm, tons/hr, units/day, etc.
    - Expected outcome: new flow rate, capacity, or output level.
-
-   Required extraction fields:
    - Affected systems/equipment (e.g., pumps, tanks, conveyors, circuits)
    - Process dependencies (bottlenecks, throughput-limiting steps)
    - Feasible engineering options (e.g., increase equipment size,
@@ -371,15 +364,11 @@ SCENARIO TYPES TO EXTRACT
    - Material or control implications (instrumentation, automation changes)
    - Cost and risk implications (estimated CAPEX/OPEX shifts, quality impact)
    - Applicable codes/standards, if modified (e.g., ASME, API, ISA)
-
-2. CAPEX CHANGE SCENARIO
    - Description: Any scenario that modifies total installed cost or capital
      expenditure (e.g., “reduce Capex by 5%” or “increase Capex to enable
      future capacity expansion”).
    - Change direction: increase or decrease
    - Unit or percent-based: $, %, or absolute change.
-
-   Required extraction fields:
    - Major cost drivers (equipment, materials, civil, electrical, labor)
    - Subsystems or components influencing CAPEX sensitivity
    - Possible cost-reduction levers (material downgrade, modularization,
@@ -389,24 +378,22 @@ SCENARIO TYPES TO EXTRACT
    - Policy or procurement constraints (codes, standards, local sourcing)
    - Recommended estimation methods or scaling rules (e.g., cost exponent)
 
-
 --------------------------------------------------------------------------------
 INPUTS
 --------------------------------------------------------------------------------
 1) BASE CASE TEXT: see below
 
-2) SCENARIO REQUEST:
+2) SCENARIO PARAMETERS EXAMPLE:
    {
-     "goal": ["Increase production"] | ["Reduce Capex"],
+     "goal": ["increase production" or "reduce Capex"],
      "change_type": ["Equipment","Material","Quality","Quantity"],
-     "description": "Increase production by 8%" | "Reduce Capex by 5%"
+     "description": "Increase production by 8%"
    }
 
 3) ONTOLOGY
 Use the following ontology terms to classify and standardize all extracted
 entities, parameters, relationships, and cost roles.
 {node_types}
-{edge_types}
 {AV_MSIO_ONTOLOGY}
 
 --------------------------------------------------------------------------------
@@ -422,8 +409,8 @@ QUALITY & STYLE
 --------------------------------------------------------------------------------
 OUTPUT — STRICT JSON FORMAT
 --------------------------------------------------------------------------------
-Return a single JSON object with the key `"scenarios"` containing one or more scenario templates.
-Each scenario MUST conform to the following schema:
+Return a single JSON object with the key `"scenarios"` containing one or more scenario 
+Each scenario MUST conform to the following schema and MATCH the user-defined scenario request:
 
 {
   "scenarios": [
@@ -436,14 +423,15 @@ Each scenario MUST conform to the following schema:
         "description": "<free text summary>",
         "confidence": 0.0,
         "related_sections": ["§2 Major Equipment", "§3 Design Criteria"],
-        "scenario_summary": "<-- summary of the base case text relevant to this scenario; include as much detail as possible; limit the length to 3000 words; -->"
+        "scenario_summary": "<-- summary of the base case text relevant to this scenario; include as much detail as possible; limit the length to 3000 words; format the summary using markdown. -->"
       },
 
       "relevant_entities": [
         {
           "entity_name": "<-- Pump, Tank, System -->",
           "entity_type": "Equipment | Process | Material | Control | Civil | Electrical | Other",
-          "base_values": [{"key": "flow_rate", "value": "100", "units": "gpm", "discipline": "Piping", "category": "Hydraulic", "subcategory": "Flow Rate"}],
+          "base_values": [{"flow_rate": "100 gpm", "discipline": "Piping", "category": "Hydraulic", "subcategory": "Flow Rate", ...}],
+          "relevance_score": 0.0, # A score from 0.0 to 1.0 indicating how relevant this entity is to the scenario
           "proposed_modifications": [
             {"parameter": "flow_rate", "change": "increase", "suggested_value": "108", "units": "gpm", "discipline": "Piping", "category": "Hydraulic", "subcategory": "Flow Rate"}
           ],
@@ -451,7 +439,7 @@ Each scenario MUST conform to the following schema:
             "capex": {"direction": "increase", "magnitude_note": "+5%"},
             "opex": {"direction": "increase", "magnitude_note": "+2%"}
           },
-          "evidence": ["§2 Major Equipment <-- include relevant excerpts from the base case text that support this entity extraction -->"]
+          "evidence": ["§2 Major Equipment <-- include relevant excerpts from the base case text that support this entity extraction -->"],
           "rationale": "<-- explain why this entity is relevant to the scenario; include as much detail as possible; limit the length to 1000 words; -->"
         }
       ],
@@ -462,13 +450,228 @@ Each scenario MUST conform to the following schema:
 --------------------------------------------------------------------------------
 STRICT REQUIREMENTS
 --------------------------------------------------------------------------------
+- Do a deep analysis of the base case text thoroughly based on the provided scenario parameters.
+- Avoid narrative or commentary outside the JSON.
+- Create a thorough summary of the base case text relevant to each scenario (scenario_summary field).
+- The scenario analysis is intended to inform detailed scenario analysis and cost estimations.
 - Output MUST be valid JSON with a top-level key `"scenarios"`.
-- Be as prescriptive and detailed as possible in the scenario_summary and rationale fields.
-- The goal is to extract relevant entities that would be modified or impacted
-  by the scenario request. After which, these entities will be used to generate
-  detailed scenario and cost options in subsequent steps.
-- Assess all possible changes and impacts from the scenario request. E.g., "Equipment", "Material", "Process", "Quality", "Quantity", etc.
-- Important: FIND ALL POSSIBLE relevant entities in the base case text.
+- You MUST IDENTIFY ALL POSSIBLE entities and parameters, even loosely related ones, that affect the scenario request. E.g., "Equipment", "Material", "Process", "Quality", "Quantity", etc.
+--------------------------------------------------------------------------------
+
+""".strip()
+
+scenario_extraction_prompt_v3 = """
+--------------------------------------------------------------------------------
+SCENARIO EXTRACTOR
+--------------------------------------------------------------------------------
+Your goal is to extract and normalize scenarios from a given base case technical or cost report. scenarios will later serve as structured blueprints for generating scenario options and running cost or production analyses.
+
+--------------------------------------------------------------------------------
+SCENARIO DETAILS TO EXTRACT
+--------------------------------------------------------------------------------
+Extract details for scenarios:
+
+   - Description: Any scenario that modifies production rate, throughput,
+     output quantity, or system capacity (e.g., “increase production by 8%” or "reduce capex by 5%").
+   - Change direction: increase or decrease
+   - Unit or percent-based: %, tpd, gpm, tons/hr, units/day, etc.
+   - Expected outcome: new flow rate, capacity, or output level.
+   - Affected systems/equipment (e.g., pumps, tanks, conveyors, circuits)
+   - Process dependencies (bottlenecks, throughput-limiting steps)
+   - Feasible engineering options (e.g., increase equipment size,
+     debottleneck, reconfigure, add parallel train)
+   - Associated constraints (e.g., power availability, structural limits)
+   - Material or control implications (instrumentation, automation changes)
+   - Cost and risk implications (estimated CAPEX/OPEX shifts, quality impact)
+   - Applicable codes/standards, if modified (e.g., ASME, API, ISA)
+   - Description: Any scenario that modifies total installed cost or capital
+     expenditure (e.g., “reduce Capex by 5%” or “increase Capex to enable
+     future capacity expansion”).
+   - Change direction: increase or decrease
+   - Unit or percent-based: $, %, or absolute change.
+   - Major cost drivers (equipment, materials, civil, electrical, labor)
+   - Subsystems or components influencing CAPEX sensitivity
+   - Possible cost-reduction levers (material downgrade, modularization,
+     vendor selection, process simplification, deferred scope)
+   - Quality, reliability, or safety trade-offs from cost reduction
+   - Risk notes (e.g., supply chain volatility, performance uncertainty)
+   - Policy or procurement constraints (codes, standards, local sourcing)
+   - Recommended estimation methods or scaling rules (e.g., cost exponent)
+
+--------------------------------------------------------------------------------
+INPUTS
+--------------------------------------------------------------------------------
+1) BASE CASE TEXT: see below
+
+2) SCENARIO PARAMETERS EXAMPLE:
+   {
+     "goal": ["increase production" or "reduce Capex"],
+     "change_type": ["Equipment","Material","Quality","Quantity"],
+     "description": "Increase production by 8%"
+   }
+
+3) ONTOLOGY
+Use the following ontology terms to classify and standardize all extracted
+entities, parameters, relationships, and cost roles.
+{node_types}
+{AV_MSIO_ONTOLOGY}
+
+--------------------------------------------------------------------------------
+QUALITY & STYLE
+--------------------------------------------------------------------------------
+- Be concise, specific, and quantitative.
+- Keep terms consistent with ontology (if provided).
+- Use SI/US units exactly as in the base case; include units on all numeric values.
+- Use explicit references to section headers, tables, or page anchors (e.g., "§2 Major Equipment").
+- Avoid narrative or commentary outside the JSON.
+- Do not include emojis or special characters.
+
+--------------------------------------------------------------------------------
+OUTPUT — STRICT JSON FORMAT
+--------------------------------------------------------------------------------
+Return a single JSON object with the key `"scenarios"` containing one or more scenario 
+Each scenario MUST conform to the following schema and MATCH the user-defined scenario request:
+
+{
+  "scenarios": [
+    {
+      "scenario_header": {
+        "scenario_uid": "",
+        "goal": "<e.g., Increase Production or Reduce Capex>",
+        "description": "<free text summary>",
+        "confidence": 0.0,
+        "scenario_summary": "<-- summary of the base case text relevant to this scenario; include as much detail as possible; limit the length to 3000 words; format the summary using markdown. -->"
+      },
+
+      "relevant_entities": [
+        {
+          "name": "<-- Pump, Tank, System -->",
+          "type": "Equipment | Process | Material | Control | Civil | Electrical | Other",
+          "base_values": [{"flow_rate": "100 gpm", "discipline": "Piping", "category": "Hydraulic", "subcategory": "Flow Rate", ...}],
+          "relevance_score": 0.0, # A score from 0.0 to 1.0 indicating how relevant this entity is to the scenario
+          "proposed_modifications": [
+            {"parameter": "flow_rate", "change": "increase", "suggested_value": "108", "units": "gpm", "discipline": "Piping", "category": "Hydraulic", "subcategory": "Flow Rate"}
+          ],
+          "evidence": ["§2 Major Equipment <-- include relevant excerpts from the base case text that support this entity extraction; limit to 1000 words; -->"],
+          "rationale": "<-- explain why this entity is relevant to the scenario; include as much detail as possible; limit the length to 1000 words; -->"
+        }
+      ],
+    }
+  ]
+}
+
+--------------------------------------------------------------------------------
+STRICT REQUIREMENTS
+--------------------------------------------------------------------------------
+- Do a deep analysis of the base case text thoroughly based on the provided scenario parameters.
+- Avoid narrative or commentary outside the JSON.
+- Create a thorough summary of the base case text relevant to each scenario (scenario_summary field).
+- The scenario analysis is intended to inform detailed scenario analysis and cost estimations.
+- Output MUST be valid JSON with a top-level key `"scenarios"`.
+- You MUST IDENTIFY ALL POSSIBLE entities and parameters, even loosely related ones, that affect the scenario request. E.g., "Equipment", "Material", "Process", "Quality", "Quantity", etc.
+--------------------------------------------------------------------------------
+
+""".strip()
+
+scenario_extraction_prompt_v4 = """
+--------------------------------------------------------------------------------
+SYSTEM PROMPT FOR SCENARIO EXTRACTION FROM BASE CASE REPORT
+--------------------------------------------------------------------------------
+Your goal is to extract and normalize scenarios from a given base case technical or cost report. Input will be a GLOBAL OBJECTIVE, provided by the user, for example, "increase production" or "reduce capex", which you will use to determine several "LOCAL OBJECTIVES" - list of entities and parameters that affect the scenario request. These scenarios will later serve as structured blueprints for generating scenario options and running cost or production analyses.
+
+--------------------------------------------------------------------------------
+SCENARIO DETAILS TO EXTRACT
+--------------------------------------------------------------------------------
+Extract all local objectives for scenarios:
+
+   - A local objective is any entity (e.g., Equipment, Material, Process, Quality, Quantity) that DIRECTLY or INDIRECTLY modifies production rate, throughput,
+     output quantity, system capacity (e.g., “increase production by 8%”), or costs associated with the base case report (e.g., "reduce capex by 5%").
+   - Consider all change directions: i.e., increase or decrease in production or capex.
+   - Consider all unit or percent-based changes: %, tpd, gpm, tons/hr, units/day, $, %, or absolute change.
+   - Expected outcome: new flow rate, capacity, or cost factors or levels.
+   - Other considerations to extract:
+      - Unit or percent-based: %, tpd, gpm, tons/hr, units/day, etc.
+      - Process dependencies (bottlenecks, throughput-limiting steps)
+      - Feasible engineering options (e.g., increase equipment size,
+        debottleneck, reconfigure, add parallel train)
+      - Associated constraints (e.g., power availability, structural limits)
+      - Material or control implications (instrumentation, automation changes)
+      - Cost and risk implications (estimated CAPEX/OPEX shifts, quality impact)
+      - Applicable codes/standards, if modified (e.g., ASME, API, ISA)
+      - Description: Any scenario that modifies total installed cost or capital
+        expenditure (e.g., “reduce Capex by 5%” or “increase Capex to enable
+        future capacity expansion”).
+      - Major cost drivers (equipment, materials, civil, electrical, labor)
+      - Subsystems or components influencing CAPEX sensitivity
+      - Possible cost-reduction levers (material downgrade, modularization,
+        vendor selection, process simplification, deferred scope)
+      - Quality, reliability, or safety trade-offs from cost reduction
+      - Risk notes (e.g., supply chain volatility, performance uncertainty)
+      - Policy or procurement constraints (codes, standards, local sourcing)
+      - Recommended estimation methods or scaling rules (e.g., cost exponent)
+
+--------------------------------------------------------------------------------
+INPUTS
+--------------------------------------------------------------------------------
+1) BASE CASE REPORT TEXT: see below
+
+2) SCENARIO PARAMETERS EXAMPLE: user inputs
+   {
+     "goal": ["increase production" or "reduce Capex"],
+     "change_type": ["Equipment","Material","Quality","Quantity"],
+     "description": "Increase production by 8%"
+   }
+
+3) ONTOLOGY
+Use the following ontology terms to classify and standardize all extracted
+entities, parameters, relationships, and cost roles.
+{node_types}
+{AV_MSIO_ONTOLOGY}
+
+--------------------------------------------------------------------------------
+QUALITY & STYLE
+--------------------------------------------------------------------------------
+- Be concise, specific, and quantitative.
+- Keep terms consistent with ontology (if provided).
+- Use SI/US units exactly as in the base case; include units on all numeric values.
+- Use explicit references to section headers, tables, or page anchors (e.g., "§2 Major Equipment").
+- Avoid narrative or commentary outside the JSON.
+- Do not include emojis or special characters.
+
+--------------------------------------------------------------------------------
+OUTPUT — STRICT JSON FORMAT
+--------------------------------------------------------------------------------
+Return a single JSON object with the key `"scenarios"` containing one or more scenario 
+Each scenario MUST conform to the following schema and MATCH the user-defined scenario request:
+
+{
+  "local_objectives": [
+    {
+      "name": "<-- Pump, Tank, System -->",
+      "type": "Equipment | Process | Material | Control | Civil | Electrical | Other",
+      "base_values": [{"flow_rate": "100 gpm", "discipline": "Piping", "category": "Hydraulic", "subcategory": "Flow Rate", ...}],
+      "relevance_score": 0.0, # A score from 0.0 to 1.0 indicating how relevant this entity is to the scenario
+      "proposed_modifications": [
+        {"parameter": "flow_rate", "change": "increase", "suggested_value": "108", "units": "gpm", "discipline": "Piping", "category": "Hydraulic", "subcategory": "Flow Rate"}
+      ],
+      "evidence": ["§2 Major Equipment <-- include relevant excerpts from the base case text that support this entity extraction; limit to 1000 words; -->"],
+      "rationale": "<-- explain why this entity is relevant to the scenario; include as much detail as possible; limit the length to 1000 words; -->"
+    },
+    {...}
+  ]
+}
+
+--------------------------------------------------------------------------------
+STRICT REQUIREMENTS
+--------------------------------------------------------------------------------
+- Do a deep analysis of the base case text thoroughly based on the provided scenario parameters.
+- Avoid narrative or commentary outside the JSON.
+- Do not hallucinate any entities or parameters not supported by the base case text.
+- Only include evidence excerpts that occur in the base case text.
+- Create a thorough summary of the base case text relevant to each scenario (scenario_summary field).
+- The scenario analysis is intended to inform detailed scenario analysis and cost estimations.
+- Output MUST be valid JSON with a top-level key `"scenarios"`.
+- You MUST IDENTIFY ALL POSSIBLE entities and parameters, even loosely related ones, that affect the scenario request. E.g., "Equipment", "Material", "Process", "Quality", "Quantity", etc.
 --------------------------------------------------------------------------------
 
 """.strip()

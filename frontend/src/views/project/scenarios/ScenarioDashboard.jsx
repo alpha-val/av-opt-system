@@ -41,7 +41,8 @@ const Scenarios = () => {
   const [activeScenarioId, setActiveScenarioId] = useState(null);
 
   // Get documents for projectId
-
+  const allScenarios = useSelector((state) => state.scenarios);
+  
   const scenarios = useSelector(
     (state) => state.scenarios.byProject[projectId] || []
   );
@@ -50,7 +51,7 @@ const Scenarios = () => {
   const activeScenario = useSelector(
     (state) => state.scenarios?.byId?.[activeScenarioId]
   );
-  console.log("Active Scenario: ", activeScenario);
+
   useEffect(() => {
     if (projectId) {
       dispatch(fetchScenarios(projectId));
@@ -90,11 +91,6 @@ const Scenarios = () => {
           if (activeScenarioId === selectedScenario.id) {
             setActiveScenarioId(null);
           }
-
-          console.log(
-            "[ScenarioDashboard] Scenario deleted:",
-            selectedScenario.id
-          );
         } catch (error) {
           console.error(
             "[ScenarioDashboard] Failed to delete scenario:",
@@ -190,7 +186,7 @@ const Scenarios = () => {
             >
               <AssignmentOutlinedIcon fontSize="small" color="action" />
               <Typography variant="h6" color="text.primary">
-                {activeScenario?.name || "Loading..."}
+                {activeScenario?.properties.name || "Loading..."}
               </Typography>
             </Box>
           </Breadcrumbs>
@@ -207,7 +203,7 @@ const Scenarios = () => {
       </Box>
     );
   }
-  console.log("Scenarios: ", scenarios);
+
   const getGoalText = (goal) => {
     switch (goal) {
       case "increase_production":

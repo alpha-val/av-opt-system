@@ -222,8 +222,9 @@ ENTITY_ONTOLOGY: Dict[str, Any] = {
 
 # Systems ontology for mechanical equipment in mining / industrial settings
 AV_MSIO_ONTOLOGY: Dict[str, Any] = {
-    "ontology_name": "AV_MSIO_ONTOLOGY",
+    "ontology_name": "ALPHA-VAL-MINING-STRUCTURED-INDUSTRIAL-ONTOLOGY",
     "version": "0.1",
+    "description": "Ontology for classifying industrial equipment, civil works, structural components, piping, instrumentation, control systems, electrical systems, safety/environmental systems, utilities, construction/commissioning activities, and cost elements in mining and heavy industry projects.",
     "disciplines": [
         {
             "name": "Mechanical Equipment",
