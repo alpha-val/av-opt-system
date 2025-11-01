@@ -1,6 +1,6 @@
 from redis import Redis
 from rq import Queue
-from tasks import say_hello
+from tests.test_app_tasks import say_hello
 
 q = Queue("default", connection=Redis())
 job = q.enqueue(say_hello, "Sid")

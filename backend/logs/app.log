@@ -1548,3 +1548,7 @@ AttributeError: 'list' object has no attribute 'get'
 2025-10-31 16:13:03 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:825] - [INFO] Upserted 30 vectors to Pinecone
 2025-10-31 16:13:03 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:847] - [TABULAR_PIPELINE] Completed: {'doc_id': 'c4a3b11a-863d-4f23-a711-10fe22e25d0d', 'filename': 'Unit costs - Disciplines.xlsx - Civil.pdf', 'file_size': 90372, 'file_sha256': 'b5438946fc3b02446ad9bd7b419a48b7bc0770d4f0300f43f6f500b7e1deb5a4', 'pages': 2, 'tables_processed': 2, 'rows_processed': 31, 'chunks_written': 2, 'entities_written': 30, 'relations_written': 30, 'vectors_upserted': 30, 'errors': None}
 2025-10-31 16:17:17 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:176] - [DEBUG] Successfully inserted scenario with id: fdfd2f4f-d1d4-43ea-bd4f-15662baf9097
+2025-10-31 21:01:06 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-31 21:01:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-31 21:37:56 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-11-01 00:31:58 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully

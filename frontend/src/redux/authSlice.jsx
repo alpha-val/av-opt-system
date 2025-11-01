@@ -3,7 +3,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import REACT_APP_CONFIG from "../AppConfig";
 
 const API_BASE_URL = REACT_APP_CONFIG.url.API_URL;
-
+console.log("API_BASE_URL:", API_BASE_URL);
 // Auth thunks
 export const registerUser = createAsyncThunk(
     'auth/register',
@@ -38,6 +38,7 @@ export const registerUser = createAsyncThunk(
 export const loginUser = createAsyncThunk(
     'auth/login',
     async (userData, { rejectWithValue }) => {
+        console.log("Logging in with userData:", userData);
         try {
             const response = await fetch(`${API_BASE_URL}/auth/login`, {
                 method: 'POST',
