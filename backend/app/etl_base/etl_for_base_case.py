@@ -39,7 +39,7 @@ def etl_base_case(
 
     # 1) Text extract + clean
     some_id, file_sha, pages_raw, pages_clean = extract_and_clean(pdf_bytes, filename)
-    
+
     chunk_by_chars = True
     if chunk_by_chars:
         full_text = extract_fulltext(pages_clean)
@@ -68,7 +68,6 @@ def etl_base_case(
             c["properties"]["user_id"] = user_id
             c["properties"]["doc_id"] = doc_id
 
-
     # ========== ENTITY EXTRACTION ==========
     kg = openai_extract_nodes_rels(
         chunks,
@@ -76,14 +75,15 @@ def etl_base_case(
             "MSIO_ONTOLOGY",
             "NODES_AND_RELATIONS",
             "PROVENANCE_AND_CONFIDENCE",
-            # "SCENARIO_EXTRACTION",
+            "STRUCTURED_REPORT",
             "UNITS_NORMALIZATION",
         ],
     )
     nodes = list(kg.get("nodes", []) or [])
     edges = list(kg.get("edges", []) or [])
     scenarios = list(kg.get("scenarios", []) or [])
-    
+    summaries = list(kg.get("summaries", []) or [])
+
     # Attach simple source back-pointer to each node
     for n in nodes:
         srcs = n.get("sources") or []
@@ -135,5 +135,6 @@ def etl_base_case(
         "entities_written": len(nodes),
         "relations_written": len(edges),
         "scenarios": scenarios,
+        "summaries": summaries,
         "vectors_upserted": vectors_upserted,  # NEW: Return vector count
     }

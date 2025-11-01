@@ -7,6 +7,10 @@ from pinecone import Pinecone
 from typing import List, Dict, Any
 from datetime import datetime
 from app.bronze_store import db
+import logging
+
+# Initialize logger
+logger = logging.getLogger(__name__)
 
 # Initialize Pinecone (do this once at startup)
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
@@ -73,6 +77,67 @@ def search_entities_by_embedding(
     entities.sort(key=lambda x: x.get("relevance_score", 0), reverse=True)
 
     return entities
+
+def find_related_entities_by_embedding(
+    entity: Dict[str, Any],
+    artifact_type: str,
+    project_id: str,
+    top_k: int = 10,
+    cutoff: Optional[float] = 0.25,
+) -> List[Dict[str, Any]]:
+    """
+    Given an entity id, find related <artifact_type> entities using embedding similarity.
+
+    Args:
+        entity_id: ID of the base_case entity (string).
+        artifact_type: The type of artifact to search for (e.g., "base_case" or "tabular_data").
+        project_id: The project ID to filter tabular entities.
+        top_k: Maximum number of related entities to return.
+
+    Returns:
+        Ranked list of related <artifact_type> entities.
+    """
+
+    # Normalize the entity for vector DB operations
+    normalized_entity = normalize_entity_for_vector_db(
+        entity, project_id, artifact_type=artifact_type
+    )
+    props_text = normalized_entity["text_content"]
+
+    try:
+        # Get embedding for the entity text
+        embedding_response = openai.embeddings.create(
+            model="text-embedding-3-small", input=props_text
+        )
+        embedding = embedding_response.data[0].embedding
+    except Exception as e:
+        logger.error(
+            f"[EMBEDDING] Failed to get embedding for entity {entity.get('id')}: {e}"
+        )
+        return []
+
+    try:
+        # Search for tabular_data entities using the embedding
+        results = search_entities_by_embedding(
+            embedding=embedding,
+            project_id=project_id,
+            entity_types=["Material", "Equipment"],
+            top_k=top_k,
+            cutoff=cutoff,
+            artifact_type=artifact_type,
+        )
+    except Exception as e:
+        logger.error(f"[VECTOR_SEARCH] Failed to search for related entities: {e}")
+        return []
+
+    # # Ensure returned items are tabular_data
+    filtered = [
+        e
+        for e in results
+        if (e.get("properties", {}) or {}).get("artifact_type") == artifact_type
+    ]
+
+    return filtered[:top_k]
 
 
 def retrieve_relevant_entities_for_scenario(

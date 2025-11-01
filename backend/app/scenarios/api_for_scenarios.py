@@ -23,7 +23,11 @@ from .schemas_for_scenario import (
     ScenarioUpdate,
     ScenarioResponse,
 )
-from .utils_for_scenarios import extract_scenario_entities
+from .utils_for_scenarios import (
+    convert_local_objectives_to_entities,
+    link_entities_in_a_list,
+    retrieve_entities_by_ids,
+)
 from app.text_clean import (
     extract_and_clean,
     chunk_by_page,
@@ -387,7 +391,6 @@ def delete_scenario(scenario_id: str, current_user: dict = Depends(get_current_u
                 detail="Could not extract user_id from authentication token",
             )
 
-
         # Verify scenario exists and belongs to user
         scenario = db().scenarios.find_one(
             {
@@ -491,7 +494,7 @@ async def extract_scenario_data(
     existing_doc = db().documents.find_one(
         {"file_sha": file_sha, "project_id": project_id}, {"_id": 0, "id": 1}
     )
-    found_doc_id = "not-applicable"
+    found_doc_id = ""
     if existing_doc:
         found_doc_id = existing_doc["id"]
 
@@ -535,10 +538,27 @@ async def extract_scenario_data(
             c["properties"]["doc_id"] = found_doc_id
 
     try:
-        # Use OpenAI to extract scenario mapping from the base case document
+        # 1) Use OpenAI to extract scenario mapping from the base case document
         local_objectives = openai_extract_scenario_data(chunks, scenario=scenario_dict)
 
-        # all_entities = extract_scenario_entities(scenarios)
+        # 2) Extract scenario entities from base case document
+        local_entities = convert_local_objectives_to_entities(
+            local_objectives, project_id, found_doc_id
+        )
+        
+        linked_entities = link_entities_in_a_list(
+            entities=local_entities,
+            project_id=project_id,
+            artifact_type="base_case",
+        )
+        
+        base_case_entities = retrieve_entities_by_ids(linked_entities)
+
+        # 3) Extract tabular entities from the vault
+
+        # 4) Create decision variables and constraints
+
+        # 5) Compute costs
 
         # Set all required fields
         scenario_dict["properties"]["doc_id"] = found_doc_id
@@ -548,7 +568,7 @@ async def extract_scenario_data(
         scenario_dict["properties"]["doc_size"] = len(pdf_bytes)
         scenario_dict["properties"]["status"] = "ready"
         scenario_dict["properties"]["file_sha256"] = file_sha
-        # scenario_dict["properties"]["relevant_entities"] = local_objectives
+        scenario_dict["properties"]["matched_bc_entities"] = base_case_entities
 
         # Update the existing scenario in the database
         if scenario_id:

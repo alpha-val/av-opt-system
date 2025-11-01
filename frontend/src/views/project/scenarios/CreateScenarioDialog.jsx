@@ -100,9 +100,11 @@ const CreateScenarioDialog = ({ open, onClose, projectId, scenarioName }) => {
                 Increase Production
               </MenuItem>
               <MenuItem value="reduce_capex">Reduce Cost</MenuItem>
-              {/* <MenuItem value="improve_quality">Improve Quality</MenuItem>
+              <MenuItem value="improve_quality">Improve Quality</MenuItem>
+              {/* 
               <MenuItem value="change_technology">Change Technology</MenuItem>
-              <MenuItem value="other">Other</MenuItem> */}
+              <MenuItem value="other">Other</MenuItem>
+              */}
             </Select>
           </FormControl>
 

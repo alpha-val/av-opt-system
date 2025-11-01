@@ -23,6 +23,8 @@ const ScenarioCard = ({ scenario, onClick, onMenuClick }) => {
         return <TrendingUp />;
       case "reduce_capex":
         return <AttachMoney />;
+      case "improve_quality":
+        return <Speed />;
       default:
         return <Speed />;
     }

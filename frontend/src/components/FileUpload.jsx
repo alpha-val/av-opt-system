@@ -267,7 +267,7 @@ const FileUpload = ({
   };
 
   return (
-    <Box sx={{ width: "100%", maxWidth: 600, ...sx }}>
+    <Box>
       {/* Upload Area */}
       <Paper
         sx={{
@@ -279,6 +279,8 @@ const FileUpload = ({
           cursor: disabled ? "not-allowed" : "pointer",
           opacity: disabled ? 0.6 : 1,
           transition: "all 0.2s ease-in-out",
+          width: "100%",
+          height: "100%",
           "&:hover": {
             borderColor: disabled ? "divider" : "primary.main",
             backgroundColor: disabled ? "background.paper" : "action.hover",

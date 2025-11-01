@@ -48,7 +48,6 @@ export const uploadProjectDescription = createAsyncThunk(
   "data/uploadProjectDescription",
   async ({ projectId, file, metadata = {} }, { rejectWithValue }) => {
     try {
-      console.log("Uploading project description:", { projectId, file, metadata });
       const token = getAuthToken();
       if (!token) {
         throw new Error("No authentication token found");
@@ -104,7 +103,7 @@ export const uploadProjectDescription = createAsyncThunk(
       }
 
       const data = await response.json();
-      console.log("Upload response data:", data);
+
       return {
         active: true,
         artifact_type: data.artifact_type || "",

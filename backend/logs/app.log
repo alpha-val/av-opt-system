@@ -1391,3 +1391,160 @@ AttributeError: 'list' object has no attribute 'join'
 2025-10-29 23:07:27 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
 2025-10-29 23:07:53 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:172] - [DEBUG] Successfully inserted scenario with id: 003a8d04-730f-4609-9e3c-7b4a8fe66b6b
 2025-10-29 23:18:08 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 23:18:29 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-29 23:19:34 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:172] - [DEBUG] Successfully inserted scenario with id: c88d8229-d73e-4330-9499-8cfc5ea71f79
+2025-10-30 08:08:00 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 08:13:19 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 08:14:11 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 08:20:36 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 08:57:27 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 09:06:23 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:172] - [DEBUG] Successfully inserted scenario with id: b1abe70e-6fda-4703-a43d-c281b8e63d74
+2025-10-30 09:37:08 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 09:38:03 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 09:40:34 - app.scenarios.api_for_scenarios - ERROR - [api_for_scenarios.py:590] - [COST_ESTIMATE] Failed to extract scenario data: 'list' object has no attribute 'get'
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/api_for_scenarios.py", line 545, in extract_scenario_data
+    local_objectives.get("entities", []), project_id, found_doc_id
+    ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+2025-10-30 09:41:03 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 09:45:09 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 09:47:20 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 09:48:01 - app.scenarios.api_for_scenarios - ERROR - [api_for_scenarios.py:597] - [COST_ESTIMATE] Failed to extract scenario data: find_related_entities_by_embedding() got an unexpected keyword argument 'entities'
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/api_for_scenarios.py", line 548, in extract_scenario_data
+    base_case_entities = find_related_entities_by_embedding(
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: find_related_entities_by_embedding() got an unexpected keyword argument 'entities'
+2025-10-30 09:51:41 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 10:01:35 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 10:05:28 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 10:07:19 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 10:08:18 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 11:21:11 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 12:58:20 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:176] - [DEBUG] Successfully inserted scenario with id: cf08b0ed-5fe8-4dce-bcca-86cf26429cf9
+2025-10-30 14:17:14 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 14:29:41 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:176] - [DEBUG] Successfully inserted scenario with id: 979b6764-d0be-497f-9d50-71d626b8f850
+2025-10-30 14:39:33 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 14:42:38 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:176] - [DEBUG] Successfully inserted scenario with id: 3b083bd2-2f85-4ac5-a89f-fa17e3fe40ef
+2025-10-30 16:00:19 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 16:00:36 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:176] - [DEBUG] Successfully inserted scenario with id: c485427b-054d-4907-a370-fc20666cd2ec
+2025-10-30 16:01:56 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 16:02:13 - app.scenarios.api_for_scenarios - ERROR - [api_for_scenarios.py:600] - [COST_ESTIMATE] Failed to extract scenario data: 'str' object has no attribute 'get'
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/api_for_scenarios.py", line 545, in extract_scenario_data
+    local_entities = convert_local_objectives_to_entities(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/utils_for_scenarios.py", line 68, in convert_local_objectives_to_entities
+    "id": obj.get("entity_id", "N/A"),
+          ^^^^^^^
+AttributeError: 'str' object has no attribute 'get'
+2025-10-30 16:04:29 - app.scenarios.api_for_scenarios - ERROR - [api_for_scenarios.py:600] - [COST_ESTIMATE] Failed to extract scenario data: 'str' object has no attribute 'get'
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/api_for_scenarios.py", line 545, in extract_scenario_data
+    local_entities = convert_local_objectives_to_entities(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/utils_for_scenarios.py", line 68, in convert_local_objectives_to_entities
+    "id": obj.get("entity_id", "N/A"),
+          ^^^^^^^
+AttributeError: 'str' object has no attribute 'get'
+2025-10-30 16:06:16 - app.scenarios.api_for_scenarios - ERROR - [api_for_scenarios.py:600] - [COST_ESTIMATE] Failed to extract scenario data: 'str' object has no attribute 'get'
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/api_for_scenarios.py", line 545, in extract_scenario_data
+    local_entities = convert_local_objectives_to_entities(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/utils_for_scenarios.py", line 68, in convert_local_objectives_to_entities
+    "id": obj.get("entity_id", "N/A"),
+          ^^^^^^^
+AttributeError: 'str' object has no attribute 'get'
+2025-10-30 16:08:33 - app.scenarios.api_for_scenarios - ERROR - [api_for_scenarios.py:600] - [COST_ESTIMATE] Failed to extract scenario data: 'str' object has no attribute 'get'
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/api_for_scenarios.py", line 545, in extract_scenario_data
+    local_entities = convert_local_objectives_to_entities(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/utils_for_scenarios.py", line 68, in convert_local_objectives_to_entities
+    "id": obj.get("entity_id", "N/A"),
+          ^^^^^^^
+AttributeError: 'str' object has no attribute 'get'
+2025-10-30 16:08:47 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 16:11:23 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 16:14:54 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 16:17:55 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 16:25:44 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 17:27:59 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 17:31:13 - app.scenarios.api_for_scenarios - ERROR - [api_for_scenarios.py:600] - [COST_ESTIMATE] Failed to extract scenario data: 'linked_entity_id'
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/api_for_scenarios.py", line 555, in extract_scenario_data
+    base_case_entities = retrieve_entities_by_ids(linked_entities)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/utils_for_scenarios.py", line 129, in retrieve_entities_by_ids
+    entity_ids = [entity["linked_entity_id"] for entity in entities]
+                  ~~~~~~^^^^^^^^^^^^^^^^^^^^
+KeyError: 'linked_entity_id'
+2025-10-30 17:33:13 - app.scenarios.api_for_scenarios - ERROR - [api_for_scenarios.py:600] - [COST_ESTIMATE] Failed to extract scenario data: 'linked_entity_id'
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/api_for_scenarios.py", line 555, in extract_scenario_data
+    base_case_entities = retrieve_entities_by_ids(linked_entities)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/utils_for_scenarios.py", line 129, in retrieve_entities_by_ids
+    entity_ids = [entity["linked_entity_ids"] for entity in entities]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'linked_entity_id'
+2025-10-30 17:33:26 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 17:35:52 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 19:40:00 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 19:40:13 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 19:41:24 - app.scenarios.api_for_scenarios - ERROR - [api_for_scenarios.py:600] - [COST_ESTIMATE] Failed to extract scenario data: 'list' object has no attribute 'get'
+Traceback (most recent call last):
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/api_for_scenarios.py", line 555, in extract_scenario_data
+    base_case_entities = retrieve_entities_by_ids(linked_entities)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/test/Documents/Projects/Optionality_Mining/av-opt-system/backend/app/scenarios/utils_for_scenarios.py", line 137, in retrieve_entities_by_ids
+    entity_ids = [entity["linked_entity_ids"].get("id") for entity in entities]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+2025-10-30 19:43:17 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 19:46:55 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 19:50:02 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 20:33:58 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 20:34:57 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 20:38:23 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 21:44:12 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 21:51:21 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 22:06:45 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 22:10:27 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 22:14:12 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 22:15:36 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 22:15:50 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 22:22:41 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 22:32:47 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-30 22:34:11 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-31 07:43:20 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-31 07:58:04 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-31 07:58:45 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-31 08:10:45 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-31 08:17:20 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-31 08:18:13 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-31 08:22:12 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-31 08:26:49 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-31 08:37:20 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-31 08:40:09 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-31 14:54:47 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-31 14:57:53 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-31 15:00:23 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-31 15:17:22 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-31 15:28:09 - app.app_logging - INFO - [app_logging.py:73] - Logging configured successfully
+2025-10-31 15:54:51 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:176] - [DEBUG] Successfully inserted scenario with id: d86fdfc2-3968-4200-b3ba-9b7fb748ee47
+2025-10-31 16:12:04 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:523] - [TABULAR_PIPELINE] Processed doc_id: c4a3b11a-863d-4f23-a711-10fe22e25d0d
+2025-10-31 16:12:18 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:126] - [TABLE_EXTRACT] Extracted 2 tables using cascade
+2025-10-31 16:12:18 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:531] - [TABULAR_PIPELINE] Extracted 2 tables from PDF
+2025-10-31 16:12:18 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 27 rows, 8 columns
+2025-10-31 16:12:18 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:690] - [TABULAR_PIPELINE] Calling LLM for table tbl::c4a3b11a-863d-4f23-a711-10fe22e25d0d::p1::0 (27 rows)
+2025-10-31 16:12:54 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:785] - [TABULAR_PIPELINE] Table tbl::c4a3b11a-863d-4f23-a711-10fe22e25d0d::p1::0: 26 nodes, 26 edges (IDs normalized)
+2025-10-31 16:12:54 - app.etl_tables.table_payload - INFO - [table_payload.py:112] - Built payload: 4 rows, 8 columns
+2025-10-31 16:12:54 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:690] - [TABULAR_PIPELINE] Calling LLM for table tbl::c4a3b11a-863d-4f23-a711-10fe22e25d0d::p2::1 (4 rows)
+2025-10-31 16:13:01 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:785] - [TABULAR_PIPELINE] Table tbl::c4a3b11a-863d-4f23-a711-10fe22e25d0d::p2::1: 4 nodes, 4 edges (IDs normalized)
+2025-10-31 16:13:01 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:800] - [TABULAR_PIPELINE] Writing to database: 2 chunks, 30 nodes, 30 edges
+2025-10-31 16:13:03 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:825] - [INFO] Upserted 30 vectors to Pinecone
+2025-10-31 16:13:03 - app.etl_tables.etl_for_tabular_data - INFO - [etl_for_tabular_data.py:847] - [TABULAR_PIPELINE] Completed: {'doc_id': 'c4a3b11a-863d-4f23-a711-10fe22e25d0d', 'filename': 'Unit costs - Disciplines.xlsx - Civil.pdf', 'file_size': 90372, 'file_sha256': 'b5438946fc3b02446ad9bd7b419a48b7bc0770d4f0300f43f6f500b7e1deb5a4', 'pages': 2, 'tables_processed': 2, 'rows_processed': 31, 'chunks_written': 2, 'entities_written': 30, 'relations_written': 30, 'vectors_upserted': 30, 'errors': None}
+2025-10-31 16:17:17 - app.scenarios.api_for_scenarios - INFO - [api_for_scenarios.py:176] - [DEBUG] Successfully inserted scenario with id: fdfd2f4f-d1d4-43ea-bd4f-15662baf9097

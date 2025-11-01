@@ -117,6 +117,7 @@ def create_document(
             "num_relations": etl_result.get("relations_written"),
             "pages": etl_result.get("pages"),
             "scenarios": etl_result.get("scenarios", []),
+            "summaries": etl_result.get("summaries", []),
         }
 
         # Insert into DB

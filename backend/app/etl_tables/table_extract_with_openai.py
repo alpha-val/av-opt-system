@@ -32,7 +32,7 @@ def call_llm_for_tables(prompt: str, ontology: Dict[str, Any]) -> Dict[str, Any]
         logger.info(f"[TABULAR DATA] Sending {len(prompt)} chars to OpenAI")
 
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model=SETTINGS.llm_model_name or "gpt-5-mini",
             messages=[
                 {
                     "role": "system",

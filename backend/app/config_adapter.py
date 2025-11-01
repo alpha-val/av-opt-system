@@ -44,6 +44,9 @@ class Settings:
 
     google_api_key: str = os.getenv("GOOGLE_API_KEY", "")
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
+    
+    # Models
+    llm_model_name: str = os.getenv("LLM_MODEL_NAME", "gpt-4o")
 
     max_chunk_text_preview: int = int(os.environ.get("MAX_CHUNK_TEXT_PREVIEW", "500"))
 

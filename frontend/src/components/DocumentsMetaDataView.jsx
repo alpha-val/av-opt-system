@@ -20,7 +20,7 @@ const DocumentMetaDataView = ({ documents }) => {
     const parts = fileName.split(".");
     const extension = parts.length > 1 ? `.${parts.pop()}` : ""; // Extract extension
     const baseName = parts.join("."); // Remaining file name without extension
-    return `${baseName.slice(0, 16)}...${baseName.slice(-8)}${extension}`;
+    return `${baseName.slice(0, 25)}...${baseName.slice(-8)}${extension}`;
   };
   console.log("Documents:", documents);
   return (
@@ -30,14 +30,14 @@ const DocumentMetaDataView = ({ documents }) => {
       </Typography>
       <Grid container spacing={3}>
         {documents.map((document, index) => (
-          <Grid item xs={12} sm={6} md={4} key={document.id || index}>
+          <Grid item xs={12} sm={6} md={4} key={document.id || index} sx={{maxWidth: '600px', height: '50%'}}>
             <Card
               sx={{
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
-                boxShadow: 3,
-                "&:hover": { boxShadow: 6 },
+                boxShadow: 1,
+                "&:hover": { boxShadow: 2 },
                 transition: "box-shadow 0.3s",
               }}
             >

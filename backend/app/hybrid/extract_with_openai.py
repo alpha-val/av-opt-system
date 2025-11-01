@@ -2,7 +2,7 @@ from typing import List, Dict, Any
 import json
 import re
 import logging
-
+from app.config_adapter import SETTINGS
 logger = logging.getLogger(__name__)
 
 
@@ -137,7 +137,7 @@ def openai_extract_hybrid(
         )
 
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model=SETTINGS.llm_model_name or "gpt-5-mini",
             messages=messages,
             temperature=0,
             max_tokens=4096,  # Limit response size

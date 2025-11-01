@@ -172,7 +172,7 @@ const BaseCaseTable = ({ entities, onSelectionChange }) => {
       onSelectionChange(selectedEntities);
     }
   };
-
+  console.log("entities:", entities);
   return (
     <Box sx={{ mt: 2 }}>
       <Box sx={{ display: "flex", gap: 2, mb: 2 }}>

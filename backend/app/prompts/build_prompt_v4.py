@@ -669,6 +669,7 @@ STRICT REQUIREMENTS
 --------------------------------------------------------------------------------
 
 """.strip()
+
 # Provenance and Confidence block
 prov_conf_block = """
     Provenance & Confidence extraction rules:
@@ -679,6 +680,412 @@ prov_conf_block = """
         0.7–0.9 direct match w/ partial attributes or minor synonym use
         0.5–0.7 good subcategory match but Entity inferred
         <0.5 omit
+"""
+
+# Summary extraction block
+# PROMPT_DISCIPLINE_STRUCTURED_SUMMARY = """
+# --------------------------------------------------------------------------------
+# ONTOLOGY-ALIGNED FAITHFUL SUMMARY GENERATION — ALPHA-VAL MINING CONTEXT
+# --------------------------------------------------------------------------------
+# Goal
+# Create a **comprehensive, structured summary** of the supplied Base Case or project
+# document, aligned with the AV_MSIO_ONTOLOGY disciplines.
+
+# This summary must preserve every salient piece of information required to recreate the
+# document’s content and context — including engineering workflows, systems,
+# equipment specifications, materials, design parameters, operational constraints,
+# policies, assumptions, and cost factors — **organized by discipline**.
+
+# --------------------------------------------------------------------------------
+# INSTRUCTIONS
+# --------------------------------------------------------------------------------
+# For each discipline listed below, extract and summarize **all** relevant content from the
+# document. If a discipline is not mentioned, explicitly state “No information found.”
+
+# Each discipline section should contain subsections for:
+# - Overview / Role in Project
+# - Key Workflows and Systems
+# - Equipment and Entities (include specs, type, capacity, duty, vendor if available)
+# - Materials and Consumables
+# - Design Parameters and Constraints
+# - Policies, Standards, and QA/QC
+# - Objectives, KPIs, and Targets
+# - Risks, Assumptions, and Data Gaps
+# - Interdependencies with other disciplines
+
+# --------------------------------------------------------------------------------
+# DISCIPLINES (as defined in ALPHA-VAL-MINING-STRUCTURED-INDUSTRIAL-ONTOLOGY)
+# --------------------------------------------------------------------------------
+# 1. Mechanical Equipment
+#    - Pumps (Centrifugal, Positive Displacement)
+#    - Vessels (Reactors, Separators)
+#    - Tanks (Fixed, Floating Roof)
+#    - Heat Exchangers (Shell-and-tube)
+#    - Compressors/Blowers (Centrifugal/Turbo)
+#    - Material Handling (Belt, Screw)
+#    - Utilities (Cooling Tower)
+#    - Specialty (Agitators)
+#    - Process Equipment (Grinding Mills)
+
+# 2. Civil
+#    - Site Works (Grading)
+#    - Access (Roads, Paving)
+#    - Stormwater (Retention, Channels)
+#    - Utilities – Site (Duct banks)
+#    - Hydrology (Culverts/Drainage)
+#    - Survey (Topography)
+
+# 3. Structural
+#    - Steelwork (Platforms, Walkways)
+#    - Pipe Supports (Racks)
+#    - Buildings (Control Room, MCC)
+#    - Foundations Interface (Embed Plates)
+
+# 4. Concrete
+#    - Foundations (Footings)
+#    - Slabs (Slab on Grade)
+#    - Retaining (Walls)
+#    - Precast (Manholes)
+
+# 5. Piping
+#    - Process Lines (Large Bore, Small Bore)
+#    - Materials (CS/SS/HDPE/FRP)
+#    - Insulation (Heat Tracing)
+#    - Testing (Hydrotest, Pneumatic)
+
+# 6. Instrumentation
+#    - Flow/Level (Flow Meters)
+#    - Temperature & Pressure (Transmitters)
+#    - Analyzers & Safety (Gas Detectors, pH)
+#    - Cabling & Termination (Junction Boxes)
+
+# 7. Control
+#    - Control Systems (PLC/DCS/SCADA)
+#    - Interfaces (HMI, Historian)
+#    - Network & Cyber (Firewalls, Switches)
+#    - I/O (Remote Panels)
+
+# 8. Electrical
+#    - Distribution (Transformers)
+#    - Switchgear (MCC/SWGR)
+#    - Cabling (Power & Control Cables)
+
+# 9. Safety/Environment
+#    - Fire Protection (Sprinklers, Hydrants)
+#    - Containment (Bunds)
+#    - Ventilation (Dust Extraction, Ducting)
+
+# 10. Utilities
+#     - Compressed Air (Network)
+#     - Cooling Water (Pumps, Heat Exchangers)
+
+# 11. Construction/Commissioning
+#     - QA/QC (Inspections, Testing)
+#     - Commissioning (Pre-startup Safety Reviews)
+
+# 12. Costs & Economics
+#     - Capex (Direct, Indirect)
+#     - Opex
+#     - Contingency
+
+# 13. Process / Workflow / Operations
+#     - Process Flow (Diagrams)
+#     - Operational Steps
+#     - Maintenance Procedures
+    
+# --------------------------------------------------------------------------------
+# OUTPUT REQUIREMENTS
+# --------------------------------------------------------------------------------
+# Return your summary as a **single structured text block** formatted as
+# Markdown-style headings. Example structure:
+
+# # Project Overview
+# ## Mechanical Equipment
+# ### Pumps
+# - Key equipment, capacity, vendor, duties
+# - Constraints, operating ranges, materials
+# ### Heat Exchangers
+# - Type, duty, assumptions, interdependencies
+# ...
+
+# Ensure:
+# - Explicit mention of missing data (e.g., “No mention of compressors”)
+# - Inclusion of all numeric, parametric, or constraint details (e.g., “Flowrate: 300 m³/h”)
+# - Capture of all assumptions, uncertainties, and cost linkages
+# - Preservation of technical context (why, how, dependencies)
+# - Capture details of processes, workflows, and operational procedures
+# - Aim for detailed completeness over brevity
+
+# --------------------------------------------------------------------------------
+# FINAL OUTPUT
+# --------------------------------------------------------------------------------
+# Call the `extract_structured_report` tool with:
+# - `structured_summary`: your full ontology-aligned summary text
+# --------------------------------------------------------------------------------
+# """
+
+PROMPT_DISCIPLINE_STRUCTURED_SUMMARY = """
+--------------------------------------------------------------------------------
+SYSTEM PROMPT — EXHAUSTIVE BASE CASE EXTRACTION & STRUCTURED RECONSTRUCTION
+--------------------------------------------------------------------------------
+ROLE
+You are an expert process engineer & cost estimator.
+Extract, normalize, and structure all technical, cost, and policy information
+from a base case engineering report into a compact but complete JSON
+representation that serves as the digital “truth source” for the report.
+
+OBJECTIVE
+Faithfully reconstruct the base case report, including:
+- All sections and subsections
+- Process flows and control logic
+- Equipment and materials with specifications
+- Instrumentation and controls
+- Environmental and site data
+- Codes, standards, and governing policies
+- Cost tables, assumptions, contingencies, exclusions
+- Constraints, limitations, risks/uncertainties
+- Provenance and coverage checks
+
+In addition to structured fields, provide a **descriptive_text (250–500 words)**
+for each top-level domain and for each item in `"sections"`, using only content
+from the report. Descriptive text must be comprehensive and anchored, but must
+not introduce new facts. It can quote short fragments (≤40 words each) where
+helpful.
+
+INPUTS
+1) BASE_CASE_TEXT: <<FULL TEXT OF REPORT>>
+2) ONTOLOGY (required):
+   {
+     "NODE_TYPES": [
+       "Equipment","Material","Process","Control","Instrument",
+       "Civil","Electrical","CostItem","CostRule","Policy","Assumption","Constraint"
+     ],
+     "EDGE_TYPES": ["HAS_PART","FEEDS","CONTROLS","CONSUMES","LOCATED_IN","GOVERNS"],
+     "AV_MSIO_ONTOLOGY": "Mapping of Discipline, Category, Subcategory, Entity, Attributes, Notes"
+   }
+
+EXTRACTION POLICY
+1) Exhaustiveness
+   - Capture every measurable, referable, or categorical fact.
+   - Include all numeric values and units exactly as written (no conversion/rounding).
+   - Extract table rows, list items, design criteria, codes, assumptions, exclusions, etc.
+   - Each object must carry at least one anchor (e.g., "§2", "p.4", "Table 1").
+
+2) Descriptive Text (250–500 words per section/domain)
+   - Provide `"descriptive_text"` for:
+     • Each entry in `"sections"` (its own subsection narrative).
+     • Each top-level domain: process_flows, design_criteria, equipment,
+       materials, instrumentation_controls, site_data, codes_standards,
+       policies_recommendations, constraints, costs, risks_uncertainties.
+   - Use only information present in the report; do not invent.
+   - You may include short quotes ≤40 words with anchors to capture exact phrasing.
+
+3) Missing Data & Fidelity
+   - If data are implied/missing → set value = null and add an item in
+     `"risks_uncertainties"` with a remediation action.
+   - Preserve original symbols and qualifiers (“~”, “@ 80%”, “±”, “nameplate”).
+
+4) Output Discipline
+   - Strict JSON only. No text outside JSON.
+   - All arrays present (use [] if empty).
+
+OUTPUT — STRICT JSON FORMAT
+Return one object with top-level key `"base_case_extract"`:
+
+{
+  "base_case_extract": {
+    "doc_header": { ... },
+
+    "sections": [
+      {
+        "name": "<exact header>",
+        "anchor": "<§ / page>",
+        "subsections": [...],
+        "descriptive_text": "<250–500 words drawn from this section only, with anchors>"
+      }
+    ],
+
+    "process_flows": {
+      "basis": {...},
+      "streams": [...],
+      "control_strategy": [...],
+      "descriptive_text": "<250–500 words: overall flow/controls narrative with anchors>"
+    },
+
+    "design_criteria": {
+      "process": [...],
+      "mechanical": [...],
+      "environmental_loads": [...],
+      "assumptions": [...],
+      "descriptive_text": "<250–500 words: criteria/basis narrative with anchors>"
+    },
+
+    "equipment": [
+      {
+        "items": [
+          {
+            "name": "Storage Tank",
+            "type": "Equipment",
+            "quantity": "1",
+            "specs": [
+              {"key": "capacity", "value": "1,000", "units": "gal @ 80%"},
+              {"key": "gross_volume", "value": "1,250", "units": "gal"}
+            ],
+            "materials": [
+              {"component": "shell", "material": "stainless steel", "grade": "304"}
+            ],
+            "notes": "Vertical atmospheric tank",
+            "anchors": ["§2"]
+          },
+          {
+            "name": "Pump + Motor",
+            "type": "Equipment",
+            "quantity": "1",
+            "specs": [{"key": "power", "value": "10", "units": "hp"}],
+            "materials": [],
+            "notes": null,
+            "anchors": ["§2"]
+          }
+        ],
+        "descriptive_text": "<250–500 words: equipment/system narrative with anchors>"
+      }
+    ],
+
+    "materials": [
+      {
+        "items": [
+          {
+            "name": "Water",
+            "specs": [{"key": "quality", "value": "clean", "units": ""}],
+            "compatibility_notes": "Suitable for stainless steel contact surfaces.",
+            "anchors": ["§3"]
+          }
+        ],
+        "descriptive_text": "<250–500 words: materials/compatibility narrative with anchors>"
+      }
+    ],
+
+    "instrumentation_controls": [
+      {
+        "items": [
+          {
+            "tag": "LT-001",
+            "type": "Level Transmitter",
+            "service": "Tank Level Monitoring",
+            "setpoints": [{"key": "SP", "value": "80", "units": "%"}],
+            "interlocks": ["LL alarm → pump stop"],
+            "io_notes": "4-20mA loop, panel display",
+            "anchors": ["§3"]
+          }
+        ],
+        "descriptive_text": "<250–500 words: instrumentation/control logic narrative>"
+      }
+    ],
+
+    "site_data": [
+      {
+        "items": [
+          {"key": "elevation", "value": "760", "units": "ft", "anchors": ["§4"]},
+          {"key": "seismic_category", "value": "A", "units": "", "anchors": ["§4"]}
+        ],
+        "descriptive_text": "<250–500 words: site/geotechnical/environmental conditions narrative>"
+      }
+    ],
+
+    "codes_standards": [
+      {
+        "items": [
+          {"domain": "Structural", "standard": "ASCE 7-16", "anchors": ["§5"]},
+          {"domain": "Process Piping", "standard": "ASME B31.3", "anchors": ["§5"]}
+        ],
+        "descriptive_text": "<250–500 words: codes and standards application narrative>"
+      }
+    ],
+
+    "policies_recommendations": [
+      {
+        "items": [
+          {
+            "type": "Policy",
+            "text": "Follow NCBC 2018 for structural design.",
+            "anchors": ["§5"]
+          },
+          {
+            "type": "Recommendation",
+            "text": "Provide low-level interlock to protect pump.",
+            "anchors": ["§3"]
+          }
+        ],
+        "descriptive_text": "<250–500 words: policy/recommendation context and rationale>"
+      }
+    ],
+
+    "constraints": [
+      {
+        "items": [
+          {
+            "type": "Physical",
+            "constraint": "Tank must remain atmospheric.",
+            "anchors": ["§3"]
+          }
+        ],
+        "descriptive_text": "<250–500 words: constraints, limitations, and boundary conditions>"
+      }
+    ],
+
+    "costs": [
+      {
+        "items": {
+          "design_basis": [...],
+          "line_items": [...],
+          "subtotals": [...],
+          "installed_total": {...},
+          "assumptions": [...],
+          "exclusions": [...],
+          "sources_refs": [...],
+          "sensitivities": [...],
+          "planning_alternatives": [...]
+        },
+        "descriptive_text": "<250–500 words: cost estimate basis, assumptions, and sensitivity notes>"
+      }
+    ],
+
+    "risks_uncertainties": [
+      {
+        "items": [
+          {
+            "gap": "TDH not provided",
+            "impact": "High",
+            "action": "Perform hydraulic calc",
+            "anchors": ["§7"]
+          }
+        ],
+        "descriptive_text": "<250–500 words: risks, uncertainties, and mitigation measures>"
+      }
+    ],
+
+    "provenance": {
+      "extraction_method": "LLM structured parse",
+      "version": "v1",
+      "notes": "All values anchored to report; units preserved.",
+      "coverage_check": {
+        "counts": {...},
+        "missing": [...]
+      }
+    }
+  }
+}
+--------------------------------------------------------------------------------
+
+STRICTNESS
+- Valid JSON; no text outside JSON.
+- Every domain listed above must include a 250–500 word descriptive_text
+  (or domain-specific *_descriptive_text) even if underlying arrays are empty.
+- Quotes ≤40 words each; include anchors for quoted or pivotal statements.
+- Do not introduce new facts; descriptive_text must be faithful to the report.
+--------------------------------------------------------------------------------
+END
+--------------------------------------------------------------------------------
 """
 
 # Load MSIO ontology
@@ -782,6 +1189,9 @@ def build_prompt_v4(rules: Optional[List[str]] = None) -> str:
     {global_objectives_block if "GLOBAL_OBJECTIVES" in (rules or []) else ""}
     --------------------------------------------------------------------------------
     
+    # SUMMARY EXTRACTION
+    {PROMPT_DISCIPLINE_STRUCTURED_SUMMARY if "STRUCTURED_REPORT" in (rules or []) else ""}
+    
     --------------------------------------------------------------------------------
     DO / DO NOT
     --------------------------------------------------------------------------------
@@ -789,16 +1199,16 @@ def build_prompt_v4(rules: Optional[List[str]] = None) -> str:
     ✓ Do: split only the Entity field on “/” when classifying ontology rows.
     ✓ Do: extract attributes near the mention; split number/unit when clear.
     ✓ Do: explicitly map extracted nodes and edges to ontology types via their properties.
-    ✓ Do: extract scenario data from two general situations: (1) Production change (increase or decrease), 
-    and (2) Cost change (capex increase or descrease).
+    ✓ Do: extract structured report if requested.
+    
     ✗ Don’t: invent elements or attributes not evidenced in the text/table.
     ✗ Don’t: split on “/” in other fields (Subcategory, Category, Discipline).
     
     --------------------------------------------------------------------------------
     FINAL DELIVERABLE
     --------------------------------------------------------------------------------
-    Return nodes with extract_nodes(nodes=[...]), edges with extract_edges(edges=[...]), and
-    scenarios with extract_scenarios(scenarios=[...]) as per the output contract.
+    Return nodes with extract_nodes(nodes=[...]), edges with extract_edges(edges=[...]), 
+    scenarios with extract_scenarios(scenarios=[...]), and extract structured report with extract_structured_report(base_case_report={...}) as per the output contract.
     """
 
     return prompt

@@ -126,6 +126,8 @@ const Scenarios = () => {
         return <TrendingUp />;
       case "reduce_capex":
         return <AttachMoney />;
+      case "improve_quality":
+        return <Speed />;
       default:
         return <Speed />;
     }

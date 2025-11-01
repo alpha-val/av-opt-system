@@ -6,6 +6,7 @@ import pprint
 import uuid
 from collections import OrderedDict
 import copy
+from openai import OpenAI
 
 # from langchain_community.graphs import Node, Relationship
 from typing import Dict, List, Any, Union, Tuple
@@ -14,8 +15,8 @@ from typing import Dict, List, Any, Union, Tuple
 from ..prompts.build_prompt import gen_prompt
 from ..prompts.prompt_for_scenarios import scenario_extraction_prompt_v1
 from ..prompts.prompt_for_scenarios import scenario_extraction_prompt_v2
-from ..prompts.prompt_for_scenarios import scenario_extraction_prompt_v3
 from ..prompts.prompt_for_scenarios import scenario_extraction_prompt_v4
+from ..prompts.prompt_for_scenarios import scenario_extraction_prompt_v5
 from .ontology import load_ontology
 from ..prompts.build_prompt_v4 import build_prompt_v4
 from ..ontology_v2 import ONTOLOGY_V2
@@ -25,6 +26,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_community.graphs import Neo4jGraph
 from langchain_community.graphs.graph_document import Node, Relationship, GraphDocument
+from app.config_adapter import SETTINGS
 
 import re
 
@@ -185,129 +187,559 @@ TOOLS = [
     # -------------------------------------------------------------------------
     # 3. Scenario extraction
     # -------------------------------------------------------------------------
+    # {
+    #     "type": "function",
+    #     "function": {
+    #         "name": "extract_scenarios",
+    #         "description": "Extract scenario data including header, approach options, relevant entities, assumptions, policies, constraints, cost guidelines, and uncertainties.",
+    #         "parameters": {
+    #             "type": "object",
+    #             "properties": {
+    #                 "scenarios": {
+    #                     "type": "array",
+    #                     "items": {
+    #                         "type": "object",
+    #                         "properties": {
+    #                             "scenario_header": {
+    #                                 "type": "object",
+    #                                 "properties": {
+    #                                     "scenario_uid": {"type": "string"},
+    #                                     "target": {"type": "string"},
+    #                                     "change_type": {
+    #                                         "type": "array",
+    #                                         "items": {"type": "string"},
+    #                                     },
+    #                                     "description": {"type": "string"},
+    #                                     "confidence": {"type": "number"},
+    #                                     "related_sections": {
+    #                                         "type": "array",
+    #                                         "items": {"type": "string"},
+    #                                     },
+    #                                     "scenario_summary": {"type": "string"},
+    #                                 },
+    #                                 "required": [
+    #                                     "target",
+    #                                     "change_type",
+    #                                     "description",
+    #                                     "confidence",
+    #                                     "scenario_summary",
+    #                                 ],
+    #                             },
+    #                             "relevant_entities": {
+    #                                 "type": "array",
+    #                                 "items": {
+    #                                     "type": "object",
+    #                                     "properties": {
+    #                                         "entity_uid": {"type": "string"},
+    #                                         "name": {"type": "string"},
+    #                                         "entity_type": {"type": "string"},
+    #                                         "base_values": {
+    #                                             "type": "array",
+    #                                             "items": {
+    #                                                 "type": "object",
+    #                                                 "properties": {
+    #                                                     "value": {"type": "string"},
+    #                                                     "units": {"type": "string"},
+    #                                                 },
+    #                                             },
+    #                                         },
+    #                                         "proposed_modifications": {
+    #                                             "type": "array",
+    #                                             "items": {
+    #                                                 "type": "object",
+    #                                                 "properties": {
+    #                                                     "parameter": {"type": "string"},
+    #                                                     "change": {"type": "string"},
+    #                                                     "suggested_value": {
+    #                                                         "type": "string"
+    #                                                     },
+    #                                                     "units": {"type": "string"},
+    #                                                     "basis": {"type": "string"},
+    #                                                 },
+    #                                             },
+    #                                         },
+    #                                         "expected_impacts": {
+    #                                             "type": "object",
+    #                                             "properties": {
+    #                                                 "capex": {
+    #                                                     "type": "object",
+    #                                                     "properties": {
+    #                                                         "direction": {
+    #                                                             "type": "string"
+    #                                                         },
+    #                                                         "magnitude_note": {
+    #                                                             "type": "string"
+    #                                                         },
+    #                                                     },
+    #                                                 },
+    #                                                 "opex": {
+    #                                                     "type": "object",
+    #                                                     "properties": {
+    #                                                         "direction": {
+    #                                                             "type": "string"
+    #                                                         },
+    #                                                         "magnitude_note": {
+    #                                                             "type": "string"
+    #                                                         },
+    #                                                     },
+    #                                                 },
+    #                                             },
+    #                                         },
+    #                                         "evidence": {
+    #                                             "type": "array",
+    #                                             "items": {"type": "string"},
+    #                                         },
+    #                                         "relevance_score": {"type": "number"},
+    #                                         "rationale": {"type": "string"},
+    #                                     },
+    #                                     "required": [
+    #                                         "name",
+    #                                         "type",
+    #                                         "base_values",
+    #                                         "proposed_modifications",
+    #                                         "expected_impacts",
+    #                                         "evidence",
+    #                                         "rationale",
+    #                                         "relevance_score",
+    #                                     ],
+    #                                 },
+    #                             },
+    #                         },
+    #                         "required": ["scenario_header", "relevant_entities"],
+    #                     },
+    #                 }
+    #             },
+    #             "required": ["scenarios"],
+    #         },
+    #     },
+    # },
+    # -------------------------------------------------------------------------
+    # 4. Report description extraction (V0)
+    # -------------------------------------------------------------------------
     {
         "type": "function",
         "function": {
-            "name": "extract_scenarios",
-            "description": "Extract scenario data including header, approach options, relevant entities, assumptions, policies, constraints, cost guidelines, and uncertainties.",
+            "name": "extract_structured_report",
+            "description": (
+                "Extract a comprehensive, ontology-aligned reconstruction of a base-case "
+                "technical report. The output must contain all relevant disciplines, systems, "
+                "equipment, materials, costs, and policies, each with structured data (`items`) "
+                "and detailed narrative context (`descriptive_text`, 250–500 words). "
+                "All innermost properties are generic, allowing use across multiple domains."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "scenarios": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "scenario_header": {
+                    "base_case_extract": {
+                        "type": "object",
+                        "properties": {
+                            # ------------------- HEADER -------------------
+                            "doc_header": {
+                                "type": "object",
+                                "properties": {
+                                    "title": {"type": "string"},
+                                    "system_name": {"type": ["string", "null"]},
+                                    "location": {"type": ["string", "null"]},
+                                    "doc_type": {"type": ["string", "null"]},
+                                    "revision_date": {"type": ["string", "null"]},
+                                    "anchors": {
+                                        "type": "array",
+                                        "items": {"type": "string"},
+                                    },
+                                },
+                                "required": ["title", "anchors"],
+                            },
+                            # ------------------- GENERIC SECTION STRUCTURE -------------------
+                            "sections": {
+                                "type": "array",
+                                "items": {
                                     "type": "object",
                                     "properties": {
-                                        "scenario_uid": {"type": "string"},
-                                        "target": {"type": "string"},
-                                        "change_type": {
+                                        "name": {"type": "string"},
+                                        "anchor": {"type": "string"},
+                                        "subsections": {
                                             "type": "array",
-                                            "items": {"type": "string"},
-                                        },
-                                        "description": {"type": "string"},
-                                        "confidence": {"type": "number"},
-                                        "related_sections": {
-                                            "type": "array",
-                                            "items": {"type": "string"},
-                                        },
-                                        "scenario_summary": {"type": "string"},
-                                    },
-                                    "required": [
-                                        "target",
-                                        "change_type",
-                                        "description",
-                                        "confidence",
-                                        "scenario_summary",
-                                    ],
-                                },
-                                "relevant_entities": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "entity_uid": {"type": "string"},
-                                            "name": {"type": "string"},
-                                            "entity_type": {"type": "string"},
-                                            "base_values": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "value": {"type": "string"},
-                                                        "units": {"type": "string"},
-                                                    },
-                                                },
-                                            },
-                                            "proposed_modifications": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "parameter": {"type": "string"},
-                                                        "change": {"type": "string"},
-                                                        "suggested_value": {
-                                                            "type": "string"
-                                                        },
-                                                        "units": {"type": "string"},
-                                                        "basis": {"type": "string"},
-                                                    },
-                                                },
-                                            },
-                                            "expected_impacts": {
+                                            "items": {
                                                 "type": "object",
                                                 "properties": {
-                                                    "capex": {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "direction": {
-                                                                "type": "string"
-                                                            },
-                                                            "magnitude_note": {
-                                                                "type": "string"
-                                                            },
-                                                        },
+                                                    "name": {"type": "string"},
+                                                    "anchor": {
+                                                        "type": ["string", "null"]
                                                     },
-                                                    "opex": {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "direction": {
-                                                                "type": "string"
-                                                            },
-                                                            "magnitude_note": {
-                                                                "type": "string"
-                                                            },
-                                                        },
+                                                    "notes": {
+                                                        "type": ["string", "null"]
                                                     },
                                                 },
+                                                "required": ["name"],
                                             },
-                                            "evidence": {
+                                        },
+                                        "descriptive_text": {"type": "string"},
+                                    },
+                                    "required": ["name", "descriptive_text"],
+                                },
+                            },
+                            # ------------------- GENERIC DOMAIN TEMPLATE -------------------
+                            "process_flows": {
+                                "type": "object",
+                                "properties": {
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "key": {"type": "string"},
+                                                "value": {"type": ["string", "null"]},
+                                                "details": {"type": ["string", "null"]},
+                                                "anchors": {
+                                                    "type": "array",
+                                                    "items": {"type": "string"},
+                                                },
+                                            },
+                                            "required": ["key"],
+                                        },
+                                    },
+                                    "descriptive_text": {"type": "string"},
+                                },
+                                "required": ["items", "descriptive_text"],
+                            },
+                            "design_criteria": {
+                                "type": "object",
+                                "properties": {
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "key": {"type": "string"},
+                                                "value": {"type": ["string", "null"]},
+                                                "details": {"type": ["string", "null"]},
+                                                "anchors": {
+                                                    "type": "array",
+                                                    "items": {"type": "string"},
+                                                },
+                                            },
+                                            "required": ["key"],
+                                        },
+                                    },
+                                    "descriptive_text": {"type": "string"},
+                                },
+                                "required": ["items", "descriptive_text"],
+                            },
+                            "equipment": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "key": {"type": "string"},
+                                                    "value": {
+                                                        "type": ["string", "null"]
+                                                    },
+                                                    "details": {
+                                                        "type": ["string", "null"]
+                                                    },
+                                                    "anchors": {
+                                                        "type": "array",
+                                                        "items": {"type": "string"},
+                                                    },
+                                                },
+                                                "required": ["key"],
+                                            },
+                                        },
+                                        "descriptive_text": {"type": "string"},
+                                    },
+                                    "required": ["items", "descriptive_text"],
+                                },
+                            },
+                            "materials": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "key": {"type": "string"},
+                                                    "value": {
+                                                        "type": ["string", "null"]
+                                                    },
+                                                    "details": {
+                                                        "type": ["string", "null"]
+                                                    },
+                                                    "anchors": {
+                                                        "type": "array",
+                                                        "items": {"type": "string"},
+                                                    },
+                                                },
+                                                "required": ["key"],
+                                            },
+                                        },
+                                        "descriptive_text": {"type": "string"},
+                                    },
+                                    "required": ["items", "descriptive_text"],
+                                },
+                            },
+                            "instrumentation_controls": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "key": {"type": "string"},
+                                                    "value": {
+                                                        "type": ["string", "null"]
+                                                    },
+                                                    "details": {
+                                                        "type": ["string", "null"]
+                                                    },
+                                                    "anchors": {
+                                                        "type": "array",
+                                                        "items": {"type": "string"},
+                                                    },
+                                                },
+                                                "required": ["key"],
+                                            },
+                                        },
+                                        "descriptive_text": {"type": "string"},
+                                    },
+                                    "required": ["items", "descriptive_text"],
+                                },
+                            },
+                            "site_data": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "key": {"type": "string"},
+                                                    "value": {
+                                                        "type": ["string", "null"]
+                                                    },
+                                                    "details": {
+                                                        "type": ["string", "null"]
+                                                    },
+                                                    "anchors": {
+                                                        "type": "array",
+                                                        "items": {"type": "string"},
+                                                    },
+                                                },
+                                                "required": ["key"],
+                                            },
+                                        },
+                                        "descriptive_text": {"type": "string"},
+                                    },
+                                    "required": ["items", "descriptive_text"],
+                                },
+                            },
+                            "codes_standards": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "key": {"type": "string"},
+                                                    "value": {
+                                                        "type": ["string", "null"]
+                                                    },
+                                                    "details": {
+                                                        "type": ["string", "null"]
+                                                    },
+                                                    "anchors": {
+                                                        "type": "array",
+                                                        "items": {"type": "string"},
+                                                    },
+                                                },
+                                                "required": ["key"],
+                                            },
+                                        },
+                                        "descriptive_text": {"type": "string"},
+                                    },
+                                    "required": ["items", "descriptive_text"],
+                                },
+                            },
+                            "policies_recommendations": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "key": {"type": "string"},
+                                                    "value": {
+                                                        "type": ["string", "null"]
+                                                    },
+                                                    "details": {
+                                                        "type": ["string", "null"]
+                                                    },
+                                                    "anchors": {
+                                                        "type": "array",
+                                                        "items": {"type": "string"},
+                                                    },
+                                                },
+                                                "required": ["key"],
+                                            },
+                                        },
+                                        "descriptive_text": {"type": "string"},
+                                    },
+                                    "required": ["items", "descriptive_text"],
+                                },
+                            },
+                            "constraints": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "key": {"type": "string"},
+                                                    "value": {
+                                                        "type": ["string", "null"]
+                                                    },
+                                                    "details": {
+                                                        "type": ["string", "null"]
+                                                    },
+                                                    "anchors": {
+                                                        "type": "array",
+                                                        "items": {"type": "string"},
+                                                    },
+                                                },
+                                                "required": ["key"],
+                                            },
+                                        },
+                                        "descriptive_text": {"type": "string"},
+                                    },
+                                    "required": ["items", "descriptive_text"],
+                                },
+                            },
+                            "costs": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "key": {"type": "string"},
+                                                    "value": {
+                                                        "type": ["string", "null"]
+                                                    },
+                                                    "details": {
+                                                        "type": ["string", "null"]
+                                                    },
+                                                    "anchors": {
+                                                        "type": "array",
+                                                        "items": {"type": "string"},
+                                                    },
+                                                },
+                                                "required": ["key"],
+                                            },
+                                        },
+                                        "descriptive_text": {"type": "string"},
+                                    },
+                                    "required": ["items", "descriptive_text"],
+                                },
+                            },
+                            "risks_uncertainties": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "key": {"type": "string"},
+                                                    "value": {
+                                                        "type": ["string", "null"]
+                                                    },
+                                                    "details": {
+                                                        "type": ["string", "null"]
+                                                    },
+                                                    "anchors": {
+                                                        "type": "array",
+                                                        "items": {"type": "string"},
+                                                    },
+                                                },
+                                                "required": ["key"],
+                                            },
+                                        },
+                                        "descriptive_text": {"type": "string"},
+                                    },
+                                    "required": ["items", "descriptive_text"],
+                                },
+                            },
+                            # ------------------- PROVENANCE -------------------
+                            "provenance": {
+                                "type": "object",
+                                "properties": {
+                                    "extraction_method": {"type": "string"},
+                                    "version": {"type": "string"},
+                                    "notes": {"type": ["string", "null"]},
+                                    "coverage_check": {
+                                        "type": "object",
+                                        "properties": {
+                                            "counts": {"type": "object"},
+                                            "missing": {
                                                 "type": "array",
                                                 "items": {"type": "string"},
                                             },
-                                            "relevance_score": {"type": "number"},
-                                            "rationale": {"type": "string"},
                                         },
-                                        "required": [
-                                            "name",
-                                            "type",
-                                            "base_values",
-                                            "proposed_modifications",
-                                            "expected_impacts",
-                                            "evidence",
-                                            "rationale",
-                                            "relevance_score",
-                                        ],
+                                        "required": ["counts", "missing"],
                                     },
                                 },
+                                "required": [
+                                    "extraction_method",
+                                    "version",
+                                    "coverage_check",
+                                ],
                             },
-                            "required": ["scenario_header", "relevant_entities"],
                         },
+                        "required": [
+                            "doc_header",
+                            "sections",
+                            "process_flows",
+                            "design_criteria",
+                            "equipment",
+                            "materials",
+                            "instrumentation_controls",
+                            "site_data",
+                            "codes_standards",
+                            "policies_recommendations",
+                            "constraints",
+                            "costs",
+                            "risks_uncertainties",
+                            "provenance",
+                        ],
                     }
                 },
-                "required": ["scenarios"],
+                "required": ["base_case_extract"],
             },
         },
     },
@@ -677,6 +1109,7 @@ TOOLS_SCENARIO_EXTRACTION_v3 = [
     },
 ]
 
+# Local objectives
 TOOLS_SCENARIO_EXTRACTION_v4 = [
     {
         "type": "function",
@@ -739,6 +1172,417 @@ TOOLS_SCENARIO_EXTRACTION_v4 = [
             },
         },
     },
+]
+
+# Full scenario extraction v6 (single scenario)
+TOOLS_SCENARIO_EXTRACTION_v5 = [
+    {
+        "type": "function",
+        "function": {
+            "name": "extract_scenario",
+            "description": "Extract exactly one scenario (Production Change or Capex Change) from a base case report, normalized per v6 schema.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "scenario": {
+                        "type": "object",
+                        "properties": {
+                            "scenario_template": {
+                                "type": "string",
+                                "enum": ["Production Change", "Capex Change"],
+                            },
+                            "scenario_header": {
+                                "type": "object",
+                                "properties": {
+                                    "scenario_uid": {"type": "string"},
+                                    "goal": {"type": "string"},
+                                    "change_type": {
+                                        "type": "array",
+                                        "items": {"type": "string"},
+                                    },
+                                    "description": {"type": "string"},
+                                    "confidence": {"type": "number"},
+                                    "related_sections": {
+                                        "type": "array",
+                                        "items": {"type": "string"},
+                                    },
+                                },
+                                "required": [
+                                    "goal",
+                                    "change_type",
+                                    "description",
+                                    "confidence",
+                                    "related_sections",
+                                ],
+                            },
+                            "template_parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "change_direction": {
+                                        "type": "string",
+                                        "enum": ["increase", "decrease"],
+                                    },
+                                    "change_magnitude": {"type": "string"},
+                                    "baseline_metric": {"type": "string"},
+                                    "baseline_value": {"type": "string"},
+                                    "target_metric": {"type": "string"},
+                                    "target_value": {"type": "string"},
+                                    "measurement_basis": {"type": "string"},
+                                },
+                                "required": [
+                                    "change_direction",
+                                    "change_magnitude",
+                                    "baseline_metric",
+                                    "baseline_value",
+                                    "target_metric",
+                                    "target_value",
+                                    "measurement_basis",
+                                ],
+                            },
+                            "local_objectives": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {"type": "string"},
+                                        "type": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Equipment",
+                                                "Process",
+                                                "Material",
+                                                "Control",
+                                                "Civil",
+                                                "Electrical",
+                                                "Other",
+                                            ],
+                                        },
+                                        "base_values": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "key": {"type": "string"},
+                                                    "value": {"type": "string"},
+                                                    "units": {"type": "string"},
+                                                },
+                                                "required": ["key", "value"],
+                                            },
+                                        },
+                                        "proposed_modifications": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "parameter": {"type": "string"},
+                                                    "change": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "increase",
+                                                            "decrease",
+                                                            "replace",
+                                                            "add_parallel",
+                                                            "remove",
+                                                            "reconfigure",
+                                                        ],
+                                                    },
+                                                    "suggested_value": {
+                                                        "type": "string"
+                                                    },
+                                                    "units": {"type": "string"},
+                                                    "basis": {"type": "string"},
+                                                },
+                                                "required": ["parameter", "change"],
+                                            },
+                                        },
+                                        "relevance_score": {
+                                            "type": "number",
+                                            "minimum": 0.0,
+                                            "maximum": 1.0,
+                                        },
+                                        "evidence": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "anchor": {"type": "string"},
+                                                    "quote": {"type": "string"},
+                                                },
+                                                "required": ["anchor", "quote"],
+                                            },
+                                        },
+                                        "rationale": {"type": "string"},
+                                    },
+                                    "required": [
+                                        "name",
+                                        "type",
+                                        "base_values",
+                                        "proposed_modifications",
+                                        "relevance_score",
+                                        "evidence",
+                                        "rationale",
+                                    ],
+                                },
+                            },
+                            "assumptions": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "text": {"type": "string"},
+                                        "type": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Design",
+                                                "Operational",
+                                                "Market",
+                                                "Environmental",
+                                                "Other",
+                                            ],
+                                        },
+                                        "refs": {
+                                            "type": "array",
+                                            "items": {"type": "string"},
+                                        },
+                                    },
+                                    "required": ["text"],
+                                },
+                            },
+                            "policies": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "text": {"type": "string"},
+                                        "domain": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Safety",
+                                                "Code",
+                                                "Cost",
+                                                "Procurement",
+                                                "Quality",
+                                                "Environmental",
+                                            ],
+                                        },
+                                        "refs": {
+                                            "type": "array",
+                                            "items": {"type": "string"},
+                                        },
+                                    },
+                                    "required": ["text", "domain"],
+                                },
+                            },
+                            "constraints": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "constraint": {"type": "string"},
+                                        "basis": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Physical",
+                                                "Regulatory",
+                                                "Budgetary",
+                                                "Schedule",
+                                                "Interface",
+                                                "Availability",
+                                            ],
+                                        },
+                                        "refs": {
+                                            "type": "array",
+                                            "items": {"type": "string"},
+                                        },
+                                    },
+                                    "required": ["constraint", "basis"],
+                                },
+                            },
+                            "cost_guidelines": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "item": {"type": "string"},
+                                        "base_cost_value": {"type": "number"},
+                                        "currency": {"type": "string"},
+                                        "basis_year": {"type": "integer"},
+                                        "cost_class": {
+                                            "type": "string",
+                                            "enum": [
+                                                "OrderOfMagnitude",
+                                                "Conceptual",
+                                                "Budget",
+                                                "Definitive",
+                                            ],
+                                        },
+                                        "scaling_rule": {"type": "string"},
+                                        "risk_notes": {"type": "string"},
+                                        "estimation_note": {"type": "string"},
+                                    },
+                                    "required": ["item"],
+                                },
+                            },
+                            "approach_options": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "option_id": {"type": "string"},
+                                        "title": {"type": "string"},
+                                        "rationale": {"type": "string"},
+                                        "expected_effects": {
+                                            "type": "object",
+                                            "properties": {
+                                                "throughput": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "direction": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "increase",
+                                                                "decrease",
+                                                                "neutral",
+                                                            ],
+                                                        },
+                                                        "estimate_pct": {
+                                                            "type": ["string", "null"]
+                                                        },
+                                                    },
+                                                    "required": ["direction"],
+                                                },
+                                                "capex": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "direction": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "increase",
+                                                                "decrease",
+                                                                "neutral",
+                                                            ],
+                                                        },
+                                                        "notes": {"type": "string"},
+                                                    },
+                                                    "required": ["direction"],
+                                                },
+                                                "opex": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "direction": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "increase",
+                                                                "decrease",
+                                                                "neutral",
+                                                            ],
+                                                        },
+                                                        "notes": {"type": "string"},
+                                                    },
+                                                    "required": ["direction"],
+                                                },
+                                                "quality": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "direction": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "increase",
+                                                                "decrease",
+                                                                "neutral",
+                                                            ],
+                                                        },
+                                                        "notes": {"type": "string"},
+                                                    },
+                                                    "required": ["direction"],
+                                                },
+                                            },
+                                            "required": [
+                                                "throughput",
+                                                "capex",
+                                                "opex",
+                                                "quality",
+                                            ],
+                                        },
+                                        "dependencies": {
+                                            "type": "array",
+                                            "items": {"type": "string"},
+                                        },
+                                        "refs": {
+                                            "type": "array",
+                                            "items": {"type": "string"},
+                                        },
+                                    },
+                                    "required": [
+                                        "option_id",
+                                        "title",
+                                        "expected_effects",
+                                    ],
+                                },
+                            },
+                            "uncertainties": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "gap": {"type": "string"},
+                                        "impact": {
+                                            "type": "string",
+                                            "enum": ["Low", "Med", "High"],
+                                        },
+                                        "action": {"type": "string"},
+                                    },
+                                    "required": ["gap", "impact", "action"],
+                                },
+                            },
+                            "quality": {
+                                "type": "object",
+                                "properties": {
+                                    "counts": {
+                                        "type": "object",
+                                        "properties": {
+                                            "local_objectives": {"type": "integer"},
+                                            "assumptions": {"type": "integer"},
+                                            "policies": {"type": "integer"},
+                                            "constraints": {"type": "integer"},
+                                            "cost_guidelines": {"type": "integer"},
+                                            "approach_options": {"type": "integer"},
+                                            "uncertainties": {"type": "integer"},
+                                        },
+                                        "required": [
+                                            "local_objectives",
+                                            "assumptions",
+                                            "policies",
+                                            "constraints",
+                                            "cost_guidelines",
+                                            "approach_options",
+                                            "uncertainties",
+                                        ],
+                                    },
+                                    "coverage_note": {"type": "string"},
+                                },
+                                "required": ["counts"],
+                            },
+                        },
+                        "required": [
+                            "scenario_template",
+                            "scenario_header",
+                            "template_parameters",
+                            "local_objectives",
+                            "assumptions",
+                            "policies",
+                            "constraints",
+                            "cost_guidelines",
+                            "approach_options",
+                            "uncertainties",
+                            "quality",
+                        ],
+                    }
+                },
+                "required": ["scenario"],
+            },
+        },
+    }
 ]
 
 # ------------------------------------------------------------------ #
@@ -929,11 +1773,13 @@ def openai_extract_nodes_rels(
     logger.info("====================================================")
 
     # ── 1. Prep the LLM with tools ──────────────────────────
+
     llm = ChatOpenAI(
-        model="gpt-4o",
+        model=SETTINGS.llm_model_name or "gpt-5-mini",
         api_key=SETTINGS.openai_api_key,
+        timeout=300,
+        max_retries=3,
         temperature=0,
-        timeout=60,
         max_tokens=4096,
         model_kwargs={
             "tools": TOOLS,
@@ -942,7 +1788,7 @@ def openai_extract_nodes_rels(
     )
 
     # ── 2. Iterate through chunks & collect calls ───────────
-    all_nodes, all_edges, all_scenarios = [], [], []
+    all_nodes, all_edges, all_scenarios, all_summaries = [], [], [], []
 
     user_prompt = build_prompt_v4(rules=rules)
 
@@ -955,9 +1801,16 @@ def openai_extract_nodes_rels(
             continue
 
         messages = [SYSTEM_PROMPT, HumanMessage(content=text)]
-        logger.debug(f"[DEBUG] Sending payload of size {len(messages)} sent to LLM.")
+        logger.info(f"[DEBUG] Sending payload of size {len(messages)} sent to LLM.")
+
+        # Make the call to the LLM
         resp = llm.invoke(messages)
-        logger.debug(f"[DEBUG] Response from OpenAI: {resp}")
+
+        logger.info(f"[DEBUG] Received response for chunk {idx+1}/{len(chunks)}")
+        # logger.info("Type:", type(resp))
+        # logger.info("Raw:", resp)
+        # logger.info("KWARGS:", getattr(resp, "additional_kwargs", {}))
+        # logger.info("Content:", getattr(resp, "content", None))
 
         for call in resp.additional_kwargs.get("tool_calls", []):
             fn = call.get("function", {})
@@ -979,6 +1832,9 @@ def openai_extract_nodes_rels(
                         logger.error(f"Invalid scenarios format: {scenarios}")
                         continue
                     all_scenarios.extend(scenarios)
+                elif name == "extract_structured_report":
+                    summaries = payload.get("base_case_extract", [])
+                    all_summaries.append(summaries)
             except json.JSONDecodeError as e:
                 logger.error(f"Failed to parse LLM JSON: {e}")
                 logger.error(f"Raw function arguments: {fn.get('arguments')}")
@@ -1043,7 +1899,114 @@ def openai_extract_nodes_rels(
     # If anything slipped, enforce uniqueness one last time
     all_nodes = {n["id"]: n for n in all_nodes}.values()
 
-    return {"nodes": all_nodes, "edges": all_edges, "scenarios": all_scenarios}
+    return {
+        "nodes": all_nodes,
+        "edges": all_edges,
+        "scenarios": all_scenarios,
+        "summaries": all_summaries,
+    }
+
+
+def deduplicate_local_objectives_0(
+    entries: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """
+    Deduplicate entries based on similar names and identical base_values.
+
+    Args:
+        entries: List of dictionaries containing entity data.
+
+    Returns:
+        List of unique entries with merged data.
+    """
+
+    def normalize_name(name: str) -> str:
+        """Normalize names for comparison (case-insensitive, stripped)."""
+        return name.strip().lower()
+
+    def base_values_key(base_values: List[Dict[str, Any]]) -> str:
+        """Generate a hashable key for base_values."""
+        return str(
+            sorted(
+                base_values,
+                key=lambda x: (x.get("key"), x.get("value"), x.get("units")),
+            )
+        )
+
+    merged = {}
+    for entry in entries:
+        name = normalize_name(entry.get("name", ""))
+        base_values = entry.get("base_values", [])
+        key = f"{name}|{base_values_key(base_values)}"
+
+        if key in merged:
+            print(f"Merging duplicate local objective: {entry.get('name')}")
+            # Merge proposed_modifications and rationale
+            merged[key]["proposed_modifications"].extend(
+                entry.get("proposed_modifications", [])
+            )
+            merged[key]["proposed_modifications"] = list(
+                {str(pm): pm for pm in merged[key]["proposed_modifications"]}.values()
+            )  # Deduplicate proposed_modifications
+            merged[key]["rationale"] += f" | {entry.get('rationale', '')}"
+        else:
+            merged[key] = entry.copy()
+
+    return list(merged.values())
+
+
+def deduplicate_local_objectives(
+    existing_entries: List[Dict[str, Any]], new_entries: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    """
+    Deduplicate entries by comparing new entries with an existing list.
+
+    Args:
+        existing_entries: List of existing dictionaries containing entity data.
+        new_entries: List of new dictionaries to be merged and deduplicated.
+
+    Returns:
+        List of unique entries with merged data.
+    """
+
+    def normalize_name(name: str) -> str:
+        """Normalize names for comparison (case-insensitive, stripped)."""
+        return name.strip().lower()
+
+    def base_values_key(base_values: List[Dict[str, Any]]) -> str:
+        """Generate a hashable key for base_values."""
+        return str(
+            sorted(
+                base_values,
+                key=lambda x: (x.get("key"), x.get("value"), x.get("units")),
+            )
+        )
+
+    # Create a dictionary for merged entries
+    merged = {
+        f"{normalize_name(entry.get('name', ''))}|{base_values_key(entry.get('base_values', []))}": entry
+        for entry in existing_entries
+    }
+
+    for entry in new_entries:
+        name = normalize_name(entry.get("name", ""))
+        base_values = entry.get("base_values", [])
+        key = f"{name}|{base_values_key(base_values)}"
+
+        if key in merged:
+            print(f"Merging duplicate local objective: {entry.get('name')}")
+            # Merge proposed_modifications and rationale
+            merged[key]["proposed_modifications"].extend(
+                entry.get("proposed_modifications", [])
+            )
+            merged[key]["proposed_modifications"] = list(
+                {str(pm): pm for pm in merged[key]["proposed_modifications"]}.values()
+            )  # Deduplicate proposed_modifications
+            merged[key]["rationale"] += f" | {entry.get('rationale', '')}"
+        else:
+            merged[key] = entry.copy()
+
+    return list(merged.values())
 
 
 def openai_extract_scenario_data(
@@ -1055,7 +2018,7 @@ def openai_extract_scenario_data(
     logger.info("Starting scenario data extraction...")
 
     llm = ChatOpenAI(
-        model="gpt-4o",
+        model=SETTINGS.llm_model_name or "gpt-5-mini",
         api_key=SETTINGS.openai_api_key,
         temperature=0,
         timeout=60,
@@ -1113,11 +2076,12 @@ def openai_extract_scenario_data(
                     arguments = call.get("function", {}).get("arguments", "{}")
                     if is_valid_json(arguments):
                         scenario_data = json.loads(arguments)
-                        # all_scenario_data.append(scenario_data)
+                        # all_scenario_data.extend(scenario_data["local_objectives"])
                         if "local_objectives" in scenario_data:
-                            all_scenario_data.extend(
-                                scenario_data.get("local_objectives", [])
+                            deduplicated = deduplicate_local_objectives(
+                                all_scenario_data, scenario_data["local_objectives"]
                             )
+                            all_scenario_data = deduplicated
                     else:
                         logger.error(f"Invalid JSON received: {arguments}")
         except Exception as e:
@@ -1481,7 +2445,7 @@ def openai_extract_graph_doc(
 
     # ── 1. Prep the LLM with tools ──────────────────────────
     llm = ChatOpenAI(
-        model="gpt-4o-mini",
+        model=SETTINGS.llm_model_name or "gpt-5-mini",
         api_key=SETTINGS.openai_api_key,
         temperature=0,
         timeout=60,
