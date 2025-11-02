@@ -125,9 +125,7 @@ async def register(body: UserRegister):
             status_code=status.HTTP_409_CONFLICT,
             detail="User with this email already exists",
         )
-    uid = str(uuid.uuid4())
     doc = {
-        "_id": ObjectId(uid),  # Use ObjectId for MongoDB
         "name": body.name,
         "email": body.email,
         "password_hash": generate_password_hash(body.password, method="pbkdf2:sha256"),
@@ -138,7 +136,8 @@ async def register(body: UserRegister):
         "active": True,
         "is_admin": False,
     }
-    _users_collection.insert_one(doc)
+    result = _users_collection.insert_one(doc)  # MongoDB generates the _id
+    uid = str(result.inserted_id)  # Get the generated _id
     access = _create_access({"sub": uid, "email": body.email, "name": body.name})
     refresh = _create_refresh({"sub": uid})
     return TokenResponse(

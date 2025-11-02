@@ -1,10 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Nav from '../../components/Nav';
-import ProjectDashboard from './ProjectDashboard';
+// import ProjectDashboard from './ProjectDashboard';
 import { Box } from '@mui/material';
+import Settings from "./Settings"
 
-const ProjectView = () => {
+const SettingsView = () => {
     const navigate = useNavigate();
 
     const handleBackToDashboard = () => {
@@ -18,10 +19,10 @@ const ProjectView = () => {
 
             {/* Project content */}
             <Box sx={{ flexGrow: 1 }}>
-                <ProjectDashboard onBackToDashboard={handleBackToDashboard} />
+                <Settings />
             </Box>
         </Box>
     );
 };
 
-export default ProjectView;
+export default SettingsView;

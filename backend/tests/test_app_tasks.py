@@ -28,3 +28,15 @@ def test_mongo_connection():
         assert client is not None
     except Exception as e:
         pytest.fail(f"MongoDB connection failed: {e}")
+        
+# Test user login
+from app_v2.api.v1.routers.auth import auth_router
+from fastapi.testclient import TestClient
+
+client = TestClient(auth_router)
+def test_user_login():
+    """Test the user login endpoint."""
+    response = client.post(
+        "/api/v1/login",
+        json={"email": "test@example.com", "password": "password123"}
+    )

@@ -91,6 +91,7 @@ const DataTable = ({
                         >
                             {headers.map((header, cellIndex) => {
                                 const value = row[header.key] || '';
+
                                 return (
                                     <TableCell key={cellIndex}>
                                         {cellRenderer(value, header.key, row, rowIndex)}

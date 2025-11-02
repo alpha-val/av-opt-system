@@ -1,17 +1,14 @@
 import React, { useContext } from "react";
+import { useNavigate } from "react-router-dom";
+
 import { useSelector } from "react-redux";
 import NotFound from "./views/NotFound";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import DialogsProvider from "./hooks/useDialogs/DialogsProvider";
 import MainGrid from "./views/MainGrid";
-import ProjectView from "./views/project/ProjectView"; // New component for project routes
 import AuthProvider from "./services/AuthProvider";
 import { useThemeMode } from "./themes/ThemeContext";
-import SettingsView from './views/settings/SettingsView';
-import ScenarioDetail from "./views/project/scenarios/ScenarioDetails";
 
-
-// Optional: global background gradient using your custom theme
 const AppBackground = ({ children }) => {
   const { theme, mode } = useThemeMode();
 
@@ -29,32 +26,14 @@ const AppBackground = ({ children }) => {
   );
 };
 
-const AppContent = () => {
-  return (
-    <AuthProvider>
-      <div style={{ width: "100vw" }}>
-        {/* Define Routes - All routes are now protected */}
-        <Routes>
-          <Route path="/" element={<MainGrid />} />
-          <Route path="/dashboard" element={<MainGrid />} />
-          <Route path="/projects/:projectId" element={<ProjectView />} /> {/* Separate route */}
-          <Route path="/projects/:projectId/scenarios/:scenarioId" element={<ScenarioDetail />} />
-          <Route path="/settings" element={
-            <SettingsView />
-          } />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </div>
-    </AuthProvider>
-  );
-};
-
 const App = () => {
   return (
     <AppBackground>
-      <DialogsProvider>
-        <AppContent />
-      </DialogsProvider>
+      <AuthProvider>
+        <DialogsProvider>
+          <MainGrid />
+        </DialogsProvider>
+      </AuthProvider>
     </AppBackground>
   );
 };
