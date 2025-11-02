@@ -6,6 +6,7 @@ import Nav from "./Nav";
 import { Routes, Route } from "react-router-dom";
 import Dashboard from "./Dashboard";
 import Settings from "./settings/Settings";
+import ProjectDetails from "./project/ProjectDetails";
 
 const MainGrid = () => {
   const theme = useTheme();
@@ -35,6 +36,7 @@ const MainGrid = () => {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/project/:projectId" element={<ProjectDetails />} />
         </Routes>
       </Box>
     </Box>

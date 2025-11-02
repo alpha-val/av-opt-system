@@ -1,14 +1,15 @@
 import React from 'react';
 import {
+    Box,
+    Button,
+    Paper,
     Table,
     TableBody,
     TableCell,
     TableContainer,
     TableHead,
     TableRow,
-    Paper,
     Typography,
-    Box,
 } from '@mui/material';
 
 const DataTable = ({
@@ -74,6 +75,11 @@ const DataTable = ({
                                 </Typography>
                             </TableCell>
                         ))}
+                        {/* <TableCell>
+                            <Typography variant="body1" fontWeight="bold">
+                                Actions
+                            </Typography>
+                        </TableCell> */}
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -97,6 +103,15 @@ const DataTable = ({
                                     </TableCell>
                                 );
                             })}
+                            {/* <TableCell>
+                                <Button
+                                    variant="outlined"
+                                    color="error"
+                                    onClick={() => handleDeleteProject(row.id)}
+                                >
+                                    Delete
+                                </Button>
+                            </TableCell> */}
                         </TableRow>
                     ))}
                 </TableBody>

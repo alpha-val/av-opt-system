@@ -10,5 +10,6 @@
     "${workspaceFolder}/backend"
   ],
   "postman.settings.dotenv-detection-notification-visibility": false,
-  "github.copilot.chat.summarizeAgentConversationHistory.enabled": false
+  "github.copilot.chat.summarizeAgentConversationHistory.enabled": false,
+  "workbench.preferredDarkColorTheme": "Default Light+"
 }

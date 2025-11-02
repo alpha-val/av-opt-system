@@ -230,10 +230,43 @@ PromptDialog.propTypes = {
 export { PromptDialog };
 
 function ProjectPromptDialog({ open, payload, onClose }) {
-  const [projectName, setProjectName] = React.useState("");
-  const [description, setDescription] = React.useState("");
-  const [tags, setTags] = React.useState("");
+  // Initialize state from initialData if provided (for edit mode)
+  const initialData = payload.initialData || {};
+  const isEditMode = !!initialData.id;
+
+  const [projectName, setProjectName] = React.useState(initialData.name || "");
+  const [description, setDescription] = React.useState(
+    initialData.description || ""
+  );
+  const [tags, setTags] = React.useState(
+    Array.isArray(initialData.tags)
+      ? initialData.tags.join(", ")
+      : typeof initialData.tags === "string"
+      ? initialData.tags
+      : ""
+  );
   const [loading, setLoading] = React.useState(false);
+
+  // Reset state when dialog opens with new initialData
+  React.useEffect(() => {
+    if (open && payload.initialData) {
+      const data = payload.initialData;
+      setProjectName(data.name || "");
+      setDescription(data.description || "");
+      setTags(
+        Array.isArray(data.tags)
+          ? data.tags.join(", ")
+          : typeof data.tags === "string"
+          ? data.tags
+          : ""
+      );
+    } else if (open && !payload.initialData) {
+      // Reset to empty for create mode
+      setProjectName("");
+      setDescription("");
+      setTags("");
+    }
+  }, [open, payload.initialData]);
 
   const cancelButtonProps = useDialogLoadingButton(() => onClose(null));
 
@@ -260,6 +293,7 @@ function ProjectPromptDialog({ open, payload, onClose }) {
               }
 
               const result = {
+                ...(isEditMode && { id: initialData.id }), // Include ID for edits
                 name: projectName.trim(),
                 description: description.trim() || "",
                 tags: tags.trim()
@@ -277,7 +311,9 @@ function ProjectPromptDialog({ open, payload, onClose }) {
         },
       }}
     >
-      <DialogTitle>{payload.title ?? "Create New Project"}</DialogTitle>
+      <DialogTitle>
+        {payload.title ?? (isEditMode ? "Edit Project" : "Create New Project")}
+      </DialogTitle>
       <DialogContent>
         <DialogContentText sx={{ mb: 2 }}>{payload.msg}</DialogContentText>
 
@@ -301,10 +337,7 @@ function ProjectPromptDialog({ open, payload, onClose }) {
             inputProps={{
               maxLength: PROJECT_NAME_LIMIT,
             }}
-            helperText={
-              // Fix: Use a single string or span instead of Box with div
-              `Required field • ${projectName.length}/${PROJECT_NAME_LIMIT}`
-            }
+            helperText={`Required field • ${projectName.length}/${PROJECT_NAME_LIMIT}`}
             FormHelperTextProps={{
               sx: {
                 display: "flex",
@@ -338,10 +371,7 @@ function ProjectPromptDialog({ open, payload, onClose }) {
             inputProps={{
               maxLength: DESCRIPTION_LIMIT,
             }}
-            helperText={
-              // Fix: Use a single string instead of Box with div
-              `Brief description of your project • ${description.length}/${DESCRIPTION_LIMIT}`
-            }
+            helperText={`Brief description of your project • ${description.length}/${DESCRIPTION_LIMIT}`}
             FormHelperTextProps={{
               sx: {
                 display: "flex",
@@ -369,22 +399,19 @@ function ProjectPromptDialog({ open, payload, onClose }) {
             onChange={(event) => {
               const value = event.target.value;
               if (value.length <= DESCRIPTION_LIMIT) {
-                setTags(value); // Fix: Update tags instead of description
+                setTags(value);
               }
             }}
             inputProps={{
               maxLength: DESCRIPTION_LIMIT,
             }}
-            helperText={
-              // Fix: Use tags.length instead of description.length
-              `Add tags to help organize your project • ${tags.length}/${DESCRIPTION_LIMIT}`
-            }
+            helperText={`Add comma-separated tags to help organize your project • ${tags.length}/${DESCRIPTION_LIMIT}`}
             FormHelperTextProps={{
               sx: {
                 display: "flex",
                 justifyContent: "space-between",
                 color:
-                  tags.length > DESCRIPTION_LIMIT * 0.9 // Fix: Use tags.length
+                  tags.length > DESCRIPTION_LIMIT * 0.9
                     ? "warning.main"
                     : "text.secondary",
               },
@@ -403,13 +430,12 @@ function ProjectPromptDialog({ open, payload, onClose }) {
           loading={loading}
           type="submit"
         >
-          {payload.okText ?? "Create Project"}
+          {payload.okText ?? (isEditMode ? "Save Changes" : "Create Project")}
         </Button>
       </DialogActions>
     </Dialog>
   );
 }
-
 ProjectPromptDialog.propTypes = {
   /**
    * A function to call when the dialog should be closed. If the dialog has a return
@@ -433,6 +459,15 @@ ProjectPromptDialog.propTypes = {
     okText: PropTypes.node,
     onClose: PropTypes.func,
     title: PropTypes.node,
+    initialData: PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      name: PropTypes.string,
+      description: PropTypes.string,
+      tags: PropTypes.oneOfType([
+        PropTypes.arrayOf(PropTypes.string),
+        PropTypes.string,
+      ]),
+    }),
   }).isRequired,
 };
 
@@ -504,6 +539,42 @@ ClearDataDialog.propTypes = {
 };
 
 export { ClearDataDialog };
+
+// Dialog to delete a project and its data
+function ProjectDeleteDialog({ open, payload, onClose }) {
+  const cancelButtonProps = useDialogLoadingButton(() => onClose(false));
+  const deleteButtonProps = useDialogLoadingButton(() => onClose(true));
+
+  return (
+    <Dialog maxWidth="xs" fullWidth open={open} onClose={() => onClose(false)}>
+      <DialogTitle>Delete Project</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          Are you sure you want to delete the project "{payload.projectName}"?
+          This action cannot be undone.
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button disabled={!open} {...cancelButtonProps}>
+          Cancel
+        </Button>
+        <Button color="error" disabled={!open} {...deleteButtonProps}>
+          Delete
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+ProjectDeleteDialog.propTypes = {
+  onClose: PropTypes.func.isRequired,
+  open: PropTypes.bool.isRequired,
+  payload: PropTypes.shape({
+    projectName: PropTypes.string.isRequired,
+  }).isRequired,
+};
+
+export { ProjectDeleteDialog };
 
 export function useDialogs() {
   const dialogsContext = React.useContext(DialogsContext);
