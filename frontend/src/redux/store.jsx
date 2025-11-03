@@ -5,6 +5,7 @@ import userReducer from "./userSlice";
 import authReducer from "./authSlice";
 import scenarioReducer from "./scenarioSlice";
 import optionReducer from "./optionSlice";
+import documentsReducer from "./documentSlice";
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     auth: authReducer,
     scenarios: scenarioReducer,
     options: optionReducer,
+    documents: documentsReducer,
   },
   // Add this to ensure state is properly initialized
   preloadedState: {

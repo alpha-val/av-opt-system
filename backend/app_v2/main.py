@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .api.v1.routers.projects import projects_router
 from .api.v1.routers.auth import auth_router
+from .api.v1.routers.documents import documents_router
 from .adapters.mongo.client import ensure_bronze_indexes
 
 
@@ -49,6 +50,7 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(projects_router)
     app.include_router(auth_router)
+    app.include_router(documents_router)
     
     # Simple health check endpoint
     @app.get("/health")

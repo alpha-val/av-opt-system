@@ -36,6 +36,10 @@ import {
   updateProject,
   deleteProject,
 } from "../../redux/projectSlice";
+import {
+  selectDocumentsByProject,
+  fetchDocumentsByProject,
+} from "../../redux/documentSlice";
 import { useDialogs } from "../../hooks/useDialogs/useDialogs";
 import Header from "../../components/widgets/Header";
 
@@ -49,15 +53,24 @@ const ProjectDetails = () => {
   const project = useSelector(selectCurrentProject);
   const loading = useSelector(selectLoading);
   const error = useSelector(selectError);
+  
+  // Get documents for this project from Redux
+  const projectDocuments = useSelector((state) =>
+    selectDocumentsByProject(state, projectId)
+  );
+  
+  // Calculate document count from Redux state
+  const documentCount = projectDocuments.length;
 
   // Local state
-  const [documentCount] = useState(0); // Placeholder - will be populated from API
   const [scenarioCount] = useState(0); // Placeholder - will be populated from API
 
   // Fetch project details on mount
   useEffect(() => {
     if (projectId) {
       dispatch(fetchProjectById(projectId));
+      // Also fetch documents to get accurate document count
+      dispatch(fetchDocumentsByProject(projectId));
     }
   }, [dispatch, projectId]);
 
@@ -198,94 +211,167 @@ const ProjectDetails = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Header userName="User" />
+      <Grid container spacing={3} sx={{ alignItems: "stretch" }}>
+        {/* Project Header */}
+        <Grid size={{ xs: 12, md: 6 }} sx={{ display: "flex" }}>
+          <Paper
+            elevation={1}
+            sx={{
+              p: 3,
+              mb: 2,
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                flex: 1,
+              }}
+            >
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="h4" fontWeight="bold" gutterBottom>
+                  {project.name}
+                </Typography>
+                {project.description && (
+                  <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
+                  >
+                    {project.description}
+                  </Typography>
+                )}
 
-      {/* Breadcrumbs */}
-      <Breadcrumbs sx={{ mb: 3 }}>
-        <Link
-          component="button"
-          variant="body1"
-          onClick={handleBack}
-          sx={{
-            textDecoration: "none",
-            "&:hover": { textDecoration: "underline" },
-          }}
-        >
-          Dashboard
-        </Link>
-        <Typography variant="body1" color="text.primary">
-          {project.name}
-        </Typography>
-      </Breadcrumbs>
-
-      {/* Project Header */}
-      <Paper elevation={1} sx={{ p: 3, mb: 2 }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-          }}
-        >
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
-              {project.name}
-            </Typography>
-            {project.description && (
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-                {project.description}
-              </Typography>
-            )}
-
-            {/* Tags */}
-            {tags.length > 0 && (
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
-                {tags.map((tag, index) => (
-                  <Chip
-                    key={index}
-                    label={tag}
-                    size="small"
-                    variant="outlined"
-                    icon={<TagIcon />}
-                  />
-                ))}
+                {/* Tags */}
+                {tags.length > 0 && (
+                  <Box
+                    sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}
+                  >
+                    {tags.map((tag, index) => (
+                      <Chip
+                        key={index}
+                        label={tag}
+                        size="small"
+                        variant="outlined"
+                        icon={<TagIcon />}
+                      />
+                    ))}
+                  </Box>
+                )}
+                {/* Date updated */}
+                <Box sx={{ mb: 0 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Last Updated
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{ display: "flex", alignItems: "center" }}
+                  >
+                    <CalendarIcon sx={{ mr: 1, fontSize: 16 }} />
+                    {formatDate(project.updated_at)}
+                  </Typography>
+                </Box>
               </Box>
-            )}
-            {/* Date updated */}
-            <Box sx={{ mb: 0 }}>
-              <Typography variant="body2" color="text.secondary">
-                Last Updated
-              </Typography>
+
+              {/* Action Buttons */}
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <IconButton onClick={handleEdit} title="Edit Project">
+                  <EditIcon />
+                </IconButton>
+                <IconButton
+                  onClick={handleDelete}
+                  title="Delete Project"
+                  color="error"
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
+            </Box>
+          </Paper>
+        </Grid>
+        {/* Project Statistics */}
+        <Grid size={{ xs: 12, md: 6 }} sx={{ display: "flex" }}>
+          <Paper
+            elevation={1}
+            sx={{
+              p: 3,
+              mb: 2,
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <Box
+              sx={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
               <Typography
-                variant="body1"
+                variant="h6"
+                gutterBottom
                 sx={{ display: "flex", alignItems: "center" }}
               >
-                <CalendarIcon sx={{ mr: 1, fontSize: 16 }} />
-                {formatDate(project.updated_at)}
+                <FolderIcon sx={{ mr: 1 }} />
+                Project Content
               </Typography>
+
+              <Grid container spacing={2} sx={{ flex: 1 }}>
+                <Grid size={6}>
+                  <Box sx={{ textAlign: "center", p: 2 }}>
+                    <Avatar
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        bgcolor: "primary.main",
+                        mx: "auto",
+                        mb: 1,
+                      }}
+                    >
+                      <DescriptionIcon />
+                    </Avatar>
+                    <Typography variant="h4" fontWeight="bold">
+                      {documentCount}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Documents
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid size={6}>
+                  <Box sx={{ textAlign: "center", p: 2 }}>
+                    <Avatar
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        bgcolor: "secondary.main",
+                        mx: "auto",
+                        mb: 1,
+                      }}
+                    >
+                      <FolderIcon />
+                    </Avatar>
+                    <Typography variant="h4" fontWeight="bold">
+                      {scenarioCount}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Scenarios
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
             </Box>
-          </Box>
-
-          {/* Action Buttons */}
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <IconButton onClick={handleEdit} title="Edit Project">
-              <EditIcon />
-            </IconButton>
-            <IconButton
-              onClick={handleDelete}
-              title="Delete Project"
-              color="error"
-            >
-              <DeleteIcon />
-            </IconButton>
-          </Box>
-        </Box>
-      </Paper>
-
+          </Paper>
+        </Grid>
+      </Grid>
       <Grid container spacing={3}>
         {/* Project Information */}
-        <Grid size={{ xs: 12, md: 6 }}>
+        {/* <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Typography
@@ -347,10 +433,10 @@ const ProjectDetails = () => {
               )}
             </CardContent>
           </Card>
-        </Grid>
+        </Grid> */}
 
         {/* Project Statistics */}
-        <Grid size={{ xs: 12, md: 6 }}>
+        {/* <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Typography
@@ -409,7 +495,7 @@ const ProjectDetails = () => {
               </Grid>
             </CardContent>
           </Card>
-        </Grid>
+        </Grid> */}
 
         {/* Recent Activity */}
         <Grid size={{ xs: 12 }}>
