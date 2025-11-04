@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from typing import List
 from ....domain.projects.schemas import ProjectCreate, ProjectUpdate, ProjectOut
+from ....domain.projects.schemas import ProjectEntitiesRelationsOut
 from ....domain.projects import services
 
 projects_router = APIRouter(prefix="/api/v1/projects", tags=["projects"])
@@ -39,3 +40,19 @@ async def delete_project(project_id: str):
     if not ok:
         raise HTTPException(status_code=404, detail="Project not found")
     return None
+
+# Clear project data: delete all documents, chunks, entities, relations, tables, scenarios, cost estimates
+@projects_router.delete("/{project_id}/data", status_code=status.HTTP_200_OK)
+async def clear_project_data(project_id: str):
+    result = await services.clear_data(project_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return result
+
+# Fetch project entities and relations
+@projects_router.get("/{project_id}/entities_relations", response_model=ProjectEntitiesRelationsOut)
+async def get_project_entities_relations(project_id: str):
+    result = await services.get_entities_relations(project_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return result

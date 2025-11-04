@@ -17,3 +17,6 @@ async def update(document_id: str, data: DocumentUpdate) -> Optional[DocumentRes
 
 async def delete(document_id: str) -> bool:
     return await repo.delete_document(document_id)
+
+async def process(document_id: str) -> Optional[DocumentResponse]:
+    return await repo.process_document(document_id)

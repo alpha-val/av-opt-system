@@ -6,10 +6,18 @@
   "python.terminal.activateEnvironment": true,
 
   // Help analysis resolve site-packages inside your venv
-  "python.analysis.extraPaths": [
-    "${workspaceFolder}/backend"
-  ],
+  "python.analysis.extraPaths": ["${workspaceFolder}/backend"],
   "postman.settings.dotenv-detection-notification-visibility": false,
   "github.copilot.chat.summarizeAgentConversationHistory.enabled": false,
-  "workbench.preferredDarkColorTheme": "Default Light+"
+  "workbench.preferredDarkColorTheme": "Default Light+",
+
+  "python.envFile": "${workspaceFolder}/backend/.env",
+  "python.analysis.diagnosticMode": "workspace",
+  "python.languageServer": "None",
+  "python.analysis.extraPaths": ["./"],
+  "python.analysis.indexing": true,
+  "cursorpyright.analysis.diagnosticMode": "workspace",
+  "cursorpyright.analysis.extraPaths": [
+    "./"
+  ]
 }

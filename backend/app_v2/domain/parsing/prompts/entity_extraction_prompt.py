@@ -1,17 +1,26 @@
 from typing import Dict, Any, List, Optional
-from ..ontology_v2 import AACE_ESTIMATE_CLASS_DEFINITION
 import json
 
-# Try to import from new app_v2 ontology first, fallback to old
-try:
-    from app_v2.domain.ontology.ontology import AV_MSIO_ONTOLOGY, ENTITY_ONTOLOGY
-    from app_v2.domain.ontology.ontology import get_default_ontology
-    default_ontology = get_default_ontology()
-    ontology_nodes_and_relations = default_ontology.get("entity_ontology", ENTITY_ONTOLOGY)
-except ImportError:
-    # Fallback to old ontology if app_v2 not available
-    from ..ontology import load_ontology, AV_MSIO_ONTOLOGY
-    ontology_nodes_and_relations = load_ontology()
+# Import from app_v2 ontology
+from ...ontology.ontology import AV_MSIO_ONTOLOGY, ENTITY_ONTOLOGY, get_default_ontology
+from ...ontology.loader import get_ontology as get_ontology_instance
+
+# Get ontology instance and convert to dict format for compatibility
+default_ontology = get_default_ontology()
+ontology_instance = get_ontology_instance()
+entity_ont = ontology_instance.entity_ontology
+
+# Convert EntityOntology to dict format expected by prompts
+ontology_nodes_and_relations = {
+    "NODE_TYPES": entity_ont.node_types,
+    "EDGE_TYPES": entity_ont.edge_types,
+    "NODE_PROPERTIES": entity_ont.node_properties,
+    "EDGE_PROPERTIES": entity_ont.edge_properties,
+    "NODE_DESCRIPTIONS": entity_ont.node_descriptions,
+    "EDGE_DESCRIPTIONS": entity_ont.edge_descriptions,
+    "NODE_PROP_EXAMPLES": entity_ont.node_prop_examples,
+    "EDGE_PROP_EXAMPLES": entity_ont.edge_prop_examples,
+}
 
 # Global objectives block
 global_objectives_block = """
@@ -375,6 +384,11 @@ nodes_and_relations_extraction_directives = """
     - Attach evidence and a confidence score to every node and edge using the
     allowed property names from NODE_PROPERTIES / EDGE_PROPERTIES.
     - Normalize entity names and deduplicate obvious variants.
+    - EVERY node MUST have MSIO ontology classification (discipline, category, subcategory, entity)
+    - EVERY node MUST match the MSIO ontology hierarchy exactly - no invented values
+    - Use ONLY Discipline/Category/Subcategory/Entity names from the provided MSIO ontology
+    - If an entity cannot be matched to MSIO ontology, DO NOT create the node (reject it)
+    - Use the MSIO matching workflow above for every entity extraction
 
     You MUST NOT:
     - Hallucinate entities, methods, or relationships.
@@ -393,6 +407,11 @@ nodes_and_relations_extraction_directives = """
     - "id": stable unique string identifier (uuid)
     - "type": one of NODE_TYPES; a Node object must have a type
     - "properties": object/dict containing:
+        • MANDATORY MSIO fields (all must be present and match ontology):
+          - "discipline": string (MUST match an MSIO Discipline name exactly)
+          - "category": string (MUST match an MSIO Category name within that Discipline)
+          - "subcategory": string (MUST match an MSIO Subcategory name within that Category)
+          - "entity": string (MUST match an MSIO Entity name within that Subcategory, or closest match)
         • follow the properties mentioned in NODE_PROPERTIES in the ontology
         • prioritize finding cost associated with an entity (e.g., 'cost_value', 'price_value', 'currency', 'basis_year', 'expenditure')
         • always keep cost value and currency as separate properties (never as a combined string)
@@ -402,9 +421,6 @@ nodes_and_relations_extraction_directives = """
         • if basis year is not present, omit 'basis_year'
         • include evidence/confidence meta-properties from NODE_PROPERTIES
         • include any other domain-specific properties from NODE_PROPERTIES that appear in the text
-    - MSIO ontology metadata MUST include:
-        • Discipline, Category, and Subcategory attributes and their values
-        • See the example for an illustration of required properties
     - "name": human-readable name (string)
 
     Edge object (each item in extract_edges.edges) MUST have:
@@ -430,7 +446,15 @@ nodes_and_relations_extraction_directives = """
     - For nodes of type 'CostEstimate' or similar, ensure costing details are present.
     - For node properties that are costs/prices, always extract and store the numeric value and currency as separate properties.
     - For node properties that are costs/prices, include currency and basis_year when available.
-    - For node properties include MSIO ontology metadata (Discipline, Category, Subcategory).
+    - MSIO ONTOLOGY VALIDATION (MANDATORY):
+      ✓ Every node.properties.discipline exists in MSIO ontology disciplines list
+      ✓ Every node.properties.category exists within the matched Discipline
+      ✓ Every node.properties.subcategory exists within the matched Category
+      ✓ Every node.properties.entity exists within the matched Subcategory (or is closest match)
+      ✓ All MSIO fields are non-empty strings
+      ✓ No nodes have MSIO fields that don't exist in the ontology
+      ✓ If MSIO match is partial/inferred, confidence < 0.7 and rationale provided
+      ✓ Reject any nodes that cannot be matched to at least Discipline+Category+Subcategory
     - Every edge: valid 'source', 'target', 'type', and a 'properties' dict.
     - Every edge property key matches EDGE_PROPERTIES.
     - For node and edge, include evidence; evidence must be present and derived from the text.
@@ -462,9 +486,15 @@ nodes_and_relations_extraction_directives = """
             "category": "string",               // Required; Category from the MSIO ontology
             "subcategory": "string",            // Required; Subcategory from the MSIO ontology
             "entity": "string",                // Required; Entity from the MSIO ontology
-            "attribute_key": "attribute_value", // Example: "design_flowrate_value": 500
-            "attribute_unit": "unit_value"      // Example: "design_flowrate_unit": "gpm"
-            "attribute_key": "raw text value"   // Example: "Design flowrate": "500 gpm"
+            "attributes": [                     // Array of attribute objects (see STEP 6)
+                {{
+                    "name": "string",           // Attribute name from ontology (e.g., "Design flowrate")
+                    "value": "number|null",     // Attribute value (e.g., 500) or null if not present
+                    "unit": "string|null",      // Attribute unit (e.g., "gpm") or null if not present
+                    "evidence_text": "string|null", // Text snippet used to extract attribute
+                    "confidence": 0.0-1.0        // Confidence score for this attribute
+                }}
+            ],
             "tableId": "t1",
             "rowIndex": 3,
             "colIndex": 5,
@@ -503,32 +533,53 @@ nodes_and_relations_extraction_directives = """
     EXAMPLES (SCHEMATIC)
     --------------------------------------------------------------------------------
     Input snippet:
-    “Two base pump units (centrifugal) sized for 500 gpm at 120 ft head with
-    mechanical seals. Vendor datasheet attached.”
+    "Two base pump units (centrifugal) sized for 500 gpm at 120 ft head with
+    mechanical seals. Vendor datasheet attached."
 
     Classification:
-        Discipline: Mechanical Equipment
-        Category: Pumps
-        Subcategory: Centrifugal
-        Entity: Base pump unit
+        Discipline: Mechanical Equipment (matches MSIO)
+        Category: Pumps (matches MSIO within Mechanical Equipment)
+        Subcategory: Centrifugal (matches MSIO within Pumps)
+        Entity: Base pump unit (matches MSIO within Centrifugal)
 
     Node (sketch):[
         {{
         "id": "mech_pump_001",
-        "type": "OntologyItem",
+        "type": "Equipment",
         "properties": {{
+            "name": "Centrifugal Pump 500 gpm",
             "discipline": "Mechanical Equipment",
             "category": "Pumps",
             "subcategory": "Centrifugal",
             "entity": "Base pump unit",
-            "design_flowrate_value": 500,
-            "design_flowrate_unit": "gpm",
-            "capacity": "120 ft head",
-            "capacity_value": 120,
-            "capacity_unit": "ft",
+            "attributes": [
+                {{
+                    "name": "Design flowrate",
+                    "value": 500,
+                    "unit": "gpm",
+                    "evidence_text": "sized for 500 gpm",
+                    "confidence": 0.95
+                }},
+                {{
+                    "name": "Head",
+                    "value": 120,
+                    "unit": "ft",
+                    "evidence_text": "at 120 ft head",
+                    "confidence": 0.95
+                }},
+                {{
+                    "name": "NPSH",
+                    "value": null,
+                    "unit": null,
+                    "evidence_text": null,
+                    "confidence": 0.0
+                }}
+            ],
             "seal_type": "mechanical",
-            "evidence_text": "...500 gpm at 120 ft head with mechanical seals..."
-            "confidence": 0.92
+            "evidence_text": "...500 gpm at 120 ft head with mechanical seals...",
+            "confidence": 0.92,
+            "created_at": "2024-01-01T12:00:00Z",
+            "updated_at": "2024-01-01T12:00:00Z"
         }}
     }}, ...]
     Edges:
@@ -690,147 +741,6 @@ prov_conf_block = """
         <0.5 omit
 """
 
-# Summary extraction block
-# PROMPT_DISCIPLINE_STRUCTURED_SUMMARY = """
-# --------------------------------------------------------------------------------
-# ONTOLOGY-ALIGNED FAITHFUL SUMMARY GENERATION — ALPHA-VAL MINING CONTEXT
-# --------------------------------------------------------------------------------
-# Goal
-# Create a **comprehensive, structured summary** of the supplied Base Case or project
-# document, aligned with the AV_MSIO_ONTOLOGY disciplines.
-
-# This summary must preserve every salient piece of information required to recreate the
-# document’s content and context — including engineering workflows, systems,
-# equipment specifications, materials, design parameters, operational constraints,
-# policies, assumptions, and cost factors — **organized by discipline**.
-
-# --------------------------------------------------------------------------------
-# INSTRUCTIONS
-# --------------------------------------------------------------------------------
-# For each discipline listed below, extract and summarize **all** relevant content from the
-# document. If a discipline is not mentioned, explicitly state “No information found.”
-
-# Each discipline section should contain subsections for:
-# - Overview / Role in Project
-# - Key Workflows and Systems
-# - Equipment and Entities (include specs, type, capacity, duty, vendor if available)
-# - Materials and Consumables
-# - Design Parameters and Constraints
-# - Policies, Standards, and QA/QC
-# - Objectives, KPIs, and Targets
-# - Risks, Assumptions, and Data Gaps
-# - Interdependencies with other disciplines
-
-# --------------------------------------------------------------------------------
-# DISCIPLINES (as defined in ALPHA-VAL-MINING-STRUCTURED-INDUSTRIAL-ONTOLOGY)
-# --------------------------------------------------------------------------------
-# 1. Mechanical Equipment
-#    - Pumps (Centrifugal, Positive Displacement)
-#    - Vessels (Reactors, Separators)
-#    - Tanks (Fixed, Floating Roof)
-#    - Heat Exchangers (Shell-and-tube)
-#    - Compressors/Blowers (Centrifugal/Turbo)
-#    - Material Handling (Belt, Screw)
-#    - Utilities (Cooling Tower)
-#    - Specialty (Agitators)
-#    - Process Equipment (Grinding Mills)
-
-# 2. Civil
-#    - Site Works (Grading)
-#    - Access (Roads, Paving)
-#    - Stormwater (Retention, Channels)
-#    - Utilities – Site (Duct banks)
-#    - Hydrology (Culverts/Drainage)
-#    - Survey (Topography)
-
-# 3. Structural
-#    - Steelwork (Platforms, Walkways)
-#    - Pipe Supports (Racks)
-#    - Buildings (Control Room, MCC)
-#    - Foundations Interface (Embed Plates)
-
-# 4. Concrete
-#    - Foundations (Footings)
-#    - Slabs (Slab on Grade)
-#    - Retaining (Walls)
-#    - Precast (Manholes)
-
-# 5. Piping
-#    - Process Lines (Large Bore, Small Bore)
-#    - Materials (CS/SS/HDPE/FRP)
-#    - Insulation (Heat Tracing)
-#    - Testing (Hydrotest, Pneumatic)
-
-# 6. Instrumentation
-#    - Flow/Level (Flow Meters)
-#    - Temperature & Pressure (Transmitters)
-#    - Analyzers & Safety (Gas Detectors, pH)
-#    - Cabling & Termination (Junction Boxes)
-
-# 7. Control
-#    - Control Systems (PLC/DCS/SCADA)
-#    - Interfaces (HMI, Historian)
-#    - Network & Cyber (Firewalls, Switches)
-#    - I/O (Remote Panels)
-
-# 8. Electrical
-#    - Distribution (Transformers)
-#    - Switchgear (MCC/SWGR)
-#    - Cabling (Power & Control Cables)
-
-# 9. Safety/Environment
-#    - Fire Protection (Sprinklers, Hydrants)
-#    - Containment (Bunds)
-#    - Ventilation (Dust Extraction, Ducting)
-
-# 10. Utilities
-#     - Compressed Air (Network)
-#     - Cooling Water (Pumps, Heat Exchangers)
-
-# 11. Construction/Commissioning
-#     - QA/QC (Inspections, Testing)
-#     - Commissioning (Pre-startup Safety Reviews)
-
-# 12. Costs & Economics
-#     - Capex (Direct, Indirect)
-#     - Opex
-#     - Contingency
-
-# 13. Process / Workflow / Operations
-#     - Process Flow (Diagrams)
-#     - Operational Steps
-#     - Maintenance Procedures
-    
-# --------------------------------------------------------------------------------
-# OUTPUT REQUIREMENTS
-# --------------------------------------------------------------------------------
-# Return your summary as a **single structured text block** formatted as
-# Markdown-style headings. Example structure:
-
-# # Project Overview
-# ## Mechanical Equipment
-# ### Pumps
-# - Key equipment, capacity, vendor, duties
-# - Constraints, operating ranges, materials
-# ### Heat Exchangers
-# - Type, duty, assumptions, interdependencies
-# ...
-
-# Ensure:
-# - Explicit mention of missing data (e.g., “No mention of compressors”)
-# - Inclusion of all numeric, parametric, or constraint details (e.g., “Flowrate: 300 m³/h”)
-# - Capture of all assumptions, uncertainties, and cost linkages
-# - Preservation of technical context (why, how, dependencies)
-# - Capture details of processes, workflows, and operational procedures
-# - Aim for detailed completeness over brevity
-
-# --------------------------------------------------------------------------------
-# FINAL OUTPUT
-# --------------------------------------------------------------------------------
-# Call the `extract_structured_report` tool with:
-# - `structured_summary`: your full ontology-aligned summary text
-# --------------------------------------------------------------------------------
-# """
 
 PROMPT_DISCIPLINE_STRUCTURED_SUMMARY = """
 --------------------------------------------------------------------------------
@@ -1099,20 +1009,87 @@ END
 # Load MSIO ontology
 MSIO_ONTOLOGY_TEXT = json.dumps(AV_MSIO_ONTOLOGY, indent=1)
 
+# Extract discipline names for quick reference
+MSIO_DISCIPLINE_NAMES = [d["name"] for d in AV_MSIO_ONTOLOGY.get("disciplines", [])]
 
-def build_prompt_v4(rules: Optional[List[str]] = None) -> str:
+
+def get_entity_extraction_prompt(rules: Optional[List[str]] = None) -> str:
     """Builds a prompt for base-case extraction with a simple ontology mapper."""
 
-    # Ontology mapping block
-    ontology_mapping_block = f"""\
+    # MSIO Quick Reference Helper
+    msio_reference_helper = f"""\
     --------------------------------------------------------------------------------
-    ONTOLOGY REFERENCE (INLINE, SOURCE OF TRUTH)
+    MSIO ONTOLOGY QUICK REFERENCE
     --------------------------------------------------------------------------------
-    Map each entity (nodes) to this hierarchical ontology:
-    - Discipline → Category → Subcategory → Entity
+    Valid Disciplines (case-insensitive match):
+    {', '.join(MSIO_DISCIPLINE_NAMES)}
 
-  Ontology:
-  {MSIO_ONTOLOGY_TEXT}
+    For each Discipline, valid Categories can be found in the full ontology JSON below.
+    For each Category, valid Subcategories can be found in the full ontology JSON below.
+    For each Subcategory, valid Entities can be found in the full ontology JSON below.
+
+    MATCHING STRATEGY:
+    1. Use case-insensitive string matching
+    2. Normalize whitespace (collapse multiple spaces)
+    3. Handle common synonyms (e.g., "pump" → match to "Pumps" category)
+    4. If exact match fails, look for partial matches (e.g., "centrifugal pump" → "Centrifugal" subcategory)
+    """
+
+    # MSIO Matching Workflow
+    msio_matching_workflow = """\
+    --------------------------------------------------------------------------------
+    MANDATORY MSIO ONTOLOGY MATCHING WORKFLOW
+    --------------------------------------------------------------------------------
+    EVERY entity extracted MUST be classified using the MSIO ontology. Follow this
+    exact workflow for each entity mention in the text:
+
+    STEP 1: Identify the entity mention
+    - Extract the entity name/description from text
+    - Note surrounding context (e.g., "pump", "tank", "conveyor belt")
+
+    STEP 2: Match to Discipline (top-down search)
+    - Start with Discipline names in the MSIO ontology
+    - Match case-insensitively (e.g., "mechanical equipment" = "Mechanical Equipment")
+    - If no match, entity CANNOT be classified - set confidence < 0.5 and note in rationale
+
+    STEP 3: Match to Category (within matched Discipline)
+    - Search Categories within the matched Discipline
+    - Match case-insensitively
+    - If no match, entity CANNOT be classified - set confidence < 0.5
+
+    STEP 4: Match to Subcategory (within matched Category)
+    - Search Subcategories within the matched Category
+    - Match case-insensitively
+    - If no match, entity CANNOT be classified - set confidence < 0.5
+
+    STEP 5: Match to Entity (within matched Subcategory)
+    - Search Entity names within the matched Subcategory
+    - Match case-insensitively (e.g., "base pump unit" = "Base pump unit")
+    - Extract attributes from the "attributes" list for this Entity
+    - If no match, try to find closest match or use Subcategory name as fallback
+
+    STEP 6: Extract Attributes
+    - For the matched Entity, check the "attributes" list in the ontology
+    - For each attribute in the ontology list:
+      * If the attribute is present in the text, extract the value and unit from the text
+      * If the attribute is not present in the text, set the attribute value to null and the attribute unit to null
+    - Extract any additional attributes found in the text that are not in the ontology list (these may be entity-specific details)
+    - Use the attribute names exactly as listed in the ontology (e.g., "Design flowrate", "Head", "NPSH")
+    - Create an object for each attribute with the following properties:
+      * "name": the attribute name
+      * "value": the attribute value
+      * "unit": the attribute unit
+      * "evidence_text": the text that was used to extract the attribute
+      * "confidence": the confidence score for the attribute
+    - Normalize attribute fields per the Attribute Extraction rules
+
+    REJECTION CRITERIA:
+    - If you cannot match to at least Discipline + Category + Subcategory, DO NOT create the entity
+    - If Entity field cannot be matched, you MAY create the entity but MUST:
+      - Set confidence < 0.7
+      - Add rationale: "Entity name not found in MSIO ontology; using closest match"
+      - Still include all four fields: discipline, category, subcategory, entity
+
 
     --------------------------------------------------------------------------------
     MATCHING & CLASSIFICATION RULES
@@ -1120,7 +1097,7 @@ def build_prompt_v4(rules: Optional[List[str]] = None) -> str:
     1) Match Scope
     - A mention in the report maps to exactly one ontology data above (Discipline,
         Category, Subcategory, Entity). Prefer the most specific match (Entity).
-    - If the report uses synonyms (e.g., “float roof” vs “Float Roof”), normalize
+    - If the report uses synonyms (e.g., "float roof" vs "Float Roof"), normalize
         via case-insensitive matching and simple singular/plural folding.
 
     2) Exactness & Fallback
@@ -1132,18 +1109,65 @@ def build_prompt_v4(rules: Optional[List[str]] = None) -> str:
     3) Attribute Extraction
     - For a matched ontology row, parse the listed Attributes from the local
         context (sentence/table row). Extract numbers and units where present.
-    - Create normalized fields from attribute labels using snake_case and
-        value/unit splitting where sensible (e.g., “Design flowrate” →
-        design_flowrate_value, design_flowrate_unit).
-    - Preserve the original text snippet as evidence_text.
+    - Create attribute objects as specified in STEP 6 with the following structure:
+        * Each attribute must be an object with: name, value, unit, evidence_text, confidence
+        * Store attributes in an "attributes" array in the node properties
+        * Use attribute names exactly as listed in the ontology (e.g., "Design flowrate", "Head")
+        * For attributes not present in text, set value and unit to null
+        * Preserve the original text snippet as evidence_text for each attribute
         
     4) Matching is case-insensitive.
       
-  Examples:
-    - "Concrete" -> {{"Discipline": "Materials", "Category": "Concrete", "Subcategory": "Reinforced Concrete", "Entity": "Reinforced Concrete"}}
-    - "Stainless steel tank" -> {{"Discipline": "Equipment", "Category": "Storage Tanks", "Subcategory": "Metal Tanks", "Entity": "Stainless Steel Tank"}}
-    - Process:"Engineering & procurement" -> {{"Discipline": "Project Management", "Category": "Engineering", "Subcategory": "Engineering & Procurement", "Entity": "Engineering & Procurement"}}
-    - Scenario:"Low-cost Budget" -> {{"Discipline": "Scenarios", "Category": "Budget Scenarios", "Subcategory": "Low-cost Budget", "Entity": "Low-cost Budget"}}
+    Examples (using actual MSIO ontology):
+    - Input: "Two centrifugal pumps sized for 500 gpm at 120 ft head"
+      Classification:
+        Discipline: "Mechanical Equipment" (matches MSIO)
+        Category: "Pumps" (matches MSIO within Mechanical Equipment)
+        Subcategory: "Centrifugal" (matches MSIO within Pumps)
+        Entity: "Base pump unit" (matches MSIO within Centrifugal)
+        Attributes: "Design flowrate" (500 gpm), "Head" (120 ft)
+
+    - Input: "Storage tank with fixed roof"
+      Classification:
+        Discipline: "Mechanical Equipment"
+        Category: "Tanks"
+        Subcategory: "Storage Tank"
+        Entity: "Fixed Roof"
+
+    - Input: "Concrete spread footings"
+      Classification:
+        Discipline: "Concrete"
+        Category: "Foundations"
+        Subcategory: "Footings"
+        Entity: "Spread footings"
+
+
+
+    VALIDATION CHECKLIST (before returning):
+    ✓ Every node has properties.discipline matching an MSIO Discipline name exactly
+    ✓ Every node has properties.category matching an MSIO Category name within that Discipline
+    ✓ Every node has properties.subcategory matching an MSIO Subcategory name within that Category  
+    ✓ Every node has properties.entity matching an MSIO Entity name within that Subcategory (or closest match)
+    ✓ All four MSIO fields are present and non-empty
+    ✓ Attribute names match those listed in the ontology for that Entity
+    """
+
+    # Ontology mapping block (MANDATORY - always included)
+    ontology_mapping_block = f"""\
+    --------------------------------------------------------------------------------
+    MSIO ONTOLOGY REFERENCE (MANDATORY - ALL ENTITIES MUST MATCH)
+    --------------------------------------------------------------------------------
+    Map each entity (nodes) to this hierarchical ontology:
+    - Discipline → Category → Subcategory → Entity
+
+    {msio_reference_helper}
+
+    --------------------------------------------------------------------------------
+    FULL MSIO ONTOLOGY JSON (SOURCE OF TRUTH)
+    --------------------------------------------------------------------------------
+    {MSIO_ONTOLOGY_TEXT}
+
+    {msio_matching_workflow}
 
     """
 
@@ -1172,8 +1196,8 @@ def build_prompt_v4(rules: Optional[List[str]] = None) -> str:
 
     Required output:
     --------------------------------------------------------------------------------
-    # ONTOLOGY
-    {ontology_mapping_block if "MSIO_ONTOLOGY" in (rules or []) else ""}
+    # ONTOLOGY (MANDATORY - ALL ENTITIES MUST MATCH MSIO)
+    {ontology_mapping_block}
     
     # NODES & RELATIONS EXTRACTION RULES
     {nodes_and_relations_extraction_block if "NODES_AND_RELATIONS" in (rules or []) else ""}
@@ -1213,10 +1237,21 @@ def build_prompt_v4(rules: Optional[List[str]] = None) -> str:
     ✗ Don’t: split on “/” in other fields (Subcategory, Category, Discipline).
     
     --------------------------------------------------------------------------------
+    FINAL VALIDATION REMINDER
+    --------------------------------------------------------------------------------
+    Before calling extract_nodes(), verify:
+    1. Every entity has been matched to MSIO ontology using the workflow above
+    2. All discipline/category/subcategory/entity values exist in the provided MSIO ontology
+    3. No entities have been created that don't match MSIO hierarchy
+    4. Confidence scores reflect MSIO matching quality (exact match = 0.9-1.0, partial = 0.7-0.8, inferred = <0.7)
+    5. All four MSIO fields (discipline, category, subcategory, entity) are present and non-empty
+    6. Reject any entities that cannot be matched to at least Discipline+Category+Subcategory
+
+    --------------------------------------------------------------------------------
     FINAL DELIVERABLE
     --------------------------------------------------------------------------------
     Return nodes with extract_nodes(nodes=[...]), edges with extract_edges(edges=[...]), 
-    scenarios with extract_scenarios(scenarios=[...]), and extract structured report with extract_structured_report(base_case_report={...}) as per the output contract.
+    scenarios with extract_scenarios(scenarios=[...]), and extract structured report with extract_structured_report(base_case_report={{...}}) as per the output contract.
     """
 
     return prompt

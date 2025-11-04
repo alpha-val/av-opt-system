@@ -14,6 +14,7 @@ import ProjectDetails from "./ProjectDetails";
 import DocumentsTab from "./tabs/DocumentsTab";
 import ScenariosTab from "./tabs/ScenariosTab";
 import CostEstimatesTab from "./tabs/CostEstimatesTab";
+import ViewDataTab from "./tabs/ViewDataTab";
 import {
   fetchProjectById,
   selectCurrentProject,
@@ -79,6 +80,7 @@ const ProjectDashboard = () => {
         >
           <Tab label="Project Details" />
           <Tab label="Documents" />
+          <Tab label="View Data" />
           <Tab label="Scenarios" />
           <Tab label="Cost Estimates" />
         </Tabs>
@@ -88,8 +90,9 @@ const ProjectDashboard = () => {
       <Box sx={{ width: "100%" }}>
         {activeTab === 0 && <ProjectDetails />}
         {activeTab === 1 && <DocumentsTab projectId={projectId} />}
-        {activeTab === 2 && <ScenariosTab projectId={projectId} />}
-        {activeTab === 3 && <CostEstimatesTab projectId={projectId} />}
+        {activeTab === 2 && <ViewDataTab projectId={projectId} />}
+        {activeTab === 3 && <ScenariosTab projectId={projectId} />}
+        {activeTab === 4 && <CostEstimatesTab projectId={projectId} />}
       </Box>
     </Box>
   );

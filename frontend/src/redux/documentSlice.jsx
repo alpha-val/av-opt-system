@@ -98,6 +98,43 @@ export const fetchDocumentById = createAsyncThunk(
   }
 );
 
+// Ingest base case document
+export const ingestBaseCaseDocument = createAsyncThunk(
+  "documents/ingestBaseCaseDocument",
+  async ({ file, projectId, artifactType, metadata = {} }, { rejectWithValue }) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("project_id", projectId);
+      formData.append("artifact_type", artifactType);
+      formData.append("metadata", JSON.stringify(metadata));
+      const response = await fetch(`${API_BASE_URL}/etl/base-case`, {
+        method: "POST",
+        headers: getAuthHeadersForUpload(), // Use upload headers (no Content-Type)
+        body: formData,
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          throw new Error(
+            `HTTP error! status: ${response.status}, message: ${errorText}`
+          );
+        }
+        throw new Error(
+          errorData.detail || `HTTP error! status: ${response.status}`
+        );
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 // Upload document with file
 export const uploadDocument = createAsyncThunk(
   "documents/uploadDocument",
@@ -361,6 +398,33 @@ const documentSlice = createSlice({
       .addCase(uploadDocument.rejected, (state, action) => {
         state.loading.upload = false;
         state.uploadProgress = 0;
+        state.error = action.payload;
+      })
+
+      // ingestBaseCaseDocument cases
+      .addCase(ingestBaseCaseDocument.pending, (state) => {
+        state.loading.ingestBaseCase = true;
+        state.error = null;
+      })
+      .addCase(ingestBaseCaseDocument.fulfilled, (state, action) => {
+        state.loading.ingestBaseCase = false;
+        // Handle response structure: may be {document, processing} or just document
+        const document = action.payload.document || action.payload;
+        if (document && document.id) {
+          // Check if document already exists
+          const existingIndex = state.documents.findIndex(
+            (doc) => doc.id === document.id
+          );
+          if (existingIndex !== -1) {
+            state.documents[existingIndex] = document;
+          } else {
+            state.documents.push(document);
+          }
+        }
+        state.error = null;
+      })
+      .addCase(ingestBaseCaseDocument.rejected, (state, action) => {
+        state.loading.ingestBaseCase = false;
         state.error = action.payload;
       })
 

@@ -513,13 +513,26 @@ export const clearAllProjectData = createAsyncThunk(
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          throw new Error(
+            `HTTP error! status: ${response.status}, message: ${errorText}`
+          );
+        }
         throw new Error(
           errorData.detail || `HTTP error! status: ${response.status}`
         );
       }
 
-      const data = await response.json();
+      // Handle 204 No Content or 200 OK with JSON
+      let data = {};
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      }
 
       return {
         projectId,

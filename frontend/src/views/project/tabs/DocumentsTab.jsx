@@ -1,26 +1,31 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Box, Typography, Paper, Grid, Alert } from "@mui/material";
+import { Box, Typography, Paper, Grid, Alert, Button } from "@mui/material";
 import {
   PictureAsPdf as PdfIcon,
   TableChart as XlsIcon,
+  DeleteSweep,
 } from "@mui/icons-material";
 import FileUpload from "../../../components/widgets/FileUpload";
 import {
-  uploadDocument,
+  ingestBaseCaseDocument,
   fetchDocumentsByProject,
   selectDocumentsByProjectAndType,
   selectDocumentsLoading,
   selectDocumentsError,
   selectUploadProgress,
 } from "../../../redux/documentSlice";
+import { clearAllProjectData } from "../../../redux/dataSlice";
+import { useDialogs } from "../../../hooks/useDialogs/useDialogs";
 import DocumentList from "../documents/DocumentList.jsx";
 
 const DocumentsTab = ({ projectId }) => {
   const dispatch = useDispatch();
+  const dialogs = useDialogs();
   const [uploadError, setUploadError] = useState(null);
   const [uploadSuccess, setUploadSuccess] = useState(null);
   const [uploadingType, setUploadingType] = useState(null); // "base_case" or "tabular_data"
+  const [clearingData, setClearingData] = useState(false);
 
   // Get documents from Redux
   const baseCaseDocuments = useSelector((state) =>
@@ -67,7 +72,7 @@ const DocumentsTab = ({ projectId }) => {
       // Upload each file
       for (const fileObj of files) {
         const result = await dispatch(
-          uploadDocument({
+          ingestBaseCaseDocument({
             file: fileObj.file,
             projectId: projectId,
             artifactType: "base_case",
@@ -161,15 +166,82 @@ const DocumentsTab = ({ projectId }) => {
     setTimeout(() => setUploadError(null), 5000);
   };
 
+  // Handle clear all project data
+  const handleClearAllData = async () => {
+    if (!projectId) {
+      setUploadError("Project ID is required");
+      return;
+    }
+
+    const confirmed = await dialogs.clearData(
+      "This will permanently delete ALL project data including documents, entities, scenarios, tables, and all associated data. This action cannot be undone.",
+      {
+        title: "Clear All Project Data",
+        warningMsg: "This action will permanently delete ALL data associated with this project, including:",
+        msg: "All documents, entities, relations, scenarios, tables, cost estimates, and vector embeddings will be deleted. This action cannot be undone. Are you absolutely sure?",
+        okText: "Clear All Data",
+        cancelText: "Cancel",
+        severity: "error",
+      }
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setClearingData(true);
+    setUploadError(null);
+    setUploadSuccess(null);
+
+    try {
+      const result = await dispatch(
+        clearAllProjectData({ projectId })
+      ).unwrap();
+
+      const total = result.deleted_counts?.total_items || 0;
+      setUploadSuccess(
+        `Successfully cleared all project data. Deleted ${total} items.`
+      );
+
+      // Refresh documents list
+      dispatch(fetchDocumentsByProject(projectId));
+
+      // Clear success message after 5 seconds
+      setTimeout(() => setUploadSuccess(null), 5000);
+    } catch (error) {
+      console.error("Clear project data error:", error);
+      setUploadError(
+        `Failed to clear project data: ${error.message || error}`
+      );
+      setTimeout(() => setUploadError(null), 5000);
+    } finally {
+      setClearingData(false);
+    }
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       {/* Header */}
-      <Typography variant="h5" gutterBottom sx={{ mb: 1 }}>
-        Project Documents
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Upload base case reports and tabular data files for your project.
-      </Typography>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+        <Box>
+          <Typography variant="h5" gutterBottom>
+            Project Documents
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Upload base case reports and tabular data files for your project.
+          </Typography>
+        </Box>
+        <Button
+          variant="outlined"
+          color="error"
+          startIcon={<DeleteSweep />}
+          onClick={handleClearAllData}
+          disabled={clearingData || baseCaseUploading || tabularDataUploading}
+          sx={{ ml: "auto", minWidth: "200px" }}
+        >
+          {clearingData ? "Clearing..." : "Clear All Project Data"}
+        </Button>
+      </Box>
 
       {/* Error Alert */}
       {uploadError && (
@@ -258,3 +330,4 @@ const DocumentsTab = ({ projectId }) => {
 };
 
 export default DocumentsTab;
+

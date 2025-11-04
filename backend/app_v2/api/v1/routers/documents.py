@@ -95,3 +95,8 @@ async def update_document(document_id: str, payload: DocumentUpdate):
 async def delete_document(document_id: str):
     print(f"[DEBUG : documents.py] Deleting document: {document_id}")
     return await services.delete(document_id)
+
+@documents_router.post("/{document_id}/process", response_model=DocumentResponse)
+async def process_document(document_id: str):
+    print(f"[DEBUG : documents.py] Processing document: {document_id}")
+    return await services.process(document_id)
