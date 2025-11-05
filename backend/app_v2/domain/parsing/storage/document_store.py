@@ -7,6 +7,7 @@ Handles storage of entities, edges, chunks, and document metadata in MongoDB.
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
 from pymongo import UpdateOne
+from pymongo.errors import BulkWriteError
 from app.bronze_store import db
 import uuid
 import logging
@@ -205,26 +206,52 @@ class DocumentStore:
                 relation["updated_at"] = datetime.now(timezone.utc).isoformat()
         
         # Prepare bulk operations
-        ops = [
-            UpdateOne(
-                {
-                    "source": relation.get("source"),
-                    "target": relation.get("target"),
-                    "type": relation.get("type")
-                },
-                {"$set": relation},
-                upsert=True
+        ops = []
+        for relation in relations:
+            # Create update document without _id (MongoDB doesn't allow updating _id in $set)
+            update_doc = {k: v for k, v in relation.items() if k != "_id"}
+            
+            # Match on source/target/type combination (most reliable for relations)
+            query = {
+                "source": relation.get("source"),
+                "target": relation.get("target"),
+                "type": relation.get("type")
+            }
+            
+            # Build update operation
+            update_op = {"$set": update_doc}
+            
+            # If _id is provided, set it only on insert (not on update)
+            if "_id" in relation:
+                update_op["$setOnInsert"] = {"_id": relation["_id"]}
+            
+            ops.append(
+                UpdateOne(
+                    query,
+                    update_op,
+                    upsert=True
+                )
             )
-            for relation in relations
-        ]
         
         if ops:
-            result = self._db.relations.bulk_write(ops, ordered=False)
-            logger.info(
-                f"Bulk upserted relations - Matched: {result.matched_count}, "
-                f"Modified: {result.modified_count}, Upserted: {result.upserted_count}"
-            )
-            return result.upserted_count + result.modified_count
+            try:
+                result = self._db.relations.bulk_write(ops, ordered=False)
+                logger.info(
+                    f"Bulk upserted relations - Matched: {result.matched_count}, "
+                    f"Modified: {result.modified_count}, Upserted: {result.upserted_count}"
+                )
+                return result.upserted_count + result.modified_count
+            except BulkWriteError as e:
+                # Log write errors but continue
+                write_errors = e.details.get('writeErrors', [])
+                if write_errors:
+                    logger.warning(f"Some relations failed to upsert: {len(write_errors)} errors")
+                    for error in write_errors[:5]:  # Log first 5 errors
+                        logger.warning(f"  Error {error.get('code')}: {error.get('errmsg')}")
+                # Return successful operations count
+                return (e.details.get('nInserted', 0) + 
+                       e.details.get('nUpserted', 0) + 
+                       e.details.get('nModified', 0))
         
         return 0
     

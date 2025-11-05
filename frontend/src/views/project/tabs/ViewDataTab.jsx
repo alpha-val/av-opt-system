@@ -23,6 +23,7 @@ import {
   selectDataLoading,
   selectDataError,
 } from "../../../redux/dataSlice";
+import { selectDocumentsLoading } from "../../../redux/documentSlice";
 
 import EntityDetailsTable from "../data/EntityDetailsTable";
 import RelationsDetailsView from "../data/RelationsDetailsView";
@@ -34,7 +35,7 @@ const ViewDataTab = ({ projectId }) => {
   // Get raw entities data
   const rawEntities =
     useSelector((state) => selectEntitiesByProject(state, projectId)) || [];
-
+  console.log("rawEntities", rawEntities);
   // Sort entities by type, then by name
   const entities = useMemo(() => {
     return [...rawEntities].sort((a, b) => {
@@ -100,6 +101,17 @@ const ViewDataTab = ({ projectId }) => {
 
   const loading = useSelector(selectDataLoading);
   const error = useSelector(selectDataError);
+  const documentsLoading = useSelector(selectDocumentsLoading);
+
+  // Track previous ingestion state to detect completion
+  const prevIngestBaseCaseRef = React.useRef(false);
+  const prevUploadRef = React.useRef(false);
+
+  // Initialize refs on mount
+  React.useEffect(() => {
+    prevIngestBaseCaseRef.current = documentsLoading.ingestBaseCase;
+    prevUploadRef.current = documentsLoading.upload;
+  }, []); // Only on mount
 
   // Load data function
   const loadData = useCallback(() => {
@@ -120,6 +132,37 @@ const ViewDataTab = ({ projectId }) => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Auto-refresh when document ingestion completes
+  useEffect(() => {
+    const ingestJustCompleted =
+      prevIngestBaseCaseRef.current && !documentsLoading.ingestBaseCase;
+    const uploadJustCompleted =
+      prevUploadRef.current && !documentsLoading.upload;
+
+    if ((ingestJustCompleted || uploadJustCompleted) && projectId) {
+      // Wait a brief moment for backend to finish processing
+      const timer = setTimeout(() => {
+        dispatch(
+          fetchProjectEntitiesRelations({
+            projectId,
+            include_metadata: true,
+          })
+        );
+      }, 1000); // 1 second delay to ensure backend has processed
+
+      return () => clearTimeout(timer);
+    }
+
+    // Update refs
+    prevIngestBaseCaseRef.current = documentsLoading.ingestBaseCase;
+    prevUploadRef.current = documentsLoading.upload;
+  }, [
+    documentsLoading.ingestBaseCase,
+    documentsLoading.upload,
+    dispatch,
+    projectId,
+  ]);
 
   // Force refresh function
   const forceRefresh = useCallback(() => {
@@ -214,7 +257,9 @@ const ViewDataTab = ({ projectId }) => {
               <Typography variant="body2" color="text.secondary">
                 Documents Processed
               </Typography>
-              <Typography variant="h5">{summary.document_count || 0}</Typography>
+              <Typography variant="h5">
+                {summary.document_count || 0}
+              </Typography>
             </Grid>
           </Grid>
         </Paper>
@@ -330,4 +375,3 @@ const ViewDataTab = ({ projectId }) => {
 };
 
 export default ViewDataTab;
-

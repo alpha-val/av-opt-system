@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Box, Typography, Paper, Grid, Alert, Button } from "@mui/material";
+import { 
+  Box, 
+  Typography, 
+  Paper, 
+  Grid, 
+  Alert, 
+  Button, 
+  CircularProgress,
+  LinearProgress,
+} from "@mui/material";
 import {
   PictureAsPdf as PdfIcon,
   TableChart as XlsIcon,
@@ -9,6 +18,7 @@ import {
 import FileUpload from "../../../components/widgets/FileUpload";
 import {
   ingestBaseCaseDocument,
+  uploadDocument,
   fetchDocumentsByProject,
   selectDocumentsByProjectAndType,
   selectDocumentsLoading,
@@ -26,6 +36,8 @@ const DocumentsTab = ({ projectId }) => {
   const [uploadSuccess, setUploadSuccess] = useState(null);
   const [uploadingType, setUploadingType] = useState(null); // "base_case" or "tabular_data"
   const [clearingData, setClearingData] = useState(false);
+  const [clearBaseCaseTrigger, setClearBaseCaseTrigger] = useState(0);
+  const [clearTabularDataTrigger, setClearTabularDataTrigger] = useState(0);
 
   // Get documents from Redux
   const baseCaseDocuments = useSelector((state) =>
@@ -38,9 +50,9 @@ const DocumentsTab = ({ projectId }) => {
   const error = useSelector(selectDocumentsError);
   const uploadProgress = useSelector(selectUploadProgress);
 
-  const baseCaseUploading = loading.upload && uploadingType === "base_case";
-  const tabularDataUploading =
-    loading.upload && uploadingType === "tabular_data";
+  // Check correct loading states
+  const baseCaseUploading = loading.ingestBaseCase || (loading.upload && uploadingType === "base_case");
+  const tabularDataUploading = loading.upload && uploadingType === "tabular_data";
 
   // Fetch documents on mount
   useEffect(() => {
@@ -90,8 +102,13 @@ const DocumentsTab = ({ projectId }) => {
         `Successfully uploaded ${files.length} base case report(s)`
       );
 
-      // Refresh documents list
-      dispatch(fetchDocumentsByProject(projectId));
+      // Clear selected files from FileUpload component
+      setClearBaseCaseTrigger((prev) => prev + 1);
+
+      // Refresh documents list after a brief delay to ensure backend has persisted
+      setTimeout(() => {
+        dispatch(fetchDocumentsByProject(projectId));
+      }, 500);
 
       // Clear success message after 5 seconds
       setTimeout(() => setUploadSuccess(null), 5000);
@@ -140,8 +157,13 @@ const DocumentsTab = ({ projectId }) => {
         `Successfully uploaded ${files.length} tabular data file(s)`
       );
 
-      // Refresh documents list
-      dispatch(fetchDocumentsByProject(projectId));
+      // Clear selected files from FileUpload component
+      setClearTabularDataTrigger((prev) => prev + 1);
+
+      // Refresh documents list after a brief delay to ensure backend has persisted
+      setTimeout(() => {
+        dispatch(fetchDocumentsByProject(projectId));
+      }, 500);
 
       // Clear success message after 5 seconds
       setTimeout(() => setUploadSuccess(null), 5000);
@@ -198,16 +220,16 @@ const DocumentsTab = ({ projectId }) => {
         clearAllProjectData({ projectId })
       ).unwrap();
 
-      const total = result.deleted_counts?.total_items || 0;
       setUploadSuccess(
-        `Successfully cleared all project data. Deleted ${total} items.`
+        `Successfully cleared all project data.`
       );
 
-      // Refresh documents list
-      dispatch(fetchDocumentsByProject(projectId));
-
-      // Clear success message after 5 seconds
-      setTimeout(() => setUploadSuccess(null), 5000);
+      // Refresh documents list after a brief delay to ensure backend has processed deletion
+      // fetchDocumentsByProject will automatically remove documents for this project
+      // and replace with the fresh list from server (which should be empty after deletion)
+      setTimeout(() => {
+        dispatch(fetchDocumentsByProject(projectId));
+      }, 1000); // Increased delay to ensure backend has fully processed deletion
     } catch (error) {
       console.error("Clear project data error:", error);
       setUploadError(
@@ -265,6 +287,38 @@ const DocumentsTab = ({ projectId }) => {
         </Alert>
       )}
 
+      {/* Processing Indicator */}
+      {(baseCaseUploading || tabularDataUploading) && (
+        <Alert
+          severity="info"
+          icon={<CircularProgress size={20} />}
+          sx={{ mb: 2 }}
+        >
+          <Box>
+            <Typography variant="body2" fontWeight="medium">
+              {baseCaseUploading 
+                ? "Processing base case document..." 
+                : "Processing tabular data document..."}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+              This may take a few minutes. Please do not close this page.
+            </Typography>
+            {uploadProgress > 0 && uploadProgress < 100 && (
+              <Box sx={{ mt: 1.5 }}>
+                <LinearProgress 
+                  variant="determinate" 
+                  value={uploadProgress} 
+                  sx={{ height: 6, borderRadius: 3 }}
+                />
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+                  {Math.round(uploadProgress)}% complete
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </Alert>
+      )}
+
       {/* Upload Widgets */}
       <Grid container spacing={3}>
         {/* Base Case Reports Upload */}
@@ -287,7 +341,8 @@ const DocumentsTab = ({ projectId }) => {
               progress={uploadProgress}
               variant="outlined"
               buttonVariant="contained"
-              buttonText="Browse Reports"
+              buttonText={baseCaseUploading ? "Processing..." : "Browse Reports"}
+              clearTrigger={clearBaseCaseTrigger}
             />
           </Paper>
         </Grid>
@@ -312,7 +367,8 @@ const DocumentsTab = ({ projectId }) => {
               progress={uploadProgress}
               variant="outlined"
               buttonVariant="contained"
-              buttonText="Browse Data Files"
+              buttonText={tabularDataUploading ? "Processing..." : "Browse Data Files"}
+              clearTrigger={clearTabularDataTrigger}
             />
           </Paper>
         </Grid>

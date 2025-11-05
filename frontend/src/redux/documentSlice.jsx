@@ -72,7 +72,8 @@ export const fetchDocumentsByProject = createAsyncThunk(
       const filteredData = Array.isArray(data)
         ? data.filter((doc) => doc.project_id === projectId)
         : [];
-      return filteredData;
+      // Return both the filtered data and projectId so reducer can use it even if array is empty
+      return { documents: filteredData, projectId };
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -101,113 +102,182 @@ export const fetchDocumentById = createAsyncThunk(
 // Ingest base case document
 export const ingestBaseCaseDocument = createAsyncThunk(
   "documents/ingestBaseCaseDocument",
-  async ({ file, projectId, artifactType, metadata = {} }, { rejectWithValue }) => {
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("project_id", projectId);
-      formData.append("artifact_type", artifactType);
-      formData.append("metadata", JSON.stringify(metadata));
-      const response = await fetch(`${API_BASE_URL}/etl/base-case`, {
-        method: "POST",
-        headers: getAuthHeadersForUpload(), // Use upload headers (no Content-Type)
-        body: formData,
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch (e) {
-          throw new Error(
-            `HTTP error! status: ${response.status}, message: ${errorText}`
-          );
+  async ({ file, projectId, artifactType, metadata = {} }, { rejectWithValue, dispatch }) => {
+    return new Promise((resolve, reject) => {
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("project_id", projectId);
+        formData.append("artifact_type", artifactType);
+        formData.append("metadata", JSON.stringify(metadata));
+        
+        const xhr = new XMLHttpRequest();
+        const url = `${API_BASE_URL}/etl/base-case`;
+        
+        // Track upload progress
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable) {
+            const percentComplete = Math.round((e.loaded / e.total) * 100);
+            dispatch(setUploadProgress(percentComplete));
+          }
+        });
+        
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              dispatch(setUploadProgress(100));
+              resolve(data);
+            } catch (e) {
+              dispatch(setUploadProgress(0));
+              reject(rejectWithValue("Failed to parse response"));
+            }
+          } else {
+            dispatch(setUploadProgress(0));
+            let errorData;
+            try {
+              errorData = JSON.parse(xhr.responseText);
+            } catch (e) {
+              reject(rejectWithValue(`HTTP error! status: ${xhr.status}`));
+              return;
+            }
+            reject(rejectWithValue(errorData.detail || `HTTP error! status: ${xhr.status}`));
+          }
+        });
+        
+        xhr.addEventListener("error", () => {
+          dispatch(setUploadProgress(0));
+          reject(rejectWithValue("Network error occurred"));
+        });
+        
+        xhr.addEventListener("abort", () => {
+          dispatch(setUploadProgress(0));
+          reject(rejectWithValue("Upload aborted"));
+        });
+        
+        // Open request first, then set headers
+        xhr.open("POST", url);
+        
+        // Set headers after opening
+        const token = getAuthToken();
+        if (token) {
+          xhr.setRequestHeader("Authorization", `Bearer ${token}`);
         }
-        throw new Error(
-          errorData.detail || `HTTP error! status: ${response.status}`
-        );
+        
+        xhr.send(formData);
+      } catch (error) {
+        dispatch(setUploadProgress(0));
+        reject(rejectWithValue(error.message));
       }
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      return rejectWithValue(error.message);
-    }
+    });
   }
 );
 
 // Upload document with file
 export const uploadDocument = createAsyncThunk(
   "documents/uploadDocument",
-  async ({ file, projectId, artifactType, metadata = {} }, { rejectWithValue }) => {
-    try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
-      const userId = getUserId();
-
-      // Create FormData for file upload
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("file_name", file.name);
-      formData.append("title", metadata.title || file.name);
-      formData.append("project_id", projectId);
-
-      if (userId) {
-        formData.append("user_id", userId);
-      }
-
-      if (artifactType) {
-        formData.append("artifact_type", artifactType);
-      }
-
-      if (metadata.type) {
-        formData.append("type", metadata.type);
-      }
-
-      if (metadata.tags && Array.isArray(metadata.tags)) {
-        metadata.tags.forEach((tag) => {
-          formData.append("tags", tag);
-        });
-      }
-
-      // Add any additional metadata
-      if (metadata.metadata && typeof metadata.metadata === "object") {
-        formData.append("metadata", JSON.stringify(metadata.metadata));
-      }
-
-      if (file.size) {
-        formData.append("size", file.size.toString());
-      }
-
-      const response = await fetch(`${API_BASE_URL}/documents/`, {
-        method: "POST",
-        headers: getAuthHeadersForUpload(),
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch (e) {
-          throw new Error(
-            `HTTP error! status: ${response.status}, message: ${errorText}`
-          );
+  async ({ file, projectId, artifactType, metadata = {} }, { rejectWithValue, dispatch }) => {
+    return new Promise((resolve, reject) => {
+      try {
+        const token = getAuthToken();
+        if (!token) {
+          reject(rejectWithValue("No authentication token found"));
+          return;
         }
-        throw new Error(
-          errorData.detail || `HTTP error! status: ${response.status}`
-        );
-      }
 
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Upload error:", error);
-      return rejectWithValue(error.message);
-    }
+        const userId = getUserId();
+
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("file_name", file.name);
+        formData.append("title", metadata.title || file.name);
+        formData.append("project_id", projectId);
+
+        if (userId) {
+          formData.append("user_id", userId);
+        }
+
+        if (artifactType) {
+          formData.append("artifact_type", artifactType);
+        }
+
+        if (metadata.type) {
+          formData.append("type", metadata.type);
+        }
+
+        if (metadata.tags && Array.isArray(metadata.tags)) {
+          metadata.tags.forEach((tag) => {
+            formData.append("tags", tag);
+          });
+        }
+
+        // Add any additional metadata
+        if (metadata.metadata && typeof metadata.metadata === "object") {
+          formData.append("metadata", JSON.stringify(metadata.metadata));
+        }
+
+        if (file.size) {
+          formData.append("size", file.size.toString());
+        }
+
+        const xhr = new XMLHttpRequest();
+        const url = `${API_BASE_URL}/documents/`;
+        
+        // Track upload progress
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable) {
+            const percentComplete = Math.round((e.loaded / e.total) * 100);
+            dispatch(setUploadProgress(percentComplete));
+          }
+        });
+        
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              dispatch(setUploadProgress(100));
+              resolve(data);
+            } catch (e) {
+              dispatch(setUploadProgress(0));
+              reject(rejectWithValue("Failed to parse response"));
+            }
+          } else {
+            dispatch(setUploadProgress(0));
+            let errorData;
+            try {
+              errorData = JSON.parse(xhr.responseText);
+            } catch (e) {
+              reject(rejectWithValue(`HTTP error! status: ${xhr.status}`));
+              return;
+            }
+            reject(rejectWithValue(errorData.detail || `HTTP error! status: ${xhr.status}`));
+          }
+        });
+        
+        xhr.addEventListener("error", () => {
+          dispatch(setUploadProgress(0));
+          reject(rejectWithValue("Network error occurred"));
+        });
+        
+        xhr.addEventListener("abort", () => {
+          dispatch(setUploadProgress(0));
+          reject(rejectWithValue("Upload aborted"));
+        });
+        
+        // Open request first, then set headers
+        xhr.open("POST", url);
+        
+        // Set headers after opening
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+        
+        xhr.send(formData);
+      } catch (error) {
+        console.error("Upload error:", error);
+        dispatch(setUploadProgress(0));
+        reject(rejectWithValue(error.message));
+      }
+    });
   }
 );
 
@@ -347,12 +417,28 @@ const documentSlice = createSlice({
       })
       .addCase(fetchDocumentsByProject.fulfilled, (state, action) => {
         state.loading.fetchByProject = false;
-        // Merge with existing documents, avoiding duplicates
-        const existingIds = new Set(state.documents.map((d) => d.id));
-        const newDocuments = action.payload.filter(
-          (doc) => !existingIds.has(doc.id)
-        );
-        state.documents = [...state.documents, ...newDocuments];
+        
+        // Handle both old format (array) and new format ({ documents, projectId })
+        let documents, projectId;
+        if (Array.isArray(action.payload)) {
+          // Old format: array of documents
+          documents = action.payload;
+          projectId = documents.length > 0 ? documents[0].project_id : null;
+        } else {
+          // New format: { documents, projectId }
+          documents = action.payload.documents || [];
+          projectId = action.payload.projectId;
+        }
+        
+        if (projectId) {
+          // Remove all existing documents for this project
+          state.documents = state.documents.filter(
+            (doc) => doc.project_id !== projectId
+          );
+        }
+        
+        // Add all documents from the server response (these are already filtered by projectId)
+        state.documents = [...state.documents, ...documents];
       })
       .addCase(fetchDocumentsByProject.rejected, (state, action) => {
         state.loading.fetchByProject = false;
@@ -404,10 +490,12 @@ const documentSlice = createSlice({
       // ingestBaseCaseDocument cases
       .addCase(ingestBaseCaseDocument.pending, (state) => {
         state.loading.ingestBaseCase = true;
+        state.uploadProgress = 0;
         state.error = null;
       })
       .addCase(ingestBaseCaseDocument.fulfilled, (state, action) => {
         state.loading.ingestBaseCase = false;
+        state.uploadProgress = 100;
         // Handle response structure: may be {document, processing} or just document
         const document = action.payload.document || action.payload;
         if (document && document.id) {
@@ -425,6 +513,7 @@ const documentSlice = createSlice({
       })
       .addCase(ingestBaseCaseDocument.rejected, (state, action) => {
         state.loading.ingestBaseCase = false;
+        state.uploadProgress = 0;
         state.error = action.payload;
       })
 

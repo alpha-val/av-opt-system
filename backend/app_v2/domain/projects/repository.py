@@ -153,17 +153,54 @@ def _normalize_entity_for_output(entity: Dict[str, Any]) -> Dict[str, Any]:
     return normalized
 
 
+def _normalize_relation_for_output(relation: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Normalize relation from MongoDB format to RelationOut format.
+    
+    Ensures required fields (source, target, type) are at top level, extracting from
+    properties if needed.
+    """
+    props = relation.get("properties", {})
+    
+    # Extract source from properties if not at top level or is None
+    source = relation.get("source") or props.get("source") or ""
+    
+    # Extract target from properties if not at top level or is None
+    target = relation.get("target") or props.get("target") or ""
+    
+    # Extract type from properties if not at top level or is None
+    relation_type = relation.get("type") or props.get("type") or "RELATED_TO"
+    
+    # Ensure properties dict exists
+    if not isinstance(props, dict):
+        props = {}
+    
+    # Build normalized relation
+    normalized = {
+        "id": str(relation.get("_id") or relation.get("id", "")),
+        "source": str(source) if source is not None else "",
+        "target": str(target) if target is not None else "",
+        "type": str(relation_type) if relation_type is not None else "RELATED_TO",
+        "properties": props,
+        "created_at": relation.get("created_at") or _now(),
+        "updated_at": relation.get("updated_at") or _now(),
+    }
+    
+    return normalized
+
+
 async def get_project_entities_relations(project_id: str) -> ProjectEntitiesRelationsOut:
     """Get entities and relations for a project from the MongoDB collection."""
     entities = list(_entities_collection.find({"properties.project_id": project_id}))
     relations = list(_relations_collection.find({"properties.project_id": project_id}))
     
-    # Normalize entities before creating EntityOut objects
+    # Normalize entities and relations before creating output objects
     normalized_entities = [_normalize_entity_for_output(e) for e in entities]
+    normalized_relations = [_normalize_relation_for_output(r) for r in relations]
     
     return ProjectEntitiesRelationsOut(
         entities=[EntityOut(**e) for e in normalized_entities],
-        relations=[RelationOut(**{**r, "id": str(r["_id"])}) for r in relations],
+        relations=[RelationOut(**r) for r in normalized_relations],
         summary={
             "entity_count": len(entities),
             "relation_count": len(relations),

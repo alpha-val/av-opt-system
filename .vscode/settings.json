@@ -17,7 +17,15 @@
   "python.analysis.extraPaths": ["./"],
   "python.analysis.indexing": true,
   "cursorpyright.analysis.diagnosticMode": "workspace",
-  "cursorpyright.analysis.extraPaths": [
-    "./"
-  ]
+  "cursorpyright.analysis.extraPaths": ["./"],
+  "editor.guides.highlightActiveIndentation": false,
+  "editor.renderWhitespace": "none",
+  "editor.guides.indentation": false,
+  "editor.hover.enabled": true,
+  "[javascriptreact]": {
+    "editor.hover.enabled": true
+  },
+  "[typescriptreact]": {
+    "editor.hover.enabled": true
+  }
 }

@@ -372,11 +372,8 @@ nodes_and_relations_extraction_directives = """
     Using ontology.NODE_TYPES and ontology.EDGE_TYPES, extract all nodes and their relationships
     from the document. Include all relevant metadata and provenance information.
 
-    Mission: Produce a clean, deduplicated knowledge graph for mining/process-engineering content
-    aligned exactly to the configured ontology.
-
     You MUST:
-    - Extract only what is explicitly or strongly implied by the text.
+    - Extract only what is explicitly or strongly implied by the input text.
     - Do not infer or assume information not present.
     - Emit only node/edge types that appear in the ontology.
     - Each node must have a type or property["label"] that maps to NODE_TYPES.
@@ -384,18 +381,12 @@ nodes_and_relations_extraction_directives = """
     - Attach evidence and a confidence score to every node and edge using the
     allowed property names from NODE_PROPERTIES / EDGE_PROPERTIES.
     - Normalize entity names and deduplicate obvious variants.
-    - EVERY node MUST have MSIO ontology classification (discipline, category, subcategory, entity)
-    - EVERY node MUST match the MSIO ontology hierarchy exactly - no invented values
+    - EVERY node MUST have MSIO (Mining System Integration Ontology) ontology classification (discipline, category, subcategory, entity)
+    - EVERY node MUST match the MSIO ontology hierarchy as closely as possible
     - Use ONLY Discipline/Category/Subcategory/Entity names from the provided MSIO ontology
-    - If an entity cannot be matched to MSIO ontology, DO NOT create the node (reject it)
+    - If an entity cannot be matched to MSIO ontology, create a new node with the closest MSIO hierarchy match and set "outside_msio": true attribute
     - Use the MSIO matching workflow above for every entity extraction
 
-    You MUST NOT:
-    - Hallucinate entities, methods, or relationships.
-    - Invent node/edge types or property keys not present in the ontology lists.
-    - Emit empty labels or unnamed nodes.
-    - Create cycles unless clearly supported by the text.
-    - Add the string (table_entity) at the end of entity names.
 
     ONTOLOGY (from config.py):
     Allowed node types (ontology.NODE_TYPES): See ontology contract for details.
@@ -412,6 +403,8 @@ nodes_and_relations_extraction_directives = """
           - "category": string (MUST match an MSIO Category name within that Discipline)
           - "subcategory": string (MUST match an MSIO Subcategory name within that Category)
           - "entity": string (MUST match an MSIO Entity name within that Subcategory, or closest match)
+        • if an entity outside the MSIO ontology is extracted, create a new node with the entity name and the MSIO hierarchy that is closest to the entity name (e.g., "Concrete Spread Footings" -> "Concrete" -> "Foundations" -> "Footings" -> "Spread footings")
+          •• for the outside entity, set an attribute "outside_msio" to true
         • follow the properties mentioned in NODE_PROPERTIES in the ontology
         • prioritize finding cost associated with an entity (e.g., 'cost_value', 'price_value', 'currency', 'basis_year', 'expenditure')
         • always keep cost value and currency as separate properties (never as a combined string)
@@ -516,7 +509,7 @@ nodes_and_relations_extraction_directives = """
         "properties": {{
             "created_at": "ISO-8601-timestamp",
             "updated_at": "ISO-8601-timestamp",
-            "evidence_text": "short supporting snippet",s
+            "evidence_text": "short supporting snippet",
             "confidence": 1.0
         }}
     }}
@@ -542,7 +535,7 @@ nodes_and_relations_extraction_directives = """
         Subcategory: Centrifugal (matches MSIO within Pumps)
         Entity: Base pump unit (matches MSIO within Centrifugal)
 
-    Node (sketch):[
+    Nodes: [
         {{
         "id": "mech_pump_001",
         "type": "Equipment",
@@ -1065,15 +1058,12 @@ def get_entity_extraction_prompt(rules: Optional[List[str]] = None) -> str:
     STEP 5: Match to Entity (within matched Subcategory)
     - Search Entity names within the matched Subcategory
     - Match case-insensitively (e.g., "base pump unit" = "Base pump unit")
-    - Extract attributes from the "attributes" list for this Entity
     - If no match, try to find closest match or use Subcategory name as fallback
 
     STEP 6: Extract Attributes
     - For the matched Entity, check the "attributes" list in the ontology
     - For each attribute in the ontology list:
-      * If the attribute is present in the text, extract the value and unit from the text
-      * If the attribute is not present in the text, set the attribute value to null and the attribute unit to null
-    - Extract any additional attributes found in the text that are not in the ontology list (these may be entity-specific details)
+      * [Required] If the attribute is present in the text, extract the value and unit from the text
     - Use the attribute names exactly as listed in the ontology (e.g., "Design flowrate", "Head", "NPSH")
     - Create an object for each attribute with the following properties:
       * "name": the attribute name
@@ -1082,10 +1072,12 @@ def get_entity_extraction_prompt(rules: Optional[List[str]] = None) -> str:
       * "evidence_text": the text that was used to extract the attribute
       * "confidence": the confidence score for the attribute
     - Normalize attribute fields per the Attribute Extraction rules
-
-    REJECTION CRITERIA:
-    - If you cannot match to at least Discipline + Category + Subcategory, DO NOT create the entity
-    - If Entity field cannot be matched, you MAY create the entity but MUST:
+      * [Required] If the attribute is not present in the text, set the attribute value to null and the attribute unit to null
+      ** For example, if the attribute is "Design flowrate", and the text says "500 gpm", then the attribute value should be 500 and the attribute unit should be "gpm"
+      ** if the attribute "Design flowrate" is not present in the text, then the attribute value should be null and the attribute unit should be null
+    - [Required] Extract any additional attributes found in the text that are not in the ontology list (these may be entity-specific details)
+    - [Required] Try to match to at least Discipline, Category, or Subcategory, if not, set confidence < 0.5 and note in rationale
+    - [Required] If Entity field cannot be matched, you MAY create the entity but MUST:
       - Set confidence < 0.7
       - Add rationale: "Entity name not found in MSIO ontology; using closest match"
       - Still include all four fields: discipline, category, subcategory, entity
@@ -1095,7 +1087,7 @@ def get_entity_extraction_prompt(rules: Optional[List[str]] = None) -> str:
     MATCHING & CLASSIFICATION RULES
     --------------------------------------------------------------------------------
     1) Match Scope
-    - A mention in the report maps to exactly one ontology data above (Discipline,
+    - A mention in the report maps to one ontology data above (Discipline,
         Category, Subcategory, Entity). Prefer the most specific match (Entity).
     - If the report uses synonyms (e.g., "float roof" vs "Float Roof"), normalize
         via case-insensitive matching and simple singular/plural folding.
@@ -1112,7 +1104,7 @@ def get_entity_extraction_prompt(rules: Optional[List[str]] = None) -> str:
     - Create attribute objects as specified in STEP 6 with the following structure:
         * Each attribute must be an object with: name, value, unit, evidence_text, confidence
         * Store attributes in an "attributes" array in the node properties
-        * Use attribute names exactly as listed in the ontology (e.g., "Design flowrate", "Head")
+        * Use attribute names as listed in the ontology (e.g., "Design flowrate", "Head")
         * For attributes not present in text, set value and unit to null
         * Preserve the original text snippet as evidence_text for each attribute
         
@@ -1144,11 +1136,13 @@ def get_entity_extraction_prompt(rules: Optional[List[str]] = None) -> str:
 
 
     VALIDATION CHECKLIST (before returning):
-    ✓ Every node has properties.discipline matching an MSIO Discipline name exactly
+    ✓ Every node has properties.discipline matching an MSIO Discipline name
     ✓ Every node has properties.category matching an MSIO Category name within that Discipline
     ✓ Every node has properties.subcategory matching an MSIO Subcategory name within that Category  
     ✓ Every node has properties.entity matching an MSIO Entity name within that Subcategory (or closest match)
     ✓ All four MSIO fields are present and non-empty
+    ✓ Extract other nodes from text and do your best to match them to the MSIO ontology hierarchy
+    ✓ Every node has properties.discipline matching an MSIO Discipline name
     ✓ Attribute names match those listed in the ontology for that Entity
     """
 
@@ -1190,8 +1184,10 @@ def get_entity_extraction_prompt(rules: Optional[List[str]] = None) -> str:
 
     ROLE
     Produce a clean, deduplicated knowledge graph for mining/process-engineering content
-    aligned exactly to the configured ontology. You read a base-case report (text/tables)
+    aligned to the configured ontology. You read a base-case report (text/tables)
     and extract entities that match a simple hierarchical catalog (Discipline → Category → Subcategory → Entity). 
+    If an entity cannot be matched to MSIO ontology, create a new node with the entity name and the MSIO hierarchy that is closest to the entity name (e.g., "Concrete Spread Footings" -> "Concrete" -> "Foundations" -> "Footings" -> "Spread footings")
+    and set the attribute "outside_msio" to true.
     You then emit a single JSON object with nodes and edges, plus evidence and confidence.
 
     Required output:

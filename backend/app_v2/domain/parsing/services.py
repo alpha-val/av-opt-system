@@ -183,26 +183,14 @@ class DocumentProcessingService:
                     edge["source"] = original_to_new[source]
                 if target in original_to_new:
                     edge["target"] = original_to_new[target]
+                edge.get("properties", {}).setdefault("project_id", project_id)
+                edge.get("properties", {}).setdefault("user_id", user_id)
+                edge.get("properties", {}).setdefault("doc_id", doc_id_actual)
+                edge.get("properties", {}).setdefault("artifact_type", "base_case")
 
-            # # Stage 6: Storage
-            # # Store document metadata
-            # self.document_store.upsert_document(
-            #     doc_id=doc_id_actual,
-            #     filename=filename,
-            #     file_sha256=file_sha,
-            #     project_id=project_id,
-            #     user_id=user_id,
-            #     artifact_type="base_case",
-            #     metadata={
-            #         "pages": len(pages_clean),
-            #         "chunking_strategy": chunking_strategy,
-            #         "char_limit": (
-            #             char_limit
-            #             if chunking_strategy in ["character", "byte"]
-            #             else None
-            #         ),
-            #     },
-            # )
+
+
+
 
             # Store chunks in MongoDB
             chunks_stored = self.document_store.bulk_upsert_chunks(chunks)

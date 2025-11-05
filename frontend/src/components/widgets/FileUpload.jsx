@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import PropTypes from "prop-types";
 import {
   Box,
@@ -95,6 +95,7 @@ const DEFAULT_FILE_TYPES = {
  * @param {string} props.variant - Visual variant: "outlined" | "elevated" | "contained"
  * @param {string} props.buttonVariant - Button variant: "outlined" | "contained" | "text"
  * @param {string} props.buttonText - Custom button text
+ * @param {any} props.clearTrigger - Trigger value to clear selected files (clears when value changes)
  */
 const FileUpload = ({
   title = "Upload Files",
@@ -119,11 +120,13 @@ const FileUpload = ({
   variant = "outlined",
   buttonVariant = "outlined",
   buttonText = "Browse Files",
+  clearTrigger = null,
 }) => {
   const [dragActive, setDragActive] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [rejectedFiles, setRejectedFiles] = useState([]);
   const fileInputRef = useRef(null);
+  const prevClearTriggerRef = useRef(clearTrigger);
 
   // Merge default and custom file types
   const fileTypeConfig = { ...DEFAULT_FILE_TYPES, ...customFileTypes };
@@ -325,6 +328,15 @@ const FileUpload = ({
   const clearRejectedFiles = () => {
     setRejectedFiles([]);
   };
+
+  // Clear selected files when clearTrigger changes
+  useEffect(() => {
+    if (clearTrigger !== null && clearTrigger !== prevClearTriggerRef.current) {
+      setSelectedFiles([]);
+      setRejectedFiles([]);
+      prevClearTriggerRef.current = clearTrigger;
+    }
+  }, [clearTrigger]);
 
   // Get file icon
   const getFileIcon = (type) => {
