@@ -10,7 +10,7 @@ import { selectBaseCaseDocuments } from "../../../redux/dataSlice";
 
 const EntityDetailsRow = ({ entity, index }) => {
   const baseCaseDocuments = useSelector(selectBaseCaseDocuments);
-  console.log("[EntityDetailsRow] entity", entity);
+
   // Get entity type color for left border
   const getTypeColor = (type) => {
     const colors = {

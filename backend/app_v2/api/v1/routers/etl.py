@@ -198,7 +198,8 @@ async def ingest_base_case_document(
 async def ingest_tabular_data_document(
     file: UploadFile = File(...),
     project_id: str = Form(...),
-    user_id: str = Form(...),
+    user_id: Optional[str] = Form(None),
+    userId: Optional[str] = Form(None),  # Alternative name for frontend compatibility
     doc_id: Optional[str] = Form(None),
     pages: Optional[str] = Form(None),
     max_rows_per_chunk: int = Form(50),
@@ -242,13 +243,16 @@ async def ingest_tabular_data_document(
         )
 
     try:
+        # Handle alternative field names from frontend
+        actual_user_id = user_id or userId or ""
+
         # Read file content
         pdf_bytes = await file.read()
         filename = file.filename or "uploaded.pdf"
 
         logger.info(
             f"Received tabular data document upload: {filename} "
-            f"(project_id: {project_id}, user_id: {user_id})"
+            f"(project_id: {project_id}, user_id: {actual_user_id})"
         )
 
         # Process document
@@ -257,7 +261,7 @@ async def ingest_tabular_data_document(
             filename=filename,
             doc_id=doc_id or "",
             project_id=project_id,
-            user_id=user_id,
+            user_id=actual_user_id,
             pages=pages,
             max_rows_per_chunk=max_rows_per_chunk,
             validate_msio=validate_msio,

@@ -14,8 +14,22 @@ const getAuthToken = () => {
 };
 
 // Helper function to get user ID
+// Tries localStorage first, then extracts from JWT token if available
 const getUserId = () => {
-  return localStorage.getItem("user_id");
+  const userId = localStorage.getItem("user_id");
+  if (userId) return userId;
+
+  // Try to extract user ID from JWT token
+  const token = getAuthToken();
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload.sub || payload.user_id || payload.id || null;
+    } catch (error) {
+      console.warn("Could not decode user ID from token:", error);
+    }
+  }
+  return null;
 };
 
 // Helper function to create auth headers for JSON requests
@@ -102,18 +116,29 @@ export const fetchDocumentById = createAsyncThunk(
 // Ingest base case document
 export const ingestBaseCaseDocument = createAsyncThunk(
   "documents/ingestBaseCaseDocument",
-  async ({ file, projectId, artifactType, metadata = {} }, { rejectWithValue, dispatch }) => {
+  async (
+    { file, projectId, artifactType, metadata = {} },
+    { rejectWithValue, dispatch }
+  ) => {
     return new Promise((resolve, reject) => {
       try {
+        // Get user_id for the request
+        const userId = getUserId();
+        
         const formData = new FormData();
         formData.append("file", file);
         formData.append("project_id", projectId);
         formData.append("artifact_type", artifactType);
         formData.append("metadata", JSON.stringify(metadata));
         
+        // Add user_id if available
+        if (userId) {
+          formData.append("user_id", userId);
+        }
+
         const xhr = new XMLHttpRequest();
         const url = `${API_BASE_URL}/etl/base-case`;
-        
+
         // Track upload progress
         xhr.upload.addEventListener("progress", (e) => {
           if (e.lengthComputable) {
@@ -121,7 +146,7 @@ export const ingestBaseCaseDocument = createAsyncThunk(
             dispatch(setUploadProgress(percentComplete));
           }
         });
-        
+
         xhr.addEventListener("load", () => {
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
@@ -141,29 +166,122 @@ export const ingestBaseCaseDocument = createAsyncThunk(
               reject(rejectWithValue(`HTTP error! status: ${xhr.status}`));
               return;
             }
-            reject(rejectWithValue(errorData.detail || `HTTP error! status: ${xhr.status}`));
+            reject(
+              rejectWithValue(
+                errorData.detail || `HTTP error! status: ${xhr.status}`
+              )
+            );
           }
         });
-        
+
         xhr.addEventListener("error", () => {
           dispatch(setUploadProgress(0));
           reject(rejectWithValue("Network error occurred"));
         });
-        
+
         xhr.addEventListener("abort", () => {
           dispatch(setUploadProgress(0));
           reject(rejectWithValue("Upload aborted"));
         });
-        
+
         // Open request first, then set headers
         xhr.open("POST", url);
-        
+
         // Set headers after opening
         const token = getAuthToken();
         if (token) {
           xhr.setRequestHeader("Authorization", `Bearer ${token}`);
         }
+
+        xhr.send(formData);
+      } catch (error) {
+        dispatch(setUploadProgress(0));
+        reject(rejectWithValue(error.message));
+      }
+    });
+  }
+);
+
+// Ingest tabular data document
+export const ingestTabularDataDocument = createAsyncThunk(
+  "documents/ingestTabularDataDocument",
+  async (
+    { file, projectId, artifactType, metadata = {} },
+    { rejectWithValue, dispatch }
+  ) => {
+    return new Promise((resolve, reject) => {
+      try {
+        // Get user_id for the request (optional, but send if available)
+        const userId = getUserId();
         
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("project_id", projectId);
+        formData.append("artifact_type", artifactType);
+        formData.append("metadata", JSON.stringify(metadata));
+        
+        // Add user_id if available (backend accepts it as optional)
+        if (userId) {
+          formData.append("user_id", userId);
+        }
+
+        const xhr = new XMLHttpRequest();
+        const url = `${API_BASE_URL}/etl/tabular-data`;
+
+        // Track upload progress
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable) {
+            const percentComplete = Math.round((e.loaded / e.total) * 100);
+            dispatch(setUploadProgress(percentComplete));
+          }
+        });
+
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              dispatch(setUploadProgress(100));
+              resolve(data);
+            } catch (e) {
+              dispatch(setUploadProgress(0));
+              reject(rejectWithValue("Failed to parse response"));
+            }
+          } else {
+            dispatch(setUploadProgress(0));
+            let errorData;
+            try {
+              errorData = JSON.parse(xhr.responseText);
+            } catch (e) {
+              reject(rejectWithValue(`HTTP error! status: ${xhr.status}`));
+              return;
+            }
+            reject(
+              rejectWithValue(
+                errorData.detail || `HTTP error! status: ${xhr.status}`
+              )
+            );
+          }
+        });
+
+        xhr.addEventListener("error", () => {
+          dispatch(setUploadProgress(0));
+          reject(rejectWithValue("Network error occurred"));
+        });
+
+        xhr.addEventListener("abort", () => {
+          dispatch(setUploadProgress(0));
+          reject(rejectWithValue("Upload aborted"));
+        });
+
+        // Open request first, then set headers
+        xhr.open("POST", url);
+
+        // Set headers after opening
+        const token = getAuthToken();
+        if (token) {
+          xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+        }
+
         xhr.send(formData);
       } catch (error) {
         dispatch(setUploadProgress(0));
@@ -176,7 +294,10 @@ export const ingestBaseCaseDocument = createAsyncThunk(
 // Upload document with file
 export const uploadDocument = createAsyncThunk(
   "documents/uploadDocument",
-  async ({ file, projectId, artifactType, metadata = {} }, { rejectWithValue, dispatch }) => {
+  async (
+    { file, projectId, artifactType, metadata = {} },
+    { rejectWithValue, dispatch }
+  ) => {
     return new Promise((resolve, reject) => {
       try {
         const token = getAuthToken();
@@ -223,7 +344,7 @@ export const uploadDocument = createAsyncThunk(
 
         const xhr = new XMLHttpRequest();
         const url = `${API_BASE_URL}/documents/`;
-        
+
         // Track upload progress
         xhr.upload.addEventListener("progress", (e) => {
           if (e.lengthComputable) {
@@ -231,7 +352,7 @@ export const uploadDocument = createAsyncThunk(
             dispatch(setUploadProgress(percentComplete));
           }
         });
-        
+
         xhr.addEventListener("load", () => {
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
@@ -251,26 +372,30 @@ export const uploadDocument = createAsyncThunk(
               reject(rejectWithValue(`HTTP error! status: ${xhr.status}`));
               return;
             }
-            reject(rejectWithValue(errorData.detail || `HTTP error! status: ${xhr.status}`));
+            reject(
+              rejectWithValue(
+                errorData.detail || `HTTP error! status: ${xhr.status}`
+              )
+            );
           }
         });
-        
+
         xhr.addEventListener("error", () => {
           dispatch(setUploadProgress(0));
           reject(rejectWithValue("Network error occurred"));
         });
-        
+
         xhr.addEventListener("abort", () => {
           dispatch(setUploadProgress(0));
           reject(rejectWithValue("Upload aborted"));
         });
-        
+
         // Open request first, then set headers
         xhr.open("POST", url);
-        
+
         // Set headers after opening
         xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-        
+
         xhr.send(formData);
       } catch (error) {
         console.error("Upload error:", error);
@@ -316,14 +441,11 @@ export const updateDocument = createAsyncThunk(
   "documents/updateDocument",
   async ({ documentId, documentData }, { rejectWithValue }) => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/documents/${documentId}/`,
-        {
-          method: "PATCH",
-          headers: getAuthHeaders(),
-          body: JSON.stringify(documentData),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/documents/${documentId}/`, {
+        method: "PATCH",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(documentData),
+      });
       if (!response.ok) {
         const errorText = await response.text();
         let errorData;
@@ -349,13 +471,10 @@ export const deleteDocument = createAsyncThunk(
   "documents/deleteDocument",
   async (documentId, { rejectWithValue }) => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/documents/${documentId}/`,
-        {
-          method: "DELETE",
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/documents/${documentId}/`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
       if (!response.ok) {
         throw new Error("Failed to delete document");
       }
@@ -417,7 +536,7 @@ const documentSlice = createSlice({
       })
       .addCase(fetchDocumentsByProject.fulfilled, (state, action) => {
         state.loading.fetchByProject = false;
-        
+
         // Handle both old format (array) and new format ({ documents, projectId })
         let documents, projectId;
         if (Array.isArray(action.payload)) {
@@ -429,14 +548,14 @@ const documentSlice = createSlice({
           documents = action.payload.documents || [];
           projectId = action.payload.projectId;
         }
-        
+
         if (projectId) {
           // Remove all existing documents for this project
           state.documents = state.documents.filter(
             (doc) => doc.project_id !== projectId
           );
         }
-        
+
         // Add all documents from the server response (these are already filtered by projectId)
         state.documents = [...state.documents, ...documents];
       })
@@ -513,6 +632,36 @@ const documentSlice = createSlice({
       })
       .addCase(ingestBaseCaseDocument.rejected, (state, action) => {
         state.loading.ingestBaseCase = false;
+        state.uploadProgress = 0;
+        state.error = action.payload;
+      })
+
+      // ingestTabularDataDocument cases
+      .addCase(ingestTabularDataDocument.pending, (state) => {
+        state.loading.ingestTabularData = true;
+        state.uploadProgress = 0;
+        state.error = null;
+      })
+      .addCase(ingestTabularDataDocument.fulfilled, (state, action) => {
+        state.loading.ingestTabularData = false;
+        state.uploadProgress = 100;
+        // Handle response structure: may be {document, processing} or just document
+        const document = action.payload.document || action.payload;
+        if (document && document.id) {
+          // Check if document already exists
+          const existingIndex = state.documents.findIndex(
+            (doc) => doc.id === document.id
+          );
+          if (existingIndex !== -1) {
+            state.documents[existingIndex] = document;
+          } else {
+            state.documents.push(document);
+          }
+        }
+        state.error = null;
+      })
+      .addCase(ingestTabularDataDocument.rejected, (state, action) => {
+        state.loading.ingestTabularData = false;
         state.uploadProgress = 0;
         state.error = action.payload;
       })
@@ -622,4 +771,3 @@ export const selectDocumentsByProjectAndType = createSelector(
 );
 
 export default documentSlice.reducer;
-

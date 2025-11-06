@@ -18,7 +18,7 @@ import {
 import FileUpload from "../../../components/widgets/FileUpload";
 import {
   ingestBaseCaseDocument,
-  uploadDocument,
+  ingestTabularDataDocument,
   fetchDocumentsByProject,
   selectDocumentsByProjectAndType,
   selectDocumentsLoading,
@@ -28,6 +28,63 @@ import {
 import { clearAllProjectData } from "../../../redux/dataSlice";
 import { useDialogs } from "../../../hooks/useDialogs/useDialogs";
 import DocumentList from "../documents/DocumentList.jsx";
+
+// Helper function to convert error objects to readable strings
+// Handles Pydantic validation errors, FastAPI errors, and standard Error objects
+const formatError = (error) => {
+    if (!error) return "Unknown error occurred";
+    
+    // If it's already a string, return it
+    if (typeof error === "string") return error;
+    
+    // If it has a message property, use it
+    if (error.message) return error.message;
+    
+    // Handle Pydantic validation errors (array of objects with type, loc, msg, input)
+    if (Array.isArray(error)) {
+      return error
+        .map((err) => {
+          if (typeof err === "string") return err;
+          if (err.msg) {
+            const loc = err.loc ? ` (${Array.isArray(err.loc) ? err.loc.join(".") : err.loc})` : "";
+            return `${err.msg}${loc}`;
+          }
+          return JSON.stringify(err);
+        })
+        .join("; ");
+    }
+    
+    // Handle error objects with type, loc, msg, input (Pydantic validation error)
+    if (error.msg) {
+      const loc = error.loc ? ` (${Array.isArray(error.loc) ? error.loc.join(".") : error.loc})` : "";
+      return `${error.msg}${loc}`;
+    }
+    
+    // Handle error objects with detail property (FastAPI error)
+    if (error.detail) {
+      if (typeof error.detail === "string") return error.detail;
+      if (Array.isArray(error.detail)) {
+        return error.detail
+          .map((err) => {
+            if (typeof err === "string") return err;
+            if (err.msg) {
+              const loc = err.loc ? ` (${Array.isArray(err.loc) ? err.loc.join(".") : err.loc})` : "";
+              return `${err.msg}${loc}`;
+            }
+            return JSON.stringify(err);
+          })
+          .join("; ");
+      }
+      return JSON.stringify(error.detail);
+    }
+    
+    // Last resort: stringify the error
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return String(error);
+    }
+};
 
 const DocumentsTab = ({ projectId }) => {
   const dispatch = useDispatch();
@@ -52,7 +109,7 @@ const DocumentsTab = ({ projectId }) => {
 
   // Check correct loading states
   const baseCaseUploading = loading.ingestBaseCase || (loading.upload && uploadingType === "base_case");
-  const tabularDataUploading = loading.upload && uploadingType === "tabular_data";
+  const tabularDataUploading = loading.ingestTabularData || (loading.upload && uploadingType === "tabular_data");
 
   // Fetch documents on mount
   useEffect(() => {
@@ -64,7 +121,8 @@ const DocumentsTab = ({ projectId }) => {
   // Clear error from Redux when component unmounts or error changes
   useEffect(() => {
     if (error) {
-      setUploadError(error);
+      const errorMessage = formatError(error);
+      setUploadError(errorMessage);
       setTimeout(() => setUploadError(null), 5000);
     }
   }, [error]);
@@ -114,9 +172,8 @@ const DocumentsTab = ({ projectId }) => {
       setTimeout(() => setUploadSuccess(null), 5000);
     } catch (error) {
       console.error("Base case upload error:", error);
-      setUploadError(
-        `Failed to upload base case reports: ${error.message || error}`
-      );
+      const errorMessage = formatError(error);
+      setUploadError(`Failed to upload base case reports: ${errorMessage}`);
       setTimeout(() => setUploadError(null), 5000);
     } finally {
       setUploadingType(null);
@@ -138,7 +195,7 @@ const DocumentsTab = ({ projectId }) => {
       // Upload each file
       for (const fileObj of files) {
         const result = await dispatch(
-          uploadDocument({
+          ingestTabularDataDocument({
             file: fileObj.file,
             projectId: projectId,
             artifactType: "tabular_data",
@@ -169,9 +226,8 @@ const DocumentsTab = ({ projectId }) => {
       setTimeout(() => setUploadSuccess(null), 5000);
     } catch (error) {
       console.error("Tabular data upload error:", error);
-      setUploadError(
-        `Failed to upload tabular data files: ${error.message || error}`
-      );
+      const errorMessage = formatError(error);
+      setUploadError(`Failed to upload tabular data files: ${errorMessage}`);
       setTimeout(() => setUploadError(null), 5000);
     } finally {
       setUploadingType(null);
@@ -232,9 +288,8 @@ const DocumentsTab = ({ projectId }) => {
       }, 1000); // Increased delay to ensure backend has fully processed deletion
     } catch (error) {
       console.error("Clear project data error:", error);
-      setUploadError(
-        `Failed to clear project data: ${error.message || error}`
-      );
+      const errorMessage = formatError(error);
+      setUploadError(`Failed to clear project data: ${errorMessage}`);
       setTimeout(() => setUploadError(null), 5000);
     } finally {
       setClearingData(false);

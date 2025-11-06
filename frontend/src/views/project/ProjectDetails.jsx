@@ -27,6 +27,7 @@ import {
   Person as PersonIcon,
   Description as DescriptionIcon,
   Tag as TagIcon,
+  Storage as StorageIcon,
 } from "@mui/icons-material";
 import {
   fetchProjectById,
@@ -61,6 +62,22 @@ const ProjectDetails = () => {
   
   // Calculate document count from Redux state
   const documentCount = projectDocuments.length;
+
+  // Format file size helper function
+  const formatFileSize = (bytes) => {
+    if (!bytes || bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
+  // Calculate total size of all documents
+  const totalDocumentSize = projectDocuments.reduce((total, doc) => {
+    // Handle both 'size' and 'length' fields, default to 0 if missing
+    const docSize = doc.size || doc.length || 0;
+    return total + (typeof docSize === 'number' ? docSize : 0);
+  }, 0);
 
   // Local state
   const [scenarioCount] = useState(0); // Placeholder - will be populated from API
@@ -322,7 +339,7 @@ const ProjectDetails = () => {
               </Typography>
 
               <Grid container spacing={2} sx={{ flex: 1 }}>
-                <Grid size={6}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Box sx={{ textAlign: "center", p: 2 }}>
                     <Avatar
                       sx={{
@@ -343,7 +360,28 @@ const ProjectDetails = () => {
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid size={6}>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <Box sx={{ textAlign: "center", p: 2 }}>
+                    <Avatar
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        bgcolor: "info.main",
+                        mx: "auto",
+                        mb: 1,
+                      }}
+                    >
+                      <StorageIcon />
+                    </Avatar>
+                    <Typography variant="h4" fontWeight="bold">
+                      {formatFileSize(totalDocumentSize)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Total Document Size
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Box sx={{ textAlign: "center", p: 2 }}>
                     <Avatar
                       sx={{
