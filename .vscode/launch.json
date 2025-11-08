@@ -114,7 +114,9 @@
         "--reload-dir",
         ".",
         "--log-level",
-        "info"
+        "info",
+        "--log-config",
+        "logging_config.json"
       ],
       "cwd": "${workspaceFolder}/backend/",
       "envFile": "${workspaceFolder}/backend/.env",
@@ -123,7 +125,8 @@
       "subProcess": true,
       "console": "integratedTerminal",
       "env": {
-        "PYTHONUNBUFFERED": "1"
+        "PYTHONUNBUFFERED": "1",
+        "LOG_LEVEL": "INFO"
       }
     },
 

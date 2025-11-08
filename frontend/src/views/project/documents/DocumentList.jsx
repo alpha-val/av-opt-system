@@ -66,10 +66,9 @@ const DocumentList = ({
       return;
     }
     if (selectedDocument) {
-      console.log("Delete document with ID:", selectedDocument.id);
       // dispatch delete...
       const result = await dispatch(deleteDocument(selectedDocument.id));
-      console.log("Delete dispatch result:", result);
+
       if (deleteDocument.fulfilled.match(result)) {
         console.log("Document deleted successfully:", result.payload);
       } else {
@@ -209,7 +208,7 @@ const DocumentList = ({
   // Combine and format documents for table
   const tableData = useMemo(() => {
     const allDocuments = [...baseCaseDocuments, ...tabularDataDocuments];
-    console.log("allDocuments:", allDocuments);
+
     return allDocuments.map((doc) => {
       // Extract artifact_type value before creating new object
       const artifactType = doc.artifact_type;

@@ -15,6 +15,7 @@ import { Refresh as RefreshIcon } from "@mui/icons-material";
 
 import {
   fetchProjectEntitiesRelations,
+  invalidateEntitiesRelationsCache,
   selectEntitiesByProject,
   selectRelationsByProject,
   selectSummaryByProject,
@@ -35,7 +36,7 @@ const ViewDataTab = ({ projectId }) => {
   // Get raw entities data
   const rawEntities =
     useSelector((state) => selectEntitiesByProject(state, projectId)) || [];
-  console.log("rawEntities", rawEntities);
+  
   // Sort entities by type, then by name
   const entities = useMemo(() => {
     return [...rawEntities].sort((a, b) => {
@@ -105,12 +106,12 @@ const ViewDataTab = ({ projectId }) => {
 
   // Track previous ingestion state to detect completion
   const prevIngestBaseCaseRef = React.useRef(false);
-  const prevUploadRef = React.useRef(false);
+  const prevIngestTabularDataRef = React.useRef(false);
 
   // Initialize refs on mount
   React.useEffect(() => {
     prevIngestBaseCaseRef.current = documentsLoading.ingestBaseCase;
-    prevUploadRef.current = documentsLoading.upload;
+    prevIngestTabularDataRef.current = documentsLoading.ingestTabularData;
   }, []); // Only on mount
 
   // Load data function
@@ -135,31 +136,35 @@ const ViewDataTab = ({ projectId }) => {
 
   // Auto-refresh when document ingestion completes
   useEffect(() => {
-    const ingestJustCompleted =
+    const baseCaseJustCompleted =
       prevIngestBaseCaseRef.current && !documentsLoading.ingestBaseCase;
-    const uploadJustCompleted =
-      prevUploadRef.current && !documentsLoading.upload;
+    const tabularDataJustCompleted =
+      prevIngestTabularDataRef.current && !documentsLoading.ingestTabularData;
 
-    if ((ingestJustCompleted || uploadJustCompleted) && projectId) {
+    if ((baseCaseJustCompleted || tabularDataJustCompleted) && projectId) {
       // Wait a brief moment for backend to finish processing
       const timer = setTimeout(() => {
+        // Invalidate cache first to ensure fresh data is fetched
+        dispatch(invalidateEntitiesRelationsCache({ projectId }));
+        
+        // Then fetch fresh data
         dispatch(
           fetchProjectEntitiesRelations({
             projectId,
             include_metadata: true,
           })
         );
-      }, 1000); // 1 second delay to ensure backend has processed
+      }, 2000); // 2 second delay to ensure backend has fully processed
 
       return () => clearTimeout(timer);
     }
 
     // Update refs
     prevIngestBaseCaseRef.current = documentsLoading.ingestBaseCase;
-    prevUploadRef.current = documentsLoading.upload;
+    prevIngestTabularDataRef.current = documentsLoading.ingestTabularData;
   }, [
     documentsLoading.ingestBaseCase,
-    documentsLoading.upload,
+    documentsLoading.ingestTabularData,
     dispatch,
     projectId,
   ]);

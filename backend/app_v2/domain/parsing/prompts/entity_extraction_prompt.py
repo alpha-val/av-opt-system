@@ -408,6 +408,7 @@ nodes_and_relations_extraction_directives = """
         • follow the properties mentioned in NODE_PROPERTIES in the ontology
         • prioritize finding cost associated with an entity (e.g., 'cost_value', 'price_value', 'currency', 'basis_year', 'expenditure')
         • always keep cost value and currency as separate properties (never as a combined string)
+        • always keep cost value and currency as top-level within the properties dictionary
         • if a cost or price is present, extract the numeric value to 'cost_value' and the currency to 'currency'
         • if a basis year is present, extract it to 'basis_year'
         • if currency is not present, set 'currency' to null

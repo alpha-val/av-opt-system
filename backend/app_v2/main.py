@@ -1,10 +1,32 @@
 # Load .env globally
 from dotenv import load_dotenv
 import os
+import logging
+import sys
 
 load_dotenv(
     dotenv_path=os.path.join(os.path.dirname(__file__), "../.env"), override=True
 )
+
+# Configure logging
+# Get log level from environment or default to INFO
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[
+        logging.StreamHandler(sys.stdout)  # Output to console
+    ],
+    force=True  # Override any existing configuration
+)
+
+# Set specific logger levels
+logging.getLogger("uvicorn").setLevel(logging.INFO)
+logging.getLogger("uvicorn.access").setLevel(logging.INFO)
+logging.getLogger("fastapi").setLevel(logging.INFO)
+
+logger = logging.getLogger(__name__)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,12 +40,12 @@ from .adapters.mongo.client import ensure_bronze_indexes
 def create_app() -> FastAPI:
     async def lifespan(app: FastAPI):
         # Startup logic
-        print("[DEBUG : main.py] Ensuring indexes during startup...")
+        logger.info("Ensuring indexes during startup...")
         ensure_bronze_indexes()
-        print("[DEBUG : main.py] Indexes ensured.")
+        logger.info("Indexes ensured.")
         yield  # This is where the app runs
         # Shutdown logic (if needed)
-        print("[DEBUG : main.py] Application is shutting down...")
+        logger.info("Application is shutting down...")
 
     app = FastAPI(title="Alpha‑Val Optionality API", version="0.0.1", lifespan=lifespan)
 

@@ -80,7 +80,7 @@ const ProjectDashboard = () => {
         >
           <Tab label="Project Details" />
           <Tab label="Documents" />
-          <Tab label="View Data" />
+          <Tab label="Inspect Data" />
           <Tab label="Scenarios" />
           <Tab label="Cost Estimates" />
         </Tabs>

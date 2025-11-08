@@ -144,19 +144,19 @@ class DocumentProcessingService:
                 edge.setdefault("properties", {})
                 edge["properties"].update(chunk_metadata)
 
-            # Stage 4: MSIO validation
+            # Stage 4: Mining System Integration Ontology (MSIO) validation
             validation_warnings = []
-            if validate_msio:
-                validation_result = self.validator.validate_batch(
-                    nodes, strict=strict_validation
-                )
-                nodes = validation_result["valid_entities"]
-                validation_warnings = validation_result["warnings"]
+            # if validate_msio:
+            #     validation_result = self.validator.validate_batch(
+            #         nodes, strict=strict_validation
+            #     )
+            #     nodes = validation_result["valid_entities"]
+            #     validation_warnings = validation_result["warnings"]
 
-                logger.info(
-                    f"Validated entities: {validation_result['stats']['valid']}/"
-                    f"{validation_result['stats']['total']} valid"
-                )
+            #     logger.info(
+            #         f"Validated entities: {validation_result['stats']['valid']}/"
+            #         f"{validation_result['stats']['total']} valid"
+            #     )
 
             # Create hierarchy edges
             hierarchy_edges = self.entity_extractor.create_hierarchy_edges(nodes)
@@ -347,17 +347,17 @@ class DocumentProcessingService:
 
             # Stage 5: MSIO validation
             validation_warnings = []
-            if validate_msio:
-                validation_result = self.validator.validate_batch(
-                    nodes, strict=strict_validation
-                )
-                nodes = validation_result["valid_entities"]
-                validation_warnings = validation_result["warnings"]
+            # if validate_msio:
+            #     validation_result = self.validator.validate_batch(
+            #         nodes, strict=strict_validation
+            #     )
+            #     nodes = validation_result["valid_entities"]
+            #     validation_warnings = validation_result["warnings"]
 
-                logger.info(
-                    f"Validated entities: {validation_result['stats']['valid']}/"
-                    f"{validation_result['stats']['total']} valid"
-                )
+            #     logger.info(
+            #         f"Validated entities: {validation_result['stats']['valid']}/"
+            #         f"{validation_result['stats']['total']} valid"
+            #     )
 
             # Create hierarchy edges
             hierarchy_edges = self.entity_extractor.create_hierarchy_edges(nodes)

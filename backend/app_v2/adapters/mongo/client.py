@@ -10,8 +10,27 @@ import uuid
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
 MONGO_DB = os.getenv("MONGO_DB", "alpha_val")
 
+# Initialize MongoDB client with SSL/TLS support for Atlas connections
+# For mongodb+srv://, pymongo automatically handles SSL/TLS - don't override
+# For mongodb:// with Atlas, ensure SSL is enabled
+_client_kwargs = {}
+if "mongodb+srv" in MONGO_URI:
+    # mongodb+srv automatically handles SSL/TLS, just add connection options
+    _client_kwargs = {
+        "retryWrites": True,
+        "w": "majority",
+    }
+elif "mongodb.net" in MONGO_URI:
+    # For mongodb:// with Atlas, explicitly enable TLS
+    # Note: mongodb+srv:// is recommended for Atlas
+    _client_kwargs = {
+        "tls": True,
+        "retryWrites": True,
+        "w": "majority",
+    }
+
 # Initialize MongoDB client and database
-_client = MongoClient(MONGO_URI)
+_client = MongoClient(MONGO_URI, **_client_kwargs)
 _db = _client[MONGO_DB]
 
 
