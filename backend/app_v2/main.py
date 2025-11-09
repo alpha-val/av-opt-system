@@ -34,6 +34,7 @@ from .api.v1.routers.projects import projects_router
 from .api.v1.routers.auth import auth_router
 from .api.v1.routers.documents import documents_router
 from .api.v1.routers.etl import etl_router
+from .api.v1.routers.scenarios import scenarios_router
 from .adapters.mongo.client import ensure_bronze_indexes
 
 
@@ -75,6 +76,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(documents_router)
     app.include_router(etl_router)
+    app.include_router(scenarios_router)
     
     # Simple health check endpoint
     @app.get("/health")

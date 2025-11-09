@@ -1,83 +1,66 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import {
+  createSlice,
+  createAsyncThunk,
+  createSelector,
+} from "@reduxjs/toolkit";
+
 import REACT_APP_CONFIG from "../AppConfig";
 
 const API_BASE_URL = REACT_APP_CONFIG.url.API_URL;
 
+// Helper function to get auth token
 const getAuthToken = () => {
   return localStorage.getItem("access_token");
 };
 
+// Helper function to create auth headers
 const getAuthHeaders = () => {
   const token = getAuthToken();
   return {
     "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
+    Authorization: `Bearer ${token}`,
   };
 };
 
-const setAuthToken = (token, rememberMe = false) => {
-  localStorage.setItem("access_token", token);
-};
-
-const clearAuthToken = () => {
-  localStorage.removeItem("access_token");
-};
-
-export const fetchScenarios = createAsyncThunk(
-  "scenarios/fetchByProject",
+// Fetch scenarios by project ID
+export const fetchScenariosByProject = createAsyncThunk(
+  "scenarios/fetchScenariosByProject",
   async (projectId, { rejectWithValue }) => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
+      console.log("Fetching scenarios by project ID:", projectId);  
       const response = await fetch(
-        `${API_BASE_URL}/projects/${projectId}/scenarios`,
+        `${API_BASE_URL}/scenarios/project/${projectId}/list`,
         {
-          method: "GET",
           headers: getAuthHeaders(),
         }
       );
-
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.detail || `HTTP error! status: ${response.status}`
-        );
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Failed to fetch scenarios");
       }
-
       const data = await response.json();
-
-      return { projectId, scenarios: data };
+      return { scenarios: data, projectId };
     } catch (error) {
       return rejectWithValue(error.message);
     }
   }
 );
 
-export const fetchScenario = createAsyncThunk(
-  "scenarios/fetchById",
+// Fetch scenario by ID
+export const fetchScenarioById = createAsyncThunk(
+  "scenarios/fetchScenarioById",
   async (scenarioId, { rejectWithValue }) => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
-      const response = await fetch(`${API_BASE_URL}/scenarios/${scenarioId}`, {
-        method: "GET",
-        headers: getAuthHeaders(),
-      });
-
+      const response = await fetch(
+        `${API_BASE_URL}/scenarios/${scenarioId}`,
+        {
+          headers: getAuthHeaders(),
+        }
+      );
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.detail || `HTTP error! status: ${response.status}`
-        );
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Failed to fetch scenario");
       }
-
       const data = await response.json();
       return data;
     } catch (error) {
@@ -86,43 +69,44 @@ export const fetchScenario = createAsyncThunk(
   }
 );
 
+// Fetch scenario with full analysis data
+export const fetchScenarioWithAnalysis = createAsyncThunk(
+  "scenarios/fetchScenarioWithAnalysis",
+  async (scenarioId, { rejectWithValue }) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/scenarios/${scenarioId}/full`,
+        {
+          headers: getAuthHeaders(),
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Failed to fetch scenario");
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Create scenario
 export const createScenario = createAsyncThunk(
-  "scenarios/create",
+  "scenarios/createScenario",
   async (scenarioData, { rejectWithValue }) => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
-      const formData = new FormData();
-      formData.append("project_id", scenarioData.project_id);
-      formData.append("name", scenarioData.name);
-      formData.append("description", scenarioData.description);
-      formData.append("goal", scenarioData.goal);
-      formData.append("change_type", scenarioData.change_type);
-      formData.append("status", "draft");
-      // if (scenarioData.file) {
-      //   formData.append("file", scenarioData.file); // Attach the file
-      // }
-
-      const response = await fetch(`${API_BASE_URL}/scenarios/add`, {
+      const response = await fetch(`${API_BASE_URL}/scenarios/`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`, // Authorization header
-        },
-        body: formData, // Send FormData as the request body
+        headers: getAuthHeaders(),
+        body: JSON.stringify(scenarioData),
       });
-
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.detail || `HTTP error! status: ${response.status}`
-        );
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Failed to create scenario");
       }
-
       const data = await response.json();
-      console.log("[scenarioSlice] createScenario result:", data);
       return data;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -130,150 +114,47 @@ export const createScenario = createAsyncThunk(
   }
 );
 
+// Update scenario
 export const updateScenario = createAsyncThunk(
-  "scenarios/update",
-  async ({ scenarioId, updates }, { rejectWithValue }) => {
+  "scenarios/updateScenario",
+  async ({ scenarioId, data }, { rejectWithValue }) => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
-      const response = await fetch(`${API_BASE_URL}/scenarios/${scenarioId}`, {
-        method: "PUT",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(updates),
-      });
-
+      const response = await fetch(
+        `${API_BASE_URL}/scenarios/${scenarioId}`,
+        {
+          method: "PATCH",
+          headers: getAuthHeaders(),
+          body: JSON.stringify(data),
+        }
+      );
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.detail || `HTTP error! status: ${response.status}`
-        );
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Failed to update scenario");
       }
-
-      const data = await response.json();
-      return data;
+      const updatedData = await response.json();
+      return updatedData;
     } catch (error) {
       return rejectWithValue(error.message);
     }
   }
 );
 
-export const analyzeScenario = createAsyncThunk(
-  "scenarios/analyze",
-  async ({ scenarioId, updates }, { rejectWithValue, dispatch, getState }) => {
-    try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
-      // // First, update the scenario with any field changes
-      // if (updates && Object.keys(updates).length > 0) {
-      //   await dispatch(updateScenario({ scenarioId, updates })).unwrap();
-      // }
-
-      // Get the updated scenario from state
-      const state = getState();
-      const scenario = state.scenarios.byId[scenarioId];
-
-      if (!scenario) {
-        throw new Error(`Scenario ${scenarioId} not found in state`);
-      }
-
-      // Build cost estimate request payload matching CostEstimateRequest schema
-      const costEstimateRequest = {
-        project_id: scenario.properties.project_id,
-        scenario_id: scenario.id,
-        cost_id: null, // Auto-generate
-        scenario_description: scenario.description,
-        entity_types: ["Equipment", "Material", "Process"], // Default entity types
-        uncertainties: null, // TODO: Add if needed
-        goal: scenario.goal,
-        change_type: scenario.change_type,
-        equipment_types: null, // TODO: Extract from scenario if needed
-        capacity_range: null, // TODO: Extract from scenario if needed
-        selected_entities: updates.selected_entities || null,
-      };
-      console.log("Cost Estimate Request:", costEstimateRequest);
-      // Trigger the cost estimation
-      const response = await fetch(`${API_BASE_URL}/cost-estimates`, {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(costEstimateRequest),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.detail || `HTTP error! status: ${response.status}`
-        );
-      }
-
-      const costEstimate = await response.json();
-
-      // Update scenario status to "ready" after successful estimation
-      const updatedScenario = await dispatch(
-        updateScenario({
-          scenarioId,
-          updates: {
-            status: "ready",
-            compute_state: "succeeded",
-          },
-        })
-      ).unwrap();
-
-      return {
-        scenario: updatedScenario,
-        costEstimate: costEstimate,
-      };
-    } catch (error) {
-
-      // Update scenario status to "failed" on error
-      try {
-        await dispatch(
-          updateScenario({
-            scenarioId,
-            updates: {
-              status: "draft",
-              compute_state: "failed",
-            },
-          })
-        );
-      } catch (updateError) {
-        console.error(
-          "[analyzeScenario] Failed to update error state:",
-          updateError
-        );
-      }
-
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
+// Delete scenario
 export const deleteScenario = createAsyncThunk(
-  "scenarios/delete",
+  "scenarios/deleteScenario",
   async (scenarioId, { rejectWithValue }) => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
-      const response = await fetch(`${API_BASE_URL}/scenarios/${scenarioId}`, {
-        method: "DELETE",
-        headers: getAuthHeaders(),
-      });
-
+      const response = await fetch(
+        `${API_BASE_URL}/scenarios/${scenarioId}`,
+        {
+          method: "DELETE",
+          headers: getAuthHeaders(),
+        }
+      );
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.detail || `HTTP error! status: ${response.status}`
-        );
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Failed to delete scenario");
       }
-
       return scenarioId;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -281,82 +162,23 @@ export const deleteScenario = createAsyncThunk(
   }
 );
 
-export const fetchCostEstimate = createAsyncThunk(
-  "scenarios/fetchCostEstimate",
+// Analyze scenario
+export const analyzeScenario = createAsyncThunk(
+  "scenarios/analyzeScenario",
   async (scenarioId, { rejectWithValue }) => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
-      // Query cost estimates by scenario_id
       const response = await fetch(
-        `${API_BASE_URL}/cost-estimates?scenario_id=${scenarioId}&limit=1`,
+        `${API_BASE_URL}/scenarios/${scenarioId}/analyze`,
         {
-          method: "GET",
+          method: "POST",
           headers: getAuthHeaders(),
         }
       );
-
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.detail || `HTTP error! status: ${response.status}`
-        );
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Failed to analyze scenario");
       }
-
       const data = await response.json();
-
-      // Extract the first estimate from the list
-      const costEstimate =
-        data.estimates && data.estimates.length > 0 ? data.estimates[0] : null;
-
-      return { scenarioId, costEstimate };
-    } catch (error) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
-export const extractScenarioData = createAsyncThunk(
-  "scenarios/extractScenarioData",
-  async ({ scenarioDetails, file, projectId, docId, artifactType, userId }, { rejectWithValue }) => {
-    try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
-      const formData = new FormData();
-      formData.append("scenario", JSON.stringify(scenarioDetails)); // Add scenario details as JSON
-      formData.append("project_id", projectId); // Add project_id
-      formData.append("artifact_type", artifactType); // Add artifact_type
-      formData.append("user_id", userId); // Add user_id
-      if (file) {
-        formData.append("file", file); // Attach the file
-      }
-
-      const response = await fetch(
-        `${API_BASE_URL}/scenarios/extract-scenario-data`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`, // Authorization header
-          },
-          body: formData, // Send FormData as the request body
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.detail || `HTTP error! status: ${response.status}`
-        );
-      }
-
-      const data = await response.json();
-      console.log("[scenarioSlice] extractScenarioData result:", data);
       return data;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -364,206 +186,451 @@ export const extractScenarioData = createAsyncThunk(
   }
 );
 
-// Add extraction state to the slice
+// Resize system
+export const resizeSystem = createAsyncThunk(
+  "scenarios/resizeSystem",
+  async ({ scenarioId, userConstraints = [] }, { rejectWithValue }) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/scenarios/${scenarioId}/resize`,
+        {
+          method: "POST",
+          headers: getAuthHeaders(),
+          body: JSON.stringify(userConstraints),
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Failed to resize system");
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Build recommendation
+export const buildRecommendation = createAsyncThunk(
+  "scenarios/buildRecommendation",
+  async (scenarioId, { rejectWithValue }) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/scenarios/${scenarioId}/recommend`,
+        {
+          method: "POST",
+          headers: getAuthHeaders(),
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Failed to build recommendation");
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Prepare cost estimation
+export const prepareCostEstimation = createAsyncThunk(
+  "scenarios/prepareCostEstimation",
+  async ({ scenarioId, generateEstimates = false }, { rejectWithValue }) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/scenarios/${scenarioId}/cost-estimation?generate_estimates=${generateEstimates}`,
+        {
+          method: "POST",
+          headers: getAuthHeaders(),
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.detail || "Failed to prepare cost estimation"
+        );
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Generate report
+export const generateReport = createAsyncThunk(
+  "scenarios/generateReport",
+  async ({ scenarioId, format = "json" }, { rejectWithValue }) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/scenarios/${scenarioId}/report?format=${format}`,
+        {
+          headers: getAuthHeaders(),
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Failed to generate report");
+      }
+      if (format === "markdown") {
+        const text = await response.text();
+        return { scenarioId, format, content: text };
+      }
+      const data = await response.json();
+      return { scenarioId, format, ...data };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Initial state
+const initialState = {
+  scenarios: {}, // keyed by scenario ID
+  scenariosByProject: {}, // keyed by project ID, array of scenario IDs
+  loading: {
+    fetch: false,
+    create: false,
+    update: false,
+    delete: false,
+    analyze: {}, // keyed by scenario ID
+    resize: {}, // keyed by scenario ID
+    recommend: {}, // keyed by scenario ID
+    costEstimation: {}, // keyed by scenario ID
+    report: {}, // keyed by scenario ID
+  },
+  error: null,
+  currentScenario: null, // Full scenario with analysis
+};
+
+// Scenario slice
 const scenarioSlice = createSlice({
   name: "scenarios",
-  initialState: {
-    byProject: {},
-    byId: {},
-    costEstimates: {},
-    extraction: {
-      loading: false,
-      result: null,
-      error: null,
-    },
-    loading: false,
-    analyzing: false,
-    error: null,
-  },
+  initialState,
   reducers: {
+    clearCurrentScenario: (state) => {
+      state.currentScenario = null;
+    },
+    clearScenarios: (state) => {
+      state.scenarios = {};
+      state.scenariosByProject = {};
+    },
     clearError: (state) => {
       state.error = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchScenarios.pending, (state) => {
-        state.loading = true;
+      // fetchScenariosByProject cases
+      .addCase(fetchScenariosByProject.pending, (state) => {
+        state.loading.fetch = true;
         state.error = null;
       })
-      .addCase(fetchScenarios.fulfilled, (state, action) => {
-        state.loading = false;
-        const { projectId, scenarios } = action.payload;
-        state.byProject[projectId] = scenarios;
-        scenarios.forEach((s) => {
-          state.byId[s.id] = s;
+      .addCase(fetchScenariosByProject.fulfilled, (state, action) => {
+        state.loading.fetch = false;
+        const { scenarios, projectId } = action.payload;
+        
+        // Store scenarios by ID
+        scenarios.forEach((scenario) => {
+          state.scenarios[scenario.id] = scenario;
         });
-      })
-      .addCase(fetchScenarios.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || action.error.message;
-      })
-
-      .addCase(fetchScenario.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchScenario.fulfilled, (state, action) => {
-        state.loading = false;
-        const scenario = action.payload;
-        state.byId[scenario.id] = scenario;
-
-        if (state.byProject[scenario.properties.project_id]) {
-          const index = state.byProject[scenario.properties.project_id].findIndex(
-            (s) => s.id === scenario.id
-          );
-          if (index !== -1) {
-            state.byProject[scenario.properties.project_id][index] = scenario;
-          } else {
-            state.byProject[scenario.properties.project_id].push(scenario);
-          }
+        
+        // Store scenario IDs by project
+        if (projectId) {
+          state.scenariosByProject[projectId] = scenarios.map((s) => s.id);
         }
       })
-      .addCase(fetchScenario.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || action.error.message;
+      .addCase(fetchScenariosByProject.rejected, (state, action) => {
+        state.loading.fetch = false;
+        state.error = action.payload;
       })
 
+      // fetchScenarioById cases
+      .addCase(fetchScenarioById.pending, (state) => {
+        state.loading.fetch = true;
+        state.error = null;
+      })
+      .addCase(fetchScenarioById.fulfilled, (state, action) => {
+        state.loading.fetch = false;
+        const scenario = action.payload;
+        state.scenarios[scenario.id] = scenario;
+      })
+      .addCase(fetchScenarioById.rejected, (state, action) => {
+        state.loading.fetch = false;
+        state.error = action.payload;
+      })
+
+      // fetchScenarioWithAnalysis cases
+      .addCase(fetchScenarioWithAnalysis.pending, (state) => {
+        state.loading.fetch = true;
+        state.error = null;
+      })
+      .addCase(fetchScenarioWithAnalysis.fulfilled, (state, action) => {
+        state.loading.fetch = false;
+        const scenario = action.payload;
+        state.scenarios[scenario.id] = scenario;
+        state.currentScenario = scenario;
+      })
+      .addCase(fetchScenarioWithAnalysis.rejected, (state, action) => {
+        state.loading.fetch = false;
+        state.error = action.payload;
+      })
+
+      // createScenario cases
       .addCase(createScenario.pending, (state) => {
-        state.loading = true;
+        state.loading.create = true;
         state.error = null;
       })
       .addCase(createScenario.fulfilled, (state, action) => {
-        state.loading = false;
+        state.loading.create = false;
         const scenario = action.payload;
-        state.byId[scenario.id] = scenario;
-        console.log("[scenarioSlice] Adding scenario: ", scenario)
-        if (!state.byProject[scenario.properties.project_id]) {
-          state.byProject[scenario.properties.project_id] = [];
+        state.scenarios[scenario.id] = scenario;
+        
+        // Add to project's scenario list
+        if (scenario.project_id) {
+          if (!state.scenariosByProject[scenario.project_id]) {
+            state.scenariosByProject[scenario.project_id] = [];
+          }
+          if (!state.scenariosByProject[scenario.project_id].includes(scenario.id)) {
+            state.scenariosByProject[scenario.project_id].push(scenario.id);
+          }
         }
-        state.byProject[scenario.properties.project_id].push(scenario);
       })
       .addCase(createScenario.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || action.error.message;
+        state.loading.create = false;
+        state.error = action.payload;
       })
 
+      // updateScenario cases
       .addCase(updateScenario.pending, (state) => {
-        state.loading = true;
+        state.loading.update = true;
         state.error = null;
       })
       .addCase(updateScenario.fulfilled, (state, action) => {
-        state.loading = false;
+        state.loading.update = false;
         const scenario = action.payload;
-        state.byId[scenario.id] = scenario;
-
-        if (state.byProject[scenario.properties.project_id]) {
-          const index = state.byProject[scenario.properties.project_id].findIndex(
-            (s) => s.id === scenario.id
-          );
-          if (index !== -1) {
-            state.byProject[scenario.properties.project_id][index] = scenario;
-          }
+        state.scenarios[scenario.id] = scenario;
+        
+        // Update currentScenario if it's the updated one
+        if (state.currentScenario?.id === scenario.id) {
+          state.currentScenario = scenario;
         }
       })
       .addCase(updateScenario.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || action.error.message;
+        state.loading.update = false;
+        state.error = action.payload;
       })
 
-      .addCase(analyzeScenario.pending, (state, action) => {
-        state.analyzing = true;
-        state.error = null;
-
-        // Update scenario state to analyzing
-        const scenarioId = action.meta.arg.scenarioId;
-        if (state.byId[scenarioId]) {
-          state.byId[scenarioId].status = "analyzing";
-          state.byId[scenarioId].compute_state = "running";
-        }
-      })
-      .addCase(analyzeScenario.fulfilled, (state, action) => {
-        state.analyzing = false;
-        const { scenario, costEstimate } = action.payload;
-
-        // Update scenario
-        state.byId[scenario.id] = scenario;
-        if (state.byProject[scenario.properties.project_id]) {
-          const index = state.byProject[scenario.properties.project_id].findIndex(
-            (s) => s.id === scenario.id
-          );
-          if (index !== -1) {
-            state.byProject[scenario.properties.project_id][index] = scenario;
-          }
-        }
-
-        // Store cost estimate
-        state.costEstimates[scenario.id] = costEstimate;
-      })
-      .addCase(analyzeScenario.rejected, (state, action) => {
-        state.analyzing = false;
-        state.error = action.payload || action.error.message;
-
-        // Update scenario state to failed
-        const scenarioId = action.meta.arg.scenarioId;
-        if (state.byId[scenarioId]) {
-          state.byId[scenarioId].status = "draft";
-          state.byId[scenarioId].compute_state = "failed";
-        }
-      })
-
+      // deleteScenario cases
       .addCase(deleteScenario.pending, (state) => {
-        state.loading = true;
+        state.loading.delete = true;
         state.error = null;
       })
       .addCase(deleteScenario.fulfilled, (state, action) => {
-        state.loading = false;
+        state.loading.delete = false;
         const scenarioId = action.payload;
-        const scenario = state.byId[scenarioId];
-        if (scenario) {
-          state.byProject[scenario.properties.project_id] = state.byProject[
-            scenario.properties.project_id
-          ].filter((s) => s.id !== scenarioId);
-          delete state.byId[scenarioId];
-          delete state.costEstimates[scenarioId];
+        delete state.scenarios[scenarioId];
+        
+        // Remove from project's scenario list
+        Object.keys(state.scenariosByProject).forEach((projectId) => {
+          state.scenariosByProject[projectId] = state.scenariosByProject[
+            projectId
+          ].filter((id) => id !== scenarioId);
+        });
+        
+        // Clear currentScenario if it was deleted
+        if (state.currentScenario?.id === scenarioId) {
+          state.currentScenario = null;
         }
       })
       .addCase(deleteScenario.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || action.error.message;
+        state.loading.delete = false;
+        state.error = action.payload;
       })
 
-      .addCase(fetchCostEstimate.pending, (state) => {
-        state.loading = true;
+      // analyzeScenario cases
+      .addCase(analyzeScenario.pending, (state, action) => {
+        const scenarioId = action.meta.arg;
+        state.loading.analyze[scenarioId] = true;
         state.error = null;
       })
-      .addCase(fetchCostEstimate.fulfilled, (state, action) => {
-        state.loading = false;
-        const { scenarioId, costEstimate } = action.payload;
-        if (costEstimate) {
-          state.costEstimates[scenarioId] = costEstimate;
+      .addCase(analyzeScenario.fulfilled, (state, action) => {
+        const scenario = action.payload;
+        const scenarioId = scenario.id;
+        state.scenarios[scenarioId] = scenario;
+        state.loading.analyze[scenarioId] = false;
+        
+        // Update currentScenario if it's the analyzed one
+        if (state.currentScenario?.id === scenarioId) {
+          state.currentScenario = scenario;
         }
       })
-      .addCase(fetchCostEstimate.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || action.error.message;
+      .addCase(analyzeScenario.rejected, (state, action) => {
+        const scenarioId = action.meta.arg;
+        state.loading.analyze[scenarioId] = false;
+        state.error = action.payload;
       })
-      .addCase(extractScenarioData.pending, (state) => {
-        state.extraction.loading = true;
-        state.extraction.result = null;
-        state.extraction.error = null;
+
+      // resizeSystem cases
+      .addCase(resizeSystem.pending, (state, action) => {
+        const scenarioId = action.meta.arg.scenarioId;
+        state.loading.resize[scenarioId] = true;
+        state.error = null;
       })
-      .addCase(extractScenarioData.fulfilled, (state, action) => {
-        state.extraction.loading = false;
-        state.extraction.result = action.payload;
+      .addCase(resizeSystem.fulfilled, (state, action) => {
+        const scenario = action.payload;
+        const scenarioId = scenario.id;
+        state.scenarios[scenarioId] = scenario;
+        state.loading.resize[scenarioId] = false;
+        
+        // Update currentScenario if it's the resized one
+        if (state.currentScenario?.id === scenarioId) {
+          state.currentScenario = scenario;
+        }
       })
-      .addCase(extractScenarioData.rejected, (state, action) => {
-        state.extraction.loading = false;
-        state.extraction.error = action.payload || action.error.message;
+      .addCase(resizeSystem.rejected, (state, action) => {
+        const scenarioId = action.meta.arg.scenarioId;
+        state.loading.resize[scenarioId] = false;
+        state.error = action.payload;
+      })
+
+      // buildRecommendation cases
+      .addCase(buildRecommendation.pending, (state, action) => {
+        const scenarioId = action.meta.arg;
+        state.loading.recommend[scenarioId] = true;
+        state.error = null;
+      })
+      .addCase(buildRecommendation.fulfilled, (state, action) => {
+        const scenario = action.payload;
+        const scenarioId = scenario.id;
+        state.scenarios[scenarioId] = scenario;
+        state.loading.recommend[scenarioId] = false;
+        
+        // Update currentScenario if it's the recommended one
+        if (state.currentScenario?.id === scenarioId) {
+          state.currentScenario = scenario;
+        }
+      })
+      .addCase(buildRecommendation.rejected, (state, action) => {
+        const scenarioId = action.meta.arg;
+        state.loading.recommend[scenarioId] = false;
+        state.error = action.payload;
+      })
+
+      // prepareCostEstimation cases
+      .addCase(prepareCostEstimation.pending, (state, action) => {
+        const scenarioId = action.meta.arg.scenarioId;
+        state.loading.costEstimation[scenarioId] = true;
+        state.error = null;
+      })
+      .addCase(prepareCostEstimation.fulfilled, (state, action) => {
+        const scenario = action.payload;
+        const scenarioId = scenario.id;
+        state.scenarios[scenarioId] = scenario;
+        state.loading.costEstimation[scenarioId] = false;
+        
+        // Update currentScenario if it's the cost estimation one
+        if (state.currentScenario?.id === scenarioId) {
+          state.currentScenario = scenario;
+        }
+      })
+      .addCase(prepareCostEstimation.rejected, (state, action) => {
+        const scenarioId = action.meta.arg.scenarioId;
+        state.loading.costEstimation[scenarioId] = false;
+        state.error = action.payload;
+      })
+
+      // generateReport cases
+      .addCase(generateReport.pending, (state, action) => {
+        const scenarioId = action.meta.arg.scenarioId;
+        state.loading.report[scenarioId] = true;
+        state.error = null;
+      })
+      .addCase(generateReport.fulfilled, (state, action) => {
+        const scenarioId = action.payload.scenarioId;
+        state.loading.report[scenarioId] = false;
+        // Report data is returned but not stored in state (display only)
+      })
+      .addCase(generateReport.rejected, (state, action) => {
+        const scenarioId = action.meta.arg.scenarioId;
+        state.loading.report[scenarioId] = false;
+        state.error = action.payload;
       });
   },
 });
 
-export const { clearError } = scenarioSlice.actions;
+// Export actions
+export const { clearCurrentScenario, clearScenarios, clearError } =
+  scenarioSlice.actions;
+
+// Selectors
+export const selectScenariosByProject = createSelector(
+  [
+    (state) => state.scenarios.scenarios,
+    (state) => state.scenarios.scenariosByProject,
+    (state, projectId) => projectId,
+  ],
+  (scenarios, scenariosByProject, projectId) => {
+    const scenarioIds = scenariosByProject[projectId] || [];
+    return scenarioIds.map((id) => scenarios[id]).filter(Boolean);
+  }
+);
+
+export const selectScenarioById = createSelector(
+  [(state) => state.scenarios.scenarios, (state, scenarioId) => scenarioId],
+  (scenarios, scenarioId) => scenarios[scenarioId] || null
+);
+
+export const selectCurrentScenario = (state) => state.scenarios.currentScenario;
+
+export const selectScenariosLoading = (state) => state.scenarios.loading;
+
+export const selectScenarioError = (state) => state.scenarios.error;
+
+export const selectAnalysisLoading = createSelector(
+  [
+    (state) => state.scenarios.loading.analyze,
+    (state, scenarioId) => scenarioId,
+  ],
+  (analyzeLoading, scenarioId) => analyzeLoading[scenarioId] || false
+);
+
+export const selectResizingLoading = createSelector(
+  [
+    (state) => state.scenarios.loading.resize,
+    (state, scenarioId) => scenarioId,
+  ],
+  (resizeLoading, scenarioId) => resizeLoading[scenarioId] || false
+);
+
+export const selectRecommendationLoading = createSelector(
+  [
+    (state) => state.scenarios.loading.recommend,
+    (state, scenarioId) => scenarioId,
+  ],
+  (recommendLoading, scenarioId) => recommendLoading[scenarioId] || false
+);
+
+export const selectCostEstimationLoading = createSelector(
+  [
+    (state) => state.scenarios.loading.costEstimation,
+    (state, scenarioId) => scenarioId,
+  ],
+  (costEstimationLoading, scenarioId) =>
+    costEstimationLoading[scenarioId] || false
+);
+
+export const selectReportLoading = createSelector(
+  [
+    (state) => state.scenarios.loading.report,
+    (state, scenarioId) => scenarioId,
+  ],
+  (reportLoading, scenarioId) => reportLoading[scenarioId] || false
+);
 
 export default scenarioSlice.reducer;
+

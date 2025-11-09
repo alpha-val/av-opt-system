@@ -164,3 +164,18 @@
 - `backend/app_v2/api/v1/routers/etl.py` (job_id, background processing)
 - `backend/app_v2/main.py` (register WebSocket router, init publisher)
 - `frontend/src/views/project/tabs/DocumentsTab.jsx` (integrate WebSocket)
+
+### To-dos
+
+- [ ] Create Pydantic schemas in app_v2/domain/scenarios/schemas.py: ScenarioBase, ScenarioCreate, ScenarioUpdate, ScenarioOut, GlobalObjective, LocalObjective, UserConstraints, ScenarioAnalysis, SystemResizing, CostEstimationData, ScenarioRecommendation, ScenarioReport
+- [ ] Implement MongoDB repository in app_v2/domain/scenarios/repository.py: create_scenario, get_scenario, list_scenarios_by_project, update_scenario, delete_scenario, get_scenario_with_analysis
+- [ ] Create LLM prompt in app_v2/domain/scenarios/analyzers/scenario_analysis_prompt.py following app_v2 patterns, adapted from existing scenario prompts
+- [ ] Implement entity analyzer in app_v2/domain/scenarios/analyzers/entity_analyzer.py: query entities from base case, use LLM to analyze relevance, extract local objectives
+- [ ] Implement hybrid resizing in app_v2/domain/scenarios/resizers/system_resizer.py: LLM identifies what to resize, algorithms calculate new values using scaling rules
+- [ ] Implement cost estimation preparation in app_v2/domain/scenarios/analyzers/cost_preparator.py: identify cost reference data, extract guidelines, optionally generate estimates
+- [ ] Implement recommendation builder in app_v2/domain/scenarios/analyzers/recommendation_builder.py: analyze objectives and constraints, generate approach options, rank by feasibility
+- [ ] Implement report generator in app_v2/domain/scenarios/reporters/scenario_reporter.py: format analysis as JSON/markdown, include summary and recommendations
+- [ ] Implement service layer in app_v2/domain/scenarios/services.py: orchestrate create, analyze, resize, recommend, cost_estimation, report, get, list, update, delete operations
+- [ ] Create FastAPI router in app_v2/api/v1/routers/scenarios.py: implement all CRUD endpoints plus analyze, resize, recommend, cost-estimation, report endpoints
+- [ ] Register scenarios router in app_v2/main.py and verify MongoDB indexes in app_v2/adapters/mongo/client.py
+- [ ] Create test cases in app_v2/tests/test_scenarios.py: test CRUD, analysis, resizing, recommendations, cost estimation, error handling with mocked dependencies
