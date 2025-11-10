@@ -1,7 +1,6 @@
 {
   "version": "0.2.0",
   "configurations": [
-
     {
       "name": "Flask: Debug (venv_3.12)",
       "type": "python",
@@ -98,7 +97,7 @@
       "debugOptions": []
     },
 
-        // --- FastAPI / Uvicorn (with reload AND breakpoints) ---
+    // --- FastAPI / Uvicorn (with reload AND breakpoints) ---
     {
       "name": "FastAPI App v2: Debug (venv_3.12)",
       "type": "python",
@@ -130,5 +129,36 @@
       }
     },
 
+    // --- FastAPI / Uvicorn (with reload AND breakpoints) ---
+    {
+      "name": "FastAPI App v3: Debug (venv_3.12)",
+      "type": "python",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "app_v3.main:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000",
+        "--reload",
+        "--reload-dir",
+        ".",
+        "--log-level",
+        "info",
+        "--log-config",
+        "logging_config.json"
+      ],
+      "cwd": "${workspaceFolder}/backend/",
+      "envFile": "${workspaceFolder}/backend/.env",
+      "pythonPath": "${workspaceFolder}/backend/venv_3.12/bin/python3",
+      "justMyCode": true,
+      "subProcess": true,
+      "console": "integratedTerminal",
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "LOG_LEVEL": "INFO"
+      }
+    }
   ]
 }

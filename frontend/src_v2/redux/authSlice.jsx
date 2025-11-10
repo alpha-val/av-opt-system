@@ -38,6 +38,7 @@ export const registerUser = createAsyncThunk(
 export const loginUser = createAsyncThunk(
     'auth/login',
     async (userData, { rejectWithValue }) => {
+        console.log("Logging in with userData:", userData);
         try {
             const response = await fetch(`${API_BASE_URL}/auth/login`, {
                 method: 'POST',
@@ -115,7 +116,7 @@ const initialState = {
         access_token: localStorage.getItem('access_token'),
         refresh_token: localStorage.getItem('refresh_token'),
     },
-    isAuthenticated: false,
+    isAuthenticated: !!localStorage.getItem('access_token'),
     loading: false,
     error: null,
     // Loading states for individual operations

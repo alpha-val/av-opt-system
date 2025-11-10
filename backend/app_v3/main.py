@@ -1,0 +1,155 @@
+# Load .env globally
+from dotenv import load_dotenv
+import os
+import logging
+import sys
+
+load_dotenv(
+    dotenv_path=os.path.join(os.path.dirname(__file__), "../.env"), override=True
+)
+
+# Configure logging
+# Get log level from environment or default to INFO
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[
+        logging.StreamHandler(sys.stdout)  # Output to console
+    ],
+    force=True  # Override any existing configuration
+)
+
+# Set specific logger levels
+logging.getLogger("uvicorn").setLevel(logging.INFO)
+logging.getLogger("uvicorn.access").setLevel(logging.INFO)
+logging.getLogger("fastapi").setLevel(logging.INFO)
+
+logger = logging.getLogger(__name__)
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+# Import progress tracking components
+from .domain.progress import InMemoryProgressPublisher, BackgroundTaskRunner
+from .domain.file_processing import FileProcessingService
+from .domain.projects.orchestration import ProjectOrchestrationService
+
+# Import routers
+from .api.v1.routers import websocket, files, auth, projects
+
+# Initialize global instances (will be set during startup)
+progress_publisher: InMemoryProgressPublisher | None = None
+task_runner: BackgroundTaskRunner | None = None
+file_processing_service: FileProcessingService | None = None
+project_orchestration_service: ProjectOrchestrationService | None = None
+
+
+def create_app() -> FastAPI:
+    async def lifespan(app: FastAPI):
+        # Startup logic
+        logger.info("Initializing application components...")
+        
+        # Initialize progress tracking infrastructure
+        global progress_publisher, task_runner, file_processing_service, project_orchestration_service
+        
+        # Create progress publisher (in-memory implementation)
+        # This can be swapped with Redis-based implementation for multi-process deployments
+        progress_publisher = InMemoryProgressPublisher()
+        logger.info("Progress publisher initialized")
+        
+        # Create background task runner
+        # Uses ThreadPoolExecutor by default (can be changed to ProcessPoolExecutor)
+        max_workers = int(os.getenv("BACKGROUND_WORKERS", "4"))
+        task_runner = BackgroundTaskRunner(max_workers=max_workers, use_processes=False)
+        logger.info(f"Background task runner initialized (max_workers={max_workers})")
+        
+        # Create file processing service
+        file_processing_service = FileProcessingService()
+        logger.info("File processing service initialized")
+        
+        # Create project orchestration service
+        project_orchestration_service = ProjectOrchestrationService()
+        logger.info("Project orchestration service initialized")
+        
+        # Set publisher for WebSocket router
+        websocket.set_progress_publisher(progress_publisher)
+        
+        # Set services for files router
+        files.set_file_processing_service(file_processing_service)
+        files.set_task_runner(task_runner)
+        files.set_progress_publisher(progress_publisher)
+        
+        # Set orchestration service for projects router
+        projects.set_orchestration_service(project_orchestration_service)
+        
+        logger.info("All components initialized successfully")
+        
+        # Ensure indexes (if needed)
+        logger.info("Ensuring indexes during startup...")
+        # ensure_bronze_indexes()
+        logger.info("Indexes ensured.")
+        
+        yield  # This is where the app runs
+        
+        # Shutdown logic
+        logger.info("Application is shutting down...")
+        
+        # Shutdown background task runner
+        if task_runner:
+            task_runner.shutdown(wait=True)
+            logger.info("Background task runner shut down")
+        
+        logger.info("Shutdown complete")
+
+    app = FastAPI(title="Alpha‑Val Optionality API", version="0.0.1", lifespan=lifespan)
+
+    # CORS (tune as needed)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    
+    '''
+    # Example of more restrictive and secure CORS settings
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["https://your-frontend-domain.com"],  # Replace with your frontend's domain
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE"],  # Restrict to necessary methods
+        allow_headers=["Authorization", "Content-Type"],  # Restrict to necessary headers
+    )
+    '''
+    
+    
+    # Include routers
+    # Register WebSocket router for progress updates
+    app.include_router(websocket.websocket_router)
+    logger.info("WebSocket router registered")
+    
+    # Register file processing router
+    app.include_router(files.files_router)
+    logger.info("File processing router registered")
+    
+    # Register auth router
+    app.include_router(auth.auth_router)
+    logger.info("Auth router registered")
+    
+    # Register projects router
+    app.include_router(projects.projects_router)
+    logger.info("Projects router registered")
+    
+    # Simple health check endpoint
+    @app.get("/health")
+    def health():
+        return {"status": "ok"}
+
+    return app
+
+
+# Create the FastAPI app instance
+app = create_app()

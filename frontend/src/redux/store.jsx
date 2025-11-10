@@ -1,39 +1,28 @@
 import { configureStore } from "@reduxjs/toolkit";
-import dataReducer from "./dataSlice";
-import projectsReducer from "./projectSlice";
-import userReducer from "./userSlice";
 import authReducer from "./authSlice";
-import scenarioReducer from "./scenarioSlice";
-import optionReducer from "./optionSlice";
-import documentsReducer from "./documentSlice";
-
+import userReducer from "./userSlice";
 export const store = configureStore({
   reducer: {
-    data: dataReducer,
-    projects: projectsReducer,
-    user: userReducer,
     auth: authReducer,
-    scenarios: scenarioReducer,
-    options: optionReducer,
-    documents: documentsReducer,
+    user: userReducer,
   },
   // Add this to ensure state is properly initialized
   preloadedState: {
-    projects: {
-      projects: [],
-      projectsCache: {},
-      currentProject: null,
-      projectStats: null,
-      pagination: { total: 0, page: 1, limit: 10 },
-      loading: {
-        fetch: false,
-        create: false,
-        update: false,
-        delete: false,
-        stats: false,
-      },
-      error: null,
-    },
+    // projects: {
+    //   projects: [],
+    //   projectsCache: {},
+    //   currentProject: null,
+    //   projectStats: null,
+    //   pagination: { total: 0, page: 1, limit: 10 },
+    //   loading: {
+    //     fetch: false,
+    //     create: false,
+    //     update: false,
+    //     delete: false,
+    //     stats: false,
+    //   },
+    //   error: null,
+    // },
   },
 });
 

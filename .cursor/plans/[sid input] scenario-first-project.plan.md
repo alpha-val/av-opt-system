@@ -1,0 +1,64 @@
+# **Scenario-First approach**
+
+1. A project is a study of optionality and cost estimates given a base case and user inputs
+2. Specifically, a "study" consists of
+
+- Global objective, which has
+    - Objective type (type of change) ["increase production", "reduce capex", "reduce wastage", etc.]
+    - Objective target (magnitude of change) ["increase by 3%", "decrease by 5%", etc.]
+- Description:
+    - text description (optional) to provide additional context on global objective
+- Input base case report documents:
+    - A set of one or more documents describing the current or established system
+    - Act as reference implementation and cost structure
+- Outcomes
+    - system design to satisfy the global objective (type and target changes)
+    - cost estimation of the re-designed system
+    - a report on the new system
+
+- 3. User journey
+    - User logs in
+    - User sees a dashboard that shows their existing studies, or if logging in for the first time, an empty state dashboard
+    - 3.1 Requirement specification:
+        - User creates a new study (internally referred to as the project)
+            - A dialog for creating new study pops up with the following inputs:
+                - Name [text input; max 40 chars]
+                - Description (optional) [text input; max 80 chars]
+                - Global objective type [dropdown widget]
+                - Global objective metric [number input and type (% or $)]
+                - Base case report documents (PDF files) [file selection widget; one or more files, up to 25 mb]
+                - Tabular data files (PDF/Excel/CSV files), which are ingested into a common 'vault' and used for getting system entities for re-designed system
+                - submit button
+    - 3.2 Processing - Part 1: When the user submits a new study, the following happens on the backend
+        - Study requirements and files are uploaded to the backend
+        - Study (project) entry is created and returned to the frontend
+        - Front end shows progress and intermediate steps
+        - For each report document uploaded by the user, the backend does the following
+            - extract, parse, and clean the document
+            - generate a prompt to extract base case entities matching the global objectives
+                - the prompt uses the global objective and other input requirements (type and magnitude of change)
+                - a domain-specific mining systems ontology is employed to force the mapping of entities 
+            - a call to an LLM (OpenAI using langchain) does the following
+                - reads the base case report
+                - maps the global objective requirements from the user
+                - generate recommendation on how the system changes
+                    - extracts
+                        - (1) unstructured text pertaining to the objective for provenance/evidence
+                        - (2) structured entity and relations data with attributes for further action downstream (e.g., for system resizing and cost estimation)
+                - process the entities (entity normalization and de-duping)
+                - persist the entity data in mongodb and vector store
+            - return the recommendation and entity data to the front end
+    - 3.3 User Validation: The user interfaces organizes the base case entity data in a structured 'system base design' view where the user can
+        - view the entity attributes (e.g., tank diameter and hight, and pump vfd or power ratings)
+        - change the attributes as needed, e.g., make certain items fixed or variable and provide range of values
+        - Submit the updated system design
+    - 3.4 Processing - Part 2: the backend does the following
+        - Takes the revised system design
+        - Study objectives
+        - Retrieve relevant entities by mapping the range of attribute values of revised entities and vault data (tabular data ingested previously)
+        - Process cost estimate
+            - compute the overall costs of base and redesigned system
+        - Create a report
+        - Return to the frontend
+    - 3.5 Review and validation step:
+        - user has the option to revise the information in step 3.3 and repeat analysis

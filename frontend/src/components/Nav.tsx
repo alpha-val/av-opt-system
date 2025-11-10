@@ -1,0 +1,317 @@
+import React, { useState, ReactElement } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  IconButton,
+  AppBar,
+  Toolbar,
+  Typography,
+  Box,
+  useTheme,
+  useMediaQuery,
+  Divider,
+} from "@mui/material";
+import {
+  Menu as MenuIcon,
+  Home as HomeIcon,
+  Settings as SettingsIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  Brightness4,
+  Brightness7,
+} from "@mui/icons-material";
+import { useThemeMode } from "../themes/ThemeContext";
+import logoLight from "../media/logo-light.png";
+import logoDark from "../media/logo-dark.png";
+import LogoutButton from "./LogoutButton";
+
+interface MenuItem {
+  text: string;
+  icon: ReactElement;
+  path: string;
+}
+
+interface DrawerContentProps {
+  collapsed?: boolean;
+}
+
+const Nav: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { mode, toggleColorMode } = useThemeMode();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // State for mobile drawer
+  const [mobileOpen, setMobileOpen] = useState<boolean>(false);
+
+  // State for desktop drawer collapse (user preference)
+  const [desktopCollapsed, setDesktopCollapsed] = useState<boolean>(true);
+
+  const drawerWidth = 240;
+  const collapsedWidth = 72;
+
+  const menuItems: MenuItem[] = [
+    { text: "Home", icon: <HomeIcon />, path: "/" },
+    { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
+  ];
+
+  const handleDrawerToggle = (): void => {
+    setMobileOpen(!mobileOpen);
+  };
+
+  const handleDesktopToggle = (): void => {
+    setDesktopCollapsed(!desktopCollapsed);
+  };
+
+  // Add menu item click handler
+  const handleMenuItemClick = (path: string): void => {
+    navigate(path);
+    // Close mobile drawer when item is clicked
+    if (isMobile) {
+      setMobileOpen(false);
+    }
+  };
+
+  // Check if menu item is active
+  const isActiveMenuItem = (path: string): boolean => {
+    if (path === "/") {
+      return location.pathname === "/" || location.pathname === "/dashboard";
+    }
+    return location.pathname.startsWith(path);
+  };
+
+  const DrawerContent: React.FC<DrawerContentProps> = ({ collapsed = true }) => (
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      {/* Header */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          p: 2,
+          minHeight: 64,
+        }}
+      >
+        {/* Logo/Title at top */}
+        <Box
+          sx={{
+            mb: 1,
+            display: "flex",
+            alignItems: "center",
+            gap: collapsed ? 0 : 1,
+          }}
+        >
+          {collapsed ? (
+            <img
+              src={mode === "dark" ? logoDark : logoLight}
+              alt="AlphaVal Pro Logo"
+              style={{
+                width: 48,
+                height: 48,
+                objectFit: "contain",
+                filter: "drop-shadow(0px 3px 3px rgba(0, 0, 0, 0.1))",
+              }}
+            />
+          ) : (
+            <img
+              src={mode === "dark" ? logoDark : logoLight}
+              alt="AlphaVal Pro Logo"
+              style={{ width: 48, height: 48, objectFit: "contain" }}
+            />
+          )}
+          {!collapsed && (
+            <Typography variant="h6" sx={{ fontWeight: "light" }} noWrap>
+              AlphaVal Pro
+            </Typography>
+          )}
+        </Box>
+
+        {/* Collapse Toggle Button below logo/title */}
+        {!isMobile && (
+          <IconButton onClick={handleDesktopToggle} size="small">
+            {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+          </IconButton>
+        )}
+      </Box>
+
+      {/* Menu Items */}
+      <List sx={{ flexGrow: 1 }}>
+        {menuItems.map((item) => (
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton
+              onClick={() => handleMenuItemClick(item.path)}
+              selected={isActiveMenuItem(item.path)}
+              sx={{
+                justifyContent: collapsed ? "center" : "flex-start",
+                px: 2.5,
+                py: 1.5,
+                borderRadius: 1,
+                "&.Mui-selected": {
+                  backgroundColor: "primary.light",
+                  color: "primary.contrastText",
+                  "&:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                  "& .MuiListItemIcon-root": {
+                    color: "primary.contrastText",
+                  },
+                },
+                "&:hover": {
+                  backgroundColor: collapsed ? "action.hover" : "action.hover",
+                },
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: collapsed ? 0 : 56,
+                  justifyContent: "center",
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+              {!collapsed && <ListItemText primary={item.text} />}
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+
+      {/* Bottom Actions */}
+      <Box sx={{ mt: "auto" }}>
+        <Divider sx={{ mx: 1 }} />
+
+        {/* Action buttons container */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: collapsed ? "column" : "row",
+            alignItems: "center",
+            justifyContent: collapsed ? "center" : "space-between",
+            gap: collapsed ? 1 : 2,
+            p: 2,
+          }}
+        >
+          {/* Theme Toggle Button */}
+          <IconButton
+            onClick={toggleColorMode}
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: "50%",
+              "&:hover": {
+                backgroundColor: "action.hover",
+              },
+            }}
+            title={`Switch to ${mode === "dark" ? "light" : "dark"} mode`}
+          >
+            {mode === "dark" ? <Brightness7 /> : <Brightness4 />}
+          </IconButton>
+
+          {/* Logout Button */}
+          {collapsed ? (
+            <LogoutButton variant="icon" collapsed={collapsed} />
+          ) : (
+            <LogoutButton variant="text" />
+          )}
+        </Box>
+      </Box>
+    </Box>
+  );
+
+  return (
+    <>
+      {/* Mobile AppBar */}
+      {isMobile && (
+        <AppBar
+          position="fixed"
+          sx={{
+            width: "100%",
+            zIndex: theme.zIndex.drawer + 1,
+          }}
+        >
+          <Toolbar>
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Typography
+              variant="h6"
+              noWrap
+              component="div"
+              sx={{ flexGrow: 1 }}
+            >
+              AlphaVal Pro
+            </Typography>
+
+            {/* Mobile header actions */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <IconButton
+                color="inherit"
+                onClick={toggleColorMode}
+                title={`Switch to ${mode === "dark" ? "light" : "dark"} mode`}
+              >
+                {mode === "dark" ? <Brightness7 /> : <Brightness4 />}
+              </IconButton>
+              <LogoutButton variant="icon" showConfirmDialog={true} />
+            </Box>
+          </Toolbar>
+        </AppBar>
+      )}
+
+      {/* Mobile Drawer */}
+      {isMobile && (
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true, // Better open performance on mobile
+          }}
+          sx={{
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
+              width: drawerWidth,
+            },
+          }}
+        >
+          <DrawerContent collapsed={false} />
+        </Drawer>
+      )}
+
+      {/* Desktop Drawer */}
+      {!isMobile && (
+        <Drawer
+          variant="permanent"
+          sx={{
+            width: desktopCollapsed ? collapsedWidth : drawerWidth,
+            flexShrink: 0,
+            "& .MuiDrawer-paper": {
+              width: desktopCollapsed ? collapsedWidth : drawerWidth,
+              boxSizing: "border-box",
+              transition: theme.transitions.create("width", {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
+              }),
+              overflowX: "hidden",
+            },
+          }}
+        >
+          <DrawerContent collapsed={desktopCollapsed} />
+        </Drawer>
+      )}
+    </>
+  );
+};
+
+export default Nav;
+
