@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { CircularProgress, Box } from "@mui/material";
 import UserAuth from "../views/UserAuth";
@@ -7,6 +7,7 @@ import {
   selectFetchingUser,
   selectUser,
   getCurrentUser,
+  clearAuth,
 } from "../redux/authSlice";
 
 const AuthProvider = ({ children }) => {
@@ -14,22 +15,28 @@ const AuthProvider = ({ children }) => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const fetchingUser = useSelector(selectFetchingUser);
   const user = useSelector(selectUser);
+  const hasCheckedAuth = useRef(false);
 
   useEffect(() => {
-    // Check for existing token and fetch user data
+    // Only check auth once on mount
+    if (hasCheckedAuth.current) return;
+    hasCheckedAuth.current = true;
+
+    // Check for existing token and validate it
     const token = localStorage.getItem("access_token");
 
-    if (token && !isAuthenticated && !user) {
-      // We have a token but no user data, fetch it
+    if (token) {
+      // We have a token - validate it by fetching user data
+      // This will set isAuthenticated to true if token is valid
       dispatch(getCurrentUser());
-    } else if (!token && isAuthenticated) {
+    } else if (isAuthenticated) {
       // Token was removed but Redux still thinks we're authenticated
       // Clear auth state
       dispatch(clearAuth());
     }
-  }, [dispatch, isAuthenticated, user]);
+  }, [dispatch, isAuthenticated]);
 
-  // Show loading spinner while checking authentication
+  // Show loading spinner while checking/validating authentication
   if (fetchingUser) {
     return (
       <Box

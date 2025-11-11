@@ -76,12 +76,11 @@ def ensure_bronze_indexes():
 
         # Scenario indexes
         _db.scenarios.create_index([("_id", ASCENDING)])
+        _db.scenarios.create_index([("id", ASCENDING)], unique=True)
         _db.scenarios.create_index([("project_id", ASCENDING)])
         _db.scenarios.create_index([("created_by", ASCENDING)])
         _db.scenarios.create_index([("status", ASCENDING)])
-        _db.scenarios.create_index(
-            [("project_id", ASCENDING), ("status", ASCENDING)]
-        )
+        _db.scenarios.create_index([("project_id", ASCENDING), ("status", ASCENDING)])
 
         # Cost Estimate indexes
         _db.cost_estimates.create_index("id", unique=True)

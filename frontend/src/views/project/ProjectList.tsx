@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import {
   Box,
   Typography,
@@ -25,54 +26,42 @@ import {
   Visibility as ViewIcon,
   Description as ReportIcon,
 } from "@mui/icons-material";
-import { ProjectOut, ProjectStatus } from "../../types/api";
-import { projectApi } from "../../services/api";
+import { ProjectStatus } from "../../types/api";
 import CreateProjectDialog from "../../components/project/CreateProjectDialog";
+import {
+  fetchProjects,
+  deleteProject,
+  selectProjects,
+  selectProjectsFetching,
+  selectProjectsError,
+  selectProjectDeleting,
+  clearError,
+} from "../../redux/projectsSlice";
 
 const ProjectList: React.FC = () => {
   const navigate = useNavigate();
-  const [projects, setProjects] = useState<ProjectOut[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useDispatch();
+  const projects = useSelector(selectProjects);
+  const loading = useSelector(selectProjectsFetching);
+  const deleting = useSelector(selectProjectDeleting);
+  const error = useSelector(selectProjectsError);
   const [createDialogOpen, setCreateDialogOpen] = useState<boolean>(false);
 
   /**
-   * Fetch all projects from the API
+   * Fetch all projects from Redux
    */
-  const fetchProjects = async (): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await projectApi.listAll();
-      setProjects(data);
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to fetch projects";
-      setError(errorMessage);
-      console.error("Error fetching projects:", err);
-    } finally {
-      setLoading(false);
-    }
+  const handleFetchProjects = (): void => {
+    dispatch(fetchProjects() as any);
   };
 
   /**
    * Delete a project
    */
-  const handleDelete = async (projectId: string): Promise<void> => {
+  const handleDelete = (projectId: string): void => {
     if (!window.confirm("Are you sure you want to delete this project?")) {
       return;
     }
-
-    try {
-      await projectApi.delete(projectId);
-      // Remove from local state
-      setProjects(projects.filter((p) => p.id !== projectId));
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to delete project";
-      setError(errorMessage);
-      console.error("Error deleting project:", err);
-    }
+    dispatch(deleteProject(projectId) as any);
   };
 
   /**
@@ -110,8 +99,15 @@ const ProjectList: React.FC = () => {
 
   // Fetch projects on component mount
   useEffect(() => {
-    fetchProjects();
-  }, []);
+    handleFetchProjects();
+  }, [dispatch]);
+
+  // Clear error when component unmounts or error changes
+  useEffect(() => {
+    if (error) {
+      // Error will be displayed, but we can clear it on user action
+    }
+  }, [error]);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -129,7 +125,7 @@ const ProjectList: React.FC = () => {
         </Typography>
         <Box sx={{ display: "flex", gap: 1 }}>
           <Tooltip title="Refresh">
-            <IconButton onClick={fetchProjects} disabled={loading}>
+            <IconButton onClick={handleFetchProjects} disabled={loading}>
               <RefreshIcon />
             </IconButton>
           </Tooltip>
@@ -145,7 +141,11 @@ const ProjectList: React.FC = () => {
 
       {/* Error Alert */}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          onClose={() => dispatch(clearError())}
+        >
           {error}
         </Alert>
       )}
@@ -189,7 +189,12 @@ const ProjectList: React.FC = () => {
                 </TableRow>
               ) : (
                 projects.map((project) => (
-                  <TableRow key={project.id} hover>
+                  <TableRow
+                    key={project.id}
+                    hover
+                    sx={{ cursor: "pointer" }}
+                    onClick={() => navigate(`/projects/${project.id}`)}
+                  >
                     <TableCell>
                       <Typography variant="body1" fontWeight="medium">
                         {project.name}
@@ -245,12 +250,15 @@ const ProjectList: React.FC = () => {
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
-                      <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
+                      <Box
+                        sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Tooltip title="View System Design">
                           <IconButton
                             size="small"
                             onClick={() => {
-                              navigate(`/projects/${project.id}/system-design`);
+                              navigate(`/projects/${project.id}`);
                             }}
                           >
                             <ViewIcon fontSize="small" />
@@ -260,7 +268,7 @@ const ProjectList: React.FC = () => {
                           <IconButton
                             size="small"
                             onClick={() => {
-                              navigate(`/projects/${project.id}/report`);
+                              navigate(`/projects/${project.id}`);
                             }}
                           >
                             <ReportIcon fontSize="small" />
@@ -269,7 +277,8 @@ const ProjectList: React.FC = () => {
                         <Tooltip title="Edit">
                           <IconButton
                             size="small"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               // TODO: Open edit dialog
                               console.log("Edit project:", project.id);
                             }}
@@ -281,7 +290,11 @@ const ProjectList: React.FC = () => {
                           <IconButton
                             size="small"
                             color="error"
-                            onClick={() => handleDelete(project.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(project.id);
+                            }}
+                            disabled={deleting}
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
@@ -301,7 +314,7 @@ const ProjectList: React.FC = () => {
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
         onSuccess={() => {
-          fetchProjects();
+          handleFetchProjects();
         }}
       />
     </Box>

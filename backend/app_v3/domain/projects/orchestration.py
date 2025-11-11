@@ -25,9 +25,12 @@ class ProjectOrchestrationService:
     logic will be implemented later.
     """
     
-    def __init__(self):
+    def __init__(self, file_storage_service=None):
         """
         Initialize the orchestration service.
+        
+        Args:
+            file_storage_service: Optional FileStorageService instance for retrieving files from GridFS
         
         In the future, this will inject dependencies like:
         - DocumentProcessingService
@@ -35,6 +38,7 @@ class ProjectOrchestrationService:
         - CostEstimationService
         - ReportGenerator
         """
+        self._file_storage_service = file_storage_service
         logger.info("Initialized ProjectOrchestrationService (placeholder)")
     
     async def process_project_documents(
@@ -56,23 +60,63 @@ class ProjectOrchestrationService:
             project_id: Project identifier
             global_objective_type: Type of global objective
             global_objective_target: Target magnitude of change
-            base_case_document_ids: List of base case document IDs
-            tabular_data_document_ids: List of tabular data document IDs
+            base_case_document_ids: List of base case document IDs (GridFS file IDs)
+            tabular_data_document_ids: List of tabular data document IDs (GridFS file IDs)
             
         Returns:
             Dictionary with processing results and statistics
             
         Note:
             This is a placeholder. Actual implementation will:
-            1. Process base case documents using DocumentProcessingService
-            2. Process tabular data documents
-            3. Extract entities using LLM with global objectives
-            4. Return processing results
+            1. Retrieve files from GridFS using FileStorageService
+            2. Process base case documents using DocumentProcessingService
+            3. Process tabular data documents
+            4. Extract entities using LLM with global objectives
+            5. Return processing results
         """
         logger.info(
             f"Processing documents for project {project_id} "
             f"(objective: {global_objective_type}, target: {global_objective_target})"
         )
+        
+        # Retrieve files from GridFS if file storage service is available
+        if self._file_storage_service:
+            logger.info(f"Retrieving {len(base_case_document_ids)} base case files and {len(tabular_data_document_ids)} tabular data files from GridFS")
+            
+            # Retrieve base case files
+            base_case_files = []
+            for doc_id in base_case_document_ids:
+                file_bytes = self._file_storage_service.get_file(doc_id)
+                if file_bytes:
+                    metadata = self._file_storage_service.get_file_metadata(doc_id)
+                    base_case_files.append({
+                        "file_id": doc_id,
+                        "content": file_bytes,
+                        "filename": metadata.get("filename", "unknown.pdf") if metadata else "unknown.pdf",
+                    })
+                    logger.debug(f"Retrieved base case file: {doc_id} ({len(file_bytes)} bytes)")
+                else:
+                    logger.warning(f"Failed to retrieve base case file: {doc_id}")
+            
+            # Retrieve tabular data files
+            tabular_data_files = []
+            for doc_id in tabular_data_document_ids:
+                file_bytes = self._file_storage_service.get_file(doc_id)
+                if file_bytes:
+                    metadata = self._file_storage_service.get_file_metadata(doc_id)
+                    tabular_data_files.append({
+                        "file_id": doc_id,
+                        "content": file_bytes,
+                        "filename": metadata.get("filename", "unknown") if metadata else "unknown",
+                    })
+                    logger.debug(f"Retrieved tabular data file: {doc_id} ({len(file_bytes)} bytes)")
+                else:
+                    logger.warning(f"Failed to retrieve tabular data file: {doc_id}")
+            
+            logger.info(f"Retrieved {len(base_case_files)} base case files and {len(tabular_data_files)} tabular data files from GridFS")
+            
+            # TODO: Pass file content to DocumentProcessingService for actual processing
+            # For now, this is a placeholder that just confirms files were retrieved
         
         # Placeholder implementation
         return {
@@ -80,7 +124,7 @@ class ProjectOrchestrationService:
             "status": "processing",
             "base_case_documents_processed": len(base_case_document_ids),
             "tabular_data_documents_processed": len(tabular_data_document_ids),
-            "message": "Document processing orchestration (placeholder)",
+            "message": "Document processing orchestration (placeholder - files retrieved from GridFS)",
         }
     
     async def extract_base_case_entities(

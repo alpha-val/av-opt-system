@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Box,
@@ -9,30 +8,27 @@ import {
   Alert,
   Paper,
 } from "@mui/material";
-import {
-  ArrowBack as ArrowBackIcon,
-  Refresh as RefreshIcon,
-} from "@mui/icons-material";
+import { Refresh as RefreshIcon } from "@mui/icons-material";
 import {
   getProjectReport,
   selectProjectReport,
-  selectProjectsLoading,
   selectProjectsError,
   clearError,
 } from "../../redux/projectsSlice";
 
+interface ReportPreviewContentProps {
+  projectId: string;
+}
+
 /**
- * Report Preview component for displaying markdown reports.
+ * Report Preview content component (for embedding in tabs).
  * 
- * This is a placeholder component that will be extended later to:
- * - Fetch markdown report from API
- * - Render markdown with preview (using react-markdown or similar)
- * - Display project details, entities, cost estimates
- * - Support markdown rendering with proper styling
+ * This component displays the markdown report for a project.
+ * It does not include headers or navigation - those are handled by the parent.
  */
-const ReportPreview: React.FC = () => {
-  const { projectId } = useParams<{ projectId: string }>();
-  const navigate = useNavigate();
+const ReportPreviewContent: React.FC<ReportPreviewContentProps> = ({
+  projectId,
+}) => {
   const dispatch = useDispatch();
   const reportData = useSelector((state: any) =>
     projectId ? selectProjectReport(projectId)(state) : null
@@ -56,36 +52,9 @@ const ReportPreview: React.FC = () => {
     handleFetchReport();
   }, [projectId, dispatch]);
 
-  if (!projectId) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="error">Invalid project ID</Alert>
-      </Box>
-    );
-  }
-
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 3,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate("/projects")}
-          >
-            Back
-          </Button>
-          <Typography variant="h4" component="h1">
-            Project Report
-          </Typography>
-        </Box>
+    <Box>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
         <Button
           startIcon={<RefreshIcon />}
           onClick={handleFetchReport}
@@ -155,5 +124,5 @@ const ReportPreview: React.FC = () => {
   );
 };
 
-export default ReportPreview;
+export default ReportPreviewContent;
 

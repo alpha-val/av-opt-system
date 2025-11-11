@@ -14,6 +14,9 @@ import {
   FileUploadResponse,
   ProjectReportResponse,
   ProjectStatus,
+  ScenarioCreate,
+  ScenarioUpdate,
+  ScenarioOut,
 } from "../types/api";
 
 // Get API base URL from environment or use default
@@ -183,6 +186,160 @@ export const projectApi = {
     );
     return response.data;
   },
+
+  /**
+   * Run or re-run analysis for a project
+   */
+  runAnalysis: async (projectId: string): Promise<{
+    project_id: string;
+    status: string;
+    message: string;
+    processing_result?: any;
+  }> => {
+    const response = await apiClient.post<{
+      project_id: string;
+      status: string;
+      message: string;
+      processing_result?: any;
+    }>(`/api/v1/projects/${projectId}/run-analysis`);
+    return response.data;
+  },
+
+  /**
+   * List all files for a project
+   */
+  listProjectFiles: async (projectId: string, artifactType?: string): Promise<{
+    project_id: string;
+    base_case_files: Array<{
+      file_id: string;
+      filename: string;
+      length: number;
+      upload_date: string;
+      content_type: string;
+      artifact_type: string;
+      sha256?: string;
+    }>;
+    tabular_data_files: Array<{
+      file_id: string;
+      filename: string;
+      length: number;
+      upload_date: string;
+      content_type: string;
+      artifact_type: string;
+      sha256?: string;
+    }>;
+    total_files: number;
+  }> => {
+    const params = artifactType ? `?artifact_type=${artifactType}` : '';
+    const response = await apiClient.get<{
+      project_id: string;
+      base_case_files: Array<{
+        file_id: string;
+        filename: string;
+        length: number;
+        upload_date: string;
+        content_type: string;
+        artifact_type: string;
+        sha256?: string;
+      }>;
+      tabular_data_files: Array<{
+        file_id: string;
+        filename: string;
+        length: number;
+        upload_date: string;
+        content_type: string;
+        artifact_type: string;
+        sha256?: string;
+      }>;
+      total_files: number;
+    }>(`/api/v1/projects/${projectId}/files${params}`);
+    return response.data;
+  },
+
+  /**
+   * Download a project file
+   */
+  downloadProjectFile: async (projectId: string, fileId: string): Promise<Blob> => {
+    const response = await apiClient.get<Blob>(
+      `/api/v1/projects/${projectId}/files/${fileId}`,
+      {
+        responseType: 'blob',
+      }
+    );
+    return response.data;
+  },
+};
+
+/**
+ * Scenario API service
+ */
+export const scenarioApi = {
+  /**
+   * Create a new scenario
+   */
+  create: async (data: ScenarioCreate): Promise<ScenarioOut> => {
+    const response = await apiClient.post<ScenarioOut>("/api/v1/scenarios", data);
+    return response.data;
+  },
+
+  /**
+   * List all scenarios, optionally filtered by project_id
+   */
+  listAll: async (projectId?: string): Promise<ScenarioOut[]> => {
+    const params = projectId ? `?project_id=${projectId}` : '';
+    const response = await apiClient.get<ScenarioOut[]>(`/api/v1/scenarios${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get a scenario by ID
+   */
+  getById: async (scenarioId: string): Promise<ScenarioOut> => {
+    const response = await apiClient.get<ScenarioOut>(`/api/v1/scenarios/${scenarioId}`);
+    return response.data;
+  },
+
+  /**
+   * Update a scenario
+   */
+  update: async (scenarioId: string, data: ScenarioUpdate): Promise<ScenarioOut> => {
+    const response = await apiClient.patch<ScenarioOut>(
+      `/api/v1/scenarios/${scenarioId}`,
+      data
+    );
+    return response.data;
+  },
+
+  /**
+   * Delete a scenario
+   */
+  delete: async (scenarioId: string): Promise<void> => {
+    await apiClient.delete(`/api/v1/scenarios/${scenarioId}`);
+  },
+};
+
+/**
+ * Delete all user data
+ */
+export const deleteAllUserData = async (): Promise<{
+  user_id: string;
+  deleted_counts: {
+    projects: number;
+    scenarios: number;
+    files: number;
+  };
+  total_items: number;
+}> => {
+  const response = await apiClient.delete<{
+    user_id: string;
+    deleted_counts: {
+      projects: number;
+      scenarios: number;
+      files: number;
+    };
+    total_items: number;
+  }>("/api/v1/projects/delete-all-user-data");
+  return response.data;
 };
 
 export default apiClient;

@@ -12,11 +12,13 @@ All endpoints are protected and require authentication (can be added via depende
 import logging
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, status, Path, Depends, UploadFile, File, Form, Query
+from fastapi.responses import Response
 from bson.errors import InvalidId
 import uuid
 
 # Import project service functions
 from ....domain.projects import services
+from .auth import get_current_user
 from ....domain.projects.schemas import (
     ProjectCreate,
     ProjectUpdate,
@@ -24,6 +26,7 @@ from ....domain.projects.schemas import (
     ProjectStatus,
 )
 from ....domain.projects.orchestration import ProjectOrchestrationService
+from ....domain.projects.file_storage import FileStorageService
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +36,9 @@ projects_router = APIRouter(prefix="/api/v1/projects", tags=["projects"])
 
 # Global orchestration service instance (will be injected in main.py)
 _orchestration_service: Optional[ProjectOrchestrationService] = None
+
+# Global file storage service instance (will be injected in main.py)
+_file_storage_service: Optional[FileStorageService] = None
 
 
 def set_orchestration_service(service: ProjectOrchestrationService) -> None:
@@ -47,6 +53,20 @@ def _get_orchestration_service() -> ProjectOrchestrationService:
     if _orchestration_service is None:
         raise RuntimeError("Project orchestration service not initialized")
     return _orchestration_service
+
+
+def set_file_storage_service(service: FileStorageService) -> None:
+    """Set the global file storage service instance."""
+    global _file_storage_service
+    _file_storage_service = service
+    logger.info("File storage service set for projects router")
+
+
+def _get_file_storage_service() -> FileStorageService:
+    """Get the file storage service instance."""
+    if _file_storage_service is None:
+        raise RuntimeError("File storage service not initialized")
+    return _file_storage_service
 
 
 @projects_router.post(
@@ -78,18 +98,7 @@ async def create_project(body: ProjectCreate):
         HTTPException: If validation fails (400) or creation fails (500)
     """
     try:
-        # Validate required fields
-        if not body.global_objective_type:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="global_objective_type is required",
-            )
-        if not body.global_objective_target:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="global_objective_target is required",
-            )
-        
+        # Create project (only name is required, objective fields can be set later)
         logger.info(f"Creating project: {body.name}")
         project = await services.create(body)
         return project
@@ -139,6 +148,46 @@ async def list_projects():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to list projects: {str(e)}",
+        )
+
+
+@projects_router.delete(
+    "/delete-all-user-data",
+    status_code=status.HTTP_200_OK,
+    summary="Delete all user data",
+    description="Delete all projects, scenarios, and files associated with the current user.",
+)
+async def delete_all_user_data(
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Delete all data associated with the current user.
+    
+    This endpoint permanently deletes:
+    - All projects created by the user
+    - All scenarios for those projects
+    - All files uploaded for those projects
+    
+    **Warning**: This action cannot be undone!
+    
+    Args:
+        current_user: Current authenticated user (from JWT token)
+        
+    Returns:
+        Dictionary with deletion counts
+        
+    Raises:
+        HTTPException: If deletion fails (500)
+    """
+    try:
+        user_id = str(current_user["_id"])
+        result = await services.delete_all_user_data(user_id)
+        return result
+    except Exception as e:
+        logger.error(f"Error deleting all user data: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete all user data: {str(e)}",
         )
 
 
@@ -463,6 +512,7 @@ async def upload_project_files(
         # Process base case files
         base_case_doc_ids = []
         if base_case_files:
+            file_storage = _get_file_storage_service()
             for file in base_case_files:
                 if file.content_type not in ALLOWED_BASE_CASE_TYPES:
                     raise HTTPException(
@@ -479,15 +529,22 @@ async def upload_project_files(
                         detail=f"Total file size exceeds 25MB limit",
                     )
                 
-                # Generate document ID (placeholder - actual storage will be implemented later)
-                doc_id = str(uuid.uuid4())
+                # Store file in GridFS
+                doc_id = file_storage.store_file(
+                    file_bytes=file_bytes,
+                    filename=file.filename or "unknown.pdf",
+                    project_id=project_id,
+                    artifact_type="base_case",
+                    content_type=file.content_type,
+                )
                 base_case_doc_ids.append(doc_id)
                 document_ids.append(doc_id)
-                logger.info(f"Uploaded base case file: {file.filename} -> {doc_id}")
+                logger.info(f"Uploaded and stored base case file: {file.filename} -> {doc_id}")
         
         # Process tabular data files
         tabular_doc_ids = []
         if tabular_data_files:
+            file_storage = _get_file_storage_service()
             for file in tabular_data_files:
                 if file.content_type not in ALLOWED_TABULAR_TYPES:
                     raise HTTPException(
@@ -504,11 +561,17 @@ async def upload_project_files(
                         detail=f"Total file size exceeds 25MB limit",
                     )
                 
-                # Generate document ID (placeholder - actual storage will be implemented later)
-                doc_id = str(uuid.uuid4())
+                # Store file in GridFS
+                doc_id = file_storage.store_file(
+                    file_bytes=file_bytes,
+                    filename=file.filename or "unknown",
+                    project_id=project_id,
+                    artifact_type="tabular_data",
+                    content_type=file.content_type,
+                )
                 tabular_doc_ids.append(doc_id)
                 document_ids.append(doc_id)
-                logger.info(f"Uploaded tabular data file: {file.filename} -> {doc_id}")
+                logger.info(f"Uploaded and stored tabular data file: {file.filename} -> {doc_id}")
         
         # Validate at least one file of each type
         if not base_case_doc_ids:
@@ -568,6 +631,261 @@ async def upload_project_files(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to upload files: {str(e)}",
+        )
+
+
+@projects_router.post(
+    "/{project_id}/run-analysis",
+    summary="Run or re-run analysis for a project",
+    description="Trigger document processing and analysis for a project. Requires objective details and documents to be uploaded.",
+)
+async def run_analysis(
+    project_id: str = Path(..., description="Project ID (MongoDB ObjectId as string)"),
+):
+    """
+    Run or re-run analysis for a project.
+    
+    This endpoint triggers the document processing and analysis pipeline.
+    It requires that the project has:
+    - Global objective details set
+    - At least one base case document uploaded
+    - At least one tabular data document uploaded
+    
+    Args:
+        project_id: MongoDB ObjectId as string
+        
+    Returns:
+        Dictionary with analysis status and job information
+        
+    Raises:
+        HTTPException: If project not found (404), missing requirements (400), or processing fails (500)
+    """
+    try:
+        # Validate project exists
+        project = await services.get(project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project not found: {project_id}",
+            )
+        
+        # Validate requirements
+        if not project.global_objective_type or not project.global_objective_target:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Global objective details are required. Please set objective type and target first.",
+            )
+        
+        if not project.base_case_documents or len(project.base_case_documents) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="At least one base case document is required. Please upload documents first.",
+            )
+        
+        if not project.tabular_data_documents or len(project.tabular_data_documents) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="At least one tabular data document is required. Please upload documents first.",
+            )
+        
+        # Update project status to processing
+        status_patch = ProjectUpdate(status=ProjectStatus.PROCESSING)
+        await services.update(project_id, status_patch)
+        
+        # Trigger document processing via orchestration service
+        orchestration = _get_orchestration_service()
+        processing_result = await orchestration.process_project_documents(
+            project_id=project_id,
+            global_objective_type=project.global_objective_type,
+            global_objective_target=project.global_objective_target,
+            base_case_document_ids=project.base_case_documents,
+            tabular_data_document_ids=project.tabular_data_documents,
+        )
+        
+        logger.info(f"Analysis started for project {project_id}")
+        
+        return {
+            "project_id": project_id,
+            "status": "processing",
+            "message": "Analysis started successfully",
+            "processing_result": processing_result,
+        }
+        
+    except ValueError as e:
+        logger.warning(f"Invalid project_id format: {project_id}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except HTTPException:
+        raise
+    except RuntimeError as e:
+        logger.error(f"Orchestration service not initialized: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Analysis service not available",
+        )
+    except Exception as e:
+        logger.error(f"Error running analysis for project {project_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to run analysis: {str(e)}",
+        )
+
+
+@projects_router.get(
+    "/{project_id}/files/{file_id}",
+    summary="Download a project file",
+    description="Retrieve a file by its ID from GridFS storage.",
+)
+async def download_project_file(
+    project_id: str = Path(..., description="Project ID (MongoDB ObjectId as string)"),
+    file_id: str = Path(..., description="File ID (GridFS ObjectId as string)"),
+):
+    """
+    Download a file from GridFS.
+    
+    This endpoint retrieves a file stored in GridFS and returns it with
+    appropriate content-type headers for download.
+    
+    Args:
+        project_id: MongoDB ObjectId as string
+        file_id: GridFS ObjectId as string
+        
+    Returns:
+        File content with appropriate headers
+        
+    Raises:
+        HTTPException: If project not found (404), file not found (404), or invalid ID format (400)
+    """
+    try:
+        # Validate project exists
+        project = await services.get(project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project not found: {project_id}",
+            )
+        
+        # Get file from storage
+        file_storage = _get_file_storage_service()
+        file_bytes = file_storage.get_file(file_id)
+        
+        if not file_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"File not found: {file_id}",
+            )
+        
+        # Get file metadata for content-type and filename
+        metadata = file_storage.get_file_metadata(file_id)
+        if not metadata:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"File metadata not found: {file_id}",
+            )
+        
+        # Verify file belongs to the project
+        if metadata.get("project_id") != project_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"File does not belong to project {project_id}",
+            )
+        
+        content_type = metadata.get("content_type", "application/octet-stream")
+        filename = metadata.get("filename", "file")
+        
+        return Response(
+            content=file_bytes,
+            media_type=content_type,
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+            },
+        )
+        
+    except ValueError as e:
+        logger.warning(f"Invalid project_id or file_id format: {project_id}, {file_id}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error downloading file {file_id} for project {project_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to download file: {str(e)}",
+        )
+
+
+@projects_router.get(
+    "/{project_id}/files",
+    summary="List project files",
+    description="Get list of all files uploaded for a project.",
+)
+async def list_project_files(
+    project_id: str = Path(..., description="Project ID (MongoDB ObjectId as string)"),
+    artifact_type: Optional[str] = Query(None, description="Filter by artifact type (base_case or tabular_data)"),
+):
+    """
+    List all files for a project.
+    
+    This endpoint retrieves metadata for all files stored in GridFS for the project.
+    
+    Args:
+        project_id: MongoDB ObjectId as string
+        artifact_type: Optional filter by artifact type
+        
+    Returns:
+        Dictionary with lists of base case and tabular data files
+        
+    Raises:
+        HTTPException: If project not found (404) or invalid ID format (400)
+    """
+    try:
+        # Validate project exists
+        project = await services.get(project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project not found: {project_id}",
+            )
+        
+        # Get file storage service
+        file_storage = _get_file_storage_service()
+        
+        # List files
+        if artifact_type:
+            files = file_storage.list_project_files(project_id, artifact_type)
+            return {
+                "project_id": project_id,
+                "files": files,
+                "artifact_type": artifact_type,
+            }
+        else:
+            base_case_files = file_storage.list_project_files(project_id, "base_case")
+            tabular_data_files = file_storage.list_project_files(project_id, "tabular_data")
+            return {
+                "project_id": project_id,
+                "base_case_files": base_case_files,
+                "tabular_data_files": tabular_data_files,
+                "total_files": len(base_case_files) + len(tabular_data_files),
+            }
+        
+    except ValueError as e:
+        logger.warning(f"Invalid project_id format: {project_id}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error listing files for project {project_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to list files: {str(e)}",
         )
 
 

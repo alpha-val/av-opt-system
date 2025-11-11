@@ -29,13 +29,13 @@ class ProjectBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200, description="Project name")
     description: Optional[str] = Field(None, max_length=500, description="Project description")
     tags: Optional[List[str]] = Field(None, description="List of tags for categorization")
-    # Global objective fields
-    global_objective_type: str = Field(
-        ..., 
+    # Global objective fields (optional - can be set later in SystemBaseDesign view)
+    global_objective_type: Optional[str] = Field(
+        None, 
         description="Type of global objective (e.g., 'increase production', 'reduce capex', 'reduce wastage')"
     )
-    global_objective_target: str = Field(
-        ..., 
+    global_objective_target: Optional[str] = Field(
+        None, 
         description="Target magnitude of change (e.g., 'increase by 3%', 'decrease by 5%')"
     )
     objective_description: Optional[str] = Field(

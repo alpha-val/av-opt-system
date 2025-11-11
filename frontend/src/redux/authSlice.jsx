@@ -108,14 +108,22 @@ export const logoutUser = createAsyncThunk(
     }
 );
 
-// Initial state
+// Helper function to check if tokens exist
+const hasValidTokens = () => {
+    const accessToken = localStorage.getItem('access_token');
+    const refreshToken = localStorage.getItem('refresh_token');
+    return !!(accessToken && refreshToken);
+};
+
+// Initial state - restore auth state from localStorage
 const initialState = {
     user: null,
     tokens: {
         access_token: localStorage.getItem('access_token'),
         refresh_token: localStorage.getItem('refresh_token'),
     },
-    isAuthenticated: false,
+    // Set isAuthenticated to true if tokens exist (will be validated by getCurrentUser)
+    isAuthenticated: hasValidTokens(),
     loading: false,
     error: null,
     // Loading states for individual operations
@@ -154,6 +162,7 @@ const authSlice = createSlice({
                     refresh_token: action.payload.refresh_token,
                 };
                 state.isAuthenticated = true;
+                state.user = action.payload.user || action.payload; // Store user data if available
                 state.error = null;
             })
             .addCase(registerUser.rejected, (state, action) => {
@@ -191,6 +200,7 @@ const authSlice = createSlice({
             .addCase(getCurrentUser.fulfilled, (state, action) => {
                 state.fetchingUser = false;
                 state.user = action.payload;
+                state.isAuthenticated = true; // Set authenticated to true on success
                 state.error = null;
             })
             .addCase(getCurrentUser.rejected, (state, action) => {
@@ -198,6 +208,9 @@ const authSlice = createSlice({
                 state.error = action.payload;
                 state.isAuthenticated = false;
                 state.tokens = { access_token: null, refresh_token: null };
+                // Clear tokens from localStorage if validation fails
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
             })
 
             // Logout user

@@ -19,3 +19,6 @@ async def delete(project_id: str) -> bool:
 
 async def clear_data(project_id: str) -> Dict[str, Any]:
     return await repo.clear_project_data(project_id)
+
+async def delete_all_user_data(user_id: str) -> Dict[str, Any]:
+    return await repo.delete_all_user_data(user_id)

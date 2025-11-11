@@ -22,9 +22,9 @@ export interface ProjectBase {
   name: string;
   description?: string | null;
   tags?: string[] | null;
-  // Global objective fields
-  global_objective_type: string;
-  global_objective_target: string;
+  // Global objective fields (optional - can be set later in SystemBaseDesign view)
+  global_objective_type?: string | null;
+  global_objective_target?: string | null;
   objective_description?: string | null;
   // Project status
   status: ProjectStatus;
@@ -109,5 +109,50 @@ export interface ProjectReportResponse {
   project_id: string;
   report: string; // Markdown content
   format: string;
+}
+
+/**
+ * Scenario status enumeration
+ */
+export enum ScenarioStatus {
+  DRAFT = "draft",
+  PROCESSING = "processing",
+  COMPLETED = "completed",
+  FAILED = "failed",
+}
+
+/**
+ * Base scenario interface
+ */
+export interface ScenarioBase {
+  name: string;
+  description?: string | null;
+  project_id: string;
+  status: ScenarioStatus;
+  configuration?: Record<string, any> | null;
+}
+
+/**
+ * Scenario creation request
+ */
+export interface ScenarioCreate extends ScenarioBase {}
+
+/**
+ * Scenario update request
+ */
+export interface ScenarioUpdate {
+  name?: string;
+  description?: string | null;
+  status?: ScenarioStatus;
+  configuration?: Record<string, any> | null;
+}
+
+/**
+ * Scenario output/response
+ */
+export interface ScenarioOut extends ScenarioBase {
+  id: string;
+  created_at: string;
+  updated_at: string;
 }
 

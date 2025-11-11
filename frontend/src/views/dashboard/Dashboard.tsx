@@ -3,8 +3,11 @@ import { Box, useTheme, useMediaQuery } from "@mui/material";
 import { Routes, Route } from "react-router-dom";
 import Nav from "../../components/Nav";
 import ProjectList from "../project/ProjectList";
+import ProjectDashboard from "../project/ProjectDashboard";
 import SystemBaseDesign from "../project/SystemBaseDesign";
 import ReportPreview from "../../components/project/ReportPreview";
+import ScenarioDetails from "../scenario/ScenarioDetails";
+import Settings from "../Settings/Settings";
 
 interface DashboardProps {
   children?: ReactNode;
@@ -40,6 +43,14 @@ const Dashboard: React.FC<DashboardProps> = ({ children }) => {
             <Route path="/" element={<ProjectList />} />
             <Route path="/projects" element={<ProjectList />} />
             <Route
+              path="/projects/:projectId"
+              element={<ProjectDashboard />}
+            />
+            <Route
+              path="/projects/:projectId/scenarios/:scenarioId"
+              element={<ScenarioDetails />}
+            />
+            <Route
               path="/projects/:projectId/system-design"
               element={<SystemBaseDesign />}
             />
@@ -47,6 +58,7 @@ const Dashboard: React.FC<DashboardProps> = ({ children }) => {
               path="/projects/:projectId/report"
               element={<ReportPreview />}
             />
+            <Route path="/settings" element={<Settings />} />
           </Routes>
         )}
       </Box>
