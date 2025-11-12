@@ -11,8 +11,8 @@ from langchain_core.messages import SystemMessage, HumanMessage
 import json
 import uuid
 import logging
-from app_v2.domain.parsing.prompts.entity_extraction_prompt import get_entity_extraction_prompt
-from app_v2.domain.parsing.utils.llm_tools import (
+from ..prompts.entity_extraction_prompt import get_entity_extraction_prompt
+from ..utils.llm_tools import (
     TOOLS,
     is_valid_json,
     sanitize_for_json,

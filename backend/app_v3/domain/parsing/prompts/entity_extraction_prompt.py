@@ -403,6 +403,13 @@ nodes_and_relations_extraction_directives = """
           - "category": string (MUST match an MSIO Category name within that Discipline)
           - "subcategory": string (MUST match an MSIO Subcategory name within that Category)
           - "entity": string (MUST match an MSIO Entity name within that Subcategory, or closest match)
+        • MANDATORY Attributes:
+          - "attributes": array of attribute objects (see STEP 6 under 'MANDATORY MSIO ONTOLOGY MATCHING WORKFLOW')
+            - "name": string (attribute name from ontology)
+            - "value": number|null (attribute value)
+            - "unit": string|null (attribute unit)
+            - "evidence_text": string|null (text snippet used to extract attribute)
+            - "confidence": 0.0-1.0 (confidence score for this attribute)
         • if an entity outside the MSIO ontology is extracted, create a new node with the entity name and the MSIO hierarchy that is closest to the entity name (e.g., "Concrete Spread Footings" -> "Concrete" -> "Foundations" -> "Footings" -> "Spread footings")
           •• for the outside entity, set an attribute "outside_msio" to true
         • follow the properties mentioned in NODE_PROPERTIES in the ontology
@@ -416,6 +423,14 @@ nodes_and_relations_extraction_directives = """
         • include evidence/confidence meta-properties from NODE_PROPERTIES
         • include any other domain-specific properties from NODE_PROPERTIES that appear in the text
     - "name": human-readable name (string)
+
+    Node object (each item in extract_nodes.tabular_entities) MUST follow the same guidelines as for entities from text, and with the following additional requirements:
+    - "attributes": array of attribute objects (see STEP 6 under 'MANDATORY MSIO ONTOLOGY MATCHING WORKFLOW')
+      - "name": string (attribute name from ontology)
+      - "value": number|null (attribute value)
+      - "unit": string|null (attribute unit)
+      - "evidence_text": string|null (text snippet used to extract attribute)
+      - "confidence": 0.0-1.0 (confidence score for this attribute)
 
     Edge object (each item in extract_edges.edges) MUST have:
     - "source": node id
