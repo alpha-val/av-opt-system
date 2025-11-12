@@ -86,7 +86,9 @@ const ProjectDashboard: React.FC = () => {
   const error = useSelector(selectProjectsError);
   const [activeTab, setActiveTab] = useState<number>(0);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null); // Selected scenario in Scenarios tab
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(
+    null
+  ); // Selected scenario in Scenarios tab
 
   // Scenarios data for Overview tab
   const scenariosLoading = useSelector(selectScenariosLoading);
@@ -94,14 +96,15 @@ const ProjectDashboard: React.FC = () => {
     () => (projectId ? selectScenariosByProject(projectId) : undefined),
     [projectId]
   );
-  const scenarios = useSelector(
-    (state: any) => (scenariosSelector ? scenariosSelector(state) : [])
+  const scenarios = useSelector((state: any) =>
+    scenariosSelector ? scenariosSelector(state) : []
   );
 
   // File upload state for Sources tab
   const [baseCaseFiles, setBaseCaseFiles] = useState<File[]>([]);
   const [tabularDataFiles, setTabularDataFiles] = useState<File[]>([]);
-  const [clearFileUploadTrigger, setClearFileUploadTrigger] = useState<number>(0);
+  const [clearFileUploadTrigger, setClearFileUploadTrigger] =
+    useState<number>(0);
 
   /**
    * Fetch project data and handle URL hash for tab navigation
@@ -348,7 +351,6 @@ This action cannot be undone. Are you sure you want to delete this file?`,
     [projectId, projectFiles, dispatch, dialogs]
   );
 
-
   if (!projectId) {
     return (
       <Box sx={{ p: 3 }}>
@@ -358,7 +360,9 @@ This action cannot be undone. Are you sure you want to delete this file?`,
   }
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", p: 2 }}>
+    <Box
+      sx={{ display: "flex", flexDirection: "column", height: "100%", p: 2 }}
+    >
       {/* Breadcrumb Navigation */}
       <Box
         sx={{
@@ -507,7 +511,11 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                 {/* Project Description and Dates */}
                 <Card sx={{ mb: 3 }}>
                   <CardContent>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    <Typography
+                      variant="subtitle2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
                       Description
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 3 }}>
@@ -516,7 +524,11 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                     <Divider sx={{ my: 2 }} />
                     <Grid container spacing={3}>
                       <Grid item xs={12} md={6}>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        <Typography
+                          variant="subtitle2"
+                          color="text.secondary"
+                          gutterBottom
+                        >
                           Date Created
                         </Typography>
                         <Typography variant="body1">
@@ -524,7 +536,11 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                         </Typography>
                       </Grid>
                       <Grid item xs={12} md={6}>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        <Typography
+                          variant="subtitle2"
+                          color="text.secondary"
+                          gutterBottom
+                        >
                           Last Updated
                         </Typography>
                         <Typography variant="body1">
@@ -543,7 +559,11 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                   <Grid item xs={12} md={4}>
                     <Card>
                       <CardContent>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        <Typography
+                          variant="subtitle2"
+                          color="text.secondary"
+                          gutterBottom
+                        >
                           Number of Documents
                         </Typography>
                         {filesLoading ? (
@@ -553,9 +573,14 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                             {getDocumentCount()}
                           </Typography>
                         )}
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                          Base Case: {projectFiles?.base_case_files?.length || 0} | 
-                          Tabular Data: {projectFiles?.tabular_data_files?.length || 0}
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mt: 1 }}
+                        >
+                          Base Case:{" "}
+                          {projectFiles?.base_case_files?.length || 0} | Tabular
+                          Data: {projectFiles?.tabular_data_files?.length || 0}
                         </Typography>
                       </CardContent>
                     </Card>
@@ -563,7 +588,11 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                   <Grid item xs={12} md={4}>
                     <Card>
                       <CardContent>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        <Typography
+                          variant="subtitle2"
+                          color="text.secondary"
+                          gutterBottom
+                        >
                           Number of Scenarios
                         </Typography>
                         {scenariosLoading ? (
@@ -573,7 +602,11 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                             {scenarios.length}
                           </Typography>
                         )}
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mt: 1 }}
+                        >
                           Total scenarios created for this project
                         </Typography>
                       </CardContent>
@@ -582,7 +615,11 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                   <Grid item xs={12} md={4}>
                     <Card>
                       <CardContent>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        <Typography
+                          variant="subtitle2"
+                          color="text.secondary"
+                          gutterBottom
+                        >
                           Total Size of Documents
                         </Typography>
                         {filesLoading ? (
@@ -592,7 +629,11 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                             {formatFileSize(calculateTotalDocumentSize())}
                           </Typography>
                         )}
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mt: 1 }}
+                        >
                           Combined size of all uploaded files
                         </Typography>
                       </CardContent>
@@ -733,7 +774,9 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                 ) : (
                   <ScenariosList
                     projectId={projectId}
-                    onScenarioSelect={(scenarioId) => setSelectedScenarioId(scenarioId)}
+                    onScenarioSelect={(scenarioId) =>
+                      setSelectedScenarioId(scenarioId)
+                    }
                   />
                 )}
               </Box>

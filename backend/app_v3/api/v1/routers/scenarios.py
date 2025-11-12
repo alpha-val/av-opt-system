@@ -8,7 +8,7 @@ This module provides FastAPI endpoints for scenario management:
 """
 import logging
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, status, Path, Query
+from fastapi import APIRouter, HTTPException, status, Path, Query, Depends
 from bson.errors import InvalidId
 
 # Import scenario service functions
@@ -23,6 +23,8 @@ from ....domain.scenarios.schemas import (
 from ....domain.projects import services as project_services
 from ....domain.projects.orchestration import ProjectOrchestrationService
 from ....domain.projects.schemas import ProjectStatus, ProjectUpdate
+# Import auth for user authentication
+from .auth import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -266,6 +268,7 @@ async def delete_scenario(
 )
 async def run_analysis(
     scenario_id: str = Path(..., description="Scenario ID (MongoDB ObjectId as string)"),
+    current_user: dict = Depends(get_current_user),
 ):
     """
     Run or re-run analysis for a scenario.
@@ -275,16 +278,24 @@ async def run_analysis(
     - The scenario has global objective details set
     - The project has at least one base case document uploaded
     
+    The endpoint processes each base case document using extract_base_case_entities,
+    which extracts entities, generates summaries, recommendations, and identifies
+    entities for cost estimation.
+    
     Args:
         scenario_id: MongoDB ObjectId as string
+        current_user: Authenticated user (from dependency injection)
         
     Returns:
-        Dictionary with analysis status and job information
+        Dictionary with analysis status and results for each document
         
     Raises:
         HTTPException: If scenario not found (404), missing requirements (400), or processing fails (500)
     """
     try:
+        # Get user_id from authenticated user
+        user_id = str(current_user["_id"])
+        
         # Validate scenario exists
         scenario = await services.get(scenario_id)
         if not scenario:
@@ -319,24 +330,85 @@ async def run_analysis(
         status_patch = ScenarioUpdate(status=ScenarioStatus.PROCESSING)
         await services.update(scenario_id, status_patch)
         
-        # Trigger document processing via orchestration service
+        # Get orchestration service
         orchestration = _get_orchestration_service()
-        processing_result = await orchestration.process_project_documents(
-            project_id=scenario.project_id,
-            global_objective_type=scenario.global_objective_type,
-            global_objective_target=scenario.global_objective_target,
-            base_case_document_ids=project.base_case_documents,
-            tabular_data_document_ids=project.tabular_data_documents or [],
-        )
         
-        logger.info(f"Analysis started for scenario {scenario_id} (project: {scenario.project_id})")
+        # Process each base case document using extract_base_case_entities
+        document_results = []
+        errors = []
+        
+        for document_id in project.base_case_documents:
+            try:
+                logger.info(
+                    f"Processing base case document {document_id} for scenario {scenario_id}"
+                )
+                
+                result = await orchestration.extract_base_case_entities(
+                    project_id=scenario.project_id,
+                    document_id=document_id,
+                    global_objective_type=scenario.global_objective_type,
+                    global_objective_target=scenario.global_objective_target,
+                    user_id=user_id,
+                    scenario_id=scenario_id,
+                    objective_description=scenario.objective_description,
+                )
+                
+                document_results.append({
+                    "document_id": document_id,
+                    "status": result.get("processing_status", "unknown"),
+                    "entities_extracted": result.get("entities_extracted", 0),
+                    "relations_extracted": result.get("relations_extracted", 0),
+                    "summary_id": result.get("summary_id"),
+                    "recommendations_id": result.get("recommendations_id"),
+                    "entities_for_costing_count": len(result.get("entities_for_costing", [])),
+                    "recommendations_count": len(result.get("recommendations", [])),
+                })
+                
+                if result.get("processing_status") == "error":
+                    errors.append({
+                        "document_id": document_id,
+                        "error": result.get("error", "Unknown error"),
+                    })
+                    
+            except Exception as e:
+                logger.error(
+                    f"Error processing document {document_id} for scenario {scenario_id}: {e}",
+                    exc_info=True
+                )
+                errors.append({
+                    "document_id": document_id,
+                    "error": str(e),
+                })
+                document_results.append({
+                    "document_id": document_id,
+                    "status": "error",
+                    "error": str(e),
+                })
+        
+        # Update scenario status based on results
+        if errors:
+            # If there are errors, set status to indicate partial completion
+            final_status = ScenarioStatus.PROCESSING if len(errors) < len(project.base_case_documents) else ScenarioStatus.FAILED
+        else:
+            # All documents processed successfully
+            final_status = ScenarioStatus.COMPLETED
+        
+        status_patch = ScenarioUpdate(status=final_status)
+        await services.update(scenario_id, status_patch)
+        
+        logger.info(
+            f"Analysis completed for scenario {scenario_id}: "
+            f"{len(document_results)} documents processed, {len(errors)} errors"
+        )
         
         return {
             "scenario_id": scenario_id,
             "project_id": scenario.project_id,
-            "status": "processing",
-            "message": "Analysis started successfully",
-            "processing_result": processing_result,
+            "status": final_status.value,
+            "message": "Analysis completed" if not errors else f"Analysis completed with {len(errors)} error(s)",
+            "documents_processed": len(document_results),
+            "document_results": document_results,
+            "errors": errors if errors else None,
         }
         
     except ValueError as e:

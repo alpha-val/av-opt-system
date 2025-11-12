@@ -781,24 +781,15 @@ helpful.
 
 INPUTS
 1) BASE_CASE_TEXT: <<FULL TEXT OF REPORT>>
-2) ONTOLOGY (required):
-   {
-     "NODE_TYPES": [
-       "Equipment","Material","Process","Control","Instrument",
-       "Civil","Electrical","CostItem","CostRule","Policy","Assumption","Constraint"
-     ],
-     "EDGE_TYPES": ["HAS_PART","FEEDS","CONTROLS","CONSUMES","LOCATED_IN","GOVERNS"],
-     "AV_MSIO_ONTOLOGY": "Mapping of Discipline, Category, Subcategory, Entity, Attributes, Notes"
-   }
 
-EXTRACTION POLICY
-1) Exhaustiveness
+2) EXTRACTION POLICY
+2.1) Exhaustiveness
    - Capture every measurable, referable, or categorical fact.
    - Include all numeric values and units exactly as written (no conversion/rounding).
    - Extract table rows, list items, design criteria, codes, assumptions, exclusions, etc.
    - Each object must carry at least one anchor (e.g., "§2", "p.4", "Table 1").
 
-2) Descriptive Text (250–500 words per section/domain)
+2.2) Descriptive Text (250–500 words per section/domain)
    - Provide `"descriptive_text"` for:
      • Each entry in `"sections"` (its own subsection narrative).
      • Each top-level domain: process_flows, design_criteria, equipment,
@@ -807,12 +798,12 @@ EXTRACTION POLICY
    - Use only information present in the report; do not invent.
    - You may include short quotes ≤40 words with anchors to capture exact phrasing.
 
-3) Missing Data & Fidelity
+2.3) Missing Data & Fidelity
    - If data are implied/missing → set value = null and add an item in
      `"risks_uncertainties"` with a remediation action.
    - Preserve original symbols and qualifiers (“~”, “@ 80%”, “±”, “nameplate”).
 
-4) Output Discipline
+2.4) Output Discipline
    - Strict JSON only. No text outside JSON.
    - All arrays present (use [] if empty).
 

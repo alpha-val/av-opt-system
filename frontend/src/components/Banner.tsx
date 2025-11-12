@@ -73,7 +73,7 @@ const Banner: React.FC = () => {
             textAlign: "center",
           }}
         >
-            Discover mining optionality through intelligent scenario analysis
+            Mining optionality through intelligent scenario analysis
           </Typography>
         </Box>
         <Box>

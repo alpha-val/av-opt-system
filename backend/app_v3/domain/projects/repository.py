@@ -28,6 +28,8 @@ _projects_collection = db().projects
 
 # Related collections for project data
 # These are used when clearing project data
+_base_case_summaries_collection = db().base_case_summaries
+_base_case_recommendations_collection = db().base_case_recommendations
 _chunks_collection = db().chunks
 _cost_estimates_collection = db().cost_estimates
 _documents_collection = db().documents
@@ -409,6 +411,14 @@ async def delete_all_user_data(user_id: str) -> Dict[str, Any]:
             "projects": 0,
             "scenarios": 0,
             "files": 0,
+            "documents": 0,
+            "chunks": 0,
+            "tables": 0,
+            "cost_estimates": 0,
+            "entities": 0,
+            "relations": 0,
+            "base_case_summaries": 0,
+            "base_case_recommendations": 0,
         }
 
         # Get all projects (for now, we delete all since projects don't have user_id)
@@ -454,6 +464,16 @@ async def delete_all_user_data(user_id: str) -> Dict[str, Any]:
             ).deleted_count
             deleted_counts["relations"] += relations_deleted
 
+            base_case_summaries_deleted = _base_case_summaries_collection.delete_many(
+                {"project_id": project_id}
+            ).deleted_count
+            deleted_counts["base_case_summaries"] += base_case_summaries_deleted
+
+            base_case_recommendations_deleted = _base_case_recommendations_collection.delete_many(
+                {"project_id": project_id}
+            ).deleted_count
+            deleted_counts["base_case_recommendations"] += base_case_recommendations_deleted
+
         # Delete all files from GridFS
         # Note: Files may have user_id in metadata, but we'll delete all files
         # associated with the projects
@@ -474,7 +494,8 @@ async def delete_all_user_data(user_id: str) -> Dict[str, Any]:
         logger.info(
             f"Deleted all user data for user {user_id}: "
             f"{projects_deleted} projects, {deleted_counts['scenarios']} scenarios, "
-            f"{files_deleted} files"
+            f"{files_deleted} files, {deleted_counts['base_case_summaries']} base case summaries, "
+            f"{deleted_counts['base_case_recommendations']} base case recommendations"
         )
 
         return {

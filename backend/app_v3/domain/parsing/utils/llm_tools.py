@@ -104,6 +104,245 @@ TOOLS = [
             },
         },
     },
+    # -------------------------------------------------------------------------
+    # 3. Structured report extraction
+    # -------------------------------------------------------------------------
+    {
+        "type": "function",
+        "function": {
+            "name": "extract_structured_report",
+            "description": "Extract structured base case report summary with sections, equipment, materials, costs, etc.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "base_case_extract": {
+                        "type": "object",
+                        "description": "Structured extraction of base case document",
+                        "properties": {
+                            "doc_header": {
+                                "type": "object",
+                                "additionalProperties": True
+                            },
+                            "sections": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {"type": "string"},
+                                        "anchor": {"type": "string"},
+                                        "subsections": {
+                                            "type": "array",
+                                            "items": {"type": "object", "additionalProperties": True}
+                                        },
+                                        "descriptive_text": {"type": "string"}
+                                    },
+                                    "additionalProperties": True
+                                }
+                            },
+                            "process_flows": {
+                                "type": "object",
+                                "additionalProperties": True
+                            },
+                            "design_criteria": {
+                                "type": "object",
+                                "additionalProperties": True
+                            },
+                            "equipment": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {"type": "object", "additionalProperties": True}
+                                        },
+                                        "descriptive_text": {"type": "string"}
+                                    },
+                                    "additionalProperties": True
+                                }
+                            },
+                            "materials": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {"type": "object", "additionalProperties": True}
+                                        },
+                                        "descriptive_text": {"type": "string"}
+                                    },
+                                    "additionalProperties": True
+                                }
+                            },
+                            "instrumentation_controls": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {"type": "object", "additionalProperties": True}
+                                        },
+                                        "descriptive_text": {"type": "string"}
+                                    },
+                                    "additionalProperties": True
+                                }
+                            },
+                            "site_data": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {"type": "object", "additionalProperties": True}
+                                        },
+                                        "descriptive_text": {"type": "string"}
+                                    },
+                                    "additionalProperties": True
+                                }
+                            },
+                            "codes_standards": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {"type": "object", "additionalProperties": True}
+                                        },
+                                        "descriptive_text": {"type": "string"}
+                                    },
+                                    "additionalProperties": True
+                                }
+                            },
+                            "policies_recommendations": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {"type": "object", "additionalProperties": True}
+                                        },
+                                        "descriptive_text": {"type": "string"}
+                                    },
+                                    "additionalProperties": True
+                                }
+                            },
+                            "constraints": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {"type": "object", "additionalProperties": True}
+                                        },
+                                        "descriptive_text": {"type": "string"}
+                                    },
+                                    "additionalProperties": True
+                                }
+                            },
+                            "costs": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "object",
+                                            "additionalProperties": True
+                                        },
+                                        "descriptive_text": {"type": "string"}
+                                    },
+                                    "additionalProperties": True
+                                }
+                            },
+                            "risks_uncertainties": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {"type": "object", "additionalProperties": True}
+                                        },
+                                        "descriptive_text": {"type": "string"}
+                                    },
+                                    "additionalProperties": True
+                                }
+                            },
+                            "provenance": {
+                                "type": "object",
+                                "additionalProperties": True
+                            },
+                        },
+                        "additionalProperties": True,
+                    }
+                },
+                "required": ["base_case_extract"],
+            },
+        },
+    },
+    # -------------------------------------------------------------------------
+    # 4. Recommendations extraction
+    # -------------------------------------------------------------------------
+    {
+        "type": "function",
+        "function": {
+            "name": "extract_recommendations",
+            "description": "Extract recommendations for system redesign based on global objectives",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "recommendations": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "recommendation_id": {"type": "string"},
+                                "type": {"type": "string"},
+                                "title": {"type": "string"},
+                                "description": {"type": "string"},
+                                "affected_entities": {"type": "array", "items": {"type": "string"}},
+                                "rationale": {"type": "string"},
+                                "priority": {"type": "string", "enum": ["high", "medium", "low"]},
+                                "estimated_impact": {"type": "string"},
+                                "implementation_complexity": {"type": "string"},
+                            },
+                            "required": ["recommendation_id", "type", "title", "description", "priority"],
+                        },
+                    },
+                    "entities_for_costing": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "entity_id": {"type": "string"},
+                                "entity_name": {"type": "string"},
+                                "entity_type": {"type": "string"},
+                                "msio_classification": {
+                                    "type": "object",
+                                    "properties": {
+                                        "discipline": {"type": "string"},
+                                        "category": {"type": "string"},
+                                        "subcategory": {"type": "string"},
+                                        "entity": {"type": "string"},
+                                    },
+                                },
+                                "key_attributes": {"type": "object"},
+                                "query_metadata": {"type": "object"},
+                                "cost_relevance_score": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+                            },
+                            "required": ["entity_id", "entity_name", "entity_type", "cost_relevance_score"],
+                        },
+                    },
+                },
+                "required": ["recommendations", "entities_for_costing"],
+            },
+        },
+    },
 ]
 
 

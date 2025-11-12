@@ -368,4 +368,56 @@ class DocumentStore:
         if deleted:
             logger.info(f"Deleted document metadata for doc_id: {doc_id}")
         return deleted
+    
+    def get_entities_by_doc_id(self, doc_id: str) -> List[Dict[str, Any]]:
+        """
+        Get all entities associated with a document.
+        
+        Args:
+            doc_id: Document identifier
+            
+        Returns:
+            List of entity dictionaries
+        """
+        entities = list(self._db.entities.find({"properties.doc_id": doc_id}))
+        logger.info(f"Retrieved {len(entities)} entities for doc_id: {doc_id}")
+        return entities
+    
+    def update_entities_scenario_id(self, document_id: str, scenario_id: str) -> int:
+        """
+        Update all entities associated with a document to include scenario_id.
+        
+        Args:
+            document_id: Document identifier
+            scenario_id: Scenario identifier
+            
+        Returns:
+            Number of entities updated
+        """
+        result = self._db.entities.update_many(
+            {"properties.doc_id": document_id},
+            {"$set": {"properties.scenario_id": scenario_id}}
+        )
+        updated_count = result.modified_count
+        logger.info(f"Updated {updated_count} entities with scenario_id {scenario_id} for doc_id: {document_id}")
+        return updated_count
+    
+    def update_relations_scenario_id(self, document_id: str, scenario_id: str) -> int:
+        """
+        Update all relations (edges) associated with a document to include scenario_id.
+        
+        Args:
+            document_id: Document identifier
+            scenario_id: Scenario identifier
+            
+        Returns:
+            Number of relations updated
+        """
+        result = self._db.relations.update_many(
+            {"properties.doc_id": document_id},
+            {"$set": {"properties.scenario_id": scenario_id}}
+        )
+        updated_count = result.modified_count
+        logger.info(f"Updated {updated_count} relations with scenario_id {scenario_id} for doc_id: {document_id}")
+        return updated_count
 

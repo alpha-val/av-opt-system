@@ -119,8 +119,13 @@ class EntityExtractor:
                         #     if isinstance(scenarios, list):
                         #         all_scenarios.extend(scenarios)
                         elif name == "extract_structured_report":
-                            summaries = payload.get("base_case_extract", [])
-                            all_summaries.append(summaries)
+                            summaries = payload.get("base_case_extract", {})
+                            if summaries:
+                                all_summaries.append(summaries)
+                        elif name == "extract_recommendations":
+                            # Handle recommendations extraction
+                            # This will be processed separately in orchestration
+                            pass
 
                     except json.JSONDecodeError as e:
                         logger.error(f"Failed to parse LLM JSON: {e}")
@@ -138,11 +143,19 @@ class EntityExtractor:
             f"from {len(chunks)} chunks"
         )
 
+        # Merge summaries if multiple chunks produced them
+        merged_summary = {}
+        if all_summaries:
+            # Take the first summary as base, merge others if needed
+            merged_summary = all_summaries[0] if isinstance(all_summaries[0], dict) else {}
+            # For now, we'll use the first comprehensive summary
+            # In the future, we could merge multiple summaries
+        
         return {
             "nodes": all_nodes,
             "edges": all_edges,
             "scenarios": all_scenarios,
-            "summaries": all_summaries,
+            "summaries": merged_summary if merged_summary else None,
         }
 
     def create_hierarchy_edges(

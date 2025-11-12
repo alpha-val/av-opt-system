@@ -118,7 +118,8 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
       setObjectiveType(scenario.global_objective_type || "");
       // Parse target value and type from global_objective_target
       if (scenario.global_objective_target) {
-        const match = scenario.global_objective_target.match(/^([\d.]+)([%$])$/);
+        const match =
+          scenario.global_objective_target.match(/^([\d.]+)([%$])$/);
         if (match) {
           setTargetValue(match[1]);
           setTargetType(match[2] as "%" | "$");
@@ -435,22 +436,28 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
               ← Back to Scenarios
             </Button>
             {scenario && (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 2,
+                }}
+              >
+                <Typography variant="h6" component="h2">
+                  {scenario.name}
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                  {scenario.description || "No description available"}
+                </Typography>
+              </Box>
+            )}{" "}
+            {scenario && (
               <Chip
                 label={scenario.status}
                 size="small"
                 color={getStatusColor(scenario.status)}
               />
-            )}
-            {scenario && (
-              <Box>
-                <Typography variant="h6" component="h2">
-                  {scenario.name}
-                </Typography>
-                <Typography variant="body1" color="text.secondary" gutterBottom>
-                  Description:{" "}
-                  {scenario.description || "No description available"}
-                </Typography>
-              </Box>
             )}
           </Box>
           {scenario && (
@@ -507,7 +514,7 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                 aria-label="scenario details tabs"
               >
                 <Tab label="Objectives" id="scenario-tab-0" />
-                <Tab label="Entities" id="scenario-tab-1" />
+                <Tab label="System Design" id="scenario-tab-1" />
                 <Tab label="Cost Estimate" id="scenario-tab-2" />
                 <Tab label="Report" id="scenario-tab-3" />
               </Tabs>
@@ -553,11 +560,11 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                   <Alert
                     severity="error"
                     sx={{ mb: 2 }}
-                        onClose={() => {
-                          setObjectiveError(null);
-                          setAnalysisError(null);
-                          dispatch(clearError());
-                        }}
+                    onClose={() => {
+                      setObjectiveError(null);
+                      setAnalysisError(null);
+                      dispatch(clearError());
+                    }}
                   >
                     {objectiveError || analysisError}
                   </Alert>
@@ -674,13 +681,13 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
             <TabPanel value={activeTab} index={1}>
               <Box sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>
-                  Extracted Entities
+                  System Design Criteria
                 </Typography>
                 <Alert severity="info" sx={{ mt: 2 }}>
                   <Typography variant="body2">
-                    This is a placeholder for the entities view. The actual
-                    implementation will display extracted entities from the
-                    scenario analysis.
+                    This is a placeholder for the system design criteria view.
+                    The actual implementation will display extracted information
+                    from the scenario analysis.
                   </Typography>
                 </Alert>
               </Box>

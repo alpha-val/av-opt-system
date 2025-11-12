@@ -30,7 +30,7 @@ const Dashboard: React.FC<DashboardProps> = ({ children }) => {
           width: "100%",
           minHeight: "100vh",
           marginTop: isMobile ? "64px" : 0,
-          padding: 1,
+          padding: 0,
           overflow: "auto",
           transition: theme.transitions.create("margin", {
             easing: theme.transitions.easing.sharp,
