@@ -41,6 +41,9 @@ async def create_scenario(data: ScenarioCreate) -> ScenarioOut:
             "status": (
                 data.status.value if hasattr(data.status, "value") else data.status
             ),
+            "global_objective_type": data.global_objective_type,  # Can be None
+            "global_objective_target": data.global_objective_target,  # Can be None
+            "objective_description": data.objective_description,  # Can be None
             "configuration": data.configuration or {},
             "created_at": _now(),
             "updated_at": _now(),
@@ -92,6 +95,9 @@ async def list_scenarios(project_id: Optional[str] = None) -> List[ScenarioOut]:
                     description=doc.get("description"),
                     project_id=doc.get("project_id", ""),
                     status=doc.get("status", ScenarioStatus.DRAFT.value),
+                    global_objective_type=doc.get("global_objective_type"),
+                    global_objective_target=doc.get("global_objective_target"),
+                    objective_description=doc.get("objective_description"),
                     configuration=doc.get("configuration", {}),
                     created_at=doc.get("created_at", _now()),
                     updated_at=doc.get("updated_at", _now()),
@@ -135,6 +141,9 @@ async def get_scenario(scenario_id: str) -> Optional[ScenarioOut]:
             description=doc.get("description"),
             project_id=doc.get("project_id", ""),
             status=doc.get("status", ScenarioStatus.DRAFT.value),
+            global_objective_type=doc.get("global_objective_type"),
+            global_objective_target=doc.get("global_objective_target"),
+            objective_description=doc.get("objective_description"),
             configuration=doc.get("configuration", {}),
             created_at=doc.get("created_at", _now()),
             updated_at=doc.get("updated_at", _now()),
@@ -171,6 +180,12 @@ async def update_scenario(
             update_doc["status"] = (
                 patch.status.value if hasattr(patch.status, "value") else patch.status
             )
+        if patch.global_objective_type is not None:
+            update_doc["global_objective_type"] = patch.global_objective_type
+        if patch.global_objective_target is not None:
+            update_doc["global_objective_target"] = patch.global_objective_target
+        if patch.objective_description is not None:
+            update_doc["objective_description"] = patch.objective_description
         if patch.configuration is not None:
             update_doc["configuration"] = patch.configuration
 

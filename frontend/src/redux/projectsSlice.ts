@@ -230,6 +230,23 @@ export const downloadProjectFile = createAsyncThunk(
   }
 );
 
+export const deleteProjectFile = createAsyncThunk(
+  'projects/deleteProjectFile',
+  async (
+    { projectId, fileId }: { projectId: string; fileId: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      await projectApi.deleteProjectFile(projectId, fileId);
+      return { projectId, fileId };
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Failed to delete file'
+      );
+    }
+  }
+);
+
 // Initial state
 interface ProjectFiles {
   base_case_files: Array<{
@@ -270,6 +287,7 @@ interface ProjectsState {
     runAnalysis: boolean;
     listFiles: boolean;
     downloadFile: boolean;
+    deleteFile: boolean;
     deleteAllUserData: boolean;
   };
   error: string | null;
@@ -293,6 +311,7 @@ const initialState: ProjectsState = {
     runAnalysis: false,
     listFiles: false,
     downloadFile: false,
+    deleteFile: false,
     deleteAllUserData: false,
   },
   error: null,
@@ -592,6 +611,31 @@ const projectsSlice = createSlice({
           })
           .addCase(downloadProjectFile.rejected, (state, action) => {
             state.loading.downloadFile = false;
+            state.error = action.payload as string;
+          })
+          // Delete project file
+          .addCase(deleteProjectFile.pending, (state) => {
+            state.loading.deleteFile = true;
+            state.error = null;
+          })
+          .addCase(deleteProjectFile.fulfilled, (state, action) => {
+            state.loading.deleteFile = false;
+            const { projectId, fileId } = action.payload;
+            // Remove file from projectFiles state
+            if (state.projectFiles && state.projectFiles[projectId]) {
+              state.projectFiles[projectId] = {
+                base_case_files: state.projectFiles[projectId].base_case_files.filter(
+                  (f) => f.file_id !== fileId
+                ),
+                tabular_data_files: state.projectFiles[projectId].tabular_data_files.filter(
+                  (f) => f.file_id !== fileId
+                ),
+              };
+            }
+            state.error = null;
+          })
+          .addCase(deleteProjectFile.rejected, (state, action) => {
+            state.loading.deleteFile = false;
             state.error = action.payload as string;
           })
 

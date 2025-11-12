@@ -29,6 +29,18 @@ class ScenarioBase(BaseModel):
         default=ScenarioStatus.DRAFT,
         description="Current status of the scenario"
     )
+    # Global objective fields (optional - can be set later)
+    global_objective_type: Optional[str] = Field(
+        None,
+        description="Type of global objective (e.g., 'increase production', 'reduce capex', 'reduce wastage')",
+    )
+    global_objective_target: Optional[str] = Field(
+        None,
+        description="Target magnitude of change (e.g., '3%', '5%', '$1000000')",
+    )
+    objective_description: Optional[str] = Field(
+        None, max_length=500, description="Additional context on global objective"
+    )
     # Scenario-specific configuration (flexible JSON field)
     configuration: Optional[Dict[str, Any]] = Field(
         default_factory=dict,
@@ -50,6 +62,15 @@ class ScenarioUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=200, description="Scenario name")
     description: Optional[str] = Field(None, max_length=500, description="Scenario description")
     status: Optional[ScenarioStatus] = Field(None, description="Current status of the scenario")
+    global_objective_type: Optional[str] = Field(
+        None, description="Type of global objective"
+    )
+    global_objective_target: Optional[str] = Field(
+        None, description="Target magnitude of change"
+    )
+    objective_description: Optional[str] = Field(
+        None, max_length=500, description="Additional context on global objective"
+    )
     configuration: Optional[Dict[str, Any]] = Field(None, description="Scenario configuration parameters")
 
 

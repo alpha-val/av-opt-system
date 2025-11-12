@@ -80,6 +80,22 @@ export const deleteScenario = createAsyncThunk(
   }
 );
 
+export const runAnalysis = createAsyncThunk(
+  'scenarios/runAnalysis',
+  async (scenarioId: string, { rejectWithValue }) => {
+    try {
+      const data = await scenarioApi.runAnalysis(scenarioId);
+      // Fetch updated scenario to get new status
+      const updatedScenario = await scenarioApi.getById(scenarioId);
+      return { scenarioId, analysisResult: data, scenario: updatedScenario };
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Failed to run analysis'
+      );
+    }
+  }
+);
+
 // Initial state
 interface ScenariosState {
   scenarios: ScenarioOut[];
@@ -90,6 +106,7 @@ interface ScenariosState {
     create: boolean;
     update: boolean;
     delete: boolean;
+    runAnalysis: boolean;
   };
   error: string | null;
 }
@@ -103,6 +120,7 @@ const initialState: ScenariosState = {
     create: false,
     update: false,
     delete: false,
+    runAnalysis: false,
   },
   error: null,
 };
@@ -235,6 +253,33 @@ const scenariosSlice = createSlice({
       .addCase(deleteScenario.rejected, (state, action) => {
         state.loading.delete = false;
         state.error = action.payload as string;
+      })
+
+      // Run analysis
+      .addCase(runAnalysis.pending, (state) => {
+        state.loading.runAnalysis = true;
+        state.error = null;
+      })
+      .addCase(runAnalysis.fulfilled, (state, action) => {
+        state.loading.runAnalysis = false;
+        const { scenario } = action.payload;
+        
+        // Update scenario in list and current scenario
+        if (scenario) {
+          const index = state.scenarios.findIndex((s) => s.id === scenario.id);
+          if (index !== -1) {
+            state.scenarios[index] = scenario;
+          }
+          if (state.currentScenario?.id === scenario.id) {
+            state.currentScenario = scenario;
+          }
+        }
+        
+        state.error = null;
+      })
+      .addCase(runAnalysis.rejected, (state, action) => {
+        state.loading.runAnalysis = false;
+        state.error = action.payload as string;
       });
   },
 });
@@ -260,6 +305,8 @@ export const selectScenarioCreating = (state: { scenarios: ScenariosState }) =>
   state.scenarios.loading.create;
 export const selectScenarioDeleting = (state: { scenarios: ScenariosState }) =>
   state.scenarios.loading.delete;
+export const selectScenarioRunningAnalysis = (state: { scenarios: ScenariosState }) =>
+  state.scenarios.loading.runAnalysis;
 
 // Memoized selector for scenarios by project
 export const selectScenariosByProject = (projectId: string) =>

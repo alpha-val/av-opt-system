@@ -34,6 +34,7 @@ from .domain.progress import InMemoryProgressPublisher, BackgroundTaskRunner
 from .domain.file_processing import FileProcessingService
 from .domain.projects.orchestration import ProjectOrchestrationService
 from .domain.projects.file_storage import FileStorageService
+from .domain.parsing.services import DocumentProcessingService
 
 # Import MongoDB index setup
 from .adapters.mongo.client import ensure_bronze_indexes
@@ -47,6 +48,7 @@ task_runner: BackgroundTaskRunner | None = None
 file_processing_service: FileProcessingService | None = None
 project_orchestration_service: ProjectOrchestrationService | None = None
 file_storage_service: FileStorageService | None = None
+document_processing_service: DocumentProcessingService | None = None
 
 
 def create_app() -> FastAPI:
@@ -55,7 +57,7 @@ def create_app() -> FastAPI:
         logger.info("Initializing application components...")
 
         # Initialize progress tracking infrastructure
-        global progress_publisher, task_runner, file_processing_service, project_orchestration_service, file_storage_service
+        global progress_publisher, task_runner, file_processing_service, project_orchestration_service, file_storage_service, document_processing_service
 
         # Create progress publisher (in-memory implementation)
         # This can be swapped with Redis-based implementation for multi-process deployments
@@ -76,9 +78,14 @@ def create_app() -> FastAPI:
         file_storage_service = FileStorageService()
         logger.info("File storage service initialized")
 
-        # Create project orchestration service (inject file storage service)
+        # Create document processing service (for table and entity extraction)
+        document_processing_service = DocumentProcessingService()
+        logger.info("Document processing service initialized")
+
+        # Create project orchestration service (inject file storage and document processing services)
         project_orchestration_service = ProjectOrchestrationService(
-            file_storage_service=file_storage_service
+            file_storage_service=file_storage_service,
+            document_processing_service=document_processing_service
         )
         logger.info("Project orchestration service initialized")
 
@@ -95,6 +102,9 @@ def create_app() -> FastAPI:
 
         # Set file storage service for projects router
         projects.set_file_storage_service(file_storage_service)
+
+        # Set orchestration service for scenarios router
+        scenarios.set_orchestration_service(project_orchestration_service)
 
         logger.info("All components initialized successfully")
 

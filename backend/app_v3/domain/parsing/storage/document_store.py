@@ -286,4 +286,86 @@ class DocumentStore:
         logger.info(f"Upserted table {table_id} to MongoDB")
         
         return table_doc
+    
+    def delete_entities_by_doc_id(self, doc_id: str) -> int:
+        """
+        Delete all entities associated with a document.
+        
+        Args:
+            doc_id: Document identifier
+            
+        Returns:
+            Number of entities deleted
+        """
+        result = self._db.entities.delete_many({"properties.doc_id": doc_id})
+        deleted_count = result.deleted_count
+        logger.info(f"Deleted {deleted_count} entities for doc_id: {doc_id}")
+        return deleted_count
+    
+    def delete_relations_by_doc_id(self, doc_id: str) -> int:
+        """
+        Delete all relations (edges) associated with a document.
+        
+        Args:
+            doc_id: Document identifier
+            
+        Returns:
+            Number of relations deleted
+        """
+        result = self._db.relations.delete_many({"properties.doc_id": doc_id})
+        deleted_count = result.deleted_count
+        logger.info(f"Deleted {deleted_count} relations for doc_id: {doc_id}")
+        return deleted_count
+    
+    def delete_chunks_by_doc_id(self, doc_id: str) -> int:
+        """
+        Delete all chunks associated with a document.
+        
+        Args:
+            doc_id: Document identifier
+            
+        Returns:
+            Number of chunks deleted
+        """
+        # Chunks may have doc_id in properties or at top level
+        result = self._db.chunks.delete_many({
+            "$or": [
+                {"properties.doc_id": doc_id},
+                {"doc_id": doc_id}
+            ]
+        })
+        deleted_count = result.deleted_count
+        logger.info(f"Deleted {deleted_count} chunks for doc_id: {doc_id}")
+        return deleted_count
+    
+    def delete_tables_by_doc_id(self, doc_id: str) -> int:
+        """
+        Delete all tables associated with a document.
+        
+        Args:
+            doc_id: Document identifier
+            
+        Returns:
+            Number of tables deleted
+        """
+        result = self._db.tables.delete_many({"doc_id": doc_id})
+        deleted_count = result.deleted_count
+        logger.info(f"Deleted {deleted_count} tables for doc_id: {doc_id}")
+        return deleted_count
+    
+    def delete_document(self, doc_id: str) -> bool:
+        """
+        Delete document metadata.
+        
+        Args:
+            doc_id: Document identifier
+            
+        Returns:
+            True if document was deleted, False otherwise
+        """
+        result = self._db.documents.delete_one({"_id": doc_id})
+        deleted = result.deleted_count > 0
+        if deleted:
+            logger.info(f"Deleted document metadata for doc_id: {doc_id}")
+        return deleted
 

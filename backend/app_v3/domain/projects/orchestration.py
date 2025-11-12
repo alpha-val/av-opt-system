@@ -25,21 +25,21 @@ class ProjectOrchestrationService:
     logic will be implemented later.
     """
     
-    def __init__(self, file_storage_service=None):
+    def __init__(self, file_storage_service=None, document_processing_service=None):
         """
         Initialize the orchestration service.
         
         Args:
             file_storage_service: Optional FileStorageService instance for retrieving files from GridFS
+            document_processing_service: Optional DocumentProcessingService instance for processing documents
         
         In the future, this will inject dependencies like:
-        - DocumentProcessingService
-        - EntityExtractor
         - CostEstimationService
         - ReportGenerator
         """
         self._file_storage_service = file_storage_service
-        logger.info("Initialized ProjectOrchestrationService (placeholder)")
+        self._document_processing_service = document_processing_service
+        logger.info("Initialized ProjectOrchestrationService")
     
     async def process_project_documents(
         self,
@@ -253,4 +253,91 @@ No cost estimates available yet.
 ### Recommendations
 Report generation is a placeholder.
 """
+    
+    async def process_tabular_data_file(
+        self,
+        file_bytes: bytes,
+        filename: str,
+        file_id: str,
+        project_id: str,
+        user_id: str,
+        store_in_pinecone: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Process a tabular data file: extract tables, extract entities, and store in MongoDB.
+        
+        This method orchestrates the complete processing pipeline for a tabular data file:
+        1. Extract tables from PDF using TableExtractor
+        2. Extract entities using LLM via EntityExtractor with MSIO ontology
+        3. Store tables and entities/edges in MongoDB
+        4. Optionally store entities in Pinecone (disabled by default)
+        
+        Args:
+            file_bytes: File content as bytes
+            filename: Original filename
+            file_id: GridFS file ID (used as doc_id)
+            project_id: Project identifier
+            user_id: User identifier
+            store_in_pinecone: Whether to store entities in Pinecone (default: False)
+            
+        Returns:
+            Dictionary with processing results including:
+            - doc_id: Document identifier
+            - tables_extracted: Number of tables extracted
+            - entities_extracted: Number of entities extracted
+            - entities_stored: Number of entities stored in MongoDB
+            - entities_vectorized: Number of entities stored in Pinecone (if enabled)
+            - edges_extracted: Number of edges/relations extracted
+            - edges_stored: Number of edges stored in MongoDB
+            - status: Processing status ("success" or "error")
+            - error: Error message if processing failed
+            
+        Raises:
+            RuntimeError: If DocumentProcessingService is not initialized
+        """
+        if not self._document_processing_service:
+            raise RuntimeError("DocumentProcessingService not initialized")
+        
+        logger.info(
+            f"Processing tabular data file: {filename} (file_id: {file_id}, "
+            f"project_id: {project_id}, store_in_pinecone: {store_in_pinecone})"
+        )
+        
+        try:
+            # Process the tabular data document
+            result = self._document_processing_service.process_tabular_data_document(
+                pdf_bytes=file_bytes,
+                filename=filename,
+                doc_id=file_id,
+                project_id=project_id,
+                user_id=user_id,
+                store_in_pinecone=store_in_pinecone,
+            )
+            
+            logger.info(
+                f"Successfully processed tabular data file {filename}: "
+                f"{result.get('tables_extracted', 0)} tables, "
+                f"{result.get('entities_extracted', 0)} entities, "
+                f"{result.get('edges_extracted', 0)} edges"
+            )
+            
+            return result
+            
+        except Exception as e:
+            logger.error(
+                f"Error processing tabular data file {filename}: {e}",
+                exc_info=True
+            )
+            return {
+                "doc_id": file_id,
+                "filename": filename,
+                "tables_extracted": 0,
+                "entities_extracted": 0,
+                "entities_stored": 0,
+                "entities_vectorized": 0,
+                "edges_extracted": 0,
+                "edges_stored": 0,
+                "status": "error",
+                "error": str(e),
+            }
 

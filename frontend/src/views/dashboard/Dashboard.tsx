@@ -2,9 +2,9 @@ import React, { ReactNode } from "react";
 import { Box, useTheme, useMediaQuery } from "@mui/material";
 import { Routes, Route } from "react-router-dom";
 import Nav from "../../components/Nav";
+import Banner from "../../components/Banner";
 import ProjectList from "../project/ProjectList";
 import ProjectDashboard from "../project/ProjectDashboard";
-import SystemBaseDesign from "../project/SystemBaseDesign";
 import ReportPreview from "../../components/project/ReportPreview";
 import ScenarioDetails from "../scenario/ScenarioDetails";
 import Settings from "../Settings/Settings";
@@ -30,37 +30,41 @@ const Dashboard: React.FC<DashboardProps> = ({ children }) => {
           width: "100%",
           minHeight: "100vh",
           marginTop: isMobile ? "64px" : 0,
-          padding: 3,
+          padding: 1,
           overflow: "auto",
           transition: theme.transitions.create("margin", {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
           }),
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        {children || (
-          <Routes>
-            <Route path="/" element={<ProjectList />} />
-            <Route path="/projects" element={<ProjectList />} />
-            <Route
-              path="/projects/:projectId"
-              element={<ProjectDashboard />}
-            />
-            <Route
-              path="/projects/:projectId/scenarios/:scenarioId"
-              element={<ScenarioDetails />}
-            />
-            <Route
-              path="/projects/:projectId/system-design"
-              element={<SystemBaseDesign />}
-            />
-            <Route
-              path="/projects/:projectId/report"
-              element={<ReportPreview />}
-            />
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
-        )}
+        {/* Banner */}
+        <Banner />
+
+        {/* Content */}
+        <Box sx={{ flexGrow: 1 }}>
+          {children || (
+            <Routes>
+              <Route path="/" element={<ProjectList />} />
+              <Route path="/projects" element={<ProjectList />} />
+              <Route
+                path="/projects/:projectId"
+                element={<ProjectDashboard />}
+              />
+              <Route
+                path="/projects/:projectId/scenarios/:scenarioId"
+                element={<ScenarioDetails />}
+              />
+              <Route
+                path="/projects/:projectId/report"
+                element={<ReportPreview />}
+              />
+              <Route path="/settings" element={<Settings />} />
+            </Routes>
+          )}
+        </Box>
       </Box>
     </Box>
   );

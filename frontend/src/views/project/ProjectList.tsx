@@ -216,7 +216,6 @@ const ProjectList: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" color="text.secondary">
-                        {project.global_objective_type}: {project.global_objective_target}
                       </Typography>
                     </TableCell>
                     <TableCell>

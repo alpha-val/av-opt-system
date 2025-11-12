@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate, Link as RouterLink } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -19,29 +19,26 @@ import {
   Link,
 } from "@mui/material";
 import {
-  ArrowBack as ArrowBackIcon,
-  PlayArrow as PlayArrowIcon,
-  Refresh as RefreshIcon,
-} from "@mui/icons-material";
-import {
   fetchProjectById,
-  runAnalysis,
   uploadProjectFiles,
   listProjectFiles,
   downloadProjectFile,
+  deleteProjectFile,
   selectCurrentProject,
   selectProjectsLoading,
   selectProjectsError,
-  selectProjectRunningAnalysis,
   selectProjectUploadingFiles,
   selectProjectFiles,
   selectProjectFilesLoading,
   clearError,
 } from "../../redux/projectsSlice";
+import {
+  fetchScenarios,
+  selectScenariosByProject,
+  selectScenariosLoading,
+} from "../../redux/scenariosSlice";
+import { useDialogs } from "../../hooks/useDialogs";
 import { ProjectStatus } from "../../types/api";
-import SystemBaseDesignContent, {
-  SystemBaseDesignContentRef,
-} from "../../components/project/SystemBaseDesignContent";
 import FileUpload from "../../components/project/FileUpload";
 import DocumentList, {
   DocumentMetadata,
@@ -74,28 +71,37 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
  * Contains:
  * - Top panel with project information
  * - Navigation back to projects list
- * - Tabbed interface with System Details, Optionality Analysis, and Results tabs
+ * - Tabbed interface with Sources and Scenarios tabs
  */
 const ProjectDashboard: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const dialogs = useDialogs();
   const project = useSelector(selectCurrentProject);
   const loading = useSelector((state: any) => state.projects.loading.fetchById);
-  const runningAnalysis = useSelector(selectProjectRunningAnalysis);
   const uploadingFiles = useSelector(selectProjectUploadingFiles);
   const filesLoading = useSelector(selectProjectFilesLoading);
   const projectFiles = useSelector(selectProjectFiles(projectId || ""));
   const error = useSelector(selectProjectsError);
   const [activeTab, setActiveTab] = useState<number>(0);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const systemDesignRef = useRef<SystemBaseDesignContentRef>(null);
-  const [filesChanged, setFilesChanged] = useState<number>(0); // Force re-render when files change
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null); // Selected scenario in Scenarios tab
+
+  // Scenarios data for Overview tab
+  const scenariosLoading = useSelector(selectScenariosLoading);
+  const scenariosSelector = useMemo(
+    () => (projectId ? selectScenariosByProject(projectId) : undefined),
+    [projectId]
+  );
+  const scenarios = useSelector(
+    (state: any) => (scenariosSelector ? scenariosSelector(state) : [])
+  );
 
   // File upload state for Sources tab
   const [baseCaseFiles, setBaseCaseFiles] = useState<File[]>([]);
   const [tabularDataFiles, setTabularDataFiles] = useState<File[]>([]);
+  const [clearFileUploadTrigger, setClearFileUploadTrigger] = useState<number>(0);
 
   /**
    * Fetch project data and handle URL hash for tab navigation
@@ -108,27 +114,70 @@ const ProjectDashboard: React.FC = () => {
       }
       // Fetch project files
       dispatch(listProjectFiles(projectId) as any);
-    }
-
-    // Check URL hash to set active tab
-    const hash = window.location.hash;
-    if (hash === "#scenarios") {
-      setActiveTab(1); // Scenarios tab is at index 1
-    } else if (hash === "#sources") {
-      setActiveTab(0); // Sources tab is at index 0
-    } else if (hash === "#system-details") {
-      setActiveTab(2); // System Details tab is at index 2
+      // Fetch scenarios for Overview tab
+      dispatch(fetchScenarios(projectId) as any);
     }
   }, [projectId, project, dispatch]);
+
+  /**
+   * Handle URL hash for tab navigation (only on mount or projectId change)
+   */
+  useEffect(() => {
+    // Check URL hash to set active tab
+    // Only set tab from hash, don't reset to default when no hash
+    // This prevents overriding user's current tab selection
+    const hash = window.location.hash;
+    if (hash === "#scenarios") {
+      setActiveTab(2); // Scenarios tab is at index 2
+    } else if (hash === "#sources") {
+      setActiveTab(1); // Sources tab is at index 1
+    }
+    // If no hash, don't change the tab - let it stay on current tab
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]); // Only run when projectId changes, not when project updates
 
   /**
    * Clear selected scenario when switching away from Scenarios tab
    */
   useEffect(() => {
-    if (activeTab !== 1) {
+    if (activeTab !== 2) {
       setSelectedScenarioId(null);
     }
   }, [activeTab]);
+
+  /**
+   * Format file size for display
+   */
+  const formatFileSize = (bytes: number): string => {
+    if (!bytes || bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
+  /**
+   * Calculate total document size
+   */
+  const calculateTotalDocumentSize = (): number => {
+    if (!projectFiles) return 0;
+    const allFiles = [
+      ...(projectFiles.base_case_files || []),
+      ...(projectFiles.tabular_data_files || []),
+    ];
+    return allFiles.reduce((total, file) => total + (file.length || 0), 0);
+  };
+
+  /**
+   * Get number of documents
+   */
+  const getDocumentCount = (): number => {
+    if (!projectFiles) return 0;
+    return (
+      (projectFiles.base_case_files?.length || 0) +
+      (projectFiles.tabular_data_files?.length || 0)
+    );
+  };
 
   /**
    * Format date for display
@@ -175,14 +224,6 @@ const ProjectDashboard: React.FC = () => {
   };
 
   /**
-   * Handle files change callback
-   */
-  const handleFilesChange = useCallback(() => {
-    // Force re-render to update canRunAnalysis check
-    setFilesChanged((prev) => prev + 1);
-  }, []);
-
-  /**
    * Handle base case files selected
    */
   const handleBaseCaseFilesSelected = useCallback((files: File[]) => {
@@ -223,6 +264,8 @@ const ProjectDashboard: React.FC = () => {
         // Clear selected files
         setBaseCaseFiles([]);
         setTabularDataFiles([]);
+        // Trigger FileUpload components to clear their internal selected files
+        setClearFileUploadTrigger((prev) => prev + 1);
         // Refresh project and files
         await dispatch(fetchProjectById(projectId) as any);
         await dispatch(listProjectFiles(projectId) as any);
@@ -246,105 +289,65 @@ const ProjectDashboard: React.FC = () => {
   );
 
   /**
-   * Handle file delete (placeholder - implement when backend supports it)
+   * Handle file delete with confirmation dialog
    */
-  const handleDeleteFile = useCallback((fileId: string) => {
-    // TODO: Implement file deletion when backend supports it
-    console.log("Delete file:", fileId);
-  }, []);
+  const handleDeleteFile = useCallback(
+    async (fileId: string) => {
+      if (!projectId) return;
 
-  /**
-   * Handle running analysis
-   */
-  const handleRunAnalysis = async (): Promise<void> => {
-    if (!projectId) return;
+      // Find file metadata to show filename in warning
+      const allFiles = [
+        ...(projectFiles?.base_case_files || []),
+        ...(projectFiles?.tabular_data_files || []),
+      ];
+      const fileToDelete = allFiles.find((f) => f.file_id === fileId);
+      const filename = fileToDelete?.filename || "this file";
 
-    setAnalysisError(null);
-    dispatch(clearError());
+      // Show confirmation dialog with warning
+      const confirmed = await dialogs.confirm(
+        `Deleting "${filename}" will permanently remove the file and all associated data. This includes:
+        
+• Related scenarios that depend on this file
+• All ingested and extracted data from this file
+• Any analysis results based on this file
 
-    // Validate requirements
-    if (!project) {
-      setAnalysisError("Project data not loaded");
-      return;
-    }
-
-    if (!project.global_objective_type || !project.global_objective_target) {
-      setAnalysisError(
-        "Objective details are required. Please set objective type and target in the System Details tab."
+This action cannot be undone. Are you sure you want to delete this file?`,
+        {
+          title: "Delete File",
+          severity: "error",
+          okText: "Delete",
+          cancelText: "Cancel",
+        }
       );
-      return;
-    }
 
-    // Check if files are selected (not yet uploaded)
-    const selectedFiles = systemDesignRef.current?.getFiles();
-    const hasSelectedFiles =
-      selectedFiles &&
-      selectedFiles.baseCaseFiles.length > 0 &&
-      selectedFiles.tabularDataFiles.length > 0;
-
-    // Check if files are already uploaded
-    const hasUploadedFiles =
-      project.base_case_documents &&
-      project.base_case_documents.length > 0 &&
-      project.tabular_data_documents &&
-      project.tabular_data_documents.length > 0;
-
-    // If files are selected but not uploaded, upload them first
-    if (hasSelectedFiles && !hasUploadedFiles) {
-      // Validate files
-      const validation = systemDesignRef.current?.validateFiles();
-      if (!validation || !validation.valid) {
-        setAnalysisError(validation?.error || "File validation failed");
-        return;
+      if (!confirmed) {
+        return; // User cancelled
       }
 
-      // Upload files
-      const uploadSuccess = await systemDesignRef.current?.uploadFiles();
-      if (!uploadSuccess) {
-        setAnalysisError("Failed to upload files. Please try again.");
-        return;
+      setAnalysisError(null);
+      dispatch(clearError());
+
+      try {
+        const result = await dispatch(
+          deleteProjectFile({ projectId, fileId }) as any
+        );
+
+        if (deleteProjectFile.fulfilled.match(result)) {
+          // Refresh project files list and project data
+          await dispatch(listProjectFiles(projectId) as any);
+          await dispatch(fetchProjectById(projectId) as any);
+          // Ensure we stay on Sources tab after deletion (set after refresh to prevent override)
+          setActiveTab(1);
+        } else if (deleteProjectFile.rejected.match(result)) {
+          setAnalysisError(result.payload as string);
+        }
+      } catch (error) {
+        setAnalysisError("Failed to delete file. Please try again.");
       }
+    },
+    [projectId, projectFiles, dispatch, dialogs]
+  );
 
-      // Refresh project data to get updated document IDs
-      await dispatch(fetchProjectById(projectId) as any);
-    } else if (!hasSelectedFiles && !hasUploadedFiles) {
-      setAnalysisError(
-        "Please select base case documents and tabular data files before running analysis."
-      );
-      return;
-    }
-
-    // Dispatch run analysis action
-    dispatch(runAnalysis(projectId) as any).then((result: any) => {
-      if (runAnalysis.rejected.match(result)) {
-        setAnalysisError(result.payload as string);
-      }
-    });
-  };
-
-  /**
-   * Check if analysis can be run
-   */
-  const canRunAnalysis = (): boolean => {
-    if (!project) return false;
-
-    // Check objective details
-    if (!project.global_objective_type || !project.global_objective_target) {
-      return false;
-    }
-
-    // Check if files are selected (not yet uploaded)
-    // Reference filesChanged to ensure this function re-evaluates when files change
-    const _ = filesChanged; // Force re-evaluation when files change
-    const selectedFiles = systemDesignRef.current?.getFiles();
-    const hasSelectedFiles =
-      selectedFiles &&
-      selectedFiles.baseCaseFiles.length > 0 &&
-      selectedFiles.tabularDataFiles.length > 0;
-
-    // Analysis can run if we have objective details AND selected files
-    return hasSelectedFiles;
-  };
 
   if (!projectId) {
     return (
@@ -355,7 +358,7 @@ const ProjectDashboard: React.FC = () => {
   }
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", p: 2 }}>
       {/* Breadcrumb Navigation */}
       <Box
         sx={{
@@ -399,15 +402,15 @@ const ProjectDashboard: React.FC = () => {
             <Typography color="text.secondary">Loading...</Typography>
           )}
         </Breadcrumbs>
-        {project && (
+        {/* {project && (
           <Typography variant="body2" color="text.secondary">
             Last updated: {formatDate(project.updated_at)}
           </Typography>
-        )}
+        )} */}
       </Box>
 
       {/* Top Panel - Project Information */}
-      <Paper elevation={0} sx={{ p: 1.5, mb: 2 }}>
+      {/* <Paper elevation={0} sx={{ p: 1.5, mb: 2 }}>
         <Box
           sx={{
             display: "flex",
@@ -441,16 +444,16 @@ const ProjectDashboard: React.FC = () => {
                     </Typography>
                   )}
                 </Box>
-                {/* <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary">
                   Last updated: {formatDate(project.updated_at)}
-                </Typography> */}
+                </Typography>
               </Box>
             ) : (
               <Typography variant="h4">Loading project...</Typography>
             )}
           </Box>
         </Box>
-      </Paper>
+      </Paper> */}
 
       {/* Error Alert */}
       {(error || analysisError) && (
@@ -488,15 +491,120 @@ const ProjectDashboard: React.FC = () => {
                 onChange={(_, newValue) => setActiveTab(newValue)}
                 aria-label="project dashboard tabs"
               >
-                <Tab label="Sources" id="project-tab-0" />
-                <Tab label="Scenarios" id="project-tab-1" />
-                <Tab label="System Details" id="project-tab-2" />
+                <Tab label="Overview" id="project-tab-0" />
+                <Tab label="Sources" id="project-tab-1" />
+                <Tab label="Scenarios" id="project-tab-2" />
               </Tabs>
             </Box>
 
-            {/* Tab 0: Sources - File Upload */}
+            {/* Tab 0: Overview */}
             <TabPanel value={activeTab} index={0}>
-              <Box sx={{ p: 3 }}>
+              <Box sx={{ p: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Project Overview
+                </Typography>
+
+                {/* Project Description and Dates */}
+                <Card sx={{ mb: 3 }}>
+                  <CardContent>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Description
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 3 }}>
+                      {project.description || "No description provided."}
+                    </Typography>
+                    <Divider sx={{ my: 2 }} />
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          Date Created
+                        </Typography>
+                        <Typography variant="body1">
+                          {formatDate(project.created_at)}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          Last Updated
+                        </Typography>
+                        <Typography variant="body1">
+                          {formatDate(project.updated_at)}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </CardContent>
+                </Card>
+
+                {/* Summary Section */}
+                <Typography variant="h6" gutterBottom sx={{ mt: 3, mb: 2 }}>
+                  Summary
+                </Typography>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={4}>
+                    <Card>
+                      <CardContent>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          Number of Documents
+                        </Typography>
+                        {filesLoading ? (
+                          <CircularProgress size={24} />
+                        ) : (
+                          <Typography variant="h4">
+                            {getDocumentCount()}
+                          </Typography>
+                        )}
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                          Base Case: {projectFiles?.base_case_files?.length || 0} | 
+                          Tabular Data: {projectFiles?.tabular_data_files?.length || 0}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Card>
+                      <CardContent>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          Number of Scenarios
+                        </Typography>
+                        {scenariosLoading ? (
+                          <CircularProgress size={24} />
+                        ) : (
+                          <Typography variant="h4">
+                            {scenarios.length}
+                          </Typography>
+                        )}
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                          Total scenarios created for this project
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Card>
+                      <CardContent>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          Total Size of Documents
+                        </Typography>
+                        {filesLoading ? (
+                          <CircularProgress size={24} />
+                        ) : (
+                          <Typography variant="h4">
+                            {formatFileSize(calculateTotalDocumentSize())}
+                          </Typography>
+                        )}
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                          Combined size of all uploaded files
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+              </Box>
+            </TabPanel>
+
+            {/* Tab 1: Sources - File Upload */}
+            <TabPanel value={activeTab} index={1}>
+              <Box sx={{ p: 2 }}>
                 <Typography variant="h6" gutterBottom>
                   Upload Source Documents
                 </Typography>
@@ -526,6 +634,7 @@ const ProjectDashboard: React.FC = () => {
                           disabled={uploadingFiles}
                           showSelectedFiles={true}
                           numberOfFiles={baseCaseFiles.length}
+                          clearTrigger={clearFileUploadTrigger}
                         />
                       </CardContent>
                     </Card>
@@ -546,6 +655,7 @@ const ProjectDashboard: React.FC = () => {
                           disabled={uploadingFiles}
                           showSelectedFiles={true}
                           numberOfFiles={tabularDataFiles.length}
+                          clearTrigger={clearFileUploadTrigger}
                         />
                       </CardContent>
                     </Card>
@@ -611,9 +721,9 @@ const ProjectDashboard: React.FC = () => {
               </Box>
             </TabPanel>
 
-            {/* Tab 1: Scenarios */}
-            <TabPanel value={activeTab} index={1}>
-              <Box sx={{ p: 3 }}>
+            {/* Tab 2: Scenarios */}
+            <TabPanel value={activeTab} index={2}>
+              <Box sx={{ p: 2 }}>
                 {selectedScenarioId ? (
                   <ScenarioDetails
                     scenarioId={selectedScenarioId}
@@ -626,55 +736,6 @@ const ProjectDashboard: React.FC = () => {
                     onScenarioSelect={(scenarioId) => setSelectedScenarioId(scenarioId)}
                   />
                 )}
-              </Box>
-            </TabPanel>
-
-            {/* Tab 2: System Details */}
-            <TabPanel value={activeTab} index={2}>
-              <Box sx={{ p: 1 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "flex-start",
-                    mb: 2,
-                    gap: 3,
-                  }}
-                >
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    size="small"
-                    startIcon={
-                      runningAnalysis ? (
-                        <CircularProgress size={20} />
-                      ) : (
-                        <PlayArrowIcon />
-                      )
-                    }
-                    onClick={handleRunAnalysis}
-                    disabled={runningAnalysis || !canRunAnalysis()}
-                  >
-                    {runningAnalysis
-                      ? "Running Analysis..."
-                      : project.status === ProjectStatus.PROCESSING ||
-                        project.status === ProjectStatus.VALIDATION ||
-                        project.status === ProjectStatus.COMPLETED
-                      ? "Re-run Analysis"
-                      : "Run Analysis"}
-                  </Button>
-                  {!canRunAnalysis() && (
-                    <Alert severity="warning">
-                      Please complete objective details and upload all required
-                      documents before running analysis.
-                    </Alert>
-                  )}
-                </Box>
-
-                <SystemBaseDesignContent
-                  ref={systemDesignRef}
-                  projectId={projectId}
-                  onFilesChange={handleFilesChange}
-                />
               </Box>
             </TabPanel>
           </Paper>

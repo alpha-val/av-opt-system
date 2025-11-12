@@ -268,6 +268,13 @@ export const projectApi = {
     );
     return response.data;
   },
+
+  /**
+   * Delete a project file
+   */
+  deleteProjectFile: async (projectId: string, fileId: string): Promise<void> => {
+    await apiClient.delete(`/api/v1/projects/${projectId}/files/${fileId}`);
+  },
 };
 
 /**
@@ -315,6 +322,26 @@ export const scenarioApi = {
    */
   delete: async (scenarioId: string): Promise<void> => {
     await apiClient.delete(`/api/v1/scenarios/${scenarioId}`);
+  },
+
+  /**
+   * Run or re-run analysis for a scenario
+   */
+  runAnalysis: async (scenarioId: string): Promise<{
+    scenario_id: string;
+    project_id: string;
+    status: string;
+    message: string;
+    processing_result?: any;
+  }> => {
+    const response = await apiClient.post<{
+      scenario_id: string;
+      project_id: string;
+      status: string;
+      message: string;
+      processing_result?: any;
+    }>(`/api/v1/scenarios/${scenarioId}/run-analysis`);
+    return response.data;
   },
 };
 

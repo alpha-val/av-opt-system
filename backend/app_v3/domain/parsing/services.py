@@ -158,9 +158,9 @@ class DocumentProcessingService:
             #         f"{validation_result['stats']['total']} valid"
             #     )
 
-            # Create hierarchy edges
-            hierarchy_edges = self.entity_extractor.create_hierarchy_edges(nodes)
-            edges.extend(hierarchy_edges)
+            # # Create hierarchy edges
+            # hierarchy_edges = self.entity_extractor.create_hierarchy_edges(nodes)
+            # edges.extend(hierarchy_edges)
 
             # Stage 5: Normalization and deduplication
             # Store original IDs before normalization for edge remapping
@@ -187,10 +187,6 @@ class DocumentProcessingService:
                 edge.get("properties", {}).setdefault("user_id", user_id)
                 edge.get("properties", {}).setdefault("doc_id", doc_id_actual)
                 edge.get("properties", {}).setdefault("artifact_type", "base_case")
-
-
-
-
 
             # Store chunks in MongoDB
             chunks_stored = self.document_store.bulk_upsert_chunks(chunks)
@@ -252,6 +248,7 @@ class DocumentProcessingService:
         max_rows_per_chunk: int = 50,
         validate_msio: bool = True,
         strict_validation: bool = False,
+        store_in_pinecone: bool = False,
     ) -> Dict[str, Any]:
         """
         Process a tabular data document through the complete pipeline.
@@ -263,8 +260,9 @@ class DocumentProcessingService:
         4. Extract entities from tables using LLM
         5. Validate entities against MSIO ontology
         6. Normalize and deduplicate entities
-        7. Store entities in MongoDB and Pinecone (vectorized)
-        8. Store table metadata in MongoDB
+        7. Store entities in MongoDB
+        8. Optionally store entities in Pinecone (vectorized) if store_in_pinecone=True
+        9. Store table metadata in MongoDB
 
         Args:
             pdf_bytes: PDF file content
@@ -276,6 +274,7 @@ class DocumentProcessingService:
             max_rows_per_chunk: Maximum rows per table chunk (default: 50)
             validate_msio: Whether to validate entities against MSIO ontology
             strict_validation: If True, invalid entities are excluded (default: False)
+            store_in_pinecone: Whether to store entities in Pinecone (default: False)
 
         Returns:
             Dictionary with processing results and statistics
@@ -359,9 +358,9 @@ class DocumentProcessingService:
             #         f"{validation_result['stats']['total']} valid"
             #     )
 
-            # Create hierarchy edges
-            hierarchy_edges = self.entity_extractor.create_hierarchy_edges(nodes)
-            edges.extend(hierarchy_edges)
+            # # Create hierarchy edges
+            # hierarchy_edges = self.entity_extractor.create_hierarchy_edges(nodes)
+            # edges.extend(hierarchy_edges)
 
             # Stage 6: Normalization and deduplication
             # Store original IDs before normalization for edge remapping
@@ -410,15 +409,26 @@ class DocumentProcessingService:
             entities_stored = self.document_store.bulk_upsert_entities(nodes)
             edges_stored = self.document_store.bulk_upsert_relations(edges)
 
-            # Vectorize and store entities in Pinecone (NOT chunks for tabular data)
-            entities_vectorized = self.entity_vector_store.upsert_entities(
-                nodes, project_id=project_id, artifact_type="tabular_data"
-            )
+            # Optionally vectorize and store entities in Pinecone (NOT chunks for tabular data)
+            entities_vectorized = 0
+            if store_in_pinecone:
+                entities_vectorized = self.entity_vector_store.upsert_entities(
+                    nodes, project_id=project_id, artifact_type="tabular_data"
+                )
+                logger.info(
+                    f"Vectorized and stored {entities_vectorized} entities in Pinecone"
+                )
+            else:
+                logger.info("Pinecone storage skipped (store_in_pinecone=False)")
 
             logger.info(
                 f"Completed processing tabular data document: "
-                f"{entities_stored} entities, {edges_stored} edges, "
-                f"{entities_vectorized} entities vectorized"
+                f"{entities_stored} entities, {edges_stored} edges"
+                + (
+                    f", {entities_vectorized} entities vectorized"
+                    if store_in_pinecone
+                    else ""
+                )
             )
 
             return {

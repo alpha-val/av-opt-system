@@ -24,6 +24,9 @@ import {
   PlayArrow as PlayArrowIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
+  Description as DescriptionIcon,
+  TrackChanges as ObjectiveIcon,
+  CalendarToday as CalendarIcon,
 } from "@mui/icons-material";
 import {
   fetchScenarios,
@@ -37,6 +40,7 @@ import {
   clearError,
 } from "../../redux/scenariosSlice";
 import { ScenarioStatus, ScenarioCreate } from "../../types/api";
+import { useDialogs } from "../../hooks/useDialogs";
 
 interface ScenariosListProps {
   projectId: string;
@@ -45,20 +49,24 @@ interface ScenariosListProps {
 
 /**
  * Scenarios list component.
- * 
+ *
  * Displays an empty state with "Create New Scenario" button when no scenarios exist,
  * or a grid of scenario cards when scenarios are present.
  */
-const ScenariosList: React.FC<ScenariosListProps> = ({ projectId, onScenarioSelect }) => {
+const ScenariosList: React.FC<ScenariosListProps> = ({
+  projectId,
+  onScenarioSelect,
+}) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  
+  const dialogs = useDialogs();
+
   // Memoize the selector to avoid creating a new one on every render
   const memoizedSelector = useMemo(
     () => selectScenariosByProject(projectId),
     [projectId]
   );
-  
+
   const scenarios = useSelector(memoizedSelector);
   const loading = useSelector(selectScenariosLoading);
   const creating = useSelector(selectScenarioCreating);
@@ -103,11 +111,40 @@ const ScenariosList: React.FC<ScenariosListProps> = ({ projectId, onScenarioSele
   /**
    * Handle deleting a scenario
    */
-  const handleDeleteScenario = (scenarioId: string, event: React.MouseEvent) => {
+  const handleDeleteScenario = async (
+    scenarioId: string,
+    event: React.MouseEvent
+  ) => {
     event.stopPropagation();
-    if (window.confirm("Are you sure you want to delete this scenario?")) {
-      dispatch(deleteScenario(scenarioId) as any);
+
+    // Find scenario to show name in warning
+    const scenarioToDelete = scenarios.find((s) => s.id === scenarioId);
+    const scenarioName = scenarioToDelete?.name || "this scenario";
+
+    // Show confirmation dialog with warning
+    const confirmed = await dialogs.confirm(
+      `Deleting "${scenarioName}" will permanently remove the scenario and all associated data. This includes:
+      
+• All analysis results and reports for this scenario
+• Extracted entities and relationships
+• Cost estimates and calculations
+• Any configuration and objective data
+
+This action cannot be undone. Are you sure you want to delete this scenario?`,
+      {
+        title: "Delete Scenario",
+        severity: "error",
+        okText: "Delete",
+        cancelText: "Cancel",
+      }
+    );
+
+    if (!confirmed) {
+      return; // User cancelled
     }
+
+    dispatch(clearError());
+    dispatch(deleteScenario(scenarioId) as any);
   };
 
   /**
@@ -126,7 +163,14 @@ const ScenariosList: React.FC<ScenariosListProps> = ({ projectId, onScenarioSele
    */
   const getStatusColor = (
     status: ScenarioStatus
-  ): "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" => {
+  ):
+    | "default"
+    | "primary"
+    | "secondary"
+    | "error"
+    | "info"
+    | "success"
+    | "warning" => {
     switch (status) {
       case ScenarioStatus.DRAFT:
         return "default";
@@ -198,7 +242,8 @@ const ScenariosList: React.FC<ScenariosListProps> = ({ projectId, onScenarioSele
             No scenarios yet
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            Create your first scenario to start analyzing different options for this project.
+            Create your first scenario to start analyzing different options for
+            this project.
           </Typography>
           <Button
             variant="contained"
@@ -221,9 +266,7 @@ const ScenariosList: React.FC<ScenariosListProps> = ({ projectId, onScenarioSele
               mb: 3,
             }}
           >
-            <Typography variant="h6">
-              Scenarios ({scenarios.length})
-            </Typography>
+            <Typography variant="h6">Scenarios ({scenarios.length})</Typography>
             <Button
               variant="contained"
               startIcon={<AddIcon />}
@@ -238,27 +281,43 @@ const ScenariosList: React.FC<ScenariosListProps> = ({ projectId, onScenarioSele
             {scenarios.map((scenario) => (
               <Grid item xs={12} sm={6} md={4} key={scenario.id}>
                 <Card
+                  variant="outlined"
                   sx={{
                     height: "100%",
                     display: "flex",
                     flexDirection: "column",
                     cursor: "pointer",
+                    transition: "all 0.2s ease-in-out",
+                    border: "1px solid",
+                    borderColor: "divider",
                     "&:hover": {
-                      boxShadow: 4,
+                      boxShadow: 1,
+                      transform: "translateY(-1px)",
+                      borderColor: "primary.main",
                     },
                   }}
                   onClick={() => handleScenarioClick(scenario.id)}
                 >
-                  <CardContent sx={{ flexGrow: 1 }}>
+                  <CardContent sx={{ flexGrow: 1, p: 2.5 }}>
+                    {/* Header with Title and Status */}
                     <Box
                       sx={{
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "flex-start",
-                        mb: 1,
+                        mb: 2,
                       }}
                     >
-                      <Typography variant="h6" component="h3" gutterBottom>
+                      <Typography
+                        variant="h6"
+                        component="h3"
+                        sx={{
+                          fontWeight: 600,
+                          flex: 1,
+                          mr: 1,
+                          lineHeight: 1.3,
+                        }}
+                      >
                         {scenario.name}
                       </Typography>
                       <Chip
@@ -266,26 +325,127 @@ const ScenariosList: React.FC<ScenariosListProps> = ({ projectId, onScenarioSele
                         size="small"
                         color={getStatusColor(scenario.status)}
                         onClick={(e) => e.stopPropagation()}
+                        sx={{
+                          fontWeight: 500,
+                          textTransform: "capitalize",
+                        }}
                       />
                     </Box>
+
+                    {/* Description */}
                     {scenario.description && (
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 2 }}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 1,
+                          mb: 2,
+                        }}
                       >
-                        {scenario.description}
-                      </Typography>
+                        <DescriptionIcon
+                          fontSize="small"
+                          sx={{ color: "text.secondary", mt: 0.5, flexShrink: 0 }}
+                        />
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{
+                            lineHeight: 1.5,
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {scenario.description}
+                        </Typography>
+                      </Box>
                     )}
-                    <Typography variant="caption" color="text.secondary">
-                      Created: {formatDate(scenario.created_at)}
-                    </Typography>
+
+                    {/* Objective Information */}
+                    {scenario.global_objective_type && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          mb: 2,
+                          p: 1.5,
+                          borderRadius: 1,
+                          bgcolor: "action.hover",
+                        }}
+                      >
+                        <ObjectiveIcon
+                          fontSize="small"
+                          sx={{ color: "primary.main", flexShrink: 0 }}
+                        />
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ display: "block", mb: 0.5 }}
+                          >
+                            Objective
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 500,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {scenario.global_objective_type}
+                            {scenario.global_objective_target && (
+                              <Typography
+                                component="span"
+                                variant="body2"
+                                color="primary.main"
+                                sx={{ ml: 0.5, fontWeight: 600 }}
+                              >
+                                {scenario.global_objective_target}
+                              </Typography>
+                            )}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    )}
+
+                    {/* Footer with Date */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.5,
+                        mt: "auto",
+                        pt: 2,
+                        borderTop: "1px solid",
+                        borderColor: "divider",
+                      }}
+                    >
+                      <CalendarIcon
+                        fontSize="small"
+                        sx={{ color: "text.secondary", fontSize: 16 }}
+                      />
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ fontSize: "0.75rem" }}
+                      >
+                        Created {formatDate(scenario.created_at)}
+                      </Typography>
+                    </Box>
                   </CardContent>
+
+                  {/* Actions */}
                   <CardActions
                     sx={{
                       justifyContent: "flex-end",
                       px: 2,
                       pb: 2,
+                      pt: 0,
+                      gap: 0.5,
                     }}
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -294,6 +454,12 @@ const ScenariosList: React.FC<ScenariosListProps> = ({ projectId, onScenarioSele
                       onClick={(e) => handleDeleteScenario(scenario.id, e)}
                       disabled={deleting}
                       color="error"
+                      sx={{
+                        "&:hover": {
+                          bgcolor: "error.light",
+                          color: "error.contrastText",
+                        },
+                      }}
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
@@ -361,4 +527,3 @@ const ScenariosList: React.FC<ScenariosListProps> = ({ projectId, onScenarioSele
 };
 
 export default ScenariosList;
-

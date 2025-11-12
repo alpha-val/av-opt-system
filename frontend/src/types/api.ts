@@ -22,10 +22,6 @@ export interface ProjectBase {
   name: string;
   description?: string | null;
   tags?: string[] | null;
-  // Global objective fields (optional - can be set later in SystemBaseDesign view)
-  global_objective_type?: string | null;
-  global_objective_target?: string | null;
-  objective_description?: string | null;
   // Project status
   status: ProjectStatus;
   // Document references
@@ -45,9 +41,6 @@ export interface ProjectUpdate {
   name?: string;
   description?: string | null;
   tags?: string[] | null;
-  global_objective_type?: string;
-  global_objective_target?: string;
-  objective_description?: string | null;
   status?: ProjectStatus;
   base_case_documents?: string[];
   tabular_data_documents?: string[];
@@ -129,6 +122,10 @@ export interface ScenarioBase {
   description?: string | null;
   project_id: string;
   status: ScenarioStatus;
+  // Global objective fields (optional - can be set later)
+  global_objective_type?: string | null;
+  global_objective_target?: string | null;
+  objective_description?: string | null;
   configuration?: Record<string, any> | null;
 }
 
@@ -144,6 +141,9 @@ export interface ScenarioUpdate {
   name?: string;
   description?: string | null;
   status?: ScenarioStatus;
+  global_objective_type?: string;
+  global_objective_target?: string;
+  objective_description?: string | null;
   configuration?: Record<string, any> | null;
 }
 

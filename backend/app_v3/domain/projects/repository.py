@@ -85,14 +85,10 @@ async def create_project(data: ProjectCreate) -> ProjectOut:
     """
     try:
         # Build document for insertion
-        # Note: global_objective fields are optional and can be set later
         doc = {
             "name": data.name,
             "description": data.description,
             "tags": data.tags or [],  # Default to empty list if None
-            "global_objective_type": data.global_objective_type,  # Can be None
-            "global_objective_target": data.global_objective_target,  # Can be None
-            "objective_description": data.objective_description,  # Can be None
             "status": (
                 data.status.value if hasattr(data.status, "value") else data.status
             ),
@@ -141,10 +137,6 @@ async def list_projects() -> List[ProjectOut]:
         for p in projects:
             doc = {**p, "id": str(p["_id"])}
             # Provide defaults for new required fields if missing (backward compatibility)
-            if "global_objective_type" not in doc:
-                doc["global_objective_type"] = "not specified"
-            if "global_objective_target" not in doc:
-                doc["global_objective_target"] = "not specified"
             if "base_case_documents" not in doc:
                 doc["base_case_documents"] = []
             if "tabular_data_documents" not in doc:
@@ -195,10 +187,6 @@ async def get_project(project_id: str) -> Optional[ProjectOut]:
         project["id"] = str(project["_id"])
 
         # Provide defaults for new required fields if missing (backward compatibility)
-        if "global_objective_type" not in project:
-            project["global_objective_type"] = "not specified"
-        if "global_objective_target" not in project:
-            project["global_objective_target"] = "not specified"
         if "base_case_documents" not in project:
             project["base_case_documents"] = []
         if "tabular_data_documents" not in project:
@@ -271,10 +259,6 @@ async def update_project(project_id: str, patch: ProjectUpdate) -> Optional[Proj
         result["id"] = str(result["_id"])
 
         # Provide defaults for new required fields if missing (backward compatibility)
-        if "global_objective_type" not in result:
-            result["global_objective_type"] = "not specified"
-        if "global_objective_target" not in result:
-            result["global_objective_target"] = "not specified"
         if "base_case_documents" not in result:
             result["base_case_documents"] = []
         if "tabular_data_documents" not in result:

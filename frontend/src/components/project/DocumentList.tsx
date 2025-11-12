@@ -16,6 +16,7 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Alert,
 } from "@mui/material";
 import {
   PictureAsPdf as PdfIcon,
@@ -305,7 +306,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
           sx={{
             color: "error.main",
             "&:hover": {
-              backgroundColor: "error.light",
+              backgroundColor: "error.veryLight",
             },
           }}
         >
