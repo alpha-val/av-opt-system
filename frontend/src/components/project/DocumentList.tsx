@@ -26,6 +26,7 @@ import {
   Download as DownloadIcon,
   Delete as DeleteIcon,
   MoreVert as MoreVertIcon,
+  Description as DescriptionIcon,
 } from "@mui/icons-material";
 import { selectProjectsError, clearError } from "../../redux/projectsSlice";
 
@@ -122,21 +123,21 @@ const DocumentList: React.FC<DocumentListProps> = ({
     }
   };
 
-  // Get file type icon
+  // Get file type icon with theme colors
   const getFileIcon = (filename: string, contentType: string) => {
-    if (!filename) return <FileIcon />;
+    if (!filename) return <FileIcon sx={{ color: "text.secondary" }} />;
     const lowerName = filename.toLowerCase();
     if (lowerName.endsWith(".pdf") || contentType === "application/pdf")
-      return <PdfIcon />;
+      return <PdfIcon sx={{ color: "error.main" }} />;
     if (
       lowerName.endsWith(".xls") ||
       lowerName.endsWith(".xlsx") ||
       contentType.includes("spreadsheet")
     )
-      return <XlsIcon />;
+      return <XlsIcon sx={{ color: "success.main" }} />;
     if (lowerName.endsWith(".csv") || contentType === "text/csv")
-      return <CsvIcon />;
-    return <FileIcon />;
+      return <CsvIcon sx={{ color: "info.main" }} />;
+    return <FileIcon sx={{ color: "text.secondary" }} />;
   };
 
   // Get artifact type chip component
@@ -149,8 +150,8 @@ const DocumentList: React.FC<DocumentListProps> = ({
           <Chip
             label="Base Case"
             size="small"
-            variant="filled"
-            color="default"
+            variant="outlined"
+            color="primary"
             sx={{
               fontWeight: 500,
               "& .MuiChip-label": {
@@ -164,8 +165,8 @@ const DocumentList: React.FC<DocumentListProps> = ({
           <Chip
             label="Tabular Data"
             size="small"
-            variant="filled"
-            color="default"
+            variant="outlined"
+            color="secondary"
             sx={{
               fontWeight: 500,
               "& .MuiChip-label": {
@@ -220,10 +221,19 @@ const DocumentList: React.FC<DocumentListProps> = ({
 
   return (
     <Box sx={{ mt: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        Uploaded Documents ({totalDocuments})
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+        <DescriptionIcon 
+          sx={{ 
+            mr: 1.5, 
+            fontSize: 24,
+            color: "primary.main",
+          }} 
+        />
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          Uploaded Documents ({totalDocuments})
+        </Typography>
+      </Box>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2, ml: 5 }}>
         Base Case Reports: {baseCaseDocuments.length} | Tabular Data Files:{" "}
         {tabularDataDocuments.length}
       </Typography>
@@ -238,33 +248,74 @@ const DocumentList: React.FC<DocumentListProps> = ({
         </Alert>
       )}
 
-      <TableContainer component={Paper}>
+      <TableContainer 
+        component={Paper}
+        variant="outlined"
+        sx={{
+          bgcolor: (theme) => theme.palette.mode === "dark" 
+            ? "rgba(25, 118, 210, 0.08)" 
+            : "rgba(25, 118, 210, 0.04)",
+        }}
+      >
         <Table>
           <TableHead>
-            <TableRow>
-              <TableCell>File Name</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Size</TableCell>
-              <TableCell>Uploaded</TableCell>
-              <TableCell align="right">Actions</TableCell>
+            <TableRow
+              sx={{
+                bgcolor: (theme) => theme.palette.mode === "dark" 
+                  ? "rgba(25, 118, 210, 0.12)" 
+                  : "rgba(25, 118, 210, 0.06)",
+              }}
+            >
+              <TableCell sx={{ fontWeight: 600 }}>File Name</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Type</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Size</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Uploaded</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 600 }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {tableData.map((doc) => (
-              <TableRow key={doc.file_id} hover>
+              <TableRow 
+                key={doc.file_id} 
+                hover
+                sx={{
+                  "&:hover": {
+                    bgcolor: (theme) => theme.palette.mode === "dark" 
+                      ? "rgba(25, 118, 210, 0.12)" 
+                      : "rgba(25, 118, 210, 0.06)",
+                  },
+                }}
+              >
                 <TableCell>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Box sx={{ color: "text.secondary" }}>{doc.file_icon}</Box>
-                    <Typography variant="body2">{doc.name}</Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    {doc.file_icon}
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {doc.name}
+                    </Typography>
                   </Box>
                 </TableCell>
                 <TableCell>{doc.artifact_type_display}</TableCell>
-                <TableCell>{doc.size_display}</TableCell>
-                <TableCell>{doc.upload_date_display}</TableCell>
+                <TableCell>
+                  <Typography variant="body2" color="text.secondary">
+                    {doc.size_display}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2" color="text.secondary">
+                    {doc.upload_date_display}
+                  </Typography>
+                </TableCell>
                 <TableCell align="right">
                   <IconButton
                     size="small"
                     onClick={(e) => handleOptionsClick(e, doc)}
+                    sx={{
+                      "&:hover": {
+                        bgcolor: (theme) => theme.palette.mode === "dark" 
+                          ? "rgba(25, 118, 210, 0.16)" 
+                          : "rgba(25, 118, 210, 0.08)",
+                      },
+                    }}
                   >
                     <MoreVertIcon />
                   </IconButton>

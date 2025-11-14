@@ -46,7 +46,7 @@ const OBJECTIVE_TYPES = [
 
 /**
  * System Base Design view for entity validation.
- * 
+ *
  * This is a placeholder component that will be extended later to:
  * - Display extracted entities in structured view
  * - Show entity attributes (tank diameter, height, pump ratings, etc.)
@@ -167,7 +167,11 @@ const SystemBaseDesign: React.FC = () => {
 
     if (totalSize > MAX_SIZE) {
       setFileError(
-        `Total file size exceeds 25MB limit (${(totalSize / 1024 / 1024).toFixed(2)}MB)`
+        `Total file size exceeds 25MB limit (${(
+          totalSize /
+          1024 /
+          1024
+        ).toFixed(2)}MB)`
       );
       return;
     }
@@ -197,9 +201,7 @@ const SystemBaseDesign: React.FC = () => {
     if (event.target.files) {
       const files = Array.from(event.target.files);
       // Filter for PDF files only
-      const pdfFiles = files.filter(
-        (file) => file.type === "application/pdf"
-      );
+      const pdfFiles = files.filter((file) => file.type === "application/pdf");
       setBaseCaseFiles([...baseCaseFiles, ...pdfFiles]);
     }
   };
@@ -276,7 +278,7 @@ const SystemBaseDesign: React.FC = () => {
             Back
           </Button>
           <Typography variant="h4" component="h1">
-            System Design
+            Base System
           </Typography>
         </Box>
       </Box>
@@ -318,18 +320,27 @@ const SystemBaseDesign: React.FC = () => {
                   {project.description}
                 </Typography>
               )}
-              {project.global_objective_type && project.global_objective_target && (
-                <Typography variant="body2" color="text.secondary">
-                  Objective: {project.global_objective_type} - {project.global_objective_target}
-                </Typography>
-              )}
+              {project.global_objective_type &&
+                project.global_objective_target && (
+                  <Typography variant="body2" color="text.secondary">
+                    Objective: {project.global_objective_type} -{" "}
+                    {project.global_objective_target}
+                  </Typography>
+                )}
             </CardContent>
           </Card>
 
           {/* Objective Details Form */}
           <Card>
             <CardContent>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 2,
+                }}
+              >
                 <Typography variant="h6">Objective Details</Typography>
                 <Button
                   variant="contained"
@@ -342,7 +353,11 @@ const SystemBaseDesign: React.FC = () => {
               </Box>
 
               {objectiveError && (
-                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setObjectiveError(null)}>
+                <Alert
+                  severity="error"
+                  sx={{ mb: 2 }}
+                  onClose={() => setObjectiveError(null)}
+                >
                   {objectiveError}
                 </Alert>
               )}
@@ -377,7 +392,9 @@ const SystemBaseDesign: React.FC = () => {
                   <FormControl sx={{ minWidth: 80 }}>
                     <Select
                       value={targetType}
-                      onChange={(e) => setTargetType(e.target.value as "%" | "$")}
+                      onChange={(e) =>
+                        setTargetType(e.target.value as "%" | "$")
+                      }
                     >
                       <MenuItem value="%">%</MenuItem>
                       <MenuItem value="$">$</MenuItem>
@@ -403,7 +420,14 @@ const SystemBaseDesign: React.FC = () => {
           {/* File Upload Section */}
           <Card>
             <CardContent>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 2,
+                }}
+              >
                 <Typography variant="h6">Document Upload</Typography>
                 <Button
                   variant="contained"
@@ -416,7 +440,11 @@ const SystemBaseDesign: React.FC = () => {
               </Box>
 
               {fileError && (
-                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setFileError(null)}>
+                <Alert
+                  severity="error"
+                  sx={{ mb: 2 }}
+                  onClose={() => setFileError(null)}
+                >
                   {fileError}
                 </Alert>
               )}
@@ -470,11 +498,13 @@ const SystemBaseDesign: React.FC = () => {
                       ))}
                     </Box>
                   )}
-                  {project.base_case_documents && project.base_case_documents.length > 0 && (
-                    <Alert severity="success" sx={{ mt: 1 }}>
-                      {project.base_case_documents.length} base case document(s) uploaded
-                    </Alert>
-                  )}
+                  {project.base_case_documents &&
+                    project.base_case_documents.length > 0 && (
+                      <Alert severity="success" sx={{ mt: 1 }}>
+                        {project.base_case_documents.length} base case
+                        document(s) uploaded
+                      </Alert>
+                    )}
                 </Box>
 
                 <Divider />
@@ -527,11 +557,13 @@ const SystemBaseDesign: React.FC = () => {
                       ))}
                     </Box>
                   )}
-                  {project.tabular_data_documents && project.tabular_data_documents.length > 0 && (
-                    <Alert severity="success" sx={{ mt: 1 }}>
-                      {project.tabular_data_documents.length} tabular data file(s) uploaded
-                    </Alert>
-                  )}
+                  {project.tabular_data_documents &&
+                    project.tabular_data_documents.length > 0 && (
+                      <Alert severity="success" sx={{ mt: 1 }}>
+                        {project.tabular_data_documents.length} tabular data
+                        file(s) uploaded
+                      </Alert>
+                    )}
                 </Box>
 
                 {/* Total File Size Display */}
@@ -566,12 +598,14 @@ const SystemBaseDesign: React.FC = () => {
                 </li>
                 <li>
                   <Typography variant="body2">
-                    Show entity attributes (tank diameter, height, pump ratings, etc.)
+                    Show entity attributes (tank diameter, height, pump ratings,
+                    etc.)
                   </Typography>
                 </li>
                 <li>
                   <Typography variant="body2">
-                    Allow editing attributes (mark as fixed/variable, set ranges)
+                    Allow editing attributes (mark as fixed/variable, set
+                    ranges)
                   </Typography>
                 </li>
                 <li>
@@ -594,4 +628,3 @@ const SystemBaseDesign: React.FC = () => {
 };
 
 export default SystemBaseDesign;
-

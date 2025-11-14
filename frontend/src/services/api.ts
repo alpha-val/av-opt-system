@@ -17,6 +17,7 @@ import {
   ScenarioCreate,
   ScenarioUpdate,
   ScenarioOut,
+  RecommendationsResponse,
 } from "../types/api";
 
 // Get API base URL from environment or use default
@@ -341,6 +342,144 @@ export const scenarioApi = {
       message: string;
       processing_result?: any;
     }>(`/api/v1/scenarios/${scenarioId}/run-analysis`);
+    return response.data;
+  },
+
+  /**
+   * Run or re-run analysis for a scenario using V2 workflow
+   */
+  runAnalysisV2: async (
+    scenarioId: string,
+    options?: {
+      extract_summary?: boolean;
+      extraction_scope?: "exact" | "with_relationships" | "with_context";
+    }
+  ): Promise<{
+    scenario_id: string;
+    project_id: string;
+    status: string;
+    workflow_version: string;
+    message: string;
+    documents_processed: number;
+    document_results: Array<{
+      document_id: string;
+      status: string;
+      entities_extracted: number;
+      relations_extracted: number;
+      summary_id?: string;
+      recommendations_id?: string;
+      relevant_entities_count: number;
+      recommendations_count: number;
+      extraction_scope: string;
+    }>;
+    errors?: Array<{
+      document_id: string;
+      error?: string;
+      warning?: string;
+    }>;
+  }> => {
+    const params = new URLSearchParams();
+    if (options?.extract_summary !== undefined) {
+      params.append("extract_summary", String(options.extract_summary));
+    }
+    if (options?.extraction_scope) {
+      params.append("extraction_scope", options.extraction_scope);
+    }
+    const queryString = params.toString();
+    const url = `/api/v1/scenarios/${scenarioId}/run-analysis-v2${
+      queryString ? `?${queryString}` : ""
+    }`;
+    const response = await apiClient.post<{
+      scenario_id: string;
+      project_id: string;
+      status: string;
+      workflow_version: string;
+      message: string;
+      documents_processed: number;
+      document_results: Array<{
+        document_id: string;
+        status: string;
+        entities_extracted: number;
+        relations_extracted: number;
+        summary_id?: string;
+        recommendations_id?: string;
+        relevant_entities_count: number;
+        recommendations_count: number;
+        extraction_scope: string;
+      }>;
+      errors?: Array<{
+        document_id: string;
+        error?: string;
+        warning?: string;
+      }>;
+    }>(url);
+    return response.data;
+  },
+
+  /**
+   * Get recommendations for a scenario
+   */
+  getRecommendations: async (scenarioId: string): Promise<RecommendationsResponse> => {
+    const response = await apiClient.get<RecommendationsResponse>(
+      `/api/v1/scenarios/${scenarioId}/recommendations`
+    );
+    return response.data;
+  },
+
+  /**
+   * Get entities for a scenario
+   */
+  getEntities: async (
+    scenarioId: string,
+    artifactType: string = "base_case"
+  ): Promise<{
+    scenario_id: string;
+    artifact_type: string;
+    entities: Array<{
+      id: string;
+      type: string;
+      properties: {
+        name?: string;
+        discipline?: string;
+        category?: string;
+        subcategory?: string;
+        entity?: string;
+        attributes?: Array<{
+          name: string;
+          value: number | null;
+          unit: string | null;
+          evidence_text: string | null;
+          confidence: number;
+        }>;
+        [key: string]: any;
+      };
+    }>;
+    count: number;
+  }> => {
+    const response = await apiClient.get<{
+      scenario_id: string;
+      artifact_type: string;
+      entities: Array<{
+        id: string;
+        type: string;
+        properties: {
+          name?: string;
+          discipline?: string;
+          category?: string;
+          subcategory?: string;
+          entity?: string;
+          attributes?: Array<{
+            name: string;
+            value: number | null;
+            unit: string | null;
+            evidence_text: string | null;
+            confidence: number;
+          }>;
+          [key: string]: any;
+        };
+      }>;
+      count: number;
+    }>(`/api/v1/scenarios/${scenarioId}/entities?artifact_type=${artifactType}`);
     return response.data;
   },
 };

@@ -343,6 +343,85 @@ TOOLS = [
             },
         },
     },
+    # -------------------------------------------------------------------------
+    # 5. Recommendations extraction v2 (with entity specifications)
+    # -------------------------------------------------------------------------
+    {
+        "type": "function",
+        "function": {
+            "name": "extract_recommendations_v2",
+            "description": "Extract recommendations for system redesign based on global objectives, including detailed specifications of relevant entities to extract",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "recommendations": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "recommendation_id": {"type": "string"},
+                                "type": {"type": "string"},
+                                "title": {"type": "string"},
+                                "description": {"type": "string"},
+                                "rationale": {"type": "string"},
+                                "priority": {"type": "string", "enum": ["high", "medium", "low"]},
+                                "estimated_impact": {"type": "string"},
+                                "implementation_complexity": {"type": "string"},
+                            },
+                            "required": ["recommendation_id", "type", "title", "description", "priority"],
+                        },
+                    },
+                    "relevant_entities": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "string", "description": "Unique identifier for the entity node"},
+                                "type": {"type": "string", "enum": _ont["NODE_TYPES"], "description": "Entity type from NODE_TYPES"},
+                                "properties": {
+                                    "type": "object",
+                                    "properties": dict(
+                                        # Include all NODE_PROPERTIES
+                                        {p: {"type": "string"} for p in _ont["NODE_PROPERTIES"]},
+                                        **{
+                                            # MSIO classification fields (required)
+                                            "discipline": {"type": "string", "description": "MSIO Discipline name"},
+                                            "category": {"type": "string", "description": "MSIO Category name"},
+                                            "subcategory": {"type": "string", "description": "MSIO Subcategory name"},
+                                            "entity": {"type": "string", "description": "MSIO Entity name"},
+                                            # Additional fields for extraction guidance
+                                            "expected_attributes": {
+                                                "type": "array",
+                                                "items": {"type": "string"},
+                                                "description": "List of attribute names that should be extracted for this entity",
+                                            },
+                                            "evidence_locations": {
+                                                "type": "array",
+                                                "items": {"type": "string"},
+                                                "description": "Text snippets, page references, or section anchors where this entity is mentioned",
+                                            },
+                                            "extraction_rationale": {
+                                                "type": "string",
+                                                "description": "Explanation of why this entity is relevant to the recommendations",
+                                            },
+                                            "extraction_priority": {
+                                                "type": "string",
+                                                "enum": ["high", "medium", "low"],
+                                                "description": "Priority level for extracting this entity",
+                                            },
+                                        }
+                                    ),
+                                    "additionalProperties": False,
+                                },
+                            },
+                            "required": ["id", "type", "properties"],
+                        },
+                    },
+                },
+                "required": ["recommendations", "relevant_entities"],
+            },
+        },
+    },
 ]
 
 

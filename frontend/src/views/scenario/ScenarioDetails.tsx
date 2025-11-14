@@ -1,4 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import { useParams, useNavigate, Link as RouterLink } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -13,16 +19,19 @@ import {
   Button,
   Tabs,
   Tab,
-  Card,
-  CardContent,
-  TextField,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
   Tooltip,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from "@mui/material";
+import SummarizeOutlinedIcon from '@mui/icons-material/SummarizeOutlined';
+import ChecklistOutlinedIcon from '@mui/icons-material/ChecklistOutlined';
+import { ExpandMore as ExpandMoreIcon } from "@mui/icons-material";
 import { PlayArrow as PlayArrowIcon } from "@mui/icons-material";
+import ObjectiveDetailsForm from "../../components/scenario/ObjectiveDetailsForm";
+import AnalysisOptionsForm from "../../components/scenario/AnalysisOptionsForm";
+import BaseCaseRecommendationView from "../../components/scenario/BaseCaseRecommendationView";
+import LocalObjectives from "../../components/scenario/LocalObjectives";
 import {
   fetchScenarioById,
   selectCurrentScenario,
@@ -30,6 +39,7 @@ import {
   selectScenariosError,
   updateScenario,
   runAnalysis,
+  runAnalysisV2,
   selectScenarioRunningAnalysis,
   clearError,
 } from "../../redux/scenariosSlice";
@@ -38,15 +48,6 @@ import {
   selectCurrentProject,
 } from "../../redux/projectsSlice";
 import { ScenarioStatus, ScenarioUpdate } from "../../types/api";
-
-const OBJECTIVE_TYPES = [
-  "increase production",
-  "reduce capex",
-  "reduce wastage",
-  "improve efficiency",
-  "reduce opex",
-  "optimize capacity",
-];
 
 interface ScenarioDetailsProps {
   scenarioId?: string;
@@ -78,28 +79,58 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  // Use memoized selectors to prevent unnecessary re-renders
   const scenario = useSelector(selectCurrentScenario);
   const project = useSelector(selectCurrentProject);
   const loading = useSelector(selectScenariosLoading);
   const error = useSelector(selectScenariosError);
   const runningAnalysis = useSelector(selectScenarioRunningAnalysis);
   const updating = useSelector((state: any) => state.scenarios.loading.update);
+
+  // Memoize extracted scenario properties to prevent unnecessary re-renders
+  // Only recalculate when the actual scenario data changes, not when object reference changes
+  const scenarioIdFromStore = useMemo(() => scenario?.id, [scenario?.id]);
+  const scenarioObjectiveType = useMemo(
+    () => scenario?.global_objective_type,
+    [scenario?.global_objective_type]
+  );
+  const scenarioObjectiveTarget = useMemo(
+    () => scenario?.global_objective_target,
+    [scenario?.global_objective_target]
+  );
+  const scenarioObjectiveDescription = useMemo(
+    () => scenario?.objective_description,
+    [scenario?.objective_description]
+  );
   const [activeTab, setActiveTab] = useState<number>(0);
 
-  // Objective details form state
-  const [objectiveType, setObjectiveType] = useState<string>("");
-  const [targetValue, setTargetValue] = useState<string>("");
-  const [targetType, setTargetType] = useState<"%" | "$">("%");
-  const [objectiveDescription, setObjectiveDescription] = useState<string>("");
+  // Objective details form state (combined)
+  const [objectiveForm, setObjectiveForm] = useState({
+    type: "",
+    targetValue: "",
+    targetType: "%" as "%" | "$",
+    description: "",
+  });
   const [objectiveError, setObjectiveError] = useState<string | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+
+  // V2 workflow options
+  const [useV2Workflow, setUseV2Workflow] = useState<boolean>(true);
+  const [extractSummary, setExtractSummary] = useState<boolean>(false);
+  const [extractionScope, setExtractionScope] = useState<
+    "exact" | "with_relationships" | "with_context"
+  >("exact");
+
+  // Track if we've initialized the form to prevent re-initialization
+  const formInitializedRef = useRef<string | null>(null);
 
   /**
    * Fetch scenario and project data
    */
   useEffect(() => {
     if (scenarioId) {
-      if (!scenario || scenario.id !== scenarioId) {
+      if (!scenarioIdFromStore || scenarioIdFromStore !== scenarioId) {
         dispatch(fetchScenarioById(scenarioId) as any);
       }
     }
@@ -108,29 +139,67 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
         dispatch(fetchProjectById(projectId) as any);
       }
     }
-  }, [scenarioId, projectId, scenario, project, dispatch]);
+  }, [scenarioId, projectId, scenarioIdFromStore, project?.id, dispatch]);
 
   /**
    * Initialize form with scenario data when scenario loads
+   * Only initializes once per scenario to prevent focus loss
+   * Re-initializes when scenario data becomes available after mount
    */
   useEffect(() => {
+    // Only initialize when scenario is loaded and matches the route scenarioId
     if (scenario && scenario.id === scenarioId) {
-      setObjectiveType(scenario.global_objective_type || "");
-      // Parse target value and type from global_objective_target
-      if (scenario.global_objective_target) {
-        const match =
-          scenario.global_objective_target.match(/^([\d.]+)([%$])$/);
-        if (match) {
-          setTargetValue(match[1]);
-          setTargetType(match[2] as "%" | "$");
-        } else {
-          setTargetValue(scenario.global_objective_target);
-        }
-      }
-      setObjectiveDescription(scenario.objective_description || "");
-    }
-  }, [scenario, scenarioId]);
+      // Check if we haven't initialized for this scenario yet
+      const needsInitialization = formInitializedRef.current !== scenarioId;
 
+      // Also check if form is empty but scenario has data (data loaded after mount)
+      const formIsEmpty =
+        !objectiveForm.type &&
+        !objectiveForm.targetValue &&
+        !objectiveForm.description;
+      const scenarioHasData =
+        scenario.global_objective_type ||
+        scenario.global_objective_target ||
+        scenario.objective_description;
+
+      if (needsInitialization || (formIsEmpty && scenarioHasData)) {
+        const newObjectiveType = scenario.global_objective_type || "";
+        const newObjectiveDescription = scenario.objective_description || "";
+
+        // Parse target value and type from global_objective_target
+        let newTargetValue = "";
+        let newTargetType: "%" | "$" = "%";
+        if (scenario.global_objective_target) {
+          const match =
+            scenario.global_objective_target.match(/^([\d.]+)([%$])$/);
+          if (match) {
+            newTargetValue = match[1];
+            newTargetType = match[2] as "%" | "$";
+          } else {
+            newTargetValue = scenario.global_objective_target;
+          }
+        }
+
+        // Set initial values using combined state
+        setObjectiveForm({
+          type: newObjectiveType,
+          targetValue: newTargetValue,
+          targetType: newTargetType,
+          description: newObjectiveDescription,
+        });
+
+        // Mark as initialized for this scenario
+        formInitializedRef.current = scenarioId;
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    scenarioId,
+    scenario?.id,
+    scenario?.global_objective_type,
+    scenario?.global_objective_target,
+    scenario?.objective_description,
+  ]);
   /**
    * Get status color for chip
    */
@@ -184,36 +253,67 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
   };
 
   /**
+   * Handle objective form field changes
+   * Memoized to prevent unnecessary re-renders of ObjectiveDetailsForm
+   */
+  const handleObjectiveFormChange = useCallback(
+    (field: string, value: string | number): void => {
+      setObjectiveForm((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    },
+    []
+  );
+
+  /**
    * Handle saving objective details
    */
-  const handleSaveObjectiveDetails = (): void => {
+  const handleSaveObjectiveDetails = (data?: {
+    localDescription?: string;
+    objectiveForm?: any;
+  }): void => {
     if (!scenarioId) return;
 
     setObjectiveError(null);
     dispatch(clearError());
 
+    // Use data from parameter if provided, otherwise use state
+    const formData = data?.objectiveForm || objectiveForm;
+    const description = data?.localDescription ?? formData.description;
+
     // Validate objective fields
-    if (!objectiveType) {
+    if (!formData.type) {
       setObjectiveError("Global objective type is required");
       return;
     }
-    if (!targetValue || targetValue.trim().length === 0) {
+    if (!formData.targetValue || formData.targetValue.trim().length === 0) {
       setObjectiveError("Global objective target is required");
       return;
     }
 
     // Build global objective target string
-    const globalObjectiveTarget = `${targetValue}${targetType}`;
+    const globalObjectiveTarget = `${formData.targetValue}${formData.targetType}`;
 
     // Create update payload
     const updateData: ScenarioUpdate = {
-      global_objective_type: objectiveType,
+      global_objective_type: formData.type,
       global_objective_target: globalObjectiveTarget,
-      objective_description: objectiveDescription || undefined,
+      objective_description: description || undefined,
     };
 
     // Dispatch update
-    dispatch(updateScenario({ scenarioId, data: updateData }) as any);
+    dispatch(updateScenario({ scenarioId, data: updateData }) as any).then(
+      (result: any) => {
+        if (updateScenario.fulfilled.match(result)) {
+        } else {
+          console.log(
+            "[ScenarioDetails] updateScenario rejected",
+            result.error
+          );
+        }
+      }
+    );
   };
 
   /**
@@ -223,7 +323,11 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
     if (!scenario || !project) return false;
 
     // Check objective details
-    if (!objectiveType || !targetValue || targetValue.trim().length === 0) {
+    if (
+      !objectiveForm.type ||
+      !objectiveForm.targetValue ||
+      objectiveForm.targetValue.trim().length === 0
+    ) {
       return false;
     }
 
@@ -242,9 +346,13 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
       return "Scenario or project data not loaded";
     }
 
-    if (!objectiveType || !targetValue || targetValue.trim().length === 0) {
-      return "Please complete objective details (type and target)";
-    }
+    // if (
+    //   !objectiveForm.type ||
+    //   !objectiveForm.targetValue ||
+    //   objectiveForm.targetValue.trim().length === 0
+    // ) {
+    //   return "Please complete objective details (type and target)";
+    // }
 
     const hasBaseCaseFiles =
       project.base_case_documents && project.base_case_documents.length > 0;
@@ -276,7 +384,11 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
       return;
     }
 
-    if (!objectiveType || !targetValue || targetValue.trim().length === 0) {
+    if (
+      !objectiveForm.type ||
+      !objectiveForm.targetValue ||
+      objectiveForm.targetValue.trim().length === 0
+    ) {
       setAnalysisError(
         "Objective details are required. Please set objective type and target."
       );
@@ -285,8 +397,9 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
 
     // Save objective details if they've changed
     if (
-      scenario.global_objective_type !== objectiveType ||
-      scenario.global_objective_target !== `${targetValue}${targetType}`
+      scenario.global_objective_type !== objectiveForm.type ||
+      scenario.global_objective_target !==
+        `${objectiveForm.targetValue}${objectiveForm.targetType}`
     ) {
       await handleSaveObjectiveDetails();
       // Refresh scenario data
@@ -304,12 +417,26 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
       return;
     }
 
-    // Dispatch run analysis action
-    dispatch(runAnalysis(scenarioId) as any).then((result: any) => {
-      if (runAnalysis.rejected.match(result)) {
-        setAnalysisError(result.payload as string);
-      }
-    });
+    // Dispatch run analysis action (V2 or V1)
+    if (useV2Workflow) {
+      dispatch(
+        runAnalysisV2({
+          scenarioId,
+          extract_summary: extractSummary,
+          extraction_scope: extractionScope,
+        }) as any
+      ).then((result: any) => {
+        if (runAnalysisV2.rejected.match(result)) {
+          setAnalysisError(result.payload as string);
+        }
+      });
+    } else {
+      dispatch(runAnalysis(scenarioId) as any).then((result: any) => {
+        if (runAnalysis.rejected.match(result)) {
+          setAnalysisError(result.payload as string);
+        }
+      });
+    }
   };
 
   interface TabPanelProps {
@@ -341,7 +468,7 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
       {!isEmbedded && (
         <Box
           sx={{
-            mb: 2,
+            p: 2,
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
@@ -400,7 +527,9 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
             </Box>
             {scenario && (
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Typography color="text.secondary">{scenario.name}</Typography>
+                <Typography color="secondary" sx={{ fontWeight: 600 }}>
+                  {scenario.name}
+                </Typography>
                 <Chip
                   label={scenario.status}
                   size="small"
@@ -492,7 +621,7 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
           <CircularProgress />
         </Box>
       ) : scenario ? (
-        <>
+        <Box sx={{ p: 2, pt: 0 }}>
           {/* Scenario Info Panel */}
           {/* <Paper elevation={0} sx={{ p: 1, mb: 3, backgroundColor: "#f9f9f9" }}>
             <Typography variant="h4" component="h1" gutterBottom>
@@ -550,6 +679,8 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                       >
                         {runningAnalysis
                           ? "Running Analysis..."
+                          : useV2Workflow
+                          ? "Run Analysis (V2)"
                           : "Run Analysis"}
                       </Button>
                     </span>
@@ -570,126 +701,77 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                   </Alert>
                 )}
 
-                {!canRunAnalysis() && (
+                {/* {!canRunAnalysis() && (
                   <Alert severity="warning" sx={{ mb: 2 }}>
                     {!scenario || !project
                       ? "Scenario or project data not loaded"
-                      : !objectiveType ||
-                        !targetValue ||
-                        targetValue.trim().length === 0
+                      : !objectiveForm.type ||
+                        !objectiveForm.targetValue ||
+                        objectiveForm.targetValue.trim().length === 0
                       ? "Please complete objective details (type and target) before running analysis."
                       : "Base case documents are required. Please upload base case documents in the Sources tab before running analysis."}
                   </Alert>
-                )}
+                )} */}
 
-                <Card>
-                  <CardContent>
-                    {objectiveError && (
-                      <Alert
-                        severity="error"
-                        sx={{ mb: 2 }}
-                        onClose={() => setObjectiveError(null)}
-                      >
-                        {objectiveError}
-                      </Alert>
-                    )}
+                <ObjectiveDetailsForm
+                  objectiveForm={objectiveForm}
+                  extractionScope={extractionScope}
+                  onChange={handleObjectiveFormChange}
+                  onExtractionScopeChange={setExtractionScope}
+                  errors={objectiveError}
+                  updating={updating}
+                  scenarioId={scenarioId || ""}
+                  onSave={handleSaveObjectiveDetails}
+                />
 
-                    <Box
-                      sx={{ display: "flex", flexDirection: "column", gap: 2 }}
-                    >
-                      {/* Global Objective Type */}
-                      <FormControl fullWidth required>
-                        <InputLabel>Global Objective Type</InputLabel>
-                        <Select
-                          value={objectiveType}
-                          onChange={(e) => setObjectiveType(e.target.value)}
-                          label="Global Objective Type"
-                        >
-                          {OBJECTIVE_TYPES.map((type) => (
-                            <MenuItem key={type} value={type}>
-                              {type}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-
-                      {/* Global Objective Target */}
-                      <Box
-                        sx={{
-                          display: "flex",
-                          gap: 1,
-                          alignItems: "flex-start",
-                        }}
-                      >
-                        <TextField
-                          label="Global Objective Target"
-                          required
-                          type="number"
-                          value={targetValue}
-                          onChange={(e) => setTargetValue(e.target.value)}
-                          sx={{ flex: 1 }}
-                        />
-                        <FormControl sx={{ minWidth: 80 }}>
-                          <Select
-                            value={targetType}
-                            onChange={(e) =>
-                              setTargetType(e.target.value as "%" | "$")
-                            }
-                          >
-                            <MenuItem value="%">%</MenuItem>
-                            <MenuItem value="$">$</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Box>
-
-                      {/* Objective Description */}
-                      <TextField
-                        label="Objective Description (Optional)"
-                        fullWidth
-                        multiline
-                        rows={3}
-                        value={objectiveDescription}
-                        onChange={(e) =>
-                          setObjectiveDescription(e.target.value)
-                        }
-                        inputProps={{ maxLength: 500 }}
-                        helperText={`${objectiveDescription.length}/500 characters`}
-                      />
-
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "flex-end",
-                          mt: 2,
-                        }}
-                      >
-                        <Button
-                          variant="outlined"
-                          onClick={handleSaveObjectiveDetails}
-                          disabled={updating}
-                        >
-                          {updating ? "Saving..." : "Save Objective Details"}
-                        </Button>
-                      </Box>
-                    </Box>
-                  </CardContent>
-                </Card>
+                <AnalysisOptionsForm
+                  useV2Workflow={useV2Workflow}
+                  extractSummary={extractSummary}
+                  onUseV2WorkflowChange={setUseV2Workflow}
+                  onExtractSummaryChange={setExtractSummary}
+                />
               </Box>
             </TabPanel>
 
-            {/* Tab 1: Entities */}
+            {/* Tab 1: System Design */}
             <TabPanel value={activeTab} index={1}>
               <Box sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>
-                  System Design Criteria
+                  System Design
                 </Typography>
-                <Alert severity="info" sx={{ mt: 2 }}>
-                  <Typography variant="body2">
-                    This is a placeholder for the system design criteria view.
-                    The actual implementation will display extracted information
-                    from the scenario analysis.
-                  </Typography>
-                </Alert>
+
+                <Accordion defaultExpanded={false} sx={{backgroundColor: "#f9f9f9", mb: 2}}>
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="recommendations-content"
+                    id="recommendations-header"
+                    
+                  >
+                    <SummarizeOutlinedIcon sx={{ mr: 1 }} />
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      Base Case Recommendations
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <BaseCaseRecommendationView scenarioId={scenarioId || ""} />
+                  </AccordionDetails>
+                </Accordion>
+
+                <Accordion defaultExpanded={false} sx={{backgroundColor: "#f9f9f9", mb: 2}}>
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="system-parameters-content"
+                    id="system-parameters-header"
+                  >
+                    <ChecklistOutlinedIcon sx={{ mr: 1 }} />
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      System Parameters
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <LocalObjectives scenarioId={scenarioId || ""} />
+                  </AccordionDetails>
+                </Accordion>
               </Box>
             </TabPanel>
 
@@ -725,7 +807,7 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
               </Box>
             </TabPanel>
           </Paper>
-        </>
+        </Box>
       ) : (
         <Alert severity="warning">Scenario not found</Alert>
       )}

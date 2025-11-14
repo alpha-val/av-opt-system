@@ -44,7 +44,7 @@ const Dashboard: React.FC<DashboardProps> = ({ children }) => {
         <Banner />
 
         {/* Content */}
-        <Box sx={{ flexGrow: 1 }}>
+        <Box sx={{ flexGrow: 1, }}>
           {children || (
             <Routes>
               <Route path="/" element={<ProjectList />} />

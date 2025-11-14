@@ -19,6 +19,13 @@ import {
   Link,
 } from "@mui/material";
 import {
+  Description as DescriptionIcon,
+  FolderSpecial as FolderSpecialIcon,
+  Storage as StorageIcon,
+  CalendarToday as CalendarTodayIcon,
+  Update as UpdateIcon,
+} from "@mui/icons-material";
+import {
   fetchProjectById,
   uploadProjectFiles,
   listProjectFiles,
@@ -366,6 +373,7 @@ This action cannot be undone. Are you sure you want to delete this file?`,
       {/* Breadcrumb Navigation */}
       <Box
         sx={{
+          mt: "2px",
           mb: 2,
           display: "flex",
           justifyContent: "space-between",
@@ -392,14 +400,14 @@ This action cannot be undone. Are you sure you want to delete this file?`,
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Typography color="text.secondary">{project.name}</Typography>
-                {project && (
+                <Typography color="secondary" sx={{ fontWeight: 600 }}>{project.name}</Typography>
+                {/* {project && (
                   <Chip
                     label={project.status}
                     size="small"
                     color={getStatusColor(project.status)}
                   />
-                )}
+                )} */}
               </Box>
             </Box>
           ) : (
@@ -509,40 +517,70 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                 </Typography>
 
                 {/* Project Description and Dates */}
-                <Card sx={{ mb: 3 }}>
+                <Card
+                  sx={{
+                    mb: 3,
+                    bgcolor: (theme) => theme.palette.mode === "dark" 
+                      ? "rgba(25, 118, 210, 0.08)" 
+                      : "rgba(25, 118, 210, 0.04)",
+                  }}
+                >
                   <CardContent>
-                    <Typography
-                      variant="subtitle2"
-                      color="text.secondary"
-                      gutterBottom
-                    >
-                      Description
-                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                      <DescriptionIcon 
+                        sx={{ 
+                          mr: 1.5, 
+                          fontSize: 24,
+                          color: "primary.main",
+                        }} 
+                      />
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        Project Information
+                      </Typography>
+                    </Box>
                     <Typography variant="body1" sx={{ mb: 3 }}>
                       {project.description || "No description provided."}
                     </Typography>
                     <Divider sx={{ my: 2 }} />
                     <Grid container spacing={3}>
                       <Grid item xs={12} md={6}>
-                        <Typography
-                          variant="subtitle2"
-                          color="text.secondary"
-                          gutterBottom
-                        >
-                          Date Created
-                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                          <CalendarTodayIcon 
+                            sx={{ 
+                              mr: 1, 
+                              fontSize: 18,
+                              color: "text.secondary",
+                            }} 
+                          />
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                            sx={{ fontWeight: 500 }}
+                          >
+                            Date Created
+                          </Typography>
+                        </Box>
                         <Typography variant="body1">
                           {formatDate(project.created_at)}
                         </Typography>
                       </Grid>
                       <Grid item xs={12} md={6}>
-                        <Typography
-                          variant="subtitle2"
-                          color="text.secondary"
-                          gutterBottom
-                        >
-                          Last Updated
-                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                          <UpdateIcon 
+                            sx={{ 
+                              mr: 1, 
+                              fontSize: 18,
+                              color: "text.secondary",
+                            }} 
+                          />
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                            sx={{ fontWeight: 500 }}
+                          >
+                            Last Updated
+                          </Typography>
+                        </Box>
                         <Typography variant="body1">
                           {formatDate(project.updated_at)}
                         </Typography>
@@ -557,19 +595,46 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                 </Typography>
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={4}>
-                    <Card>
+                    <Card
+                      sx={{
+                        height: "100%",
+                        bgcolor: (theme) => theme.palette.mode === "dark" 
+                          ? "rgba(25, 118, 210, 0.08)" 
+                          : "rgba(25, 118, 210, 0.04)",
+                        transition: "transform 0.2s, box-shadow 0.2s",
+                        "&:hover": {
+                          transform: "translateY(-2px)",
+                          boxShadow: 3,
+                        },
+                      }}
+                    >
                       <CardContent>
-                        <Typography
-                          variant="subtitle2"
-                          color="text.secondary"
-                          gutterBottom
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            mb: 2,
+                          }}
                         >
-                          Number of Documents
-                        </Typography>
+                          <DescriptionIcon 
+                            sx={{ 
+                              mr: 1.5, 
+                              fontSize: 24,
+                              color: "primary.main",
+                            }} 
+                          />
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                            sx={{ fontWeight: 500 }}
+                          >
+                            Number of Documents
+                          </Typography>
+                        </Box>
                         {filesLoading ? (
                           <CircularProgress size={24} />
                         ) : (
-                          <Typography variant="h4">
+                          <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, textAlign: "center" }}>
                             {getDocumentCount()}
                           </Typography>
                         )}
@@ -586,19 +651,46 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                     </Card>
                   </Grid>
                   <Grid item xs={12} md={4}>
-                    <Card>
+                    <Card
+                      sx={{
+                        height: "100%",
+                        bgcolor: (theme) => theme.palette.mode === "dark" 
+                          ? "rgba(156, 39, 176, 0.08)" 
+                          : "rgba(156, 39, 176, 0.04)",
+                        transition: "transform 0.2s, box-shadow 0.2s",
+                        "&:hover": {
+                          transform: "translateY(-2px)",
+                          boxShadow: 3,
+                        },
+                      }}
+                    >
                       <CardContent>
-                        <Typography
-                          variant="subtitle2"
-                          color="text.secondary"
-                          gutterBottom
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            mb: 2,
+                          }}
                         >
-                          Number of Scenarios
-                        </Typography>
+                          <FolderSpecialIcon 
+                            sx={{ 
+                              mr: 1.5, 
+                              fontSize: 24,
+                              color: "secondary.main",
+                            }} 
+                          />
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                            sx={{ fontWeight: 500 }}
+                          >
+                            Number of Scenarios
+                          </Typography>
+                        </Box>
                         {scenariosLoading ? (
                           <CircularProgress size={24} />
                         ) : (
-                          <Typography variant="h4">
+                          <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, textAlign: "center" }}>
                             {scenarios.length}
                           </Typography>
                         )}
@@ -613,19 +705,46 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                     </Card>
                   </Grid>
                   <Grid item xs={12} md={4}>
-                    <Card>
+                    <Card
+                      sx={{
+                        height: "100%",
+                        bgcolor: (theme) => theme.palette.mode === "dark" 
+                          ? "rgba(0, 150, 136, 0.08)" 
+                          : "rgba(0, 150, 136, 0.04)",
+                        transition: "transform 0.2s, box-shadow 0.2s",
+                        "&:hover": {
+                          transform: "translateY(-2px)",
+                          boxShadow: 3,
+                        },
+                      }}
+                    >
                       <CardContent>
-                        <Typography
-                          variant="subtitle2"
-                          color="text.secondary"
-                          gutterBottom
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            mb: 2,
+                          }}
                         >
-                          Total Size of Documents
-                        </Typography>
+                          <StorageIcon 
+                            sx={{ 
+                              mr: 1.5, 
+                              fontSize: 24,
+                              color: "success.main",
+                            }} 
+                          />
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                            sx={{ fontWeight: 500 }}
+                          >
+                            Total Size of Documents
+                          </Typography>
+                        </Box>
                         {filesLoading ? (
                           <CircularProgress size={24} />
                         ) : (
-                          <Typography variant="h4">
+                          <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, textAlign: "center" }}>
                             {formatFileSize(calculateTotalDocumentSize())}
                           </Typography>
                         )}

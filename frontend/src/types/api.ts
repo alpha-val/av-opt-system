@@ -156,3 +156,55 @@ export interface ScenarioOut extends ScenarioBase {
   updated_at: string;
 }
 
+/**
+ * Recommendation item interface
+ */
+export interface Recommendation {
+  recommendation_id: string;
+  type: string;
+  title: string;
+  description: string;
+  rationale?: string;
+  priority: "high" | "medium" | "low";
+  estimated_impact?: string;
+  implementation_complexity?: string;
+  affected_entities?: string[];
+}
+
+/**
+ * Relevant entity specification (V2 workflow)
+ */
+export interface RelevantEntity {
+  entity_name: string;
+  entity_type: string;
+  msio_classification: {
+    discipline: string;
+    category: string;
+    subcategory: string;
+    entity: string;
+  };
+  expected_attributes?: string[];
+  evidence_locations?: string[];
+  rationale?: string;
+  priority: "high" | "medium" | "low";
+}
+
+/**
+ * Recommendations response interface
+ */
+export interface RecommendationsResponse {
+  id?: string;
+  scenario_id: string;
+  document_id?: string;
+  project_id?: string;
+  global_objective_type?: string;
+  global_objective_target?: string;
+  recommendations: Recommendation[];
+  relevant_entities?: RelevantEntity[];
+  workflow_version?: string;
+  created_at?: string;
+  updated_at?: string;
+  count?: number;
+  recommendations_documents?: RecommendationsResponse[];
+}
+

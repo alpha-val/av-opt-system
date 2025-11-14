@@ -849,6 +849,7 @@ No cost estimates available yet.
 Report generation is a placeholder.
 """
 
+    # Process a tabular data file
     async def process_tabular_data_file(
         self,
         file_bytes: bytes,
@@ -934,3 +935,591 @@ Report generation is a placeholder.
                 "status": "error",
                 "error": str(e),
             }
+
+    # Extract entities from a base case document using V2 workflow (recommendations-first approach)
+    async def extract_base_case_entities_v2(
+        self,
+        project_id: str,
+        document_id: str,
+        global_objective_type: str,
+        global_objective_target: str,
+        user_id: str,
+        scenario_id: str,
+        objective_description: Optional[str] = None,
+        extract_summary: bool = False,
+        extraction_scope: str = "exact",
+    ) -> Dict[str, Any]:
+        """
+        Extract entities from a base case document using V2 workflow (recommendations-first approach).
+
+        This method first analyzes the document to generate recommendations and identify
+        relevant entities, then extracts only those entities. This is more targeted and
+        efficient than extracting all entities first.
+
+        Args:
+            project_id: Project identifier
+            document_id: Document identifier (GridFS file ID)
+            global_objective_type: Type of global objective
+            global_objective_target: Target magnitude of change
+            user_id: User identifier
+            scenario_id: Scenario identifier
+            objective_description: Optional description of the global objective
+            extract_summary: Whether to extract document summary (default: False)
+            extraction_scope: "exact" (only specified entities), "with_relationships"
+                             (entities + direct relationships), or "with_context"
+                             (entities + related entities in same context)
+
+        Returns:
+            Dictionary with extracted entities, recommendations, and metadata
+
+        Raises:
+            RuntimeError: If required services are not initialized
+        """
+        logger.info(
+            f"Extracting entities (V2) from document {document_id} "
+            f"for project {project_id}, scenario {scenario_id} "
+            f"(objective: {global_objective_type}, target: {global_objective_target})"
+        )
+
+        # Validate services are available
+        if not self._file_storage_service:
+            raise RuntimeError("FileStorageService not initialized")
+        if not self._document_processing_service:
+            raise RuntimeError("DocumentProcessingService not initialized")
+
+        try:
+            # Step 1: Retrieve document from GridFS
+            file_bytes = self._file_storage_service.get_file(document_id)
+            if not file_bytes:
+                raise ValueError(f"Document not found: {document_id}")
+
+            metadata = self._file_storage_service.get_file_metadata(document_id)
+            filename = (
+                metadata.get("filename", "unknown.pdf") if metadata else "unknown.pdf"
+            )
+
+            logger.info(f"Retrieved document {document_id} ({len(file_bytes)} bytes)")
+
+            # Step 2: Extract full text for analysis
+            from ..parsing.extractors.text_extractor import TextExtractor
+
+            text_extractor = TextExtractor()
+            _, _, _, pages_clean = text_extractor.extract(file_bytes, filename, None)
+            full_text = text_extractor.extract_full_text(pages_clean)
+
+            # Step 3: Extract recommendations and identify relevant entities (Step 1 of V2 workflow)
+            recommendations_result = await self._extract_recommendations_with_entities_v2(
+                full_text=full_text,
+                global_objective_type=global_objective_type,
+                global_objective_target=global_objective_target,
+                objective_description=objective_description,
+                document_id=document_id,
+                project_id=project_id,
+                scenario_id=scenario_id,
+                user_id=user_id,
+            )
+
+            recommendations = recommendations_result.get("recommendations", [])
+            relevant_entities = recommendations_result.get("relevant_entities", [])
+            recommendations_id = recommendations_result.get("recommendations_id", "")
+
+            logger.info(
+                f"Step 1 complete: {len(recommendations)} recommendations, "
+                f"{len(relevant_entities)} relevant entities identified"
+            )
+
+            if not relevant_entities:
+                logger.warning(
+                    f"No relevant entities identified for document {document_id}. "
+                    f"Cannot proceed with entity extraction."
+                )
+                return {
+                    "document_id": document_id,
+                    "project_id": project_id,
+                    "scenario_id": scenario_id,
+                    "processing_status": "warning",
+                    "message": "No relevant entities identified",
+                    "recommendations": recommendations,
+                    "recommendations_id": recommendations_id,
+                    "entities_extracted": 0,
+                    "relations_extracted": 0,
+                }
+
+            # Step 4: Extract targeted entities (Step 2 of V2 workflow)
+            entities_result = await self._extract_targeted_entities_v2(
+                file_bytes=file_bytes,
+                filename=filename,
+                document_id=document_id,
+                project_id=project_id,
+                user_id=user_id,
+                scenario_id=scenario_id,
+                relevant_entities=relevant_entities,
+                extraction_scope=extraction_scope,
+            )
+
+            entities_extracted = len(entities_result.get("nodes", []))
+            edges_extracted = len(entities_result.get("edges", []))
+
+            logger.info(
+                f"Step 2 complete: {entities_extracted} entities, {edges_extracted} edges extracted"
+            )
+
+            # Step 5: Optionally extract document summary
+            summary = None
+            summary_id = None
+            if extract_summary:
+                summary = await self._extract_document_summary(
+                    full_text=full_text,
+                    filename=filename,
+                    document_id=document_id,
+                )
+                summary_id = await self._store_summary(
+                    document_id=document_id,
+                    project_id=project_id,
+                    scenario_id=scenario_id,
+                    summary=summary,
+                )
+                logger.info(f"Extracted and stored summary (id: {summary_id})")
+
+            # Step 6: Return structured response
+            return {
+                "document_id": document_id,
+                "project_id": project_id,
+                "scenario_id": scenario_id,
+                "processing_status": "success",
+                "summary": summary,
+                "summary_id": summary_id,
+                "entities_extracted": entities_extracted,
+                "relations_extracted": edges_extracted,
+                "recommendations": recommendations,
+                "recommendations_id": recommendations_id,
+                "relevant_entities_count": len(relevant_entities),
+                "extraction_scope": extraction_scope,
+                "statistics": {
+                    "chunks_processed": entities_result.get("chunks_processed", 0),
+                    "entities_stored": entities_result.get("entities_stored", 0),
+                    "edges_stored": entities_result.get("edges_stored", 0),
+                },
+            }
+
+        except Exception as e:
+            logger.error(
+                f"Error extracting entities (V2) from document {document_id}: {e}",
+                exc_info=True,
+            )
+            return {
+                "document_id": document_id,
+                "project_id": project_id,
+                "scenario_id": scenario_id,
+                "processing_status": "error",
+                "error": str(e),
+                "entities_extracted": 0,
+                "relations_extracted": 0,
+                "recommendations": [],
+                "relevant_entities": [],
+            }
+
+    # Extract recommendations and identify relevant entities for extraction (Step 1 of V2 workflow)
+    async def _extract_recommendations_with_entities_v2(
+        self,
+        full_text: str,
+        global_objective_type: str,
+        global_objective_target: str,
+        objective_description: Optional[str],
+        document_id: str,
+        project_id: str,
+        scenario_id: str,
+        user_id: str,
+    ) -> Dict[str, Any]:
+        """
+        Extract recommendations and identify relevant entities for extraction (Step 1 of V2 workflow).
+
+        Args:
+            full_text: Full text content of the document
+            global_objective_type: Type of global objective
+            global_objective_target: Target magnitude of change
+            objective_description: Optional description of the global objective
+            document_id: Document identifier
+            project_id: Project identifier
+            scenario_id: Scenario identifier
+            user_id: User identifier
+
+        Returns:
+            Dictionary with recommendations, relevant_entities, and recommendations_id
+        """
+        logger.info(
+            f"Extracting recommendations and identifying relevant entities "
+            f"for objective: {global_objective_type} ({global_objective_target})"
+        )
+
+        try:
+            # Build prompt for recommendations extraction
+            objective_context = f"""
+GLOBAL OBJECTIVE:
+- Type: {global_objective_type}
+- Target: {global_objective_target}
+"""
+            if objective_description:
+                objective_context += f"- Description: {objective_description}\n"
+
+            # Limit text to avoid token limits (keep first 50000 chars)
+            text_for_analysis = (
+                full_text[:50000] if len(full_text) > 50000 else full_text
+            )
+
+            recommendations_prompt = f"""
+You are an expert process engineer and cost estimator analyzing a base case engineering report.
+
+{objective_context}
+
+TASK:
+1. Analyze the base case document in the context of the global objective.
+2. Generate specific recommendations for system redesign to meet the objective.
+3. Identify which entities are most relevant for achieving the recommendations.
+4. For each relevant entity, provide a COMPLETE NODE STRUCTURE with:
+   - id: unique identifier for the entity
+   - type: entity type from NODE_TYPES
+   - properties: complete properties object including:
+     * name: entity name
+     * discipline, category, subcategory, entity: MSIO classification (REQUIRED)
+     * All applicable properties from NODE_PROPERTIES as found in the text
+     * expected_attributes: list of attribute names to extract
+     * evidence_locations: text snippets, page references, section anchors
+     * extraction_rationale: why this entity is relevant
+     * extraction_priority: priority level (high/medium/low)
+
+BASE CASE TEXT:
+{text_for_analysis}
+
+INSTRUCTIONS:
+- Generate recommendations that address what needs to change to meet the objective.
+- For each recommendation, identify ALL entities that should be modified/replaced.
+- Prioritize recommendations based on impact and feasibility.
+- For each relevant entity, provide a COMPLETE NODE STRUCTURE following the extract_nodes format:
+  * Include id, type, and properties fields
+  * Include all applicable properties from NODE_PROPERTIES
+  * Include complete MSIO classification (discipline, category, subcategory, entity)
+  * Include expected_attributes, evidence_locations, extraction_rationale, extraction_priority in properties
+- Include evidence locations (text snippets, page numbers, section references) to guide entity extraction.
+- List expected attributes that should be extracted for each entity.
+- Be comprehensive: identify all entities relevant to the recommendations.
+- ALL relevant_entities must follow the exact structure: id, type, properties (with all NODE_PROPERTIES)
+
+Use the extract_recommendations_v2 tool to provide your analysis.
+"""
+
+            system_prompt = SystemMessage(
+                content="You are an expert process engineer and cost estimator. Analyze base case documents and provide recommendations for system redesign based on global objectives, including detailed specifications of relevant entities to extract."
+            )
+            human_message = HumanMessage(content=recommendations_prompt)
+
+            messages = [system_prompt, human_message]
+            resp = self._llm.invoke(messages)
+
+            # Process tool calls
+            recommendations = []
+            relevant_entities = []
+
+            for call in resp.additional_kwargs.get("tool_calls", []):
+                fn = call.get("function", {})
+                name = fn.get("name")
+
+                if name == "extract_recommendations_v2":
+                    arguments = fn.get("arguments", "{}")
+                    if is_valid_json(arguments):
+                        payload = json.loads(arguments)
+                        payload = sanitize_for_json(payload)
+                        recommendations = payload.get("recommendations", [])
+                        relevant_entities = payload.get("relevant_entities", [])
+                        break
+
+            # If no recommendations extracted, log warning
+            if not recommendations:
+                logger.warning(
+                    f"No recommendations extracted for document {document_id}"
+                )
+
+            if not relevant_entities:
+                logger.warning(
+                    f"No relevant entities identified for document {document_id}"
+                )
+
+            # Store recommendations in MongoDB
+            recommendations_id = await self._store_recommendations_v2(
+                document_id=document_id,
+                project_id=project_id,
+                scenario_id=scenario_id,
+                user_id=user_id,
+                global_objective_type=global_objective_type,
+                global_objective_target=global_objective_target,
+                recommendations=recommendations,
+                relevant_entities=relevant_entities,
+            )
+
+            logger.info(
+                f"Extracted {len(recommendations)} recommendations and "
+                f"{len(relevant_entities)} relevant entities"
+            )
+
+            return {
+                "recommendations": recommendations,
+                "relevant_entities": relevant_entities,
+                "recommendations_id": recommendations_id,
+            }
+
+        except Exception as e:
+            logger.error(
+                f"Error extracting recommendations (V2) for document {document_id}: {e}",
+                exc_info=True,
+            )
+            return {
+                "recommendations": [],
+                "relevant_entities": [],
+                "recommendations_id": "",
+            }
+
+    async def _extract_targeted_entities_v2(
+        self,
+        file_bytes: bytes,
+        filename: str,
+        document_id: str,
+        project_id: str,
+        user_id: str,
+        scenario_id: str,
+        relevant_entities: List[Dict[str, Any]],
+        extraction_scope: str = "exact",
+    ) -> Dict[str, Any]:
+        """
+        Extract targeted entities based on relevant_entities specifications (Step 2 of V2 workflow).
+
+        Args:
+            file_bytes: PDF file content
+            filename: Original filename
+            document_id: Document identifier
+            project_id: Project identifier
+            user_id: User identifier
+            scenario_id: Scenario identifier
+            relevant_entities: List of entity specifications from Step 1
+            extraction_scope: "exact", "with_relationships", or "with_context"
+
+        Returns:
+            Dictionary with extracted nodes, edges, and statistics
+        """
+        logger.info(
+            f"Extracting targeted entities for document {document_id}, "
+            f"scope: {extraction_scope}, {len(relevant_entities)} entities to extract"
+        )
+
+        try:
+            # Extract text and create chunks
+            from ..parsing.extractors.text_extractor import TextExtractor
+            from ..parsing.chunkers import CharacterChunker
+            from ..parsing.storage.document_store import DocumentStore
+            import uuid
+
+            # Use same namespace as DocumentProcessingService
+            CHUNK_NAMESPACE = uuid.UUID("11111111-2222-3333-4444-555555555555")
+
+            text_extractor = TextExtractor()
+            _, _, _, pages_clean = text_extractor.extract(file_bytes, filename, None)
+            full_text = text_extractor.extract_full_text(pages_clean)
+
+            # Create chunks
+            chunk_metadata = {
+                "artifact_type": "base_case",
+                "project_id": project_id,
+                "user_id": user_id,
+                "doc_id": document_id,
+                "scenario_id": scenario_id,
+            }
+
+            chunker = CharacterChunker(document_id, CHUNK_NAMESPACE, char_limit=5000)
+            chunks = chunker.chunk(full_text, chunk_metadata)
+
+            logger.info(f"Created {len(chunks)} chunks for targeted extraction")
+
+            # Extract entities using targeted extraction
+            from ..parsing.extractors.entity_extractor import EntityExtractor
+
+            entity_extractor = EntityExtractor()
+            extraction_result = entity_extractor.extract_targeted(
+                chunks=chunks,
+                relevant_entities=relevant_entities,
+                extraction_scope=extraction_scope,
+            )
+
+            nodes = extraction_result.get("nodes", [])
+            edges = extraction_result.get("edges", [])
+
+            # Generate UUID IDs for nodes that have non-UUID IDs (e.g., "E1", "E2", etc.)
+            id_mapping = {}  # Map old IDs to new UUID IDs
+            for node in nodes:
+                old_id = node.get("id", "")
+                if not old_id:
+                    # Generate UUID if no ID present
+                    new_id = str(uuid.uuid4())
+                    node["id"] = new_id
+                    logger.debug(f"Generated UUID for node without ID: {new_id}")
+                else:
+                    # Check if ID is a simple string like "E1", "E2", etc. (not a valid UUID)
+                    try:
+                        # Try to parse as UUID to validate
+                        uuid.UUID(old_id)
+                        # If successful, it's already a valid UUID, keep it
+                        new_id = old_id
+                    except (ValueError, AttributeError):
+                        # Not a valid UUID, generate a new one
+                        new_id = str(uuid.uuid4())
+                        id_mapping[old_id] = new_id
+                        node["id"] = new_id
+                        logger.debug(
+                            f"Replaced non-UUID ID '{old_id}' with UUID '{new_id}' "
+                            f"for node type '{node.get('type', 'Unknown')}'"
+                        )
+            
+            # Update edge source/target references to use new UUID IDs
+            for edge in edges:
+                source = edge.get("source", "")
+                target = edge.get("target", "")
+                if source in id_mapping:
+                    edge["source"] = id_mapping[source]
+                    logger.debug(f"Updated edge source from '{source}' to '{id_mapping[source]}'")
+                if target in id_mapping:
+                    edge["target"] = id_mapping[target]
+                    logger.debug(f"Updated edge target from '{target}' to '{id_mapping[target]}'")
+
+            # Validate and add metadata to entities and edges
+            validated_nodes = []
+            for node in nodes:
+                # Ensure node has complete structure (id, type, properties)
+                if not node.get("id"):
+                    logger.warning(f"Node missing id, skipping: {node.get('type', 'Unknown')}")
+                    continue
+                if not node.get("type"):
+                    logger.warning(f"Node missing type, skipping: {node.get('id', 'Unknown')}")
+                    continue
+                if not node.get("properties"):
+                    node["properties"] = {}
+                
+                # Ensure MSIO classification is present
+                props = node["properties"]
+                if not all(key in props for key in ["discipline", "category", "subcategory", "entity"]):
+                    logger.warning(
+                        f"Node {node.get('id')} missing MSIO classification, "
+                        f"attempting to infer from relevant_entities"
+                    )
+                    # Try to match with relevant_entities to get MSIO classification
+                    for rel_entity in relevant_entities:
+                        rel_props = rel_entity.get("properties", {})
+                        if (rel_props.get("name") == props.get("name") or
+                            rel_entity.get("id") == node.get("id")):
+                            props.setdefault("discipline", rel_props.get("discipline", ""))
+                            props.setdefault("category", rel_props.get("category", ""))
+                            props.setdefault("subcategory", rel_props.get("subcategory", ""))
+                            props.setdefault("entity", rel_props.get("entity", ""))
+                            break
+                
+                # Add chunk metadata
+                props.update(chunk_metadata)
+                validated_nodes.append(node)
+            
+            nodes = validated_nodes
+
+            for edge in edges:
+                edge.setdefault("properties", {})
+                edge["properties"].update(chunk_metadata)
+
+            # Store entities and edges in MongoDB
+            document_store = DocumentStore()
+            entities_stored = document_store.bulk_upsert_entities(nodes)
+            edges_stored = document_store.bulk_upsert_relations(edges)
+
+            # Store chunks
+            chunks_stored = document_store.bulk_upsert_chunks(chunks)
+
+            logger.info(
+                f"Stored {entities_stored} entities, {edges_stored} edges, "
+                f"{chunks_stored} chunks"
+            )
+
+            return {
+                "nodes": nodes,
+                "edges": edges,
+                "chunks_processed": len(chunks),
+                "entities_stored": entities_stored,
+                "edges_stored": edges_stored,
+            }
+
+        except Exception as e:
+            logger.error(
+                f"Error extracting targeted entities for document {document_id}: {e}",
+                exc_info=True,
+            )
+            return {
+                "nodes": [],
+                "edges": [],
+                "chunks_processed": 0,
+                "entities_stored": 0,
+                "edges_stored": 0,
+            }
+
+    async def _store_recommendations_v2(
+        self,
+        document_id: str,
+        project_id: str,
+        scenario_id: str,
+        user_id: str,
+        global_objective_type: str,
+        global_objective_target: str,
+        recommendations: List[Dict[str, Any]],
+        relevant_entities: List[Dict[str, Any]],
+    ) -> str:
+        """
+        Store recommendations with relevant entities in MongoDB (V2 format).
+
+        Args:
+            document_id: Document identifier
+            project_id: Project identifier
+            scenario_id: Scenario identifier
+            user_id: User identifier
+            global_objective_type: Type of global objective
+            global_objective_target: Target magnitude of change
+            recommendations: List of recommendation dictionaries
+            relevant_entities: List of relevant entity specifications
+
+        Returns:
+            Recommendations document ID
+        """
+        try:
+            recommendations_id = str(uuid.uuid4())
+            recommendations_doc = {
+                "_id": recommendations_id,
+                "id": recommendations_id,
+                "document_id": document_id,
+                "project_id": project_id,
+                "scenario_id": scenario_id,
+                "user_id": user_id,
+                "global_objective_type": global_objective_type,
+                "global_objective_target": global_objective_target,
+                "recommendations": recommendations,
+                "relevant_entities": relevant_entities,
+                "workflow_version": "v2",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+
+            db().base_case_recommendations.replace_one(
+                {"_id": recommendations_id}, recommendations_doc, upsert=True
+            )
+
+            logger.info(
+                f"Stored recommendations (V2) {recommendations_id} for document {document_id}"
+            )
+            return recommendations_id
+
+        except Exception as e:
+            logger.error(
+                f"Error storing recommendations (V2) for document {document_id}: {e}",
+                exc_info=True,
+            )
+            return ""

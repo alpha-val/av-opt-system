@@ -1258,3 +1258,156 @@ def get_entity_extraction_prompt(rules: Optional[List[str]] = None) -> str:
     """
 
     return prompt
+
+
+def get_targeted_entity_extraction_prompt(
+    relevant_entities: Optional[List[Dict[str, Any]]] = None,
+    extraction_scope: str = "exact",
+    rules: Optional[List[str]] = None,
+) -> str:
+    """
+    Build a prompt for targeted entity extraction based on relevant entities.
+
+    Args:
+        relevant_entities: List of entity specifications from recommendations
+        extraction_scope: "exact" (only specified entities), "with_relationships"
+                         (entities + direct relationships), or "with_context"
+                         (entities + related entities in same context)
+        rules: Optional list of extraction rules to enable
+
+    Returns:
+        Prompt string for targeted entity extraction
+    """
+    # Get base prompt
+    base_prompt = get_entity_extraction_prompt(rules=rules)
+
+    if not relevant_entities:
+        # If no relevant entities provided, return base prompt
+        return base_prompt
+
+    # Build targeted extraction section
+    entities_spec = []
+    for idx, entity in enumerate(relevant_entities, 1):
+        # Handle full node structure
+        entity_id = entity.get("id", f"entity_{idx}")
+        entity_type = entity.get("type", "Unknown")
+        props = entity.get("properties", {})
+
+        # Extract fields from properties
+        entity_name = props.get("name", "Unknown")
+        discipline = props.get("discipline", "N/A")
+        category = props.get("category", "N/A")
+        subcategory = props.get("subcategory", "N/A")
+        msio_entity = props.get("entity", "N/A")
+        expected_attrs = props.get("expected_attributes", [])
+        evidence_locs = props.get("evidence_locations", [])
+        rationale = props.get("extraction_rationale", "")
+        priority = props.get("extraction_priority", "medium")
+
+        spec = f"""
+    Entity {idx} (ID: {entity_id}):
+    - Type: {entity_type}
+    - Name: {entity_name}
+    - MSIO Classification:
+      * Discipline: {discipline}
+      * Category: {category}
+      * Subcategory: {subcategory}
+      * Entity: {msio_entity}
+    - Priority: {priority}
+    - Expected Attributes: {', '.join(expected_attrs) if expected_attrs else 'All relevant attributes from ontology'}
+    - Evidence Locations: {', '.join(evidence_locs[:5]) if evidence_locs else 'Search entire document'}
+    - Rationale: {rationale[:200] if rationale else 'N/A'}...
+    - Additional Properties: Extract all applicable properties from NODE_PROPERTIES as found in the text
+"""
+        entities_spec.append(spec)
+
+    entities_list = "\n".join(entities_spec)
+
+    # Determine extraction scope instructions
+    if extraction_scope == "exact":
+        scope_instruction = """
+    EXTRACTION SCOPE: EXACT ENTITIES ONLY
+    - Extract ONLY the entities listed above
+    - Do NOT extract other entities, even if mentioned in the text
+    - Focus on extracting comprehensive information for the specified entities
+    - Extract all attributes, relationships, and properties for these entities
+    - Penalize extracting fewer entities or sparse information
+"""
+    elif extraction_scope == "with_relationships":
+        scope_instruction = """
+    EXTRACTION SCOPE: SPECIFIED ENTITIES + DIRECT RELATIONSHIPS
+    - Extract the entities listed above
+    - Also extract entities that have direct relationships (edges) with the specified entities
+    - Extract relationships between specified entities and related entities
+    - Focus on comprehensive extraction for all entities in scope
+"""
+    else:  # with_context
+        scope_instruction = """
+    EXTRACTION SCOPE: SPECIFIED ENTITIES + RELATED CONTEXT ENTITIES
+    - Extract the entities listed above
+    - Also extract entities mentioned in the same context/sections as the specified entities
+    - Extract entities that are part of the same system or process as specified entities
+    - Extract comprehensive information for all entities in scope
+"""
+
+    targeted_section = f"""
+    --------------------------------------------------------------------------------
+    TARGETED ENTITY EXTRACTION MODE
+    --------------------------------------------------------------------------------
+    You are extracting entities in TARGETED MODE. This means you should focus on
+    extracting specific entities that have been identified as relevant to the
+    analysis objectives.
+    
+    {scope_instruction}
+    
+    RELEVANT ENTITIES TO EXTRACT:
+    {entities_list}
+    
+    EXTRACTION REQUIREMENTS:
+    - Extract ONLY entities that match the specifications above (or related entities if scope allows)
+    - For each specified entity, extract as a COMPLETE NODE following the extract_nodes structure:
+      * REQUIRED: id (unique identifier), type (from NODE_TYPES), properties (object)
+      * REQUIRED: properties.name (entity name)
+      * REQUIRED: properties.discipline, properties.category, properties.subcategory, properties.entity (MSIO classification)
+      * REQUIRED: properties.attributes (array of attribute objects with name, value, unit, evidence_text, confidence)
+      * Extract ALL applicable properties from NODE_PROPERTIES as found in the text
+      * All attributes mentioned in expected_attributes list
+      * All additional attributes found in the text
+      * All relationships (edges) to other entities
+      * Evidence text and confidence scores for all extracted information
+    - Be comprehensive: extract as much detail as possible for each entity
+    - Do NOT skip entities or extract sparse information
+    - If an entity is mentioned multiple times, merge information from all mentions
+    - Prioritize high-priority entities but extract all specified entities
+    - ALL extracted nodes MUST follow the exact structure from extract_nodes tool:
+      * id: string (unique identifier)
+      * type: string (from NODE_TYPES enum)
+      * properties: object containing all applicable NODE_PROPERTIES
+      * properties must include MSIO classification (discipline, category, subcategory, entity)
+      * properties must include attributes array with full attribute objects
+    - Map ALL nodes to MSIO ontology following the matching workflow in nodes_and_relations_extraction_directives
+    
+    QUALITY REQUIREMENTS:
+    ✓ Extract comprehensive information for each specified entity as COMPLETE NODES
+    ✓ Include all attributes, relationships, and properties following extract_nodes structure
+    ✓ Provide evidence text for all extracted information
+    ✓ Set appropriate confidence scores based on MSIO match quality
+    ✓ All nodes must have complete MSIO classification (discipline, category, subcategory, entity)
+    ✓ All nodes must follow the exact extract_nodes structure with id, type, and properties
+    ✗ Do NOT extract entities not in the relevant_entities list (unless scope allows)
+    ✗ Do NOT extract sparse or incomplete entity information
+    ✗ Do NOT skip expected attributes if they are mentioned in the text
+    ✗ Do NOT extract nodes without complete structure (id, type, properties)
+    
+    --------------------------------------------------------------------------------
+"""
+
+    # Insert targeted section after base prompt's role section but before ontology section
+    # Find a good insertion point - after the role/objective section
+    insertion_marker = "Required output:"
+    if insertion_marker in base_prompt:
+        parts = base_prompt.split(insertion_marker, 1)
+        return parts[0] + targeted_section + insertion_marker + parts[1]
+    else:
+        # Fallback: prepend to base prompt
+        return targeted_section + "\n" + base_prompt
