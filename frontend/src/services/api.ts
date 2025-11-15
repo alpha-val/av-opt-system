@@ -18,6 +18,9 @@ import {
   ScenarioUpdate,
   ScenarioOut,
   RecommendationsResponse,
+  CostEstimateCreate,
+  CostEstimateUpdate,
+  CostEstimateOut,
 } from "../types/api";
 
 // Get API base URL from environment or use default
@@ -481,6 +484,54 @@ export const scenarioApi = {
       count: number;
     }>(`/api/v1/scenarios/${scenarioId}/entities?artifact_type=${artifactType}`);
     return response.data;
+  },
+};
+
+/**
+ * Cost Estimate API service
+ */
+export const costEstimateApi = {
+  /**
+   * Create a new cost estimate
+   */
+  create: async (data: CostEstimateCreate): Promise<CostEstimateOut> => {
+    const response = await apiClient.post<CostEstimateOut>("/api/v1/cost-estimates", data);
+    return response.data;
+  },
+
+  /**
+   * List all cost estimates, optionally filtered by scenario_id
+   */
+  listAll: async (scenarioId?: string): Promise<CostEstimateOut[]> => {
+    const params = scenarioId ? `?scenario_id=${scenarioId}` : '';
+    const response = await apiClient.get<CostEstimateOut[]>(`/api/v1/cost-estimates${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get a cost estimate by ID
+   */
+  getById: async (costEstimateId: string): Promise<CostEstimateOut> => {
+    const response = await apiClient.get<CostEstimateOut>(`/api/v1/cost-estimates/${costEstimateId}`);
+    return response.data;
+  },
+
+  /**
+   * Update a cost estimate
+   */
+  update: async (costEstimateId: string, data: CostEstimateUpdate): Promise<CostEstimateOut> => {
+    const response = await apiClient.patch<CostEstimateOut>(
+      `/api/v1/cost-estimates/${costEstimateId}`,
+      data
+    );
+    return response.data;
+  },
+
+  /**
+   * Delete a cost estimate
+   */
+  delete: async (costEstimateId: string): Promise<void> => {
+    await apiClient.delete(`/api/v1/cost-estimates/${costEstimateId}`);
   },
 };
 

@@ -429,10 +429,24 @@ async def delete_all_user_data(user_id: str) -> Dict[str, Any]:
         # Delete all scenarios for these projects
         scenarios_collection = db().scenarios
         for project_id in project_ids:
+            # Get all scenario IDs for this project before deleting scenarios
+            scenario_docs = list(scenarios_collection.find(
+                {"project_id": project_id},
+                {"_id": 1}
+            ))
+            scenario_ids = [str(s["_id"]) for s in scenario_docs]
+            
             scenarios_deleted = scenarios_collection.delete_many(
                 {"project_id": project_id}
             ).deleted_count
             deleted_counts["scenarios"] += scenarios_deleted
+
+            # Delete cost estimates by scenario_id (not project_id)
+            for scenario_id in scenario_ids:
+                cost_estimates_deleted = _cost_estimates_collection.delete_many(
+                    {"scenario_id": scenario_id}
+                ).deleted_count
+                deleted_counts["cost_estimates"] += cost_estimates_deleted
 
             documents_deleted = _documents_collection.delete_many(
                 {"project_id": project_id}
@@ -448,11 +462,6 @@ async def delete_all_user_data(user_id: str) -> Dict[str, Any]:
                 {"project_id": project_id}
             ).deleted_count
             deleted_counts["tables"] += tables_deleted
-
-            cost_estimates_deleted = _cost_estimates_collection.delete_many(
-                {"project_id": project_id}
-            ).deleted_count
-            deleted_counts["cost_estimates"] += cost_estimates_deleted
 
             entities_deleted = _entities_collection.delete_many(
                 {"project_id": project_id}

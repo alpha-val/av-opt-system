@@ -23,15 +23,32 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Grid,
+  Card,
+  CardContent,
+  IconButton,
 } from "@mui/material";
-import SummarizeOutlinedIcon from '@mui/icons-material/SummarizeOutlined';
-import ChecklistOutlinedIcon from '@mui/icons-material/ChecklistOutlined';
+import SummarizeOutlinedIcon from "@mui/icons-material/SummarizeOutlined";
+import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
 import { ExpandMore as ExpandMoreIcon } from "@mui/icons-material";
 import { PlayArrow as PlayArrowIcon } from "@mui/icons-material";
+import {
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  ArrowBack as ArrowBackIcon,
+} from "@mui/icons-material";
 import ObjectiveDetailsForm from "../../components/scenario/ObjectiveDetailsForm";
 import AnalysisOptionsForm from "../../components/scenario/AnalysisOptionsForm";
 import BaseCaseRecommendationView from "../../components/scenario/BaseCaseRecommendationView";
 import LocalObjectives from "../../components/scenario/LocalObjectives";
+import CreateCostEstimateDialog from "../../components/scenario/CreateCostEstimateDialog";
+import SystemDesignInputs from "../../components/scenario/SystemDesignInputs";
+import { useDialogs } from "../../hooks/useDialogs";
 import {
   fetchScenarioById,
   selectCurrentScenario,
@@ -44,10 +61,28 @@ import {
   clearError,
 } from "../../redux/scenariosSlice";
 import {
+  fetchCostEstimates,
+  fetchCostEstimateById,
+  createCostEstimate,
+  deleteCostEstimate,
+  selectCostEstimatesByScenario,
+  selectCurrentCostEstimate,
+  selectCostEstimatesLoading,
+  selectCostEstimatesError,
+  selectCostEstimateCreating,
+  selectCostEstimateDeleting,
+  clearError as clearCostEstimatesError,
+  clearCurrentCostEstimate,
+} from "../../redux/costEstimatesSlice";
+import {
   fetchProjectById,
   selectCurrentProject,
 } from "../../redux/projectsSlice";
-import { ScenarioStatus, ScenarioUpdate } from "../../types/api";
+import {
+  ScenarioStatus,
+  ScenarioUpdate,
+  CostEstimateCreate,
+} from "../../types/api";
 
 interface ScenarioDetailsProps {
   scenarioId?: string;
@@ -79,6 +114,7 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const dialogs = useDialogs();
 
   // Use memoized selectors to prevent unnecessary re-renders
   const scenario = useSelector(selectCurrentScenario);
@@ -104,6 +140,27 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
     [scenario?.objective_description]
   );
   const [activeTab, setActiveTab] = useState<number>(0);
+
+  // Cost estimate state
+  const [createCostEstimateDialogOpen, setCreateCostEstimateDialogOpen] =
+    useState(false);
+  const [selectedCostEstimateId, setSelectedCostEstimateId] = useState<
+    string | null
+  >(null);
+
+  // Cost estimates data
+  const costEstimatesSelector = useMemo(
+    () => (scenarioId ? selectCostEstimatesByScenario(scenarioId) : undefined),
+    [scenarioId]
+  );
+  const costEstimates = useSelector((state: any) =>
+    costEstimatesSelector ? costEstimatesSelector(state) : []
+  );
+  const currentCostEstimate = useSelector(selectCurrentCostEstimate);
+  const costEstimatesLoading = useSelector(selectCostEstimatesLoading);
+  const costEstimatesError = useSelector(selectCostEstimatesError);
+  const creatingCostEstimate = useSelector(selectCostEstimateCreating);
+  const deletingCostEstimate = useSelector(selectCostEstimateDeleting);
 
   // Objective details form state (combined)
   const [objectiveForm, setObjectiveForm] = useState({
@@ -138,6 +195,10 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
       if (!project || project.id !== projectId) {
         dispatch(fetchProjectById(projectId) as any);
       }
+    }
+    // Fetch cost estimates for this scenario
+    if (scenarioId) {
+      dispatch(fetchCostEstimates(scenarioId) as any);
     }
   }, [scenarioId, projectId, scenarioIdFromStore, project?.id, dispatch]);
 
@@ -362,6 +423,66 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
     }
 
     return "";
+  };
+
+  /**
+   * Handle creating a new cost estimate
+   */
+  const handleCreateCostEstimate = (costEstimateData: CostEstimateCreate) => {
+    dispatch(createCostEstimate(costEstimateData) as any).then(
+      (result: any) => {
+        if (createCostEstimate.fulfilled.match(result)) {
+          setCreateCostEstimateDialogOpen(false);
+        }
+      }
+    );
+  };
+
+  /**
+   * Handle deleting a cost estimate
+   */
+  const handleDeleteCostEstimate = async (costEstimateId: string) => {
+    if (!costEstimateId) return;
+
+    // Find cost estimate to show name in warning
+    const costEstimateToDelete = costEstimates.find(
+      (ce) => ce.id === costEstimateId
+    );
+    const costEstimateName = costEstimateToDelete?.name || "this cost estimate";
+
+    // Show confirmation dialog
+    const confirmed = await dialogs.confirm(
+      `Are you sure you want to delete "${costEstimateName}"? This action cannot be undone.`,
+      {
+        title: "Delete Cost Estimate",
+        severity: "error",
+        okText: "Delete",
+        cancelText: "Cancel",
+      }
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    dispatch(clearCostEstimatesError());
+    dispatch(deleteCostEstimate(costEstimateId) as any).then((result: any) => {
+      if (deleteCostEstimate.fulfilled.match(result)) {
+        // If we deleted the currently selected cost estimate, clear selection
+        if (selectedCostEstimateId === costEstimateId) {
+          setSelectedCostEstimateId(null);
+          dispatch(clearCurrentCostEstimate());
+        }
+      }
+    });
+  };
+
+  /**
+   * Handle clicking on a cost estimate card
+   */
+  const handleCostEstimateClick = (costEstimateId: string) => {
+    setSelectedCostEstimateId(costEstimateId);
+    dispatch(fetchCostEstimateById(costEstimateId) as any);
   };
 
   /**
@@ -623,16 +744,16 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
       ) : scenario ? (
         <Box sx={{ p: 2, pt: 0 }}>
           {/* Scenario Info Panel */}
-          {/* <Paper elevation={0} sx={{ p: 1, mb: 3, backgroundColor: "#f9f9f9" }}>
+          <Paper elevation={0} sx={{ p: 1, mb: 3, backgroundColor: "#f9f9f9" }}>
             <Typography variant="h4" component="h1" gutterBottom>
-              {scenario.name}
+              {scenario.name}  ID: {scenario.id}
             </Typography>
             {scenario.description && (
               <Typography variant="body1" color="text.secondary" gutterBottom>
                 Description: {scenario.description || "No description available"}
               </Typography>
             )}
-          </Paper> */}
+          </Paper>
 
           {/* Tabbed Interface */}
           <Paper sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
@@ -740,12 +861,14 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                   System Design
                 </Typography>
 
-                <Accordion defaultExpanded={false} sx={{backgroundColor: "#f9f9f9", mb: 2}}>
+                <Accordion
+                  defaultExpanded={false}
+                  sx={{ backgroundColor: "#f9f9f9", mb: 2 }}
+                >
                   <AccordionSummary
                     expandIcon={<ExpandMoreIcon />}
                     aria-controls="recommendations-content"
                     id="recommendations-header"
-                    
                   >
                     <SummarizeOutlinedIcon sx={{ mr: 1 }} />
                     <Typography variant="subtitle1" fontWeight={600}>
@@ -757,7 +880,10 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                   </AccordionDetails>
                 </Accordion>
 
-                <Accordion defaultExpanded={false} sx={{backgroundColor: "#f9f9f9", mb: 2}}>
+                <Accordion
+                  defaultExpanded={false}
+                  sx={{ backgroundColor: "#f9f9f9", mb: 2 }}
+                >
                   <AccordionSummary
                     expandIcon={<ExpandMoreIcon />}
                     aria-controls="system-parameters-content"
@@ -778,16 +904,181 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
             {/* Tab 2: Cost Estimate */}
             <TabPanel value={activeTab} index={2}>
               <Box sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  Cost Estimate
-                </Typography>
-                <Alert severity="info" sx={{ mt: 2 }}>
-                  <Typography variant="body2">
-                    This is a placeholder for the cost estimate view. The actual
-                    implementation will display cost estimation results from the
-                    scenario analysis.
-                  </Typography>
-                </Alert>
+                {selectedCostEstimateId && currentCostEstimate ? (
+                  /* Cost Estimate Details View */
+                  <Box>
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+                      <Button
+                        startIcon={<ArrowBackIcon />}
+                        onClick={() => {
+                          setSelectedCostEstimateId(null);
+                          dispatch(clearCurrentCostEstimate());
+                        }}
+                        sx={{ mr: 2 }}
+                      >
+                        Back to Cost Estimates
+                      </Button>
+                    </Box>
+
+                    <Paper sx={{ p: 3, mb: 2 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          mb: 2,
+                        }}
+                      >
+                        <Box>
+                          <Typography variant="h5" gutterBottom>
+                            {currentCostEstimate.name}
+                          </Typography>
+                          {currentCostEstimate.description && (
+                            <Typography variant="body1" color="text.secondary">
+                              {currentCostEstimate.description}
+                            </Typography>
+                          )}
+                        </Box>
+                        <IconButton
+                          color="error"
+                          onClick={() =>
+                            handleDeleteCostEstimate(currentCostEstimate.id)
+                          }
+                          disabled={deletingCostEstimate}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                      <Typography variant="caption" color="text.secondary">
+                        Created: {formatDate(currentCostEstimate.created_at)} |
+                        Updated: {formatDate(currentCostEstimate.updated_at)}
+                      </Typography>
+                    </Paper>
+
+                    {/* Step 1: System Design Inputs */}
+                    <Box sx={{ mb: 4 }}>
+                      <SystemDesignInputs
+                        scenarioId={scenarioId || ""}
+                        globalObjectiveType={scenario?.global_objective_type}
+                        globalObjectiveTarget={
+                          scenario?.global_objective_target
+                        }
+                        costEstimateId={selectedCostEstimateId || undefined}
+                      />
+                    </Box>
+                  </Box>
+                ) : (
+                  /* Cost Estimates List View */
+                  <Box>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        mb: 3,
+                      }}
+                    >
+                      <Typography variant="h6">
+                        Cost Estimates ({costEstimates.length})
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={() => setCreateCostEstimateDialogOpen(true)}
+                        disabled={creatingCostEstimate || !scenarioId}
+                      >
+                        New Cost Estimate
+                      </Button>
+                    </Box>
+
+                    {costEstimatesError && (
+                      <Alert
+                        severity="error"
+                        sx={{ mb: 2 }}
+                        onClose={() => dispatch(clearCostEstimatesError())}
+                      >
+                        {costEstimatesError}
+                      </Alert>
+                    )}
+
+                    {costEstimatesLoading.fetch ? (
+                      <Box
+                        sx={{ display: "flex", justifyContent: "center", p: 4 }}
+                      >
+                        <CircularProgress />
+                      </Box>
+                    ) : costEstimates.length === 0 ? (
+                      <Alert severity="info">
+                        <Typography variant="body2">
+                          No cost estimates created yet. Click "New Cost
+                          Estimate" to create one.
+                        </Typography>
+                      </Alert>
+                    ) : (
+                      <Grid container spacing={2}>
+                        {costEstimates.map((costEstimate) => (
+                          <Grid
+                            item
+                            xs={12}
+                            sm={6}
+                            md={4}
+                            key={costEstimate.id}
+                          >
+                            <Card
+                              variant="outlined"
+                              sx={{
+                                height: "100%",
+                                cursor: "pointer",
+                                transition: "transform 0.2s, box-shadow 0.2s",
+                                "&:hover": {
+                                  transform: "translateY(-2px)",
+                                  boxShadow: 3,
+                                },
+                              }}
+                              onClick={() =>
+                                handleCostEstimateClick(costEstimate.id)
+                              }
+                            >
+                              <CardContent>
+                                <Typography
+                                  variant="h6"
+                                  component="h3"
+                                  sx={{ fontWeight: 600, mb: 1 }}
+                                >
+                                  {costEstimate.name}
+                                </Typography>
+                                {costEstimate.description && (
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{ mb: 2 }}
+                                  >
+                                    {costEstimate.description}
+                                  </Typography>
+                                )}
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  Created: {formatDate(costEstimate.created_at)}
+                                </Typography>
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    )}
+                  </Box>
+                )}
+
+                {/* Create Cost Estimate Dialog */}
+                <CreateCostEstimateDialog
+                  open={createCostEstimateDialogOpen}
+                  onClose={() => setCreateCostEstimateDialogOpen(false)}
+                  onCreate={handleCreateCostEstimate}
+                  creating={creatingCostEstimate}
+                  scenarioId={scenarioId || ""}
+                />
               </Box>
             </TabPanel>
 

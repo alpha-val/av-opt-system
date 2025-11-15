@@ -363,6 +363,209 @@ QUALITY REQUIREMENTS FOR TABLE EXTRACTION:
 ✗ No assumptions about missing units
 """
 
+# Deduplication block
+entity_deduplication_block = """
+    --------------------------------------------------------------------------------
+    = = = ENTITY DEDUPLICATION AND MERGING POLICY = = =
+    --------------------------------------------------------------------------------
+    PURPOSE:
+    Prevent duplicate nodes by merging entities that represent the same physical/logical
+    entity across multiple text chunks or mentions with alternative units.
+
+    DEDUPLICATION CRITERIA:
+    Two entities are considered DUPLICATES if ALL of the following match:
+    1. **MSIO Classification Match** (MANDATORY):
+       - Same discipline (case-insensitive)
+       - Same category (case-insensitive)
+       - Same subcategory (case-insensitive)
+       - Same entity (case-insensitive)
+    
+    2. **Entity Name Similarity** (MANDATORY):
+       - Exact match (case-insensitive), OR
+       - High semantic similarity (e.g., "Salt Slurry System" vs "Salt Slurry Process")
+       - Ignore minor variations in wording
+    
+    3. **Attribute Overlap** (at least 60% of attributes match):
+       - Compare attribute names and values
+       - If same attribute has different values, check if they are unit conversions
+       - If values differ but units are convertible (e.g., GPM vs gal/hr), treat as same entity
+
+    MERGING STRATEGY:
+    When duplicates are detected, merge them into a SINGLE node using this strategy:
+
+    1. **Preserve All Information**:
+       - Keep the most specific/complete name
+       - Retain the highest confidence score
+       - Merge all evidence_text snippets (concatenate or pick best)
+    
+    2. **Handle Alternative Units**:
+       - When the same attribute appears with different units (e.g., flow_rate: 3733 GPM and 223975 gal/hr):
+         * Store BOTH as separate attribute objects in the attributes array
+         * Use descriptive names: "flow_rate_gpm" and "flow_rate_gal_per_hr"
+         * OR keep both in the attributes array with their respective units
+       - Example:
+         ```json
+         "attributes": [
+           {
+             "name": "flow_rate",
+             "value": 3733,
+             "unit": "GPM",
+             "evidence_text": "3,733 GPM",
+             "confidence": 0.95
+           },
+           {
+             "name": "flow_rate",
+             "value": 223975,
+             "unit": "gal/hr",
+             "evidence_text": "≈223,975 gal/hr",
+             "confidence": 0.95
+           }
+         ]
+         ```
+    
+    3. **Consolidate Attributes**:
+       - Merge attributes from all duplicate mentions
+       - For same attribute with same units: keep the most confident/complete value
+       - For different attributes: add all to the merged node
+       - Preserve all evidence_text for provenance
+    
+    4. **Merge Properties**:
+       - Combine all properties from duplicate nodes
+       - For conflicting values: prefer more specific/confident source
+       - Keep all non-null values
+    
+    5. **Update Edges**:
+       - Redirect all edges pointing to duplicate nodes to point to the merged node
+       - Remove duplicate edges (same source, target, type)
+
+    DEDUPLICATION WORKFLOW:
+    1. Extract all entities first following normal extraction rules
+    2. Group entities by MSIO classification (discipline/category/subcategory/entity)
+    3. Within each group, identify entities with similar names and overlapping attributes
+    4. Apply merging strategy to consolidate duplicates
+    5. Update all edge references to merged nodes
+    6. Return deduplicated node list
+
+    EXAMPLES:
+
+    Example 1: Alternative Units (Same Entity, Different Units)
+    Input mentions:
+    - "Throughput: 100 short tons/hr"
+    - "200,000 lb/hr dry table salt"
+    - "Volumetric flow: ≈223,975 gal/hr ≈ 3,733 GPM"
+    
+    Detected duplicates:
+    - All refer to "Salt Slurry Process" (same MSIO classification)
+    - Same entity, different attribute representations
+    
+    Merged output (SINGLE NODE):
+    ```json
+    {
+      "id": "salt_slurry_process_001",
+      "type": "Process",
+      "properties": {
+        "name": "Salt Slurry Process",
+        "discipline": "Process Engineering",
+        "category": "Slurry Processing",
+        "subcategory": "Mixing",
+        "entity": "Salt Slurry System",
+        "attributes": [
+          {
+            "name": "slurry_concentration",
+            "value": 10,
+            "unit": "% mass",
+            "evidence_text": "10% (w/w) salt slurry",
+            "confidence": 0.95
+          },
+          {
+            "name": "feed_rate",
+            "value": 100,
+            "unit": "st/hr",
+            "evidence_text": "100 short tons/hr",
+            "confidence": 0.95
+          },
+          {
+            "name": "feed_rate",
+            "value": 200000,
+            "unit": "lb/hr",
+            "evidence_text": "200,000 lb/hr dry table salt",
+            "confidence": 0.95
+          },
+          {
+            "name": "flow_rate",
+            "value": 223975,
+            "unit": "gal/hr",
+            "evidence_text": "≈223,975 gal/hr",
+            "confidence": 0.93
+          },
+          {
+            "name": "flow_rate",
+            "value": 3733,
+            "unit": "GPM",
+            "evidence_text": "≈ 3,733 GPM",
+            "confidence": 0.93
+          }
+        ],
+        "evidence_text": "Salt + Water Suspension System — 10% (w/w) salt slurry. Throughput: 100 short tons/hr (200,000 lb/hr). Volumetric flow: ≈223,975 gal/hr ≈ 3,733 GPM.",
+        "confidence": 0.94
+      }
+    }
+    ```
+
+    Example 2: Cross-Chunk Consolidation
+    Chunk 1: "Centrifugal pump rated for 500 GPM"
+    Chunk 2: "The pump has a 10 HP motor and mechanical seal"
+    
+    Detected duplicates:
+    - Both refer to same pump (same MSIO: Mechanical Equipment/Pumps/Centrifugal)
+    
+    Merged output (SINGLE NODE):
+    ```json
+    {
+      "id": "pump_001",
+      "type": "Equipment",
+      "properties": {
+        "name": "Centrifugal Pump",
+        "discipline": "Mechanical Equipment",
+        "category": "Pumps",
+        "subcategory": "Centrifugal",
+        "entity": "Base pump unit",
+        "attributes": [
+          {
+            "name": "Design flowrate",
+            "value": 500,
+            "unit": "GPM",
+            "evidence_text": "rated for 500 GPM",
+            "confidence": 0.95
+          },
+          {
+            "name": "Power",
+            "value": 10,
+            "unit": "HP",
+            "evidence_text": "10 HP motor",
+            "confidence": 0.95
+          }
+        ],
+        "seal_type": "mechanical",
+        "evidence_text": "Centrifugal pump rated for 500 GPM. The pump has a 10 HP motor and mechanical seal",
+        "confidence": 0.94
+      }
+    }
+    ```
+
+    QUALITY REQUIREMENTS:
+    ✓ Merge all duplicate entities into single nodes
+    ✓ Preserve all information from all mentions
+    ✓ Store alternative units as separate attribute entries
+    ✓ Consolidate evidence from multiple chunks
+    ✓ Update all edge references to merged nodes
+    ✓ Maintain highest confidence scores
+    ✗ Do NOT create multiple nodes for the same entity
+    ✗ Do NOT lose information when merging
+    ✗ Do NOT convert units (store both original units)
+    ✗ Do NOT merge entities with different MSIO classifications
+"""
+
 # Nodes and relations extraction block
 nodes_and_relations_extraction_directives = """
     --------------------------------------------------------------------------------
@@ -386,6 +589,7 @@ nodes_and_relations_extraction_directives = """
     - Use ONLY Discipline/Category/Subcategory/Entity names from the provided MSIO ontology
     - If an entity cannot be matched to MSIO ontology, create a new node with the closest MSIO hierarchy match and set "outside_msio": true attribute
     - Use the MSIO matching workflow above for every entity extraction
+    - DEDUPLICATE entities following the Entity Deduplication and Merging Policy (see above)
 
 
     ONTOLOGY (from config.py):
@@ -1202,6 +1406,9 @@ def get_entity_extraction_prompt(rules: Optional[List[str]] = None) -> str:
     # ONTOLOGY (MANDATORY - ALL ENTITIES MUST MATCH MSIO)
     {ontology_mapping_block}
     
+    # ENTITY DEDUPLICATION (MANDATORY - MERGE DUPLICATE NODES)
+    {entity_deduplication_block}
+    
     # NODES & RELATIONS EXTRACTION RULES
     {nodes_and_relations_extraction_block if "NODES_AND_RELATIONS" in (rules or []) else ""}
 
@@ -1271,8 +1478,8 @@ def get_targeted_entity_extraction_prompt(
     Args:
         relevant_entities: List of entity specifications from recommendations
         extraction_scope: "exact" (only specified entities), "with_relationships"
-                         (entities + direct relationships), or "with_context"
-                         (entities + related entities in same context)
+        (entities + direct relationships), or "with_context"
+        (entities + related entities in same context)
         rules: Optional list of extraction rules to enable
 
     Returns:
@@ -1387,6 +1594,14 @@ def get_targeted_entity_extraction_prompt(
       * properties must include attributes array with full attribute objects
     - Map ALL nodes to MSIO ontology following the matching workflow in nodes_and_relations_extraction_directives
     
+    DEDUPLICATION (MANDATORY):
+    - Apply Entity Deduplication and Merging Policy (see above)
+    - Merge duplicate entities with same MSIO classification and similar names
+    - Consolidate information from multiple chunks/mentions into single nodes
+    - Store alternative units as separate attribute entries (e.g., GPM and gal/hr)
+    - Preserve all evidence and information when merging
+    - Return only deduplicated nodes (no duplicates)
+    
     QUALITY REQUIREMENTS:
     ✓ Extract comprehensive information for each specified entity as COMPLETE NODES
     ✓ Include all attributes, relationships, and properties following extract_nodes structure
@@ -1394,10 +1609,15 @@ def get_targeted_entity_extraction_prompt(
     ✓ Set appropriate confidence scores based on MSIO match quality
     ✓ All nodes must have complete MSIO classification (discipline, category, subcategory, entity)
     ✓ All nodes must follow the exact extract_nodes structure with id, type, and properties
+    ✓ DEDUPLICATE entities - merge duplicates following the deduplication policy
+    ✓ Store alternative units as separate attributes (e.g., 3733 GPM and 223975 gal/hr as two attribute objects)
+    ✓ Consolidate cross-chunk mentions into single nodes
     ✗ Do NOT extract entities not in the relevant_entities list (unless scope allows)
     ✗ Do NOT extract sparse or incomplete entity information
     ✗ Do NOT skip expected attributes if they are mentioned in the text
     ✗ Do NOT extract nodes without complete structure (id, type, properties)
+    ✗ Do NOT create duplicate nodes for the same entity (same MSIO + similar name)
+    ✗ Do NOT lose information when merging duplicates
     
     --------------------------------------------------------------------------------
 """

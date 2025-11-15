@@ -209,11 +209,19 @@ async def update_scenario(
 
 async def delete_scenario(scenario_id: str) -> bool:
     """
-    Delete a scenario.
+    Delete a scenario and cascade delete associated cost estimates.
     """
     try:
         if not ObjectId.is_valid(scenario_id):
             raise ValueError(f"Invalid scenario_id format: {scenario_id}")
+
+        # Delete associated cost estimates first
+        cost_estimates_collection = db().cost_estimates
+        cost_estimates_deleted = cost_estimates_collection.delete_many(
+            {"scenario_id": scenario_id}
+        ).deleted_count
+        if cost_estimates_deleted > 0:
+            logger.info(f"Deleted {cost_estimates_deleted} cost estimates for scenario: {scenario_id}")
 
         collection = db().scenarios
         result = collection.delete_one({"_id": ObjectId(scenario_id)})

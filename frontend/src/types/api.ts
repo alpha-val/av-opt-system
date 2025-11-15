@@ -190,6 +190,37 @@ export interface RelevantEntity {
 }
 
 /**
+ * Cost estimate base interface
+ */
+export interface CostEstimateBase {
+  name: string;
+  description?: string | null;
+  scenario_id: string;
+}
+
+/**
+ * Cost estimate creation request payload
+ */
+export interface CostEstimateCreate extends CostEstimateBase {}
+
+/**
+ * Cost estimate update request payload (all fields optional for PATCH)
+ */
+export interface CostEstimateUpdate {
+  name?: string;
+  description?: string | null;
+}
+
+/**
+ * Cost estimate output/response from API
+ */
+export interface CostEstimateOut extends CostEstimateBase {
+  id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
  * Recommendations response interface
  */
 export interface RecommendationsResponse {
