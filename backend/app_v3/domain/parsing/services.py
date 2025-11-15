@@ -402,7 +402,11 @@ class DocumentProcessingService:
             # Store table metadata
             for table in tables:
                 self.document_store.upsert_table(
-                    doc_id=doc_id_actual, table_id=table["table_id"], metadata=table
+                    doc_id=doc_id_actual,
+                    table_id=table["table_id"],
+                    metadata=table,
+                    project_id=project_id,
+                    user_id=user_id,
                 )
 
             # Store entities and edges in MongoDB

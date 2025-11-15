@@ -448,28 +448,66 @@ async def delete_all_user_data(user_id: str) -> Dict[str, Any]:
                 ).deleted_count
                 deleted_counts["cost_estimates"] += cost_estimates_deleted
 
+            # Get all document IDs for this project BEFORE deleting documents
+            # (needed for deleting related chunks and tables)
+            project_doc_docs = list(_documents_collection.find(
+                {"project_id": project_id},
+                {"_id": 1}
+            ))
+            project_doc_ids = [str(doc["_id"]) for doc in project_doc_docs]
+            project_doc_object_ids = [doc["_id"] for doc in project_doc_docs]
+
             documents_deleted = _documents_collection.delete_many(
                 {"project_id": project_id}
             ).deleted_count
             deleted_counts["documents"] += documents_deleted
 
+            # Delete chunks - check both root level and nested in properties, and by doc_id
+            # Handle both string and ObjectId formats for doc_id
             chunks_deleted = _chunks_collection.delete_many(
-                {"project_id": project_id}
+                {
+                    "$or": [
+                        {"properties.project_id": project_id},
+                        {"project_id": project_id},
+                        {"doc_id": {"$in": project_doc_ids}},  # String format
+                        {"doc_id": {"$in": project_doc_object_ids}}  # ObjectId format
+                    ]
+                }
             ).deleted_count
             deleted_counts["chunks"] += chunks_deleted
 
+            # Delete tables - check doc_id and properties.project_id
+            # Handle both string and ObjectId formats for doc_id
             tables_deleted = _tables_collection.delete_many(
-                {"project_id": project_id}
+                {
+                    "$or": [
+                        {"doc_id": {"$in": project_doc_ids}},  # String format
+                        {"doc_id": {"$in": project_doc_object_ids}},  # ObjectId format
+                        {"properties.project_id": project_id}  # New format with properties
+                    ]
+                }
             ).deleted_count
             deleted_counts["tables"] += tables_deleted
 
+            # Delete entities - check both root level and nested in properties
             entities_deleted = _entities_collection.delete_many(
-                {"project_id": project_id}
+                {
+                    "$or": [
+                        {"properties.project_id": project_id},
+                        {"project_id": project_id}
+                    ]
+                }
             ).deleted_count
             deleted_counts["entities"] += entities_deleted
 
+            # Delete relations - check both root level and nested in properties
             relations_deleted = _relations_collection.delete_many(
-                {"project_id": project_id}
+                {
+                    "$or": [
+                        {"properties.project_id": project_id},
+                        {"project_id": project_id}
+                    ]
+                }
             ).deleted_count
             deleted_counts["relations"] += relations_deleted
 

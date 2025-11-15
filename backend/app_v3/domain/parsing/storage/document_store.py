@@ -259,7 +259,9 @@ class DocumentStore:
         self,
         doc_id: str,
         table_id: str,
-        metadata: Dict[str, Any]
+        metadata: Dict[str, Any],
+        project_id: Optional[str] = None,
+        user_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Upsert table metadata to MongoDB.
@@ -268,6 +270,8 @@ class DocumentStore:
             doc_id: Document identifier
             table_id: Table identifier
             metadata: Table metadata
+            project_id: Optional project identifier (stored in properties)
+            user_id: Optional user identifier (stored in properties)
             
         Returns:
             Stored table dictionary
@@ -281,6 +285,15 @@ class DocumentStore:
             "created_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
+        
+        # Add properties field with project_id and user_id if provided
+        properties = {}
+        if project_id:
+            properties["project_id"] = project_id
+        if user_id:
+            properties["user_id"] = user_id
+        if properties:
+            table_doc["properties"] = properties
         
         self._db.tables.replace_one({"_id": table_id}, table_doc, upsert=True)
         logger.info(f"Upserted table {table_id} to MongoDB")
