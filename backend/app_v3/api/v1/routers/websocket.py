@@ -126,9 +126,9 @@ def _create_progress_callback(job_id: str, websocket: WebSocket):
             # Send over WebSocket
             await websocket.send_text(message)
             
-            logger.debug(
+            logger.info(
                 f"Sent progress event to WebSocket: job_id={job_id}, "
-                f"stage={event.stage.value}, progress={event.progress}%"
+                f"stage={event.stage.value}, status={event.status.value}, progress={event.progress}%"
             )
         except Exception as e:
             logger.error(
@@ -189,6 +189,7 @@ async def websocket_progress(
     # Subscribe to progress events for this job_id
     publisher.subscribe(job_id, callback)
     _add_connection(job_id, websocket)
+    logger.info(f"WebSocket subscribed to progress events for job_id: {job_id}")
     
     try:
         # Keep connection alive and handle incoming messages

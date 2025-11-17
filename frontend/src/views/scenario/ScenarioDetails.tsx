@@ -57,6 +57,7 @@ import {
   updateScenario,
   runAnalysis,
   runAnalysisV2,
+  runAnalysisV3,
   selectScenarioRunningAnalysis,
   clearError,
 } from "../../redux/scenariosSlice";
@@ -172,8 +173,9 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
   const [objectiveError, setObjectiveError] = useState<string | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
-  // V2 workflow options
-  const [useV2Workflow, setUseV2Workflow] = useState<boolean>(true);
+  // Workflow options
+  const [useV2Workflow, setUseV2Workflow] = useState<boolean>(false);
+  const [useV3Workflow, setUseV3Workflow] = useState<boolean>(true);
   const [extractSummary, setExtractSummary] = useState<boolean>(false);
   const [extractionScope, setExtractionScope] = useState<
     "exact" | "with_relationships" | "with_context"
@@ -538,8 +540,14 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
       return;
     }
 
-    // Dispatch run analysis action (V2 or V1)
-    if (useV2Workflow) {
+    // Dispatch run analysis action (V3, V2, or V1)
+    if (useV3Workflow) {
+      dispatch(runAnalysisV3(scenarioId) as any).then((result: any) => {
+        if (runAnalysisV3.rejected.match(result)) {
+          setAnalysisError(result.payload as string);
+        }
+      });
+    } else if (useV2Workflow) {
       dispatch(
         runAnalysisV2({
           scenarioId,
@@ -800,6 +808,8 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                       >
                         {runningAnalysis
                           ? "Running Analysis..."
+                          : useV3Workflow
+                          ? "Run Analysis (V3)"
                           : useV2Workflow
                           ? "Run Analysis (V2)"
                           : "Run Analysis"}

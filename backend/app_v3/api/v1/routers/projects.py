@@ -10,7 +10,8 @@ All endpoints are protected and require authentication (can be added via depende
 """
 
 import logging
-from typing import List, Optional
+import asyncio
+from typing import List, Optional, Dict, Tuple
 from fastapi import (
     APIRouter,
     HTTPException,
@@ -38,6 +39,8 @@ from ....domain.projects.schemas import (
 from ....domain.projects.orchestration import ProjectOrchestrationService
 from ....domain.projects.file_storage import FileStorageService
 from ....domain.parsing.storage.document_store import DocumentStore
+from ....domain.progress.events import ProgressEvent, Stage, Status
+from .websocket import get_progress_publisher
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +53,9 @@ _orchestration_service: Optional[ProjectOrchestrationService] = None
 
 # Global file storage service instance (will be injected in main.py)
 _file_storage_service: Optional[FileStorageService] = None
+
+# Track background upload processing tasks
+_upload_processing_tasks: Dict[str, asyncio.Task] = {}
 
 
 def set_orchestration_service(service: ProjectOrchestrationService) -> None:
@@ -335,6 +341,7 @@ async def delete_project(
     """
     try:
         logger.info(f"Deleting project: {project_id}")
+        await services.clear_data(project_id)
         deleted = await services.delete(project_id)
 
         if not deleted:
@@ -471,6 +478,217 @@ async def update_project_status(
         )
 
 
+async def _process_uploaded_files_background(
+    job_id: str,
+    file_data: List[
+        Tuple[bytes, str, str, str]
+    ],  # (file_bytes, filename, doc_id, artifact_type)
+    project_id: str,
+    user_id: str,
+    store_in_pinecone: bool,
+):
+    """Process uploaded files in background with progress updates.
+
+    Args:
+        job_id: Unique job identifier for progress tracking
+        file_data: List of tuples (file_bytes, filename, doc_id, artifact_type)
+        project_id: Project identifier
+        user_id: User identifier
+        store_in_pinecone: Whether to store entities in Pinecone
+    """
+    logger.info(
+        f"[Background Task] Starting processing for job {job_id} with {len(file_data)} files"
+    )
+    try:
+        publisher = get_progress_publisher()
+        orchestration = _get_orchestration_service()
+
+        logger.info(
+            f"[Background Task] Retrieved publisher and orchestration service for job {job_id}"
+        )
+
+        total_files = len(file_data)
+        successful = 0
+        errors = []
+
+        # Emit start event
+        logger.info(f"[Background Task] Publishing start event for job {job_id}")
+        publisher.publish(
+            job_id,
+            ProgressEvent(
+                job_id=job_id,
+                stage=Stage.PROCESSING,
+                status=Status.STARTED,
+                progress=0,
+                seq=0,
+                meta={
+                    "project_id": project_id,
+                    "total_files": total_files,
+                    "current_stage": "Processing uploaded files",
+                },
+            ),
+        )
+        logger.info(f"[Background Task] Start event published for job {job_id}")
+
+        # Process each file sequentially
+        for idx, (file_bytes, filename, doc_id, artifact_type) in enumerate(
+            file_data, 1
+        ):
+            logger.info(
+                f"[Background Task] Processing file {idx}/{total_files}: {filename} (doc_id: {doc_id}, type: {artifact_type})"
+            )
+            try:
+                # Emit file start event
+                publisher.publish(
+                    job_id,
+                    ProgressEvent(
+                        job_id=job_id,
+                        stage=Stage.PROCESSING,
+                        status=Status.IN_PROGRESS,
+                        progress=int((idx - 1) / total_files * 100),
+                        seq=idx * 2 - 1,
+                        meta={
+                            "project_id": project_id,
+                            "current_file": filename,
+                            "file_index": idx,
+                            "total_files": total_files,
+                            "artifact_type": artifact_type,
+                            "current_stage": f"Processing {artifact_type} file {idx} of {total_files}: {filename}",
+                        },
+                    ),
+                )
+
+                if artifact_type == "base_case":
+                    # Process the file
+                    logger.info(
+                        f"[Background Task] Calling orchestration.process_base_case_file for {filename}"
+                    )
+                    result = await orchestration.process_base_case_file(
+                        file_bytes=file_bytes,
+                        filename=filename,
+                        file_id=doc_id,
+                        project_id=project_id,
+                        user_id=user_id,
+                        store_in_pinecone=store_in_pinecone,
+                    )
+                    logger.info(
+                        f"[Background Task] Processing complete for {filename}: {result.get('status', 'unknown')}"
+                    )
+                elif artifact_type == "tabular_data":
+                    # Process the file
+                    logger.info(
+                        f"[Background Task] Calling orchestration.process_tabular_data_file for {filename}"
+                    )
+                    result = await orchestration.process_tabular_data_file(
+                        file_bytes=file_bytes,
+                        filename=filename,
+                        file_id=doc_id,
+                        project_id=project_id,
+                        user_id=user_id,
+                        store_in_pinecone=store_in_pinecone,
+                    )
+                    logger.info(
+                        f"[Background Task] Processing complete for {filename}: {result.get('status', 'unknown')}"
+                    )
+                else:
+                    logger.warning(
+                        f"[Background Task] Unknown artifact_type '{artifact_type}' for file {filename}, skipping processing"
+                    )
+                    result = {
+                        "status": "skipped",
+                        "reason": f"Unknown artifact_type: {artifact_type}",
+                    }
+
+                successful += 1
+
+                # Emit file complete event
+                publisher.publish(
+                    job_id,
+                    ProgressEvent(
+                        job_id=job_id,
+                        stage=Stage.PROCESSING,
+                        status=Status.IN_PROGRESS,
+                        progress=int(idx / total_files * 100),
+                        seq=idx * 2,
+                        meta={
+                            "project_id": project_id,
+                            "current_file": filename,
+                            "file_index": idx,
+                            "total_files": total_files,
+                            "artifact_type": artifact_type,
+                            "current_stage": f"Completed {artifact_type} file {idx} of {total_files}",
+                            "tables_extracted": result.get("tables_extracted", 0),
+                            "entities_extracted": result.get("entities_extracted", 0),
+                        },
+                    ),
+                )
+
+            except Exception as e:
+                logger.error(f"Error processing file {filename}: {e}", exc_info=True)
+                errors.append(
+                    {
+                        "filename": filename,
+                        "doc_id": doc_id,
+                        "error": str(e),
+                    }
+                )
+
+        # Emit completion event
+        final_status = (
+            Status.COMPLETED
+            if successful == total_files
+            else (Status.COMPLETED if successful > 0 else Status.FAILED)
+        )
+
+        logger.info(
+            f"[Background Task] Processing complete for job {job_id}: {successful}/{total_files} files successful"
+        )
+        publisher.publish(
+            job_id,
+            ProgressEvent(
+                job_id=job_id,
+                stage=(
+                    Stage.COMPLETE if final_status == Status.COMPLETED else Stage.ERROR
+                ),
+                status=final_status,
+                progress=100,
+                seq=len(file_data) * 2 + 1,
+                meta={
+                    "project_id": project_id,
+                    "total_files": total_files,
+                    "successful_files": successful,
+                    "failed_files": len(errors),
+                    "errors": errors if errors else None,
+                    "current_stage": f"Processing complete: {successful}/{total_files} files processed successfully",
+                },
+            ),
+        )
+
+    except Exception as e:
+        logger.error(
+            f"Background processing failed for job {job_id}: {e}", exc_info=True
+        )
+        publisher.publish(
+            job_id,
+            ProgressEvent(
+                job_id=job_id,
+                stage=Stage.ERROR,
+                status=Status.FAILED,
+                progress=0,
+                seq=999,
+                meta={"error": str(e)},
+            ),
+        )
+    finally:
+        # Cleanup
+        logger.info(f"[Background Task] Cleaning up task for job {job_id}")
+        if job_id in _upload_processing_tasks:
+            del _upload_processing_tasks[job_id]
+            logger.info(
+                f"[Background Task] Task removed from tracking for job {job_id}"
+            )
+
+
 @projects_router.post(
     "/{project_id}/upload-files",
     summary="Upload files for a project",
@@ -540,8 +758,9 @@ async def upload_project_files(
         total_size = 0
         document_ids = []
 
-        # Store file bytes for tabular data processing (only PDFs can be processed currently)
-        tabular_file_data = []  # List of (file_bytes, filename, doc_id) tuples
+        # Store file bytes for processing (only PDFs can be processed currently)
+        # Combined list: (file_bytes, filename, doc_id, artifact_type)
+        files_to_process = []
 
         # Process base case files
         base_case_doc_ids = []
@@ -577,11 +796,28 @@ async def upload_project_files(
                     f"Uploaded and stored base case file: {file.filename} -> {doc_id}"
                 )
 
+                # Store file data for processing (only PDFs can be processed currently)
+                if file.content_type == "application/pdf":
+                    files_to_process.append(
+                        (
+                            file_bytes,
+                            file.filename or "unknown.pdf",
+                            doc_id,
+                            "base_case",
+                        )
+                    )
+                    logger.info(
+                        f"Added {file.filename} to processing queue (base_case)"
+                    )
+                else:
+                    logger.info(f"Skipping {file.filename} - not a PDF, cannot process")
+
         # Process tabular data files
         tabular_doc_ids = []
         if tabular_data_files:
             file_storage = _get_file_storage_service()
-            for file in tabular_data_files:
+
+            for idx, file in enumerate(tabular_data_files, 1):
                 if file.content_type not in ALLOWED_TABULAR_TYPES:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
@@ -613,9 +849,14 @@ async def upload_project_files(
 
                 # Store file data for processing (only PDFs can be processed currently)
                 if file.content_type == "application/pdf":
-                    tabular_file_data.append(
-                        (file_bytes, file.filename or "unknown", doc_id)
+                    files_to_process.append(
+                        (file_bytes, file.filename or "unknown", doc_id, "tabular_data")
                     )
+                    logger.info(
+                        f"Added {file.filename} to processing queue (tabular_data)"
+                    )
+                else:
+                    logger.info(f"Skipping {file.filename} - not a PDF, cannot process")
 
         # Validate at least one file was uploaded
         if not document_ids:
@@ -642,67 +883,105 @@ async def upload_project_files(
         # Update project with merged document lists
         update_patch = ProjectUpdate(**update_data)
         updated_project = await services.update(project_id, update_patch)
+        logger.info(
+            f"Updated project {project_id} with {len(base_case_doc_ids)} base case and {len(tabular_doc_ids)} tabular documents"
+        )
 
-        # Process tabular data files (extract tables and entities)
-        processing_results = []
-        if tabular_file_data:
-            orchestration = _get_orchestration_service()
-            for file_bytes, filename, doc_id in tabular_file_data:
+        # Process files in background if any PDFs were uploaded
+        if files_to_process:
+            # Generate unique job ID for background processing
+            job_id = str(uuid.uuid4())
+            logger.info(
+                f"Creating background task for job {job_id} with {len(files_to_process)} files "
+                f"({sum(1 for _, _, _, at in files_to_process if at == 'base_case')} base_case, "
+                f"{sum(1 for _, _, _, at in files_to_process if at == 'tabular_data')} tabular_data)"
+            )
+
+            # Publish start event
+            publisher = get_progress_publisher()
+            publisher.publish(
+                job_id,
+                ProgressEvent(
+                    job_id=job_id,
+                    stage=Stage.PROCESSING,
+                    status=Status.STARTED,
+                    progress=0,
+                    seq=0,
+                    meta={
+                        "project_id": project_id,
+                        "total_files": len(files_to_process),
+                        "current_stage": "Processing uploaded files",
+                    },
+                ),
+            )
+            logger.info(f"Start event published for job {job_id}")
+
+            # Create background task for file processing
+            task = asyncio.create_task(
+                _process_uploaded_files_background(
+                    job_id=job_id,
+                    file_data=files_to_process,
+                    project_id=project_id,
+                    user_id=user_id,
+                    store_in_pinecone=store_in_pinecone,
+                )
+            )
+            _upload_processing_tasks[job_id] = task
+
+            logger.info(
+                f"Task created: {task}, done={task.done()}, cancelled={task.cancelled()}"
+            )
+            logger.info(
+                f"Started background processing for {len(files_to_process)} files (job_id: {job_id})"
+            )
+
+            # Yield control to event loop to ensure task starts
+            await asyncio.sleep(0)
+
+            logger.info(
+                f"After sleep(0): task done={task.done()}, cancelled={task.cancelled()}"
+            )
+
+            # Check if task failed immediately
+            if task.done():
                 try:
-                    logger.info(
-                        f"Processing tabular data file: {filename} (doc_id: {doc_id})"
-                    )
-                    result = await orchestration.process_tabular_data_file(
-                        file_bytes=file_bytes,
-                        filename=filename,
-                        file_id=doc_id,
-                        project_id=project_id,
-                        user_id=user_id,
-                        store_in_pinecone=store_in_pinecone,
-                    )
-                    processing_results.append(result)
-                    logger.info(
-                        f"Successfully processed {filename}: {result.get('tables_extracted', 0)} tables, {result.get('entities_extracted', 0)} entities"
-                    )
+                    task.result()  # This will raise if there was an exception
+                    logger.info(f"Task completed immediately (this is unusual)")
                 except Exception as e:
-                    # Log error but don't fail the upload (file is already stored)
                     logger.error(
-                        f"Error processing tabular data file {filename}: {e}",
-                        exc_info=True,
+                        f"Task failed immediately with exception: {e}", exc_info=True
                     )
-                    processing_results.append(
-                        {
-                            "doc_id": doc_id,
-                            "filename": filename,
-                            "status": "error",
-                            "error": str(e),
-                        }
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail=f"Background processing failed to start: {str(e)}",
                     )
 
-        # Build response message
-        message = "Files uploaded successfully."
-        if processing_results:
-            successful = sum(
-                1 for r in processing_results if r.get("status") == "success"
-            )
-            total_tables = sum(r.get("tables_extracted", 0) for r in processing_results)
-            total_entities = sum(
-                r.get("entities_extracted", 0) for r in processing_results
-            )
-            if successful > 0:
-                message += f" Processed {successful} file(s): {total_tables} tables extracted, {total_entities} entities extracted."
-            if successful < len(processing_results):
-                message += f" {len(processing_results) - successful} file(s) had processing errors (check processing_results for details)."
+            logger.info(f"Background task created and scheduled for job {job_id}")
+            logger.info(f"Active tasks in tracker: {len(_upload_processing_tasks)}")
 
-        return {
-            "project_id": project_id,
-            "base_case_documents": base_case_doc_ids,
-            "tabular_data_documents": tabular_doc_ids,
-            "total_files": len(document_ids),
-            "total_size_bytes": total_size,
-            "message": message,
-            "processing_results": processing_results if processing_results else None,
-        }
+            # Return with job info
+            return {
+                "job_id": job_id,
+                "project_id": project_id,
+                "status": "queued",
+                "message": "Files uploaded successfully. Processing started in background.",
+                "websocket_url": f"/api/v1/ws/progress/{job_id}",
+                "base_case_documents": base_case_doc_ids,
+                "tabular_data_documents": tabular_doc_ids,
+                "total_files": len(document_ids),
+                "total_size_bytes": total_size,
+            }
+        else:
+            # No processing needed (no PDFs to process)
+            logger.info(f"No PDF files to process. Returning success response.")
+            return {
+                "project_id": project_id,
+                "base_case_documents": base_case_doc_ids,
+                "tabular_data_documents": tabular_doc_ids,
+                "total_files": len(document_ids),
+                "total_size_bytes": total_size,
+                "message": "Files uploaded successfully. No processing required.",
+            }
 
     except ValueError as e:
         logger.warning(f"Invalid project_id format: {project_id}")

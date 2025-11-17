@@ -3,6 +3,7 @@ import React, {
   useState,
   useImperativeHandle,
   forwardRef,
+  useCallback,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -28,8 +29,10 @@ import {
   selectProjectUpdating,
   selectProjectUploadingFiles,
   clearError,
+  fetchProjectById,
 } from "../../redux/projectsSlice";
 import { ProjectUpdate } from "../../types/api";
+import ProgressWidget from "../common/ProgressWidget";
 
 const OBJECTIVE_TYPES = [
   "increase production",
@@ -77,6 +80,7 @@ const SystemBaseDesignContent = forwardRef<
   const [tabularDataFiles, setTabularDataFiles] = useState<File[]>([]);
   const [objectiveError, setObjectiveError] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [uploadJobId, setUploadJobId] = useState<string | null>(null);
 
   /**
    * Initialize form with project data when project loads
@@ -261,6 +265,13 @@ const SystemBaseDesignContent = forwardRef<
       );
 
       if (uploadProjectFiles.fulfilled.match(result)) {
+        const response = result.payload;
+        
+        // If job_id is present, processing is happening in background
+        if (response.job_id) {
+          setUploadJobId(response.job_id);
+        }
+        
         // Clear file selections on success
         setBaseCaseFiles([]);
         setTabularDataFiles([]);
@@ -284,6 +295,18 @@ const SystemBaseDesignContent = forwardRef<
     [baseCaseFiles, tabularDataFiles]
   );
 
+  // Progress widget callbacks
+  const handleProgressDismiss = useCallback(() => {
+    setUploadJobId(null);
+  }, []);
+
+  const handleProgressComplete = useCallback(() => {
+    if (projectId) {
+      dispatch(fetchProjectById(projectId) as any);
+    }
+    setUploadJobId(null);
+  }, [projectId, dispatch]);
+
   if (!project || project.id !== projectId) {
     return (
       <Box sx={{ p: 2 }}>
@@ -294,6 +317,16 @@ const SystemBaseDesignContent = forwardRef<
 
   return (
     <Box xs={12} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* Progress Widget for File Processing */}
+      {uploadJobId && (
+        <ProgressWidget
+          jobId={uploadJobId}
+          title="File Processing"
+          onDismiss={handleProgressDismiss}
+          onComplete={handleProgressComplete}
+        />
+      )}
+
       {/* Objective Details and Document Selection - Side by Side */}
       <Grid
         container

@@ -349,7 +349,7 @@ TOOLS = [
     {
         "type": "function",
         "function": {
-            "name": "extract_recommendations_v2",
+            "name": "extract_recommendations",
             "description": "Extract recommendations for system redesign based on global objectives, including detailed specifications of relevant entities to extract",
             "parameters": {
                 "type": "object",

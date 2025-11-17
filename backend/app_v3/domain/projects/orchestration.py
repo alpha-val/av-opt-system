@@ -262,16 +262,14 @@ class ProjectOrchestrationService:
 
             document_store = DocumentStore()
             extracted_entities = document_store.get_entities_by_doc_id(document_id)
-            
+
             # Update entities and relations with scenario_id
             if extracted_entities:
                 entities_updated = document_store.update_entities_scenario_id(
-                    document_id=document_id,
-                    scenario_id=scenario_id
+                    document_id=document_id, scenario_id=scenario_id
                 )
                 relations_updated = document_store.update_relations_scenario_id(
-                    document_id=document_id,
-                    scenario_id=scenario_id
+                    document_id=document_id, scenario_id=scenario_id
                 )
                 logger.info(
                     f"Updated {entities_updated} entities and {relations_updated} relations "
@@ -472,10 +470,10 @@ class ProjectOrchestrationService:
         try:
             # Build prompt for recommendations extraction
             objective_context = f"""
-GLOBAL OBJECTIVE:
-- Type: {global_objective_type}
-- Target: {global_objective_target}
-"""
+            GLOBAL OBJECTIVE:
+            - Type: {global_objective_type}
+            - Target: {global_objective_target}
+            """
             if objective_description:
                 objective_context += f"- Description: {objective_description}\n"
 
@@ -488,30 +486,30 @@ GLOBAL OBJECTIVE:
             )
 
             recommendations_prompt = f"""
-You are an expert process engineer and cost estimator analyzing a base case engineering report.
+            You are an expert process engineer and cost estimator analyzing a base case engineering report.
 
-{objective_context}
+            {objective_context}
 
-TASK:
-1. Analyze the base case document and extracted entities in the context of the global objective.
-2. Generate specific recommendations for system redesign to meet the objective.
-3. Identify which entities are most relevant for cost estimation queries.
+            TASK:
+            1. Analyze the base case document and extracted entities in the context of the global objective.
+            2. Generate specific recommendations for system redesign to meet the objective.
+            3. Identify which entities are most relevant for cost estimation queries.
 
-BASE CASE TEXT:
-{text_for_analysis}
+            BASE CASE TEXT:
+            {text_for_analysis}
 
-EXTRACTED ENTITIES SUMMARY:
-{entities_summary}
+            EXTRACTED ENTITIES SUMMARY:
+            {entities_summary}
 
-INSTRUCTIONS:
-- Generate recommendations that address what needs to change to meet the objective.
-- For each recommendation, identify which entities should be modified/replaced.
-- Prioritize recommendations based on impact and feasibility.
-- Identify entities that are critical for cost estimation (equipment, materials, processes with cost implications).
-- Provide cost relevance scores (0.0-1.0) for each entity based on its importance for costing.
+            INSTRUCTIONS:
+            - Generate recommendations that address what needs to change to meet the objective.
+            - For each recommendation, identify which entities should be modified/replaced.
+            - Prioritize recommendations based on impact and feasibility.
+            - Identify entities that are critical for cost estimation (equipment, materials, processes with cost implications).
+            - Provide cost relevance scores (0.0-1.0) for each entity based on its importance for costing.
 
-Use the extract_recommendations tool to provide your analysis.
-"""
+            Use the extract_recommendations tool to provide your analysis.
+            """
 
             system_prompt = SystemMessage(
                 content="You are an expert process engineer and cost estimator. Analyze base case documents and provide recommendations for system redesign based on global objectives."
@@ -678,13 +676,13 @@ Use the extract_recommendations tool to provide your analysis.
     ) -> str:
         """
         Store document summary in MongoDB.
-        
+
         Args:
             document_id: Document identifier
             project_id: Project identifier
             scenario_id: Scenario identifier
             summary: Summary dictionary
-            
+
         Returns:
             Summary document ID
         """
@@ -725,7 +723,7 @@ Use the extract_recommendations tool to provide your analysis.
     ) -> str:
         """
         Store recommendations in MongoDB.
-        
+
         Args:
             document_id: Document identifier
             project_id: Project identifier
@@ -733,7 +731,7 @@ Use the extract_recommendations tool to provide your analysis.
             global_objective_type: Type of global objective
             global_objective_target: Target magnitude of change
             recommendations: List of recommendation dictionaries
-            
+
         Returns:
             Recommendations document ID
         """
@@ -831,23 +829,23 @@ Use the extract_recommendations tool to provide your analysis.
         # Placeholder implementation
         return f"""# Project Report
 
-## Project: {project_id}
+            ## Project: {project_id}
 
-This is a placeholder report. Actual report generation will be implemented later.
+            This is a placeholder report. Actual report generation will be implemented later.
 
-### Project Details
-- Status: Processing
-- Report generated: Placeholder
+            ### Project Details
+            - Status: Processing
+            - Report generated: Placeholder
 
-### Entities
-No entities extracted yet.
+            ### Entities
+            No entities extracted yet.
 
-### Cost Estimates
-No cost estimates available yet.
+            ### Cost Estimates
+            No cost estimates available yet.
 
-### Recommendations
-Report generation is a placeholder.
-"""
+            ### Recommendations
+            Report generation is a placeholder.
+            """
 
     # Process a tabular data file
     async def process_tabular_data_file(
@@ -936,6 +934,106 @@ Report generation is a placeholder.
                 "error": str(e),
             }
 
+    # Process a tabular data file
+    async def process_base_case_file(
+        self,
+        file_bytes: bytes,
+        filename: str,
+        file_id: str,
+        project_id: str,
+        user_id: str,
+        store_in_pinecone: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Process a base case file: extract text, extract entities, and store in MongoDB.
+
+        This method orchestrates the complete processing pipeline for a base case file:
+        1. Extract text from PDF using TextExtractor
+        2. Chunk text using specified chunking strategy
+        3. Extract entities using LLM via EntityExtractor with MSIO ontology
+        4. Validate and normalize entities
+        5. Store chunks, entities, and edges in MongoDB
+        6. Optionally store chunks and entities in Pinecone (disabled by default)
+
+        Args:
+            file_bytes: File content as bytes
+            filename: Original filename
+            file_id: GridFS file ID (used as doc_id)
+            project_id: Project identifier
+            user_id: User identifier
+            store_in_pinecone: Whether to store chunks and entities in Pinecone (default: False)
+
+        Returns:
+            Dictionary with processing results including:
+            - doc_id: Document identifier
+            - filename: Original filename
+            - file_sha256: SHA256 hash of the file
+            - pages: Number of pages extracted
+            - chunks_created: Number of chunks created
+            - chunks_stored: Number of chunks stored in MongoDB
+            - chunks_vectorized: Number of chunks stored in Pinecone (if enabled)
+            - entities_extracted: Number of entities extracted
+            - entities_stored: Number of entities stored in MongoDB
+            - entities_vectorized: Number of entities stored in Pinecone (if enabled)
+            - edges_extracted: Number of edges/relations extracted
+            - edges_stored: Number of edges stored in MongoDB
+            - status: Processing status ("success" or "error")
+            - error: Error message if processing failed
+
+        Raises:
+            RuntimeError: If DocumentProcessingService is not initialized
+        """
+        if not self._document_processing_service:
+            raise RuntimeError("DocumentProcessingService not initialized")
+
+        logger.info(
+            f"Processing base case file: {filename} (file_id: {file_id}, "
+            f"project_id: {project_id}, store_in_pinecone: {store_in_pinecone})"
+        )
+
+        try:
+            # Process the base case document
+            result = self._document_processing_service.process_base_case_document(
+                pdf_bytes=file_bytes,
+                filename=filename,
+                doc_id=file_id,
+                project_id=project_id,
+                user_id=user_id,
+                store_in_pinecone=store_in_pinecone,
+            )
+
+            logger.info(
+                f"Successfully processed base case file {filename}: "
+                f"{result.get('pages', 0)} pages, "
+                f"{result.get('chunks_created', 0)} chunks, "
+                f"{result.get('entities_extracted', 0)} entities, "
+                f"{result.get('edges_extracted', 0)} edges"
+            )
+
+            return result
+
+        except Exception as e:
+            logger.error(
+                f"Error processing base case file {filename}: {e}", exc_info=True
+            )
+            return {
+                "doc_id": file_id,
+                "filename": filename,
+                "file_sha256": None,
+                "pages": 0,
+                "chunks_created": 0,
+                "chunks_stored": 0,
+                "chunks_vectorized": 0,
+                "entities_extracted": 0,
+                "entities_stored": 0,
+                "entities_vectorized": 0,
+                "edges_extracted": 0,
+                "edges_stored": 0,
+                "validation_warnings": [],
+                "status": "error",
+                "error": str(e),
+            }
+
     # Extract entities from a base case document using V2 workflow (recommendations-first approach)
     async def extract_base_case_entities_v2(
         self,
@@ -966,8 +1064,8 @@ Report generation is a placeholder.
             objective_description: Optional description of the global objective
             extract_summary: Whether to extract document summary (default: False)
             extraction_scope: "exact" (only specified entities), "with_relationships"
-                             (entities + direct relationships), or "with_context"
-                             (entities + related entities in same context)
+            (entities + direct relationships), or "with_context"
+            (entities + related entities in same context)
 
         Returns:
             Dictionary with extracted entities, recommendations, and metadata
@@ -1008,15 +1106,17 @@ Report generation is a placeholder.
             full_text = text_extractor.extract_full_text(pages_clean)
 
             # Step 3: Extract recommendations and identify relevant entities (Step 1 of V2 workflow)
-            recommendations_result = await self._extract_recommendations_with_entities_v2(
-                full_text=full_text,
-                global_objective_type=global_objective_type,
-                global_objective_target=global_objective_target,
-                objective_description=objective_description,
-                document_id=document_id,
-                project_id=project_id,
-                scenario_id=scenario_id,
-                user_id=user_id,
+            recommendations_result = (
+                await self._extract_recommendations_with_entities_v2(
+                    full_text=full_text,
+                    global_objective_type=global_objective_type,
+                    global_objective_target=global_objective_target,
+                    objective_description=objective_description,
+                    document_id=document_id,
+                    project_id=project_id,
+                    scenario_id=scenario_id,
+                    user_id=user_id,
+                )
             )
 
             recommendations = recommendations_result.get("recommendations", [])
@@ -1155,10 +1255,10 @@ Report generation is a placeholder.
         try:
             # Build prompt for recommendations extraction
             objective_context = f"""
-GLOBAL OBJECTIVE:
-- Type: {global_objective_type}
-- Target: {global_objective_target}
-"""
+                GLOBAL OBJECTIVE:
+                - Type: {global_objective_type}
+                - Target: {global_objective_target}
+                """
             if objective_description:
                 objective_context += f"- Description: {objective_description}\n"
 
@@ -1168,45 +1268,45 @@ GLOBAL OBJECTIVE:
             )
 
             recommendations_prompt = f"""
-You are an expert process engineer and cost estimator analyzing a base case engineering report.
+            You are an expert process engineer and cost estimator analyzing a base case engineering report.
 
-{objective_context}
+            {objective_context}
 
-TASK:
-1. Analyze the base case document in the context of the global objective.
-2. Generate specific recommendations for system redesign to meet the objective.
-3. Identify which entities are most relevant for achieving the recommendations.
-4. For each relevant entity, provide a COMPLETE NODE STRUCTURE with:
-   - id: unique identifier for the entity
-   - type: entity type from NODE_TYPES
-   - properties: complete properties object including:
-     * name: entity name
-     * discipline, category, subcategory, entity: MSIO classification (REQUIRED)
-     * All applicable properties from NODE_PROPERTIES as found in the text
-     * expected_attributes: list of attribute names to extract
-     * evidence_locations: text snippets, page references, section anchors
-     * extraction_rationale: why this entity is relevant
-     * extraction_priority: priority level (high/medium/low)
+            TASK:
+            1. Analyze the base case document in the context of the global objective.
+            2. Generate specific recommendations for system redesign to meet the objective.
+            3. Identify which entities are most relevant for achieving the recommendations.
+            4. For each relevant entity, provide a COMPLETE NODE STRUCTURE with:
+            - id: unique identifier for the entity
+            - type: entity type from NODE_TYPES
+            - properties: complete properties object including:
+                * name: entity name
+                * discipline, category, subcategory, entity: MSIO classification (REQUIRED)
+                * All applicable properties from NODE_PROPERTIES as found in the text
+                * expected_attributes: list of attribute names to extract
+                * evidence_locations: text snippets, page references, section anchors
+                * extraction_rationale: why this entity is relevant
+                * extraction_priority: priority level (high/medium/low)
 
-BASE CASE TEXT:
-{text_for_analysis}
+            BASE CASE TEXT:
+            {text_for_analysis}
 
-INSTRUCTIONS:
-- Generate recommendations that address what needs to change to meet the objective.
-- For each recommendation, identify ALL entities that should be modified/replaced.
-- Prioritize recommendations based on impact and feasibility.
-- For each relevant entity, provide a COMPLETE NODE STRUCTURE following the extract_nodes format:
-  * Include id, type, and properties fields
-  * Include all applicable properties from NODE_PROPERTIES
-  * Include complete MSIO classification (discipline, category, subcategory, entity)
-  * Include expected_attributes, evidence_locations, extraction_rationale, extraction_priority in properties
-- Include evidence locations (text snippets, page numbers, section references) to guide entity extraction.
-- List expected attributes that should be extracted for each entity.
-- Be comprehensive: identify all entities relevant to the recommendations.
-- ALL relevant_entities must follow the exact structure: id, type, properties (with all NODE_PROPERTIES)
+            INSTRUCTIONS:
+            - Generate recommendations that address what needs to change to meet the objective.
+            - For each recommendation, identify ALL entities that should be modified/replaced.
+            - Prioritize recommendations based on impact and feasibility.
+            - For each relevant entity, provide a COMPLETE NODE STRUCTURE following the extract_nodes format:
+            * Include id, type, and properties fields
+            * Include all applicable properties from NODE_PROPERTIES
+            * Include complete MSIO classification (discipline, category, subcategory, entity)
+            * Include expected_attributes, evidence_locations, extraction_rationale, extraction_priority in properties
+            - Include evidence locations (text snippets, page numbers, section references) to guide entity extraction.
+            - List expected attributes that should be extracted for each entity.
+            - Be comprehensive: identify all entities relevant to the recommendations.
+            - ALL relevant_entities must follow the exact structure: id, type, properties (with all NODE_PROPERTIES)
 
-Use the extract_recommendations_v2 tool to provide your analysis.
-"""
+            Use the extract_recommendations tool to provide your analysis.
+            """
 
             system_prompt = SystemMessage(
                 content="You are an expert process engineer and cost estimator. Analyze base case documents and provide recommendations for system redesign based on global objectives, including detailed specifications of relevant entities to extract."
@@ -1224,7 +1324,7 @@ Use the extract_recommendations_v2 tool to provide your analysis.
                 fn = call.get("function", {})
                 name = fn.get("name")
 
-                if name == "extract_recommendations_v2":
+                if name == "extract_recommendations":
                     arguments = fn.get("arguments", "{}")
                     if is_valid_json(arguments):
                         payload = json.loads(arguments)
@@ -1277,6 +1377,36 @@ Use the extract_recommendations_v2 tool to provide your analysis.
                 "relevant_entities": [],
                 "recommendations_id": "",
             }
+
+
+    def dedupe_nodes_by_attributes_and_msio(
+        self,
+        nodes: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        """
+        De-duplicate nodes based on attributes and MSIO categorization.
+        """
+        deduped_nodes = []
+        seen_nodes = set()
+        try:
+            for node in nodes:
+                node_key = (
+                    node.get("properties", {}).get("name"),
+                    node.get("properties", {}).get("discipline"),
+                    node.get("properties", {}).get("category"),
+                    node.get("properties", {}).get("subcategory"),
+                    node.get("properties", {}).get("entity"),
+                )
+                if node_key not in seen_nodes:
+                    seen_nodes.add(node_key)
+                    deduped_nodes.append(node)
+                else:
+                    logger.debug(f"Skipping duplicate node: {node_key}")
+            return deduped_nodes
+        except Exception as e:
+            logger.error(f"Error deduplicating nodes: {e}")
+            return nodes
+
 
     async def _extract_targeted_entities_v2(
         self,
@@ -1351,6 +1481,9 @@ Use the extract_recommendations_v2 tool to provide your analysis.
             nodes = extraction_result.get("nodes", [])
             edges = extraction_result.get("edges", [])
 
+            # De-dupe nodes based on attributes and MSIO categorization
+            nodes = self.dedupe_nodes_by_attributes_and_msio(nodes)
+
             # Generate UUID IDs for nodes that have non-UUID IDs (e.g., "E1", "E2", etc.)
             id_mapping = {}  # Map old IDs to new UUID IDs
             for node in nodes:
@@ -1376,34 +1509,45 @@ Use the extract_recommendations_v2 tool to provide your analysis.
                             f"Replaced non-UUID ID '{old_id}' with UUID '{new_id}' "
                             f"for node type '{node.get('type', 'Unknown')}'"
                         )
-            
+
             # Update edge source/target references to use new UUID IDs
             for edge in edges:
                 source = edge.get("source", "")
                 target = edge.get("target", "")
                 if source in id_mapping:
                     edge["source"] = id_mapping[source]
-                    logger.debug(f"Updated edge source from '{source}' to '{id_mapping[source]}'")
+                    logger.debug(
+                        f"Updated edge source from '{source}' to '{id_mapping[source]}'"
+                    )
                 if target in id_mapping:
                     edge["target"] = id_mapping[target]
-                    logger.debug(f"Updated edge target from '{target}' to '{id_mapping[target]}'")
+                    logger.debug(
+                        f"Updated edge target from '{target}' to '{id_mapping[target]}'"
+                    )
 
             # Validate and add metadata to entities and edges
             validated_nodes = []
             for node in nodes:
                 # Ensure node has complete structure (id, type, properties)
                 if not node.get("id"):
-                    logger.warning(f"Node missing id, skipping: {node.get('type', 'Unknown')}")
+                    logger.warning(
+                        f"Node missing id, skipping: {node.get('type', 'Unknown')}"
+                    )
                     continue
                 if not node.get("type"):
-                    logger.warning(f"Node missing type, skipping: {node.get('id', 'Unknown')}")
+                    logger.warning(
+                        f"Node missing type, skipping: {node.get('id', 'Unknown')}"
+                    )
                     continue
                 if not node.get("properties"):
                     node["properties"] = {}
-                
+
                 # Ensure MSIO classification is present
                 props = node["properties"]
-                if not all(key in props for key in ["discipline", "category", "subcategory", "entity"]):
+                if not all(
+                    key in props
+                    for key in ["discipline", "category", "subcategory", "entity"]
+                ):
                     logger.warning(
                         f"Node {node.get('id')} missing MSIO classification, "
                         f"attempting to infer from relevant_entities"
@@ -1411,18 +1555,21 @@ Use the extract_recommendations_v2 tool to provide your analysis.
                     # Try to match with relevant_entities to get MSIO classification
                     for rel_entity in relevant_entities:
                         rel_props = rel_entity.get("properties", {})
-                        if (rel_props.get("name") == props.get("name") or
-                            rel_entity.get("id") == node.get("id")):
+                        if rel_props.get("name") == props.get("name") or rel_entity.get(
+                            "id"
+                        ) == node.get("id"):
                             props.setdefault("discipline", rel_props.get("discipline", ""))
                             props.setdefault("category", rel_props.get("category", ""))
-                            props.setdefault("subcategory", rel_props.get("subcategory", ""))
+                            props.setdefault(
+                                "subcategory", rel_props.get("subcategory", "")
+                            )
                             props.setdefault("entity", rel_props.get("entity", ""))
                             break
-                
+
                 # Add chunk metadata
                 props.update(chunk_metadata)
                 validated_nodes.append(node)
-            
+
             nodes = validated_nodes
 
             for edge in edges:
@@ -1462,6 +1609,7 @@ Use the extract_recommendations_v2 tool to provide your analysis.
                 "entities_stored": 0,
                 "edges_stored": 0,
             }
+
 
     async def _store_recommendations_v2(
         self,
@@ -1520,6 +1668,434 @@ Use the extract_recommendations_v2 tool to provide your analysis.
         except Exception as e:
             logger.error(
                 f"Error storing recommendations (V2) for document {document_id}: {e}",
+                exc_info=True,
+            )
+            return ""
+
+        # ============================================================================
+        # V3 Analysis Workflow Functions
+        # ============================================================================
+
+
+    async def _read_base_case_documents_v3(
+        self,
+        document_ids: List[str],
+        file_storage_service,
+    ) -> List[Dict[str, Any]]:
+        """
+        Retrieve base case documents from GridFS.
+
+        Args:
+            document_ids: List of document IDs (GridFS file IDs)
+            file_storage_service: FileStorageService instance
+
+        Returns:
+            List of dictionaries with file_bytes, filename, document_id
+        """
+        documents = []
+        for doc_id in document_ids:
+            try:
+                file_bytes = file_storage_service.get_file(doc_id)
+                if file_bytes:
+                    metadata = file_storage_service.get_file_metadata(doc_id)
+                    filename = (
+                        metadata.get("filename", "unknown.pdf")
+                        if metadata
+                        else "unknown.pdf"
+                    )
+                    documents.append(
+                        {
+                            "file_bytes": file_bytes,
+                            "filename": filename,
+                            "document_id": doc_id,
+                        }
+                    )
+                    logger.info(
+                        f"Retrieved base case document: {filename} ({doc_id}, {len(file_bytes)} bytes)"
+                    )
+                else:
+                    logger.warning(f"Failed to retrieve base case document: {doc_id}")
+            except Exception as e:
+                logger.error(
+                    f"Error retrieving document {doc_id}: {e}",
+                    exc_info=True,
+                )
+        return documents
+
+
+    async def _extract_recommendations_v3(
+        self,
+        full_text: str,
+        global_objective_type: str,
+        global_objective_target: str,
+        objective_description: Optional[str],
+        document_id: str,
+    ) -> Dict[str, Any]:
+        """
+        Extract recommendations using LLM (simplified version, no entity extraction).
+
+        Args:
+            full_text: Full text content of the document
+            global_objective_type: Type of global objective
+            global_objective_target: Target magnitude of change
+            objective_description: Optional description of the global objective
+            document_id: Document identifier
+
+        Returns:
+            Dictionary with recommendations and recommendations_id
+        """
+        logger.info(
+            f"Extracting recommendations (V3) for objective: {global_objective_type} ({global_objective_target})"
+        )
+
+        try:
+            # Build prompt for recommendations extraction
+            objective_context = f"""
+                GLOBAL OBJECTIVE:
+                - Type: {global_objective_type}
+                - Target: {global_objective_target}
+                """
+            if objective_description:
+                objective_context += f"- Description: {objective_description}\n"
+
+            # Limit text to avoid token limits (keep first 50000 chars)
+            text_for_analysis = full_text[:50000] if len(full_text) > 50000 else full_text
+
+            recommendations_prompt = f"""
+            You are an expert process engineer and cost estimator analyzing a base case engineering report.
+
+            {objective_context}
+
+            TASK:
+            1. Analyze the base case document in the context of the global objective.
+            2. Generate specific recommendations for system redesign to meet the objective.
+            3. Identify which entities are most relevant for achieving the recommendations.
+            4. For each relevant entity, provide a COMPLETE NODE STRUCTURE with:
+            - id: unique identifier for the entity
+            - type: entity type from NODE_TYPES
+            - properties: complete properties object including:
+                * name: entity name
+                * discipline, category, subcategory, entity: MSIO classification (REQUIRED)
+                * All applicable properties from NODE_PROPERTIES as found in the text
+                * expected_attributes: list of attribute names to extract
+                * evidence_locations: text snippets, page references, section anchors
+                * extraction_rationale: why this entity is relevant
+                * extraction_priority: priority level (high/medium/low)
+
+            BASE CASE TEXT:
+            {text_for_analysis}
+
+            INSTRUCTIONS:
+            - Generate recommendations that address what needs to change to meet the objective.
+            - For each recommendation, identify ALL entities that should be modified/replaced.
+            - Prioritize recommendations based on impact and feasibility.
+            - For each relevant entity, provide a COMPLETE NODE STRUCTURE following the extract_nodes format:
+            * Include id, type, and properties fields
+            * Include all applicable properties from NODE_PROPERTIES
+            * Include complete MSIO classification (discipline, category, subcategory, entity)
+            * Include expected_attributes, evidence_locations, extraction_rationale, extraction_priority in properties
+            - Include evidence locations (text snippets, page numbers, section references) to guide entity extraction.
+            - List expected attributes that should be extracted for each entity.
+            - Be comprehensive: identify all entities relevant to the recommendations.
+            - ALL relevant_entities must follow the exact structure: id, type, properties (with all NODE_PROPERTIES)
+
+            Use the extract_recommendations tool to provide your analysis.
+            """
+
+            system_prompt = SystemMessage(
+                content="You are an expert process engineer and cost estimator. Analyze base case documents and provide recommendations for system redesign based on global objectives, including queryable entity information for MongoDB lookup."
+            )
+            human_message = HumanMessage(content=recommendations_prompt)
+
+            messages = [system_prompt, human_message]
+            resp = self._llm.invoke(messages)
+
+            # Process tool calls
+            recommendations = []
+            entities_for_costing = []
+
+            for call in resp.additional_kwargs.get("tool_calls", []):
+                fn = call.get("function", {})
+                name = fn.get("name")
+
+                if name == "extract_recommendations":
+                    arguments = fn.get("arguments", "{}")
+                    if is_valid_json(arguments):
+                        payload = json.loads(arguments)
+                        payload = sanitize_for_json(payload)
+                        recommendations = payload.get("recommendations", [])
+                        entities_for_costing = payload.get("relevant_entities", [])
+                        break
+
+            # If no recommendations extracted, log warning
+            if not recommendations:
+                logger.warning(f"No recommendations extracted for document {document_id}")
+
+            logger.info(
+                f"Extracted {len(recommendations)} recommendations and "
+                f"{len(entities_for_costing)} entities for costing"
+            )
+
+            return {
+                "recommendations": recommendations,
+                "entities_for_costing": entities_for_costing,
+            }
+
+        except Exception as e:
+            logger.error(
+                f"Error extracting recommendations (V3) for document {document_id}: {e}",
+                exc_info=True,
+            )
+            return {
+                "recommendations": [],
+                "entities_for_costing": [],
+            }
+
+
+    async def _retrieve_relevant_entities_v3(
+        self,
+        project_id: str,
+        scenario_id: str,
+        recommendations: List[Dict[str, Any]],
+        entities_for_costing: List[Dict[str, Any]],
+        artifact_type: str = "base_case",
+    ) -> List[Dict[str, Any]]:
+        """
+        Query MongoDB for entities based on recommendations, create placeholders if no matches.
+
+        Args:
+            project_id: Project identifier
+            scenario_id: Scenario identifier
+            recommendations: List of recommendation dictionaries
+            entities_for_costing: List of entity specifications from recommendations extraction
+            artifact_type: Type of artifact (default: "base_case")
+
+        Returns:
+            List of entity documents (matched + placeholders)
+        """
+        from ..parsing.storage.document_store import DocumentStore
+
+        document_store = DocumentStore()
+        matched_entities = []
+        placeholder_entities = []
+
+        try:
+            # Use entities_for_costing directly (passed from recommendations extraction)
+            all_entities_for_costing = entities_for_costing
+
+            # If no entities_for_costing, try to extract from recommendation structure
+            if not all_entities_for_costing:
+                logger.warning(
+                    "No entities_for_costing found, attempting to extract from recommendation structure"
+                )
+                # Try to extract entity information from recommendation descriptions
+                # Look for affected_entities in recommendations
+                for rec in recommendations:
+                    affected_entities = rec.get("affected_entities", [])
+                    if affected_entities:
+                        # Create basic entity specs from affected_entities names
+                        for entity_name in affected_entities:
+                            all_entities_for_costing.append(
+                                {
+                                    "_id": f"E{len(all_entities_for_costing) + 1}",
+                                    "type": "Unknown",
+                                    "properties": {
+                                        "name": entity_name,
+                                        "discipline": "",
+                                        "category": "",
+                                        "subcategory": "",
+                                        "entity": "",
+                                    },
+                                }
+                            )
+
+            # Build MongoDB queries for each entity specification
+            for entity_spec in all_entities_for_costing:
+                query = {
+                    "properties.project_id": project_id,
+                    "properties.scenario_id": scenario_id,
+                    "properties.artifact_type": artifact_type,
+                }
+
+                # Extract properties from entity spec (format: {_id, type, properties: {...}})
+                properties = entity_spec.get("properties", {})
+                
+                # Match by entity name
+                entity_name = properties.get("name")
+                if entity_name:
+                    query["properties.name"] = {"$regex": entity_name, "$options": "i"}
+
+                # Match by MSIO classification (directly from properties)
+                if properties.get("discipline"):
+                    query["properties.discipline"] = properties["discipline"]
+                if properties.get("category"):
+                    query["properties.category"] = properties["category"]
+                if properties.get("subcategory"):
+                    query["properties.subcategory"] = properties["subcategory"]
+                if properties.get("entity"):
+                    query["properties.entity"] = properties["entity"]
+
+                # Match by entity type (at top level)
+                entity_type = entity_spec.get("type")
+                if entity_type:
+                    query["type"] = entity_type
+
+                # Query MongoDB
+                found_entities = list(document_store._db.entities.find(query))
+
+                if found_entities:
+                    matched_entities.extend(found_entities)
+                    logger.info(
+                        f"Found {len(found_entities)} matching entities for {entity_name or 'unknown'}"
+                    )
+                else:
+                    # Create placeholder entity
+                    placeholder = self._create_placeholder_entity(
+                        entity_spec, project_id, scenario_id, artifact_type
+                    )
+                    placeholder_entities.append(placeholder)
+                    logger.info(
+                        f"Created placeholder entity for {entity_name or 'unknown'}"
+                    )
+
+            # Remove duplicates from matched_entities (by _id)
+            seen_ids = set()
+            unique_matched = []
+            for entity in matched_entities:
+                entity_id = entity.get("_id") or entity.get("id")
+                if entity_id and entity_id not in seen_ids:
+                    seen_ids.add(entity_id)
+                    unique_matched.append(entity)
+
+            logger.info(
+                f"Retrieved {len(unique_matched)} matched entities and "
+                f"created {len(placeholder_entities)} placeholder entities"
+            )
+
+            return unique_matched + placeholder_entities
+
+        except Exception as e:
+            logger.error(
+                f"Error retrieving relevant entities (V3): {e}",
+                exc_info=True,
+            )
+            # Return placeholders even on error
+            return placeholder_entities
+
+
+    def _create_placeholder_entity(
+        self,
+        entity_spec: Dict[str, Any],
+        project_id: str,
+        scenario_id: str,
+        artifact_type: str,
+    ) -> Dict[str, Any]:
+        """
+        Create a placeholder entity from recommendation specification.
+
+        Args:
+            entity_spec: Entity specification from recommendations (format: {_id, type, properties: {...}})
+            project_id: Project identifier
+            scenario_id: Scenario identifier
+            artifact_type: Type of artifact
+
+        Returns:
+            Placeholder entity dictionary
+        """
+        # Use existing _id from entity_spec if available, otherwise generate new UUID
+        entity_id = entity_spec.get("_id") or entity_spec.get("id") or str(uuid.uuid4())
+        
+        # Extract properties from entity spec (format: {_id, type, properties: {...}})
+        properties = entity_spec.get("properties", {})
+        entity_name = properties.get("name", "Unknown Entity")
+        entity_type = entity_spec.get("type", "Unknown")
+
+        placeholder = {
+            "_id": entity_id,
+            "id": entity_id,
+            "type": entity_type,
+            "properties": {
+                "name": entity_name,
+                "discipline": properties.get("discipline", ""),
+                "category": properties.get("category", ""),
+                "subcategory": properties.get("subcategory", ""),
+                "entity": properties.get("entity", ""),
+                "project_id": project_id,
+                "scenario_id": scenario_id,
+                "artifact_type": artifact_type,
+                "is_placeholder": True,
+                "attributes": [],
+            },
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        # Preserve additional properties from entity_spec if available
+        # (e.g., expected_attributes, evidence_locations, extraction_rationale, extraction_priority)
+        for key in ["expected_attributes", "evidence_locations", "extraction_rationale", "extraction_priority"]:
+            if key in properties:
+                placeholder["properties"][key] = properties[key]
+
+        return placeholder
+
+
+    async def _store_recommendations_v3(
+        self,
+        document_id: str,
+        project_id: str,
+        scenario_id: str,
+        user_id: str,
+        global_objective_type: str,
+        global_objective_target: str,
+        recommendations: List[Dict[str, Any]],
+        relevant_entities: List[Dict[str, Any]],
+    ) -> str:
+        """
+        Store recommendations in MongoDB (V3 format).
+
+        Args:
+            document_id: Document identifier
+            project_id: Project identifier
+            scenario_id: Scenario identifier
+            user_id: User identifier
+            global_objective_type: Type of global objective
+            global_objective_target: Target magnitude of change
+            recommendations: List of recommendation dictionaries
+            relevant_entities: List of relevant entities from MongoDB query
+
+        Returns:
+            Recommendations document ID
+        """
+        try:
+            recommendations_id = str(uuid.uuid4())
+            recommendations_doc = {
+                "_id": recommendations_id,
+                "id": recommendations_id,
+                "document_id": document_id,
+                "project_id": project_id,
+                "scenario_id": scenario_id,
+                "user_id": user_id,
+                "global_objective_type": global_objective_type,
+                "global_objective_target": global_objective_target,
+                "recommendations": recommendations,
+                "relevant_entities": relevant_entities,
+                "workflow_version": "v3",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+
+            db().base_case_recommendations.replace_one(
+                {"_id": recommendations_id}, recommendations_doc, upsert=True
+            )
+
+            logger.info(
+                f"Stored recommendations (V3) {recommendations_id} for document {document_id}"
+            )
+            return recommendations_id
+
+        except Exception as e:
+            logger.error(
+                f"Error storing recommendations (V3) for document {document_id}: {e}",
                 exc_info=True,
             )
             return ""

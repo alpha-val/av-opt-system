@@ -433,4 +433,33 @@ class DocumentStore:
         updated_count = result.modified_count
         logger.info(f"Updated {updated_count} relations with scenario_id {scenario_id} for doc_id: {document_id}")
         return updated_count
+    
+    def get_entities_by_scenario(
+        self,
+        project_id: str,
+        scenario_id: str,
+        artifact_type: str = "base_case",
+    ) -> List[Dict[str, Any]]:
+        """
+        Get all entities for a scenario by project_id, scenario_id, and artifact_type.
+        
+        Args:
+            project_id: Project identifier
+            scenario_id: Scenario identifier
+            artifact_type: Type of artifact (default: "base_case")
+            
+        Returns:
+            List of entity dictionaries
+        """
+        query = {
+            "properties.project_id": project_id,
+            "properties.scenario_id": scenario_id,
+            "properties.artifact_type": artifact_type,
+        }
+        entities = list(self._db.entities.find(query))
+        logger.info(
+            f"Retrieved {len(entities)} entities for project_id={project_id}, "
+            f"scenario_id={scenario_id}, artifact_type={artifact_type}"
+        )
+        return entities
 

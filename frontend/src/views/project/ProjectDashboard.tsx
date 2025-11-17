@@ -31,6 +31,7 @@ import {
   listProjectFiles,
   downloadProjectFile,
   deleteProjectFile,
+  clearProjectData,
   selectCurrentProject,
   selectProjectsLoading,
   selectProjectsError,
@@ -52,6 +53,7 @@ import DocumentList, {
 } from "../../components/project/DocumentList";
 import ScenariosList from "../../components/scenario/ScenariosList";
 import ScenarioDetails from "../scenario/ScenarioDetails";
+import ProgressWidget from "../../components/common/ProgressWidget";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -112,6 +114,7 @@ const ProjectDashboard: React.FC = () => {
   const [tabularDataFiles, setTabularDataFiles] = useState<File[]>([]);
   const [clearFileUploadTrigger, setClearFileUploadTrigger] =
     useState<number>(0);
+  const [uploadJobId, setUploadJobId] = useState<string | null>(null);
 
   /**
    * Fetch project data and handle URL hash for tab navigation
@@ -121,13 +124,12 @@ const ProjectDashboard: React.FC = () => {
       // Only fetch if we don't have the project or it's a different project
       if (!project || project.id !== projectId) {
         dispatch(fetchProjectById(projectId) as any);
+        dispatch(listProjectFiles(projectId) as any);
+        dispatch(fetchScenarios(projectId) as any);
       }
-      // Fetch project files
-      dispatch(listProjectFiles(projectId) as any);
-      // Fetch scenarios for Overview tab
-      dispatch(fetchScenarios(projectId) as any);
     }
-  }, [projectId, project, dispatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, dispatch]); // Removed 'project' to prevent cascade re-renders
 
   /**
    * Handle URL hash for tab navigation (only on mount or projectId change)
@@ -271,14 +273,32 @@ const ProjectDashboard: React.FC = () => {
       );
 
       if (uploadProjectFiles.fulfilled.match(result)) {
+        const response = result.payload;
+        // console.log("Upload response:", response);
+        
+        // job_id is nested in uploadData
+        const jobId = response.uploadData?.job_id || response.job_id;
+        // console.log("job_id from response:", jobId);
+        
+        // If job_id is present, processing is happening in background
+        if (jobId) {
+          // console.log("Setting uploadJobId to:", jobId);
+          setUploadJobId(jobId);
+        } else {
+          // console.log("No job_id in response, immediate processing");
+        }
+        
         // Clear selected files
         setBaseCaseFiles([]);
         setTabularDataFiles([]);
         // Trigger FileUpload components to clear their internal selected files
         setClearFileUploadTrigger((prev) => prev + 1);
-        // Refresh project and files
-        await dispatch(fetchProjectById(projectId) as any);
-        await dispatch(listProjectFiles(projectId) as any);
+        
+        // Only refresh immediately if no background processing
+        if (!jobId) {
+          await dispatch(fetchProjectById(projectId) as any);
+          await dispatch(listProjectFiles(projectId) as any);
+        }
       } else {
         setAnalysisError("Failed to upload files");
       }
@@ -297,6 +317,71 @@ const ProjectDashboard: React.FC = () => {
     },
     [projectId, dispatch]
   );
+
+  /**
+   * Handle progress widget dismiss
+   */
+  const handleProgressDismiss = useCallback(() => {
+    setUploadJobId(null);
+  }, []);
+
+  /**
+   * Handle progress complete
+   */
+  const handleProgressComplete = useCallback(() => {
+    if (projectId) {
+      dispatch(fetchProjectById(projectId) as any);
+      dispatch(listProjectFiles(projectId) as any);
+    }
+    setUploadJobId(null);
+  }, [projectId, dispatch]);
+
+  /**
+   * Handle clear all project data with confirmation dialog
+   */
+  const handleClearProjectData = useCallback(async () => {
+    if (!projectId || !project) return;
+
+    // Show warning dialog
+    const confirmed = await dialogs.clearData(
+      "This action cannot be undone. Are you absolutely sure?",
+      {
+        title: "Clear All Project Data",
+        warningMsg: `This will permanently delete ALL data associated with "${project.name}", including:
+        
+• All scenarios and cost estimates
+• All uploaded files and documents
+• All extracted entities, tables, and analysis results
+• All processing history
+
+The project itself will remain, but all its data will be cleared.`,
+        okText: "Clear All Data",
+        cancelText: "Cancel",
+      }
+    );
+
+    if (!confirmed) {
+      return; // User cancelled
+    }
+
+    setAnalysisError(null);
+    dispatch(clearError());
+
+    try {
+      const result = await dispatch(clearProjectData(projectId) as any);
+
+      if (clearProjectData.fulfilled.match(result)) {
+        // Refresh project and files list
+        await dispatch(fetchProjectById(projectId) as any);
+        await dispatch(listProjectFiles(projectId) as any);
+        await dispatch(fetchScenarios(projectId) as any);
+      } else if (clearProjectData.rejected.match(result)) {
+        setAnalysisError(result.payload as string);
+      }
+    } catch (error) {
+      setAnalysisError("Failed to clear project data. Please try again.");
+    }
+  }, [projectId, project, dispatch, dialogs]);
 
   /**
    * Handle file delete with confirmation dialog
@@ -479,6 +564,16 @@ This action cannot be undone. Are you sure you want to delete this file?`,
         >
           {error || analysisError}
         </Alert>
+      )}
+
+      {/* Progress Widget for File Processing */}
+      {uploadJobId && (
+        <ProgressWidget
+          jobId={uploadJobId}
+          title="File Processing"
+          onDismiss={handleProgressDismiss}
+          onComplete={handleProgressComplete}
+        />
       )}
 
       {/* Loading State */}
@@ -878,6 +973,31 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                     />
                   )}
                 </Box>
+
+                {/* Clear All Project Data Button */}
+                {(projectFiles?.base_case_files.length > 0 ||
+                  projectFiles?.tabular_data_files.length > 0 ||
+                  scenarios.length > 0) && (
+                  <Box sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: "divider" }}>
+                    <Alert severity="warning" sx={{ mb: 2 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                        Danger Zone
+                      </Typography>
+                      <Typography variant="body2">
+                        Clearing all project data will permanently delete all scenarios, files, 
+                        and extracted data. This action cannot be undone.
+                      </Typography>
+                    </Alert>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={handleClearProjectData}
+                      disabled={uploadingFiles}
+                    >
+                      Clear All Project Data
+                    </Button>
+                  </Box>
+                )}
               </Box>
             </TabPanel>
 

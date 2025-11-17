@@ -331,7 +331,13 @@ async def clear_project_data(project_id: str) -> Dict[str, Any]:
     """
     Clear all data associated with a project, but keep the project itself.
 
-    This deletes entities, relations, and other related data for a project.
+    This deletes all related data including:
+    - Scenarios and their cost estimates
+    - Documents, chunks, tables
+    - Entities and relations
+    - Base case summaries and recommendations
+    - Files in GridFS
+
     The project document itself is not deleted.
 
     Args:
@@ -345,6 +351,8 @@ async def clear_project_data(project_id: str) -> Dict[str, Any]:
         Consider adding user confirmation or soft-delete patterns.
     """
     try:
+        from ...domain.projects.file_storage import FileStorageService
+        
         # Validate project exists
         obj_id = _validate_object_id(project_id)
         project = _projects_collection.find_one({"_id": obj_id})
@@ -357,28 +365,136 @@ async def clear_project_data(project_id: str) -> Dict[str, Any]:
                 "deleted_counts": {},
             }
 
-        # Delete related data from various collections
-        # All related data should have project_id in properties
-        entities_deleted = _entities_collection.delete_many(
-            {"properties.project_id": project_id}
-        ).deleted_count
+        deleted_counts = {
+            "scenarios": 0,
+            "cost_estimates": 0,
+            "files": 0,
+            "documents": 0,
+            "chunks": 0,
+            "tables": 0,
+            "entities": 0,
+            "relations": 0,
+            "base_case_summaries": 0,
+            "base_case_recommendations": 0,
+        }
 
-        relations_deleted = _relations_collection.delete_many(
-            {"properties.project_id": project_id}
+        # Delete all scenarios for this project
+        scenario_docs = list(_scenarios_collection.find(
+            {"project_id": project_id},
+            {"_id": 1}
+        ))
+        scenario_ids = [str(s["_id"]) for s in scenario_docs]
+        
+        scenarios_deleted = _scenarios_collection.delete_many(
+            {"project_id": project_id}
         ).deleted_count
+        deleted_counts["scenarios"] = scenarios_deleted
+
+        # Delete cost estimates by scenario_id
+        for scenario_id in scenario_ids:
+            cost_estimates_deleted = _cost_estimates_collection.delete_many(
+                {"scenario_id": scenario_id}
+            ).deleted_count
+            deleted_counts["cost_estimates"] += cost_estimates_deleted
+
+        # Get all document IDs for this project BEFORE deleting documents
+        # (needed for deleting related chunks and tables)
+        project_doc_docs = list(_documents_collection.find(
+            {"project_id": project_id},
+            {"_id": 1}
+        ))
+        project_doc_ids = [str(doc["_id"]) for doc in project_doc_docs]
+        project_doc_object_ids = [doc["_id"] for doc in project_doc_docs]
+
+        documents_deleted = _documents_collection.delete_many(
+            {"project_id": project_id}
+        ).deleted_count
+        deleted_counts["documents"] = documents_deleted
+
+        # Delete chunks - check both root level and nested in properties, and by doc_id
+        # Handle both string and ObjectId formats for doc_id
+        chunks_deleted = _chunks_collection.delete_many(
+            {
+                "$or": [
+                    {"properties.project_id": project_id},
+                    {"project_id": project_id},
+                    {"doc_id": {"$in": project_doc_ids}},  # String format
+                    {"doc_id": {"$in": project_doc_object_ids}}  # ObjectId format
+                ]
+            }
+        ).deleted_count
+        deleted_counts["chunks"] = chunks_deleted
+
+        # Delete tables - check doc_id and properties.project_id
+        # Handle both string and ObjectId formats for doc_id
+        tables_deleted = _tables_collection.delete_many(
+            {
+                "$or": [
+                    {"doc_id": {"$in": project_doc_ids}},  # String format
+                    {"doc_id": {"$in": project_doc_object_ids}},  # ObjectId format
+                    {"properties.project_id": project_id}  # New format with properties
+                ]
+            }
+        ).deleted_count
+        deleted_counts["tables"] = tables_deleted
+
+        # Delete entities - check both root level and nested in properties
+        entities_deleted = _entities_collection.delete_many(
+            {
+                "$or": [
+                    {"properties.project_id": project_id},
+                    {"project_id": project_id}
+                ]
+            }
+        ).deleted_count
+        deleted_counts["entities"] = entities_deleted
+
+        # Delete relations - check both root level and nested in properties
+        relations_deleted = _relations_collection.delete_many(
+            {
+                "$or": [
+                    {"properties.project_id": project_id},
+                    {"project_id": project_id}
+                ]
+            }
+        ).deleted_count
+        deleted_counts["relations"] = relations_deleted
+
+        # Delete base case summaries
+        base_case_summaries_deleted = _base_case_summaries_collection.delete_many(
+            {"project_id": project_id}
+        ).deleted_count
+        deleted_counts["base_case_summaries"] = base_case_summaries_deleted
+
+        # Delete base case recommendations
+        base_case_recommendations_deleted = _base_case_recommendations_collection.delete_many(
+            {"project_id": project_id}
+        ).deleted_count
+        deleted_counts["base_case_recommendations"] = base_case_recommendations_deleted
+
+        # Delete all files from GridFS
+        file_storage = FileStorageService()
+        files_deleted = 0
+        project_files = file_storage.list_project_files(project_id)
+        for file_meta in project_files:
+            if file_storage.delete_file(file_meta["file_id"]):
+                files_deleted += 1
+        deleted_counts["files"] = files_deleted
 
         logger.info(
             f"Cleared project data for {project_id}: "
-            f"{entities_deleted} entities, {relations_deleted} relations"
+            f"{scenarios_deleted} scenarios, {deleted_counts['cost_estimates']} cost estimates, "
+            f"{files_deleted} files, {documents_deleted} documents, "
+            f"{chunks_deleted} chunks, {tables_deleted} tables, "
+            f"{entities_deleted} entities, {relations_deleted} relations, "
+            f"{deleted_counts['base_case_summaries']} base case summaries, "
+            f"{deleted_counts['base_case_recommendations']} base case recommendations"
         )
 
         return {
             "project_id": project_id,
-            "deleted_counts": {
-                "entities": entities_deleted,
-                "relations": relations_deleted,
-            },
-            "total_items": entities_deleted + relations_deleted,
+            "deleted_counts": deleted_counts,
+            "total_items": sum(deleted_counts.values()),
         }
     except ValueError:
         # Re-raise validation errors

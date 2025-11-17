@@ -93,6 +93,10 @@ export interface FileUploadResponse {
   total_files: number;
   total_size_bytes: number;
   message: string;
+  // Optional fields for async processing (when tabular files are uploaded)
+  job_id?: string;
+  status?: string;
+  websocket_url?: string;
 }
 
 /**

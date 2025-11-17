@@ -93,7 +93,10 @@ class InMemoryProgressPublisher(ProgressPublisher):
         self._subscribers: Dict[str, List[Callable[[ProgressEvent], None]]] = {}
         # Thread lock for thread-safe operations
         self._lock = Lock()
-        logger.info("Initialized InMemoryProgressPublisher")
+        # Buffer recent events for late-connecting subscribers (job_id -> list of events)
+        self._event_buffer: Dict[str, List[ProgressEvent]] = {}
+        self._max_buffer_size = 100  # Keep last 100 events per job
+        logger.info("Initialized InMemoryProgressPublisher with event buffering")
     
     def publish(self, job_id: str, event: ProgressEvent) -> None:
         """
@@ -107,27 +110,43 @@ class InMemoryProgressPublisher(ProgressPublisher):
             job_id: Unique identifier for the processing job
             event: Progress event to publish
         """
+        # Buffer the event for late-connecting subscribers
         with self._lock:
+            if job_id not in self._event_buffer:
+                self._event_buffer[job_id] = []
+            self._event_buffer[job_id].append(event)
+            # Keep only last N events
+            if len(self._event_buffer[job_id]) > self._max_buffer_size:
+                self._event_buffer[job_id] = self._event_buffer[job_id][-self._max_buffer_size:]
+            
             callbacks = self._subscribers.get(job_id, [])
         
         if not callbacks:
-            logger.debug(f"No subscribers for job_id: {job_id}")
+            logger.info(f"No subscribers yet for job_id: {job_id}, event buffered (buffer size: {len(self._event_buffer[job_id])})")
             return
         
-        logger.debug(
-            f"Publishing event for job_id {job_id}: "
+        logger.info(
+            f"Publishing event for job_id {job_id} to {len(callbacks)} subscribers: "
             f"stage={event.stage.value}, status={event.status.value}, "
             f"progress={event.progress}%"
         )
         
         # Call all registered callbacks
         # We iterate over a copy to avoid issues if callbacks modify subscriptions
-        for callback in callbacks[:]:
+        for idx, callback in enumerate(callbacks[:]):
             try:
-                callback(event)
+                # Check if callback is async (coroutine function)
+                if asyncio.iscoroutinefunction(callback):
+                    # Schedule async callback as a task
+                    logger.info(f"Scheduling async callback {idx} for job_id {job_id}")
+                    asyncio.create_task(callback(event))
+                else:
+                    # Call sync callback directly
+                    logger.info(f"Calling sync callback {idx} for job_id {job_id}")
+                    callback(event)
             except Exception as e:
                 logger.error(
-                    f"Error in progress callback for job_id {job_id}: {e}",
+                    f"Error in progress callback {idx} for job_id {job_id}: {e}",
                     exc_info=True
                 )
     
@@ -150,7 +169,23 @@ class InMemoryProgressPublisher(ProgressPublisher):
             if job_id not in self._subscribers:
                 self._subscribers[job_id] = []
             self._subscribers[job_id].append(callback)
-            logger.debug(f"Subscribed callback for job_id: {job_id}")
+            is_async = asyncio.iscoroutinefunction(callback)
+            logger.info(f"Subscribed {'async' if is_async else 'sync'} callback for job_id: {job_id}. Total subscribers: {len(self._subscribers[job_id])}")
+            
+            # Get buffered events for this job
+            buffered_events = self._event_buffer.get(job_id, []).copy()
+        
+        # Deliver buffered events to the new subscriber
+        if buffered_events:
+            logger.info(f"Delivering {len(buffered_events)} buffered events to new subscriber for job_id: {job_id}")
+            for event in buffered_events:
+                try:
+                    if asyncio.iscoroutinefunction(callback):
+                        asyncio.create_task(callback(event))
+                    else:
+                        callback(event)
+                except Exception as e:
+                    logger.error(f"Error delivering buffered event to subscriber for job_id {job_id}: {e}", exc_info=True)
     
     def unsubscribe(self, job_id: str) -> None:
         """
@@ -167,6 +202,10 @@ class InMemoryProgressPublisher(ProgressPublisher):
             if job_id in self._subscribers:
                 del self._subscribers[job_id]
                 logger.debug(f"Unsubscribed all callbacks for job_id: {job_id}")
+            # Also clean up buffered events for this job
+            if job_id in self._event_buffer:
+                del self._event_buffer[job_id]
+                logger.debug(f"Cleared event buffer for job_id: {job_id}")
     
     def get_subscriber_count(self, job_id: str) -> int:
         """

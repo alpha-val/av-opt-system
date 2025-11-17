@@ -105,6 +105,9 @@ def create_app() -> FastAPI:
 
         # Set orchestration service for scenarios router
         scenarios.set_orchestration_service(project_orchestration_service)
+        
+        # Set file storage service for scenarios router
+        scenarios.set_file_storage_service(file_storage_service)
 
         logger.info("All components initialized successfully")
 

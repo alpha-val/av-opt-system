@@ -60,6 +60,7 @@ class DocumentProcessingService:
         pages: Optional[str] = None,
         validate_msio: bool = True,
         strict_validation: bool = False,
+        store_in_pinecone: bool = False,
     ) -> Dict[str, Any]:
         """
         Process a base case document through the complete pipeline.
@@ -70,8 +71,9 @@ class DocumentProcessingService:
         3. Extract entities and edges using LLM
         4. Validate entities against MSIO ontology
         5. Normalize and deduplicate entities
-        6. Store chunks in Pinecone (vectorized)
-        7. Store entities and edges in MongoDB
+        6. Store chunks in MongoDB
+        7. Optionally store chunks and entities in Pinecone (vectorized) if store_in_pinecone=True
+        8. Store entities and edges in MongoDB
 
         Args:
             pdf_bytes: PDF file content
@@ -84,6 +86,7 @@ class DocumentProcessingService:
             pages: Optional page range filter (e.g., "1-5,10")
             validate_msio: Whether to validate entities against MSIO ontology
             strict_validation: If True, invalid entities are excluded (default: False)
+            store_in_pinecone: Whether to store chunks and entities in Pinecone (default: False)
 
         Returns:
             Dictionary with processing results and statistics
@@ -191,24 +194,34 @@ class DocumentProcessingService:
             # Store chunks in MongoDB
             chunks_stored = self.document_store.bulk_upsert_chunks(chunks)
 
-            # Vectorize and store chunks in Pinecone
-            chunks_vectorized = self.chunk_vector_store.upsert_chunks(
-                chunks, project_id=project_id, artifact_type="base_case"
-            )
-
             # Store entities and edges in MongoDB
             entities_stored = self.document_store.bulk_upsert_entities(nodes)
             edges_stored = self.document_store.bulk_upsert_relations(edges)
 
-            # Vectorize and store entities in Pinecone
-            entities_vectorized = self.entity_vector_store.upsert_entities(
-                nodes, project_id=project_id, artifact_type="base_case"
-            )
+            # Optionally vectorize and store chunks and entities in Pinecone
+            chunks_vectorized = 0
+            entities_vectorized = 0
+            if store_in_pinecone:
+                chunks_vectorized = self.chunk_vector_store.upsert_chunks(
+                    chunks, project_id=project_id, artifact_type="base_case"
+                )
+                entities_vectorized = self.entity_vector_store.upsert_entities(
+                    nodes, project_id=project_id, artifact_type="base_case"
+                )
+                logger.info(
+                    f"Vectorized and stored {chunks_vectorized} chunks and {entities_vectorized} entities in Pinecone"
+                )
+            else:
+                logger.info("Pinecone storage skipped (store_in_pinecone=False)")
 
             logger.info(
                 f"Completed processing base case document: "
-                f"{entities_stored} entities, {edges_stored} edges, "
-                f"{chunks_vectorized} chunks vectorized, {entities_vectorized} entities vectorized"
+                f"{entities_stored} entities, {edges_stored} edges"
+                + (
+                    f", {chunks_vectorized} chunks vectorized, {entities_vectorized} entities vectorized"
+                    if store_in_pinecone
+                    else ""
+                )
             )
 
             return {

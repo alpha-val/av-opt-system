@@ -126,6 +126,22 @@ export const runAnalysisV2 = createAsyncThunk(
   }
 );
 
+export const runAnalysisV3 = createAsyncThunk(
+  'scenarios/runAnalysisV3',
+  async (scenarioId: string, { rejectWithValue }) => {
+    try {
+      const data = await scenarioApi.runAnalysisV3(scenarioId);
+      // Fetch updated scenario to get new status
+      const updatedScenario = await scenarioApi.getById(scenarioId);
+      return { scenarioId, analysisResult: data, scenario: updatedScenario };
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Failed to run analysis (V3)'
+      );
+    }
+  }
+);
+
 // Initial state
 interface ScenariosState {
   scenarios: ScenarioOut[];
@@ -138,6 +154,7 @@ interface ScenariosState {
     delete: boolean;
     runAnalysis: boolean;
     runAnalysisV2: boolean;
+    runAnalysisV3: boolean;
   };
   error: string | null;
 }
@@ -153,6 +170,7 @@ const initialState: ScenariosState = {
     delete: false,
     runAnalysis: false,
     runAnalysisV2: false,
+    runAnalysisV3: false,
   },
   error: null,
 };
@@ -339,6 +357,33 @@ const scenariosSlice = createSlice({
       .addCase(runAnalysisV2.rejected, (state, action) => {
         state.loading.runAnalysisV2 = false;
         state.error = action.payload as string;
+      })
+
+      // Run analysis V3
+      .addCase(runAnalysisV3.pending, (state) => {
+        state.loading.runAnalysisV3 = true;
+        state.error = null;
+      })
+      .addCase(runAnalysisV3.fulfilled, (state, action) => {
+        state.loading.runAnalysisV3 = false;
+        const { scenario } = action.payload;
+        
+        // Update scenario in list and current scenario
+        if (scenario) {
+          const index = state.scenarios.findIndex((s) => s.id === scenario.id);
+          if (index !== -1) {
+            state.scenarios[index] = scenario;
+          }
+          if (state.currentScenario?.id === scenario.id) {
+            state.currentScenario = scenario;
+          }
+        }
+        
+        state.error = null;
+      })
+      .addCase(runAnalysisV3.rejected, (state, action) => {
+        state.loading.runAnalysisV3 = false;
+        state.error = action.payload as string;
       });
   },
 });
@@ -365,7 +410,9 @@ export const selectScenarioCreating = (state: { scenarios: ScenariosState }) =>
 export const selectScenarioDeleting = (state: { scenarios: ScenariosState }) =>
   state.scenarios.loading.delete;
 export const selectScenarioRunningAnalysis = (state: { scenarios: ScenariosState }) =>
-  state.scenarios.loading.runAnalysis || state.scenarios.loading.runAnalysisV2;
+  state.scenarios.loading.runAnalysis || 
+  state.scenarios.loading.runAnalysisV2 || 
+  state.scenarios.loading.runAnalysisV3;
 
 // Memoized selector for scenarios by project
 export const selectScenariosByProject = (projectId: string) =>
