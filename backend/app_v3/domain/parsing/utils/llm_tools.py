@@ -286,65 +286,7 @@ TOOLS = [
         },
     },
     # -------------------------------------------------------------------------
-    # 4. Recommendations extraction
-    # -------------------------------------------------------------------------
-    {
-        "type": "function",
-        "function": {
-            "name": "extract_recommendations",
-            "description": "Extract recommendations for system redesign based on global objectives",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "recommendations": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "recommendation_id": {"type": "string"},
-                                "type": {"type": "string"},
-                                "title": {"type": "string"},
-                                "description": {"type": "string"},
-                                "affected_entities": {"type": "array", "items": {"type": "string"}},
-                                "rationale": {"type": "string"},
-                                "priority": {"type": "string", "enum": ["high", "medium", "low"]},
-                                "estimated_impact": {"type": "string"},
-                                "implementation_complexity": {"type": "string"},
-                            },
-                            "required": ["recommendation_id", "type", "title", "description", "priority"],
-                        },
-                    },
-                    "entities_for_costing": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "entity_id": {"type": "string"},
-                                "entity_name": {"type": "string"},
-                                "entity_type": {"type": "string"},
-                                "msio_classification": {
-                                    "type": "object",
-                                    "properties": {
-                                        "discipline": {"type": "string"},
-                                        "category": {"type": "string"},
-                                        "subcategory": {"type": "string"},
-                                        "entity": {"type": "string"},
-                                    },
-                                },
-                                "key_attributes": {"type": "object"},
-                                "query_metadata": {"type": "object"},
-                                "cost_relevance_score": {"type": "number", "minimum": 0.0, "maximum": 1.0},
-                            },
-                            "required": ["entity_id", "entity_name", "entity_type", "cost_relevance_score"],
-                        },
-                    },
-                },
-                "required": ["recommendations", "entities_for_costing"],
-            },
-        },
-    },
-    # -------------------------------------------------------------------------
-    # 5. Recommendations extraction v2 (with entity specifications)
+    # 4. Recommendations extraction (with entity specifications)
     # -------------------------------------------------------------------------
     {
         "type": "function",
@@ -360,15 +302,38 @@ TOOLS = [
                             "type": "object",
                             "properties": {
                                 "recommendation_id": {"type": "string"},
-                                "type": {"type": "string"},
+                                "type": {"type": "string", "description": "Category type (e.g., 'Equipment Upgrade', 'Process Optimization', 'Operational Change', 'Infrastructure', 'Material Change', 'Control System', 'Energy Efficiency', 'Maintenance Strategy', 'Safety Enhancement', 'Environmental Improvement')"},
                                 "title": {"type": "string"},
                                 "description": {"type": "string"},
                                 "rationale": {"type": "string"},
                                 "priority": {"type": "string", "enum": ["high", "medium", "low"]},
+                                "recommendation_category": {
+                                    "type": "string",
+                                    "enum": ["primary", "secondary", "other"],
+                                    "description": "Classification of recommendation importance: 'primary' for high-impact direct solutions, 'secondary' for supporting changes, 'other' for alternative approaches"
+                                },
                                 "estimated_impact": {"type": "string"},
                                 "implementation_complexity": {"type": "string"},
+                                "estimated_cost_range": {
+                                    "type": "string",
+                                    "description": "Rough cost estimate range (e.g., 'Low: $10K-$50K', 'Medium: $50K-$200K', 'High: $200K-$500K', 'Very High: $500K+')"
+                                },
+                                "time_to_implement": {
+                                    "type": "string",
+                                    "description": "Estimated implementation timeline (e.g., '1-3 months', '3-6 months', '6-12 months', '12+ months')"
+                                },
+                                "dependencies": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                    "description": "Array of recommendation_ids that this recommendation depends on"
+                                },
+                                "alternative_to": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                    "description": "Array of recommendation_ids that this recommendation is an alternative to"
+                                },
                             },
-                            "required": ["recommendation_id", "type", "title", "description", "priority"],
+                            "required": ["recommendation_id", "type", "title", "description", "priority", "recommendation_category"],
                         },
                     },
                     "relevant_entities": {

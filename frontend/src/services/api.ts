@@ -279,6 +279,63 @@ export const projectApi = {
   deleteProjectFile: async (projectId: string, fileId: string): Promise<void> => {
     await apiClient.delete(`/api/v1/projects/${projectId}/files/${fileId}`);
   },
+
+  /**
+   * Get entities for a project
+   */
+  getEntities: async (
+    projectId: string,
+    artifactType: string = "base_case"
+  ): Promise<{
+    project_id: string;
+    artifact_type: string;
+    entities: Array<{
+      id: string;
+      type: string;
+      properties: {
+        name?: string;
+        discipline?: string;
+        category?: string;
+        subcategory?: string;
+        entity?: string;
+        attributes?: Array<{
+          name: string;
+          value: number | null;
+          unit: string | null;
+          evidence_text: string | null;
+          confidence: number;
+        }>;
+        [key: string]: any;
+      };
+    }>;
+    count: number;
+  }> => {
+    const response = await apiClient.get<{
+      project_id: string;
+      artifact_type: string;
+      entities: Array<{
+        id: string;
+        type: string;
+        properties: {
+          name?: string;
+          discipline?: string;
+          category?: string;
+          subcategory?: string;
+          entity?: string;
+          attributes?: Array<{
+            name: string;
+            value: number | null;
+            unit: string | null;
+            evidence_text: string | null;
+            confidence: number;
+          }>;
+          [key: string]: any;
+        };
+      }>;
+      count: number;
+    }>(`/api/v1/projects/${projectId}/entities?artifact_type=${artifactType}`);
+    return response.data;
+  },
 };
 
 /**

@@ -190,9 +190,9 @@ const Settings: React.FC = () => {
             <Box component="ul" sx={{ pl: 2, mt: 1, mb: 0 }}>
               <li>All your projects</li>
               <li>All your scenarios</li>
-              <li>All derived data</li>
               <li>All uploaded files</li>
               <li>All cost estimate reports</li>
+              <li>All derived data (recommendations, entities, vectors, etc.)</li>
             </Box>
           </Alert>
           <DialogContentText>

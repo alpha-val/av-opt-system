@@ -978,7 +978,30 @@ async def _run_analysis_background_v3(
                 entities_for_costing=entities_for_costing,
                 artifact_type="base_case",
             )
-            
+            for entity in relevant_entities:
+                logger.info(f"Relevant entity: {entity}")
+                logger.info(f"Entity type: {entity['type']}")
+                logger.info(f"Entity properties: {entity['properties']}")
+                logger.info(f"Entity id: {entity['id']}")
+                logger.info(f"Entity scenario_id: {entity['properties'].get('scenario_id')}")
+                logger.info(f"Entity artifact_type: {entity['properties'].get('artifact_type')}")
+                logger.info(f"Entity name: {entity['properties'].get('name')}")
+                logger.info(f"Entity discipline: {entity['properties'].get('discipline')}")
+                logger.info(f"Entity category: {entity['properties'].get('category')}")
+                logger.info(f"Entity subcategory: {entity['properties'].get('subcategory')}")
+                logger.info(f"Entity entity: {entity['properties'].get('entity')}")
+                logger.info(f"Entity extraction_priority: {entity['properties'].get('extraction_priority')}")
+                logger.info(f"Entity extraction_rationale: {entity['properties'].get('extraction_rationale')}")
+                logger.info(f"Entity expected_attributes: {entity['properties'].get('expected_attributes')}")
+                logger.info(f"Entity priority: {entity['properties'].get('priority')}")
+                logger.info(f"Entity rationale: {entity['properties'].get('rationale')}")
+                logger.info(f"Entity expected_attributes: {entity['properties'].get('expected_attributes')}")
+                logger.info(f"Entity priority: {entity['properties'].get('priority')}")
+                logger.info(f"Entity rationale: {entity['properties'].get('rationale')}")
+                logger.info(f"Entity expected_attributes: {entity['properties'].get('expected_attributes')}")
+                logger.info(f"Entity priority: {entity['properties'].get('priority')}")
+                logger.info(f"Entity rationale: {entity['properties'].get('rationale')}")
+                logger.info(f"Entity expected_attributes: {entity['properties'].get('expected_attributes')}")
             all_relevant_entities.extend(relevant_entities)
             
             # Step 4: Store recommendations
@@ -991,6 +1014,7 @@ async def _run_analysis_background_v3(
                 global_objective_target=global_objective_target,
                 recommendations=recommendations,
                 relevant_entities=relevant_entities,
+                overwrite=True,
             )
             
             document_results.append({

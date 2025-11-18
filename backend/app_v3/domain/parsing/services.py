@@ -323,6 +323,7 @@ class DocumentProcessingService:
                     pages=pages,
                     validate_msio=validate_msio,
                     strict_validation=strict_validation,
+                    chunking_strategy="byte",
                 )
 
             # Stage 3: Create table chunks for LLM processing

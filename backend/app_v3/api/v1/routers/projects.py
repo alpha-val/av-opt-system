@@ -30,6 +30,7 @@ import uuid
 # Import project service functions
 from ....domain.projects import services
 from .auth import get_current_user
+from ....adapters.mongo.client import db
 from ....domain.projects.schemas import (
     ProjectCreate,
     ProjectUpdate,
@@ -41,8 +42,30 @@ from ....domain.projects.file_storage import FileStorageService
 from ....domain.parsing.storage.document_store import DocumentStore
 from ....domain.progress.events import ProgressEvent, Stage, Status
 from .websocket import get_progress_publisher
+import time
 
 logger = logging.getLogger(__name__)
+
+
+def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
+    """
+    Dependency to require admin access.
+    
+    Args:
+        current_user: Current authenticated user (from JWT token)
+    
+    Returns:
+        User dictionary if admin, otherwise raises HTTPException
+    
+    Raises:
+        HTTPException: If user is not an admin (403)
+    """
+    if not current_user.get("is_admin", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    return current_user
 
 # Create router with prefix and tags
 # All routes will be under /api/v1/projects
@@ -703,8 +726,8 @@ async def upload_project_files(
         None, description="Tabular data files (PDF, Excel, CSV)"
     ),
     store_in_pinecone: bool = Query(
-        False,
-        description="Whether to store extracted entities in Pinecone (default: False)",
+        True,
+        description="Whether to store extracted entities in Pinecone (default: True)",
     ),
     current_user: dict = Depends(get_current_user),
 ):
@@ -718,13 +741,13 @@ async def upload_project_files(
     - Extract tables from PDF files
     - Extract entities using LLM with MSIO ontology
     - Store tables and entities/edges in MongoDB
-    - Optionally store entities in Pinecone (if store_in_pinecone=True)
+    - Store entities in Pinecone by default (can be disabled by setting store_in_pinecone=False)
 
     Args:
         project_id: MongoDB ObjectId as string
         base_case_files: List of base case PDF files
         tabular_data_files: List of tabular data files (PDF, Excel, CSV)
-        store_in_pinecone: Whether to store extracted entities in Pinecone (default: False)
+        store_in_pinecone: Whether to store extracted entities in Pinecone (default: True)
         current_user: Current authenticated user (from JWT token)
 
     Returns:
@@ -1397,6 +1420,96 @@ async def list_project_files(
 
 
 @projects_router.get(
+    "/{project_id}/entities",
+    summary="Get entities for a project",
+    description="Retrieve entities from the entities collection filtered by project_id and artifact_type",
+)
+async def get_project_entities(
+    project_id: str = Path(..., description="Project ID (MongoDB ObjectId as string)"),
+    artifact_type: str = Query("base_case", description="Artifact type filter (default: base_case)"),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Get entities for a project.
+    
+    Returns entities from the entities collection that match the project_id
+    and artifact_type. For base_case entities, excludes entities with scenario_id
+    to show only project-level base case entities.
+    
+    Args:
+        project_id: Project identifier
+        artifact_type: Artifact type filter (default: "base_case")
+        current_user: Authenticated user
+    
+    Returns:
+        Dictionary with project_id, artifact_type, entities list, and count
+    """
+    try:
+        # Validate project_id format
+        try:
+            from bson import ObjectId
+            ObjectId(project_id)
+        except Exception:
+            raise ValueError(f"Invalid project_id format: {project_id}")
+        
+        # Verify project exists and user has access
+        project = await services.get(project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project not found: {project_id}",
+            )
+        
+        # Query entities collection
+        entities_collection = db().entities
+        query = {
+            "properties.project_id": project_id,
+            "properties.artifact_type": artifact_type,
+        }
+        
+        # For base_case entities, exclude entities with scenario_id to show only project-level entities
+        if artifact_type == "base_case":
+            query["properties.scenario_id"] = {"$exists": False}
+        
+        entities = list(entities_collection.find(query, {"_id": 0}))
+        
+        # Convert ObjectId to string if present in nested structures
+        for entity in entities:
+            if "_id" in entity:
+                entity["id"] = str(entity["_id"])
+                del entity["_id"]
+            elif "id" not in entity and "_id" in entity:
+                entity["id"] = str(entity["_id"])
+        
+        logger.info(
+            f"Retrieved {len(entities)} entities for project {project_id} "
+            f"with artifact_type {artifact_type}"
+        )
+        
+        return {
+            "project_id": project_id,
+            "artifact_type": artifact_type,
+            "entities": entities,
+            "count": len(entities),
+        }
+            
+    except ValueError as e:
+        logger.warning(f"Invalid project_id format: {project_id}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching entities for project {project_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch entities: {str(e)}",
+        )
+
+
+@projects_router.get(
     "/{project_id}/report",
     summary="Get project report",
     description="Generate and retrieve markdown report for a project.",
@@ -1459,6 +1572,119 @@ async def get_project_report(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate report: {str(e)}",
+        )
+
+
+@projects_router.delete(
+    "/admin/clear-pinecone-index",
+    status_code=status.HTTP_200_OK,
+    summary="Clear all Pinecone index data (Admin only)",
+    description="Delete all vectors from all namespaces in the Pinecone index. This is a destructive operation that cannot be undone.",
+)
+async def clear_pinecone_index(
+    current_user: dict = Depends(require_admin),
+    verify: bool = Query(
+        False,
+        description="Whether to verify deletion by checking index stats after deletion",
+    ),
+):
+    """
+    Clear all Pinecone index data.
+    
+    This endpoint permanently deletes all vectors from all namespaces in the Pinecone index.
+    This operation:
+    1. Enumerates all namespaces in the index
+    2. Deletes all vectors from each namespace
+    3. Optionally verifies the deletion
+    
+    **Warning**: This is a destructive operation that cannot be undone!
+    This will delete ALL vector data for ALL projects in the system.
+    
+    Args:
+        current_user: Current authenticated admin user (from JWT token)
+        verify: Whether to verify deletion by checking index stats (default: False)
+    
+    Returns:
+        Dictionary with deletion summary including:
+        - namespaces_cleared: List of namespace names that were cleared
+        - total_namespaces: Total number of namespaces found
+        - verification_stats: Index stats after deletion (if verify=True)
+    
+    Raises:
+        HTTPException: If user is not admin (403) or operation fails (500)
+    """
+    try:
+        from ....domain.parsing.storage.vector_store import _get_pinecone_index
+        
+        index = _get_pinecone_index()
+        
+        # Step 1: Enumerate namespaces
+        logger.info("Enumerating Pinecone namespaces for deletion")
+        stats = index.describe_index_stats()
+        namespaces = list(stats.get("namespaces", {}).keys())
+        
+        # If no explicit namespaces exist, Pinecone implicitly uses "__default__"
+        if not namespaces:
+            namespaces = ["__default__"]
+            logger.info("No explicit namespaces found, using default namespace")
+        
+        logger.info(f"Found {len(namespaces)} namespace(s) to clear: {namespaces}")
+        
+        # Step 2: Delete everything per namespace
+        namespaces_cleared = []
+        for ns in namespaces:
+            try:
+                logger.info(f"Deleting all vectors from namespace: {ns}")
+                index.delete(delete_all=True, namespace=ns)
+                namespaces_cleared.append(ns)
+                logger.info(f"Successfully deleted all vectors from namespace: {ns}")
+            except Exception as e:
+                logger.error(
+                    f"Failed to delete vectors from namespace {ns}: {e}",
+                    exc_info=True,
+                )
+                # Continue with other namespaces even if one fails
+                continue
+        
+        # Step 3: Optional verification
+        verification_stats = None
+        if verify:
+            logger.info("Verifying deletion (waiting 2 seconds for propagation)")
+            time.sleep(2)  # Allow propagation
+            try:
+                stats_after = index.describe_index_stats()
+                verification_stats = {
+                    "total_vector_count": stats_after.get("total_vector_count", 0),
+                    "namespaces": list(stats_after.get("namespaces", {}).keys()),
+                }
+                logger.info(f"Verification stats: {verification_stats}")
+            except Exception as e:
+                logger.warning(f"Failed to get verification stats: {e}")
+        
+        logger.info(
+            f"Pinecone index cleared by admin user {current_user.get('email', 'unknown')}: "
+            f"{len(namespaces_cleared)}/{len(namespaces)} namespaces cleared"
+        )
+        
+        return {
+            "message": "Pinecone index cleared successfully",
+            "namespaces_cleared": namespaces_cleared,
+            "total_namespaces": len(namespaces),
+            "cleared_by": current_user.get("email", "unknown"),
+            "verification_stats": verification_stats if verify else None,
+        }
+        
+    except ValueError as e:
+        logger.error(f"Pinecone configuration error: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Pinecone configuration error: {str(e)}",
+        )
+    except Exception as e:
+        logger.error(f"Error clearing Pinecone index: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to clear Pinecone index: {str(e)}",
         )
 
 

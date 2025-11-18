@@ -159,7 +159,7 @@ const ObjectiveDetailsForm: React.FC<ObjectiveDetailsFormProps> = memo(({
           />
 
           {/* Extraction Scope */}
-          <FormControl fullWidth>
+          {/* <FormControl fullWidth>
             <InputLabel>Extraction Scope</InputLabel>
             <Select
               value={extractionScope}
@@ -183,7 +183,7 @@ const ObjectiveDetailsForm: React.FC<ObjectiveDetailsFormProps> = memo(({
                 With Context (entities + related context entities)
               </MenuItem>
             </Select>
-          </FormControl>
+          </FormControl> */}
 
           <Box
             sx={{

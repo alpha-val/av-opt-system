@@ -8,9 +8,10 @@ from typing import List, Dict, Any, Optional
 import os
 import openai
 from datetime import datetime
-from app_v2.adapters.config import SETTINGS
-from app_v2.domain.parsing.utils.text_utils import sanitize_metadata
+from app_v3.adapters.config import SETTINGS
+from app_v3.domain.parsing.utils.text_utils import sanitize_metadata
 from pinecone import Pinecone
+from app_v3.adapters.mongo.client import db
 import logging
 
 logger = logging.getLogger(__name__)
@@ -225,6 +226,7 @@ class EntityVectorStore(VectorStore):
         Build text representation of entity for embedding.
 
         Dynamically flattens all properties and concatenates key fields.
+        Avoids duplication by tracking which MSIO fields were already added.
 
         Args:
             entity: Entity dictionary
@@ -243,22 +245,48 @@ class EntityVectorStore(VectorStore):
 
         # MSIO hierarchy fields (critical for ontology alignment)
         props = entity.get("properties", {})
+        msio_fields_added = set()
+        
         if "discipline" in props:
             parts.append(f"Discipline: {props['discipline']}")
+            msio_fields_added.add("discipline")
         if "category" in props:
             parts.append(f"Category: {props['category']}")
+            msio_fields_added.add("category")
         if "subcategory" in props:
             parts.append(f"Subcategory: {props['subcategory']}")
+            msio_fields_added.add("subcategory")
         if "entity" in props:
             parts.append(f"Entity: {props['entity']}")
+            msio_fields_added.add("entity")
 
-        # Flatten all properties dynamically (exclude IDs and confidence)
+        # Handle attributes specially - expand into readable text
+        if "attributes" in props and isinstance(props["attributes"], list):
+            msio_fields_added.add("attributes")  # Skip in the loop below
+            attr_texts = []
+            for attr in props["attributes"]:
+                if isinstance(attr, dict):
+                    attr_name = attr.get("name", "Unknown")
+                    attr_value = attr.get("value")
+                    attr_unit = attr.get("unit", "")
+                    
+                    # Build readable attribute text
+                    if attr_value is not None:
+                        attr_text = f"{attr_name}: {attr_value}"
+                        if attr_unit:
+                            attr_text += f" {attr_unit}"
+                        attr_texts.append(attr_text)
+            if attr_texts:
+                parts.append(f"Attributes: {', '.join(attr_texts)}")
+
+        # Flatten all properties dynamically (exclude IDs, confidence, status, and already-added MSIO fields)
         for key, value in props.items():
             if (
                 value is not None
                 and not key.lower().endswith("_id")
                 and key != "confidence"
                 and key != "status"
+                and key not in msio_fields_added  # Skip MSIO fields already added above
             ):
                 # Format key-value pairs
                 parts.append(f"{key.replace('_', ' ').capitalize()}: {value}")
@@ -294,6 +322,11 @@ class EntityVectorStore(VectorStore):
             "updated_at": datetime.utcnow().isoformat(),
         }
 
+        # Add scenario_id if present (critical for filtering by scenario)
+        # scenario_id is in props but gets excluded by the _id filter, so add it explicitly
+        if "scenario_id" in props:
+            metadata["scenario_id"] = props["scenario_id"]
+
         # Add MSIO hierarchy fields if present (for filtering)
         if "discipline" in props:
             metadata["discipline"] = props["discipline"]
@@ -304,13 +337,15 @@ class EntityVectorStore(VectorStore):
         if "entity" in props:
             metadata["entity"] = props["entity"]
 
-        # Flatten properties, excluding IDs, confidence, and status
+        # Flatten properties, excluding IDs, confidence, status, and attributes
+        # Attributes are handled specially in text_content, not as metadata
+        # Note: scenario_id is already added above, so exclude it from flattening
         flattened_props = {
             k: v
             for k, v in props.items()
             if v is not None
             and not k.lower().endswith("_id")
-            and k not in ["confidence", "status"]
+            and k not in ["confidence", "status", "attributes", "scenario_id"]  # Exclude attributes and scenario_id from metadata flattening
             and k
             not in [
                 "discipline",
@@ -397,3 +432,263 @@ class EntityVectorStore(VectorStore):
 
         # Upsert to Pinecone
         return self.upsert_vectors(vectors, namespace=project_id)
+
+
+def search_entities_by_embedding(
+    embedding: List[float],
+    project_id: str,
+    scenario_id: Optional[str] = None,
+    artifact_type: str = "base_case",
+    entity_types: Optional[List[str]] = None,
+    top_k: int = 5,
+    cutoff: float = 0.7,
+) -> List[Dict[str, Any]]:
+    """
+    Search Pinecone for entities by embedding similarity.
+    Returns full entity data from MongoDB with relevance scores.
+
+    Args:
+        embedding: Query embedding vector (list of floats)
+        project_id: Project identifier (used as Pinecone namespace)
+        scenario_id: Optional scenario identifier for filtering
+        artifact_type: Type of artifact (default: "base_case")
+        entity_types: Optional list of entity types to filter (e.g., ["Equipment", "Material"])
+        top_k: Maximum number of results to return (default: 5)
+        cutoff: Minimum similarity score threshold (default: 0.7)
+
+    Returns:
+        List of entity dictionaries from MongoDB with relevance_score added
+    """
+    try:
+        index = _get_pinecone_index()
+
+        # Build filter for Pinecone
+        pinecone_filter = {
+            "project_id": {"$eq": project_id},
+            "artifact_type": {"$eq": artifact_type},
+        }
+
+        # # Add scenario_id filter if provided AND artifact_type is not base_case
+        # # Base case entities don't have scenario_id because they're shared across scenarios
+        # if scenario_id and artifact_type != "base_case":
+        #     pinecone_filter["scenario_id"] = {"$eq": scenario_id}
+
+        # Add entity_type filter if provided
+        if entity_types:
+            pinecone_filter["entity_type"] = {"$in": entity_types}
+
+        # Query Pinecone
+        logger.debug(
+            f"Querying Pinecone with filter: {pinecone_filter}, "
+            f"namespace: {project_id}, top_k: {top_k}"
+        )
+        
+        results = index.query(
+            vector=embedding,
+            top_k=top_k,
+            filter=pinecone_filter,
+            namespace=project_id,
+            include_metadata=True,
+        )
+
+        # Log raw results before cutoff filtering
+        logger.debug(
+            f"Pinecone returned {len(results.matches)} raw matches "
+            f"(before cutoff {cutoff} filtering)"
+        )
+        
+        if results.matches:
+            raw_scores = [f"{m.id}: {m.score:.3f}" for m in results.matches[:5]]
+            logger.debug(f"Raw match scores (top 5): {', '.join(raw_scores)}")
+            
+            # Log metadata from first match to check structure
+            first_match = results.matches[0]
+            logger.debug(
+                f"First match metadata keys: {list(first_match.metadata.keys()) if first_match.metadata else 'None'}"
+            )
+            if first_match.metadata:
+                logger.debug(
+                    f"First match metadata sample: "
+                    f"project_id={first_match.metadata.get('project_id')}, "
+                    f"artifact_type={first_match.metadata.get('artifact_type')}, "
+                    f"scenario_id={first_match.metadata.get('scenario_id')}"
+                )
+
+        # Filter matches based on the cutoff score
+        filtered_matches = [
+            match for match in results.matches if match.score >= cutoff
+        ]
+
+        if not filtered_matches:
+            if results.matches:
+                # Log that we had matches but they were below cutoff
+                max_score = max(m.score for m in results.matches) if results.matches else 0
+                logger.info(
+                    f"No entities found above cutoff {cutoff} for project {project_id}, "
+                    f"artifact_type {artifact_type}. "
+                    f"Max score was {max_score:.3f} (below cutoff)"
+                )
+            else:
+                # No matches at all from Pinecone
+                logger.info(
+                    f"No entities found in Pinecone for project {project_id}, "
+                    f"artifact_type {artifact_type}, filter: {pinecone_filter}"
+                )
+            return []
+
+        # Extract entity IDs from filtered matches
+        entity_ids = [match.metadata["entity_id"] for match in filtered_matches]
+
+        # Fetch full entities from MongoDB
+        entities = (
+            list(
+                db().entities.find(
+                    {"id": {"$in": entity_ids}},
+                    {"_id": 0},
+                )
+            )
+            if entity_ids
+            else []
+        )
+
+        # Add relevance scores
+        scores = {m.metadata["entity_id"]: m.score for m in filtered_matches}
+        for entity in entities:
+            entity["relevance_score"] = scores.get(entity["id"], 0.0)
+
+        # Sort by relevance
+        entities.sort(key=lambda x: x.get("relevance_score", 0), reverse=True)
+
+        logger.info(
+            f"Semantic search found {len(entities)} entities above cutoff {cutoff} "
+            f"for project {project_id}, artifact_type {artifact_type}"
+        )
+
+        return entities
+
+    except Exception as e:
+        logger.error(
+            f"Error in semantic search for entities: {e}",
+            exc_info=True,
+        )
+        return []
+
+
+def delete_vectors_by_namespace(project_id: str) -> int:
+    """
+    Delete all vectors in a Pinecone namespace (project_id).
+    
+    Args:
+        project_id: Project identifier (used as Pinecone namespace)
+    
+    Returns:
+        Number of vectors deleted (0 if deletion failed or namespace doesn't exist)
+    """
+    try:
+        index = _get_pinecone_index()
+        
+        # Get index stats to check if namespace exists and get vector count
+        try:
+            index_stats = index.describe_index_stats()
+            namespaces = index_stats.get("namespaces", {})
+            
+            if project_id not in namespaces:
+                logger.info(
+                    f"Namespace '{project_id}' does not exist in Pinecone. "
+                    f"No vectors to delete."
+                )
+                return 0
+            
+            # Get vector count before deletion
+            vector_count = namespaces[project_id].get("vector_count", 0)
+            
+            if vector_count == 0:
+                logger.info(
+                    f"Namespace '{project_id}' exists but has no vectors. "
+                    f"No deletion needed."
+                )
+                return 0
+            
+            # Delete all vectors in the namespace
+            index.delete(delete_all=True, namespace=project_id)
+            
+            logger.info(
+                f"Successfully deleted {vector_count} vectors from Pinecone "
+                f"namespace '{project_id}'"
+            )
+            
+            return vector_count
+            
+        except Exception as stats_error:
+            logger.warning(
+                f"Failed to get index stats for namespace '{project_id}': {stats_error}. "
+                f"Attempting deletion anyway."
+            )
+            # Try deletion anyway
+            index.delete(delete_all=True, namespace=project_id)
+            logger.info(
+                f"Deleted vectors from Pinecone namespace '{project_id}' "
+                f"(count unknown due to stats error)"
+            )
+            return -1  # Indicates deletion attempted but count unknown
+            
+    except Exception as e:
+        logger.error(
+            f"Error deleting vectors from Pinecone namespace '{project_id}': {e}",
+            exc_info=True,
+        )
+        return 0
+
+
+def delete_vectors_by_filter(
+    project_id: str, filter_dict: Dict[str, Any]
+) -> int:
+    """
+    Delete vectors from Pinecone by metadata filter.
+    
+    Args:
+        project_id: Project identifier (used as Pinecone namespace)
+        filter_dict: Pinecone metadata filter (e.g., {"scenario_id": {"$eq": "scenario_123"}})
+    
+    Returns:
+        Number of vectors deleted (0 if deletion failed or no vectors matched)
+    """
+    try:
+        index = _get_pinecone_index()
+        
+        # Get index stats to check if namespace exists
+        try:
+            index_stats = index.describe_index_stats()
+            namespaces = index_stats.get("namespaces", {})
+            
+            if project_id not in namespaces:
+                logger.info(
+                    f"Namespace '{project_id}' does not exist in Pinecone. "
+                    f"No vectors to delete."
+                )
+                return 0
+        except Exception as stats_error:
+            logger.warning(
+                f"Failed to get index stats for namespace '{project_id}': {stats_error}. "
+                f"Attempting deletion anyway."
+            )
+        
+        # Delete vectors matching the filter
+        index.delete(filter=filter_dict, namespace=project_id)
+        
+        logger.info(
+            f"Deleted vectors from Pinecone namespace '{project_id}' "
+            f"matching filter: {filter_dict}"
+        )
+        
+        # Note: Pinecone delete() doesn't return count, so we return -1 to indicate success
+        # but unknown count
+        return -1
+        
+    except Exception as e:
+        logger.error(
+            f"Error deleting vectors from Pinecone namespace '{project_id}' "
+            f"with filter {filter_dict}: {e}",
+            exc_info=True,
+        )
+        return 0

@@ -209,12 +209,22 @@ async def update_scenario(
 
 async def delete_scenario(scenario_id: str) -> bool:
     """
-    Delete a scenario and cascade delete associated cost estimates.
+    Delete a scenario and cascade delete associated cost estimates and Pinecone vectors.
     """
     try:
         if not ObjectId.is_valid(scenario_id):
             raise ValueError(f"Invalid scenario_id format: {scenario_id}")
 
+        collection = db().scenarios
+        
+        # Get scenario to retrieve project_id before deletion
+        scenario = collection.find_one({"_id": ObjectId(scenario_id)})
+        if not scenario:
+            logger.warning(f"Scenario not found for deletion: {scenario_id}")
+            return False
+        
+        project_id = scenario.get("project_id")
+        
         # Delete associated cost estimates first
         cost_estimates_collection = db().cost_estimates
         cost_estimates_deleted = cost_estimates_collection.delete_many(
@@ -223,7 +233,31 @@ async def delete_scenario(scenario_id: str) -> bool:
         if cost_estimates_deleted > 0:
             logger.info(f"Deleted {cost_estimates_deleted} cost estimates for scenario: {scenario_id}")
 
-        collection = db().scenarios
+        # Delete vectors from Pinecone with scenario_id filter
+        if project_id:
+            try:
+                from ...domain.parsing.storage.vector_store import delete_vectors_by_filter
+                vectors_deleted = delete_vectors_by_filter(
+                    project_id=project_id,
+                    filter_dict={"scenario_id": {"$eq": scenario_id}}
+                )
+                if vectors_deleted != 0:
+                    logger.info(
+                        f"Deleted Pinecone vectors for scenario {scenario_id} "
+                        f"in project {project_id}"
+                    )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to delete Pinecone vectors for scenario {scenario_id}: {e}. "
+                    f"Continuing with scenario deletion."
+                )
+        else:
+            logger.warning(
+                f"Scenario {scenario_id} has no project_id. "
+                f"Skipping Pinecone vector deletion."
+            )
+
+        # Delete the scenario document
         result = collection.delete_one({"_id": ObjectId(scenario_id)})
 
         if result.deleted_count == 0:

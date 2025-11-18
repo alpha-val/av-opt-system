@@ -37,6 +37,8 @@ import {
   selectProjectDeleting,
   clearError,
 } from "../../redux/projectsSlice";
+import { useDialogs } from "../../hooks/useDialogs";
+import { ProjectDeleteDialog } from "../../hooks/useDialogs";
 
 const ProjectList: React.FC = () => {
   const navigate = useNavigate();
@@ -46,6 +48,7 @@ const ProjectList: React.FC = () => {
   const deleting = useSelector(selectProjectDeleting);
   const error = useSelector(selectProjectsError);
   const [createDialogOpen, setCreateDialogOpen] = useState<boolean>(false);
+  const dialogs = useDialogs();
 
   /**
    * Fetch all projects from Redux
@@ -58,10 +61,23 @@ const ProjectList: React.FC = () => {
    * Delete a project
    */
   const handleDelete = (projectId: string): void => {
-    if (!window.confirm("Are you sure you want to delete this project?")) {
-      return;
-    }
-    dispatch(deleteProject(projectId) as any);
+    const project = projects.find((p) => p.id === projectId);
+    const projectName = project?.name || "this project";
+
+    dialogs.open(
+      ProjectDeleteDialog,
+      { projectName },
+      {
+        onClose: async (confirmed: boolean) => {
+          if (confirmed) {
+            dispatch(deleteProject(projectId) as any).then(() => {
+              // Refresh the project list after deletion
+              handleFetchProjects();
+            });
+          }
+        },
+      }
+    );
   };
 
   /**

@@ -376,6 +376,7 @@ async def clear_project_data(project_id: str) -> Dict[str, Any]:
             "relations": 0,
             "base_case_summaries": 0,
             "base_case_recommendations": 0,
+            "vectors": 0,
         }
 
         # Delete all scenarios for this project
@@ -481,6 +482,18 @@ async def clear_project_data(project_id: str) -> Dict[str, Any]:
                 files_deleted += 1
         deleted_counts["files"] = files_deleted
 
+        # Delete all vectors from Pinecone namespace
+        try:
+            from ...domain.parsing.storage.vector_store import delete_vectors_by_namespace
+            vectors_deleted = delete_vectors_by_namespace(project_id)
+            deleted_counts["vectors"] = vectors_deleted if vectors_deleted > 0 else 0
+        except Exception as e:
+            logger.warning(
+                f"Failed to delete Pinecone vectors for project {project_id}: {e}. "
+                f"Continuing with other cleanup operations."
+            )
+            deleted_counts["vectors"] = 0
+
         logger.info(
             f"Cleared project data for {project_id}: "
             f"{scenarios_deleted} scenarios, {deleted_counts['cost_estimates']} cost estimates, "
@@ -488,7 +501,8 @@ async def clear_project_data(project_id: str) -> Dict[str, Any]:
             f"{chunks_deleted} chunks, {tables_deleted} tables, "
             f"{entities_deleted} entities, {relations_deleted} relations, "
             f"{deleted_counts['base_case_summaries']} base case summaries, "
-            f"{deleted_counts['base_case_recommendations']} base case recommendations"
+            f"{deleted_counts['base_case_recommendations']} base case recommendations, "
+            f"{deleted_counts['vectors']} vectors"
         )
 
         return {
@@ -535,6 +549,7 @@ async def delete_all_user_data(user_id: str) -> Dict[str, Any]:
             "relations": 0,
             "base_case_summaries": 0,
             "base_case_recommendations": 0,
+            "vectors": 0,
         }
 
         # Get all projects (for now, we delete all since projects don't have user_id)
@@ -650,6 +665,64 @@ async def delete_all_user_data(user_id: str) -> Dict[str, Any]:
                     files_deleted += 1
         deleted_counts["files"] = files_deleted
 
+        # Clear all vectors from Pinecone index (all namespaces)
+        try:
+            from ...domain.parsing.storage.vector_store import _get_pinecone_index
+            
+            index = _get_pinecone_index()
+            
+            # Enumerate all namespaces
+            logger.info("Enumerating Pinecone namespaces for deletion")
+            stats = index.describe_index_stats()
+            namespaces = list(stats.get("namespaces", {}).keys())
+            
+            # If no explicit namespaces exist, Pinecone implicitly uses "__default__"
+            if not namespaces:
+                namespaces = ["__default__"]
+                logger.info("No explicit namespaces found, using default namespace")
+            
+            logger.info(f"Found {len(namespaces)} namespace(s) to clear: {namespaces}")
+            
+            # Delete all vectors from each namespace
+            namespaces_cleared = []
+            total_vectors_deleted = 0
+            for ns in namespaces:
+                try:
+                    logger.info(f"Deleting all vectors from namespace: {ns}")
+                    index.delete(delete_all=True, namespace=ns)
+                    namespaces_cleared.append(ns)
+                    
+                    # Try to get vector count before deletion for logging
+                    try:
+                        ns_stats = stats.get("namespaces", {}).get(ns, {})
+                        vector_count = ns_stats.get("vector_count", 0)
+                        if vector_count > 0:
+                            total_vectors_deleted += vector_count
+                    except Exception:
+                        # If we can't get the count, that's okay
+                        pass
+                    
+                    logger.info(f"Successfully deleted all vectors from namespace: {ns}")
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to delete vectors from namespace {ns}: {e}. "
+                        f"Continuing with other namespaces."
+                    )
+                    # Continue with other namespaces even if one fails
+                    continue
+            
+            deleted_counts["vectors"] = total_vectors_deleted if total_vectors_deleted > 0 else len(namespaces_cleared)
+            logger.info(
+                f"Cleared {len(namespaces_cleared)}/{len(namespaces)} Pinecone namespaces "
+                f"during user data deletion"
+            )
+        except Exception as e:
+            logger.warning(
+                f"Failed to clear Pinecone index during user data cleanup: {e}. "
+                f"Continuing with other cleanup operations."
+            )
+            deleted_counts["vectors"] = 0
+
         # Delete all projects
         projects_deleted = _projects_collection.delete_many({}).deleted_count
         deleted_counts["projects"] = projects_deleted
@@ -658,7 +731,8 @@ async def delete_all_user_data(user_id: str) -> Dict[str, Any]:
             f"Deleted all user data for user {user_id}: "
             f"{projects_deleted} projects, {deleted_counts['scenarios']} scenarios, "
             f"{files_deleted} files, {deleted_counts['base_case_summaries']} base case summaries, "
-            f"{deleted_counts['base_case_recommendations']} base case recommendations"
+            f"{deleted_counts['base_case_recommendations']} base case recommendations, "
+            f"{deleted_counts['vectors']} vectors"
         )
 
         return {

@@ -33,9 +33,6 @@ import {
   CardContent,
   IconButton,
 } from "@mui/material";
-import SummarizeOutlinedIcon from "@mui/icons-material/SummarizeOutlined";
-import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
-import { ExpandMore as ExpandMoreIcon } from "@mui/icons-material";
 import { PlayArrow as PlayArrowIcon } from "@mui/icons-material";
 import {
   Add as AddIcon,
@@ -45,9 +42,8 @@ import {
 import ObjectiveDetailsForm from "../../components/scenario/ObjectiveDetailsForm";
 import AnalysisOptionsForm from "../../components/scenario/AnalysisOptionsForm";
 import BaseCaseRecommendationView from "../../components/scenario/BaseCaseRecommendationView";
-import LocalObjectives from "../../components/scenario/LocalObjectives";
+import LocalObjectiveInputs from "../../components/scenario/LocalObjectiveInputs";
 import CreateCostEstimateDialog from "../../components/scenario/CreateCostEstimateDialog";
-import SystemDesignInputs from "../../components/scenario/SystemDesignInputs";
 import { useDialogs } from "../../hooks/useDialogs";
 import {
   fetchScenarioById,
@@ -754,11 +750,12 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
           {/* Scenario Info Panel */}
           <Paper elevation={0} sx={{ p: 1, mb: 3, backgroundColor: "#f9f9f9" }}>
             <Typography variant="h4" component="h1" gutterBottom>
-              {scenario.name}  ID: {scenario.id}
+              {scenario.name} ID: {scenario.id}
             </Typography>
             {scenario.description && (
               <Typography variant="body1" color="text.secondary" gutterBottom>
-                Description: {scenario.description || "No description available"}
+                Description:{" "}
+                {scenario.description || "No description available"}
               </Typography>
             )}
           </Paper>
@@ -772,8 +769,8 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                 aria-label="scenario details tabs"
               >
                 <Tab label="Objectives" id="scenario-tab-0" />
-                <Tab label="System Design" id="scenario-tab-1" />
-                <Tab label="Cost Estimate" id="scenario-tab-2" />
+                <Tab label="Recommendations" id="scenario-tab-1" />
+                <Tab label="Cost Estimates" id="scenario-tab-2" />
                 <Tab label="Report" id="scenario-tab-3" />
               </Tabs>
             </Box>
@@ -864,50 +861,13 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
               </Box>
             </TabPanel>
 
-            {/* Tab 1: System Design */}
+            {/* Tab 1: Recommendations */}
             <TabPanel value={activeTab} index={1}>
               <Box sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>
-                  System Design
+                  Recommendations
                 </Typography>
-
-                <Accordion
-                  defaultExpanded={false}
-                  sx={{ backgroundColor: "#f9f9f9", mb: 2 }}
-                >
-                  <AccordionSummary
-                    expandIcon={<ExpandMoreIcon />}
-                    aria-controls="recommendations-content"
-                    id="recommendations-header"
-                  >
-                    <SummarizeOutlinedIcon sx={{ mr: 1 }} />
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      Base Case Recommendations
-                    </Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <BaseCaseRecommendationView scenarioId={scenarioId || ""} />
-                  </AccordionDetails>
-                </Accordion>
-
-                <Accordion
-                  defaultExpanded={false}
-                  sx={{ backgroundColor: "#f9f9f9", mb: 2 }}
-                >
-                  <AccordionSummary
-                    expandIcon={<ExpandMoreIcon />}
-                    aria-controls="system-parameters-content"
-                    id="system-parameters-header"
-                  >
-                    <ChecklistOutlinedIcon sx={{ mr: 1 }} />
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      System Parameters
-                    </Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <LocalObjectives scenarioId={scenarioId || ""} />
-                  </AccordionDetails>
-                </Accordion>
+                <BaseCaseRecommendationView scenarioId={scenarioId || ""} />
               </Box>
             </TabPanel>
 
@@ -967,7 +927,7 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
 
                     {/* Step 1: System Design Inputs */}
                     <Box sx={{ mb: 4 }}>
-                      <SystemDesignInputs
+                      <LocalObjectiveInputs
                         scenarioId={scenarioId || ""}
                         globalObjectiveType={scenario?.global_objective_type}
                         globalObjectiveTarget={

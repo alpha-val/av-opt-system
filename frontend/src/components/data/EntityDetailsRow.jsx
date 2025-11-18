@@ -1,15 +1,14 @@
 import React, { useMemo } from "react";
-import { useSelector } from "react-redux";
 import { TableRow, TableCell, Typography, Chip, Box } from "@mui/material";
 import {
   Info as InfoIcon,
   Description as DocumentIcon,
 } from "@mui/icons-material";
 
-import { selectBaseCaseDocuments } from "../../../redux/dataSlice";
-
 const EntityDetailsRow = ({ entity, index }) => {
-  const baseCaseDocuments = useSelector(selectBaseCaseDocuments);
+  // Note: baseCaseDocuments was removed as documentsSlice doesn't exist
+  // The Sources column is commented out, so this is not needed
+  const baseCaseDocuments = [];
 
   // Get entity type color for left border
   const getTypeColor = (type) => {

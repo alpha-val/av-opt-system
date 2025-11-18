@@ -54,6 +54,7 @@ import DocumentList, {
 import ScenariosList from "../../components/scenario/ScenariosList";
 import ScenarioDetails from "../scenario/ScenarioDetails";
 import ProgressWidget from "../../components/common/ProgressWidget";
+import InspectDataView from "../../components/data/InspectDataView";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -600,7 +601,8 @@ This action cannot be undone. Are you sure you want to delete this file?`,
               >
                 <Tab label="Overview" id="project-tab-0" />
                 <Tab label="Sources" id="project-tab-1" />
-                <Tab label="Scenarios" id="project-tab-2" />
+                <Tab label="Inspect Data" id="project-tab-2" />
+                <Tab label="Scenarios" id="project-tab-3" />
               </Tabs>
             </Box>
 
@@ -1001,8 +1003,15 @@ This action cannot be undone. Are you sure you want to delete this file?`,
               </Box>
             </TabPanel>
 
-            {/* Tab 2: Scenarios */}
+            {/* Tab 2: Inspect Data */}
             <TabPanel value={activeTab} index={2}>
+              <Box sx={{ p: 2 }}>
+                <InspectDataView projectId={projectId} />
+              </Box>
+            </TabPanel>
+
+            {/* Tab 3: Scenarios */}
+            <TabPanel value={activeTab} index={3}>
               <Box sx={{ p: 2 }}>
                 {selectedScenarioId ? (
                   <ScenarioDetails

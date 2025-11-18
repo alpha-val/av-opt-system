@@ -59,7 +59,7 @@ class ProjectOrchestrationService:
 
         # Initialize LLM for recommendations extraction
         self._llm = ChatOpenAI(
-            model=SETTINGS.llm_model_name or "gpt-4o",
+            model=SETTINGS.llm_model_name or "gpt-5.1",
             api_key=SETTINGS.openai_api_key,
             timeout=300,
             max_retries=3,
@@ -1000,6 +1000,8 @@ class ProjectOrchestrationService:
                 project_id=project_id,
                 user_id=user_id,
                 store_in_pinecone=store_in_pinecone,
+                chunking_strategy="character",
+                char_limit=15000,
             )
 
             logger.info(
@@ -1378,7 +1380,6 @@ class ProjectOrchestrationService:
                 "recommendations_id": "",
             }
 
-
     def dedupe_nodes_by_attributes_and_msio(
         self,
         nodes: List[Dict[str, Any]],
@@ -1406,7 +1407,6 @@ class ProjectOrchestrationService:
         except Exception as e:
             logger.error(f"Error deduplicating nodes: {e}")
             return nodes
-
 
     async def _extract_targeted_entities_v2(
         self,
@@ -1558,7 +1558,9 @@ class ProjectOrchestrationService:
                         if rel_props.get("name") == props.get("name") or rel_entity.get(
                             "id"
                         ) == node.get("id"):
-                            props.setdefault("discipline", rel_props.get("discipline", ""))
+                            props.setdefault(
+                                "discipline", rel_props.get("discipline", "")
+                            )
                             props.setdefault("category", rel_props.get("category", ""))
                             props.setdefault(
                                 "subcategory", rel_props.get("subcategory", "")
@@ -1609,7 +1611,6 @@ class ProjectOrchestrationService:
                 "entities_stored": 0,
                 "edges_stored": 0,
             }
-
 
     async def _store_recommendations_v2(
         self,
@@ -1676,7 +1677,6 @@ class ProjectOrchestrationService:
         # V3 Analysis Workflow Functions
         # ============================================================================
 
-
     async def _read_base_case_documents_v3(
         self,
         document_ids: List[str],
@@ -1722,7 +1722,6 @@ class ProjectOrchestrationService:
                 )
         return documents
 
-
     async def _extract_recommendations_v3(
         self,
         full_text: str,
@@ -1752,25 +1751,48 @@ class ProjectOrchestrationService:
             # Build prompt for recommendations extraction
             objective_context = f"""
                 GLOBAL OBJECTIVE:
-                - Type: {global_objective_type}
-                - Target: {global_objective_target}
+                - Analyze the text to achieve the following objective: {global_objective_type}
+                - Target magnitude of change by: {global_objective_target}
                 """
             if objective_description:
                 objective_context += f"- Description: {objective_description}\n"
 
-            # Limit text to avoid token limits (keep first 50000 chars)
-            text_for_analysis = full_text[:50000] if len(full_text) > 50000 else full_text
-
+            # Limit text to avoid token limits (keep first 15000 chars)
+            # text_for_analysis = (
+            #     full_text[:15000] if len(full_text) > 15000 else full_text
+            # )
+            text_for_analysis = full_text
+            
             recommendations_prompt = f"""
-            You are an expert process engineer and cost estimator analyzing a base case engineering report.
-
+            You are an expert process engineer and cost estimator analyzing a base case engineering report. You are tasked with analyzing the text to achieve the following objective: 
             {objective_context}
 
             TASK:
-            1. Analyze the base case document in the context of the global objective.
-            2. Generate specific recommendations for system redesign to meet the objective.
-            3. Identify which entities are most relevant for achieving the recommendations.
-            4. For each relevant entity, provide a COMPLETE NODE STRUCTURE with:
+            1. Comprehensively analyze the base case document in the context of the objective: {global_objective_type} and target magnitude of change by: {global_objective_target}.
+            2. Generate a COMPREHENSIVE set of recommendations (aim for 15-30+ recommendations) categorized as:
+               - PRIMARY recommendations (5-10): High-impact, direct solutions that directly address the objective
+               - SECONDARY recommendations (5-10): Supporting changes that enhance or enable primary recommendations
+               - OTHER recommendations (5-10): Alternative approaches, lower-priority options, or innovative solutions
+            3. Explore ALL aspects of the system across multiple categories:
+               - Equipment Upgrades: Capacity increases, replacements, additions, technology upgrades
+               - Process Optimization: Flow improvements, efficiency gains, throughput enhancements
+               - Operational Changes: Shift patterns, staffing, procedures, scheduling
+               - Infrastructure: Utilities, buildings, site work, foundations, structures
+               - Material Changes: Raw materials, consumables, feedstocks, product specifications
+               - Control Systems: Automation, instrumentation, SCADA, control logic
+               - Energy Efficiency: Power consumption, heat recovery, waste minimization
+               - Maintenance Strategy: Reliability improvements, preventive maintenance, spare parts
+               - Safety Enhancements: Safety systems, procedures, equipment, training
+               - Environmental Improvements: Emissions reduction, waste treatment, compliance
+            4. For each recommendation, classify it with:
+               - recommendation_category: "primary", "secondary", or "other"
+               - type: Specific category (e.g., "Equipment Upgrade", "Process Optimization", etc.)
+               - estimated_cost_range: Rough cost estimate
+               - time_to_implement: Implementation timeline
+               - dependencies: Other recommendations this depends on (if any)
+               - alternative_to: Alternative approaches to other recommendations (if any)
+            5. Identify ALL entities relevant for achieving each recommendation.
+            6. For each relevant entity, provide a COMPLETE NODE STRUCTURE with:
             - id: unique identifier for the entity
             - type: entity type from NODE_TYPES
             - properties: complete properties object including:
@@ -1786,19 +1808,60 @@ class ProjectOrchestrationService:
             {text_for_analysis}
 
             INSTRUCTIONS:
-            - Generate recommendations that address what needs to change to meet the objective.
-            - For each recommendation, identify ALL entities that should be modified/replaced.
-            - Prioritize recommendations based on impact and feasibility.
-            - For each relevant entity, provide a COMPLETE NODE STRUCTURE following the extract_nodes format:
-            * Include id, type, and properties fields
-            * Include all applicable properties from NODE_PROPERTIES
-            * Include complete MSIO classification (discipline, category, subcategory, entity)
-            * Include expected_attributes, evidence_locations, extraction_rationale, extraction_priority in properties
+            - THINK BROADLY: Don't just focus on obvious equipment upgrades. Explore all aspects:
+              * Equipment: pumps, tanks, vessels, reactors, heat exchangers, compressors, filters, separators
+              * Processes: reaction conditions, separation methods, purification steps, material handling
+              * Operations: work schedules, batch vs continuous, staffing levels, training
+              * Infrastructure: utilities (steam, cooling water, electricity), buildings, site improvements
+              * Materials: feed quality, product specifications, consumables, catalysts
+              * Controls: automation level, instrumentation, data collection, process control
+              * Energy: power consumption, heat integration, waste heat recovery, efficiency
+              * Maintenance: reliability, spare parts, preventive maintenance, condition monitoring
+              * Safety: safety systems, emergency response, hazard mitigation, personal protective equipment
+              * Environment: emissions, waste streams, treatment systems, compliance
+            - Generate MINIMUM 15 recommendations (ideally 20-30+), distributed across categories:
+              * 5-10 primary recommendations (direct, high-impact solutions)
+              * 5-10 secondary recommendations (supporting/enabling changes)
+              * 5-10 other recommendations (alternatives, innovations, lower priority)
+            - For each recommendation, identify ALL entities that should be modified/replaced/added.
+            - Prioritize recommendations based on impact, feasibility, and cost-effectiveness.
+            - For each relevant entity, exhaustively combine all possible information from the base case reports and provide a COMPLETE NODE STRUCTURE:
+                * Include id, type, and properties fields
+                * Include all applicable properties from NODE_PROPERTIES
+                * Include complete MSIO classification (discipline, category, subcategory, entity)
+                * Include expected_attributes, evidence_locations, extraction_rationale, extraction_priority in properties
+                * Explicitly encode based on the objective: {global_objective_type} and target magnitude of change by: {global_objective_target} whether the entity is a fixed or floating entity.
+                * Explicitly encode in the attributes the direction of the change: encode the direction of the change in the attributes. 
+                * Explicitly encode in the attributes the unit of the change: encode the unit of the change in the attributes.
+                * Explicitly encode in the attributes the basis year of the change: encode the basis year of the change in the attributes.
+                * Explicitly encode in the attributes the currency of the change: encode the currency of the change in the attributes.
+                * Explicitly encode in the attributes the source of the change: encode the source of the change in the attributes.
+                * Explicitly encode in the attributes the update frequency of the change: encode the update frequency of the change in the attributes.
+                * Explicitly encode in the attributes the effective life of the change: encode the effective life of the change in the attributes.
+                * Explicitly encode in the attributes the reclamation cost of the change: encode the reclamation cost of the change in the attributes.
             - Include evidence locations (text snippets, page numbers, section references) to guide entity extraction.
             - List expected attributes that should be extracted for each entity.
-            - Be comprehensive: identify all entities relevant to the recommendations.
+            - Be COMPREHENSIVE: identify all entities relevant to ALL recommendations across ALL categories.
             - ALL relevant_entities must follow the exact structure: id, type, properties (with all NODE_PROPERTIES)
 
+            EXAMPLES OF RECOMMENDATION TYPES TO EXPLORE:
+            - Equipment Upgrade: "Upgrade pump from 100 gpm to 125 gpm capacity"
+            - Process Optimization: "Optimize reaction temperature to increase yield by 10%"
+            - Operational Change: "Implement 24/7 operation with 3-shift schedule"
+            - Infrastructure: "Install additional cooling water system capacity"
+            - Material Change: "Switch to higher-grade feedstock for improved efficiency"
+            - Control System: "Implement advanced process control (APC) system"
+            - Energy Efficiency: "Install heat exchanger to recover waste heat"
+            - Maintenance Strategy: "Implement predictive maintenance program"
+            - Safety Enhancement: "Install automated emergency shutdown system"
+            - Environmental Improvement: "Add scrubber system to reduce emissions"
+
+            IMPORTANT:
+            - EXPLORE EXHAUSTIVELY: Think beyond the obvious. Consider all system components, processes, and operations.
+            - Generate a COMPREHENSIVE set: Aim for 15-30+ recommendations across all categories.
+            - Categorize properly: Primary = direct high-impact solutions, Secondary = supporting changes, Other = alternatives/innovations.
+            - Be thorough: Every significant system component, process step, and operational aspect should be considered.
+            
             Use the extract_recommendations tool to provide your analysis.
             """
 
@@ -1829,11 +1892,28 @@ class ProjectOrchestrationService:
 
             # If no recommendations extracted, log warning
             if not recommendations:
-                logger.warning(f"No recommendations extracted for document {document_id}")
+                logger.warning(
+                    f"No recommendations extracted for document {document_id}"
+                )
 
+            # Sort recommendations by category (primary first, then secondary, then other)
+            category_order = {"primary": 0, "secondary": 1, "other": 2}
+            recommendations.sort(
+                key=lambda r: (
+                    category_order.get(r.get("recommendation_category", "other"), 2),
+                    r.get("recommendation_id", "")
+                )
+            )
+
+            # Log recommendation counts by category
+            primary_count = sum(1 for r in recommendations if r.get("recommendation_category") == "primary")
+            secondary_count = sum(1 for r in recommendations if r.get("recommendation_category") == "secondary")
+            other_count = sum(1 for r in recommendations if r.get("recommendation_category") == "other")
+            
             logger.info(
-                f"Extracted {len(recommendations)} recommendations and "
-                f"{len(entities_for_costing)} entities for costing"
+                f"Extracted {len(recommendations)} total recommendations "
+                f"(Primary: {primary_count}, Secondary: {secondary_count}, Other: {other_count}) "
+                f"and {len(entities_for_costing)} entities for costing"
             )
 
             return {
@@ -1851,7 +1931,6 @@ class ProjectOrchestrationService:
                 "entities_for_costing": [],
             }
 
-
     async def _retrieve_relevant_entities_v3(
         self,
         project_id: str,
@@ -1861,7 +1940,8 @@ class ProjectOrchestrationService:
         artifact_type: str = "base_case",
     ) -> List[Dict[str, Any]]:
         """
-        Query MongoDB for entities based on recommendations, create placeholders if no matches.
+        Query entities using semantic search (Pinecone) with MongoDB fallback.
+        Create placeholders if no matches found.
 
         Args:
             project_id: Project identifier
@@ -1874,8 +1954,14 @@ class ProjectOrchestrationService:
             List of entity documents (matched + placeholders)
         """
         from ..parsing.storage.document_store import DocumentStore
+        from ..parsing.storage.vector_store import (
+            search_entities_by_embedding,
+            generate_embeddings,
+            EntityVectorStore,
+        )
 
         document_store = DocumentStore()
+        entity_vector_store = EntityVectorStore()
         matched_entities = []
         placeholder_entities = []
 
@@ -1909,45 +1995,230 @@ class ProjectOrchestrationService:
                                 }
                             )
 
-            # Build MongoDB queries for each entity specification
+            # Process each entity specification with semantic search
             for entity_spec in all_entities_for_costing:
-                query = {
-                    "properties.project_id": project_id,
-                    "properties.scenario_id": scenario_id,
-                    "properties.artifact_type": artifact_type,
-                }
-
-                # Extract properties from entity spec (format: {_id, type, properties: {...}})
+                # Normalize entity_spec to match MongoDB entity format
+                # Entity spec format: {_id, type, properties: {name, discipline, category, subcategory, entity, ...}}
                 properties = entity_spec.get("properties", {})
-                
-                # Match by entity name
-                entity_name = properties.get("name")
-                if entity_name:
-                    query["properties.name"] = {"$regex": entity_name, "$options": "i"}
 
-                # Match by MSIO classification (directly from properties)
-                if properties.get("discipline"):
-                    query["properties.discipline"] = properties["discipline"]
-                if properties.get("category"):
-                    query["properties.category"] = properties["category"]
-                if properties.get("subcategory"):
-                    query["properties.subcategory"] = properties["subcategory"]
-                if properties.get("entity"):
-                    query["properties.entity"] = properties["entity"]
-
-                # Match by entity type (at top level)
+                # Extract name from properties if not at top level (normalize format)
+                entity_name = properties.get("name") or entity_spec.get(
+                    "name", "unknown"
+                )
                 entity_type = entity_spec.get("type")
-                if entity_type:
-                    query["type"] = entity_type
 
-                # Query MongoDB
-                found_entities = list(document_store._db.entities.find(query))
+                # Ensure MSIO fields are in properties dict (normalize structure)
+                normalized_properties = properties.copy()
+                if "name" not in normalized_properties:
+                    normalized_properties["name"] = entity_name
 
-                if found_entities:
-                    matched_entities.extend(found_entities)
-                    logger.info(
-                        f"Found {len(found_entities)} matching entities for {entity_name or 'unknown'}"
+                # Convert expected_attributes to readable format if present
+                if "expected_attributes" in normalized_properties:
+                    expected_attrs = normalized_properties["expected_attributes"]
+                    if isinstance(expected_attrs, list):
+                        # Convert list to comma-separated string for better semantic matching
+                        normalized_properties["expected_attributes"] = ", ".join(
+                            str(attr) for attr in expected_attrs if attr
+                        )
+
+                found_entity = None
+
+                try:
+                    # Convert entity_spec to entity-like dict matching MongoDB format exactly
+                    # Format: {id, type, name, properties: {name, discipline, category, subcategory, entity, ...}}
+                    entity_like_dict = {
+                        "id": entity_spec.get("_id") or entity_spec.get("id", ""),
+                        "type": entity_type or "Unknown",
+                        "name": entity_name,
+                        "properties": normalized_properties,
+                    }
+                    # Build text representation for embedding
+                    text_for_embedding = entity_vector_store.build_text_for_embedding(
+                        entity_like_dict
                     )
+
+                    logger.info(
+                        f"Semantic search for '{entity_name}': "
+                        f"project_id={project_id}, scenario_id={scenario_id}, "
+                        f"artifact_type={artifact_type}"
+                    )
+                    logger.debug(
+                        f"Semantic search query text for '{entity_name}': {text_for_embedding}"
+                    )
+
+                    # Generate embedding
+                    embeddings = generate_embeddings([text_for_embedding])
+                    if not embeddings:
+                        raise ValueError("Failed to generate embedding")
+
+                    embedding = embeddings[0]
+                    logger.debug(
+                        f"Generated embedding vector of length {len(embedding)} for '{entity_name}'"
+                    )
+
+                    # Search Pinecone with progressive cutoff fallback
+                    # Note: For base_case entities, scenario_id filter is automatically skipped
+                    # because base case entities don't have scenario_id (they're shared across scenarios)
+                    semantic_matches = None
+                    cutoff_used = 0.7
+                    used_scenario_filter = (
+                        artifact_type != "base_case" and scenario_id is not None
+                    )
+
+                    # Search with progressive cutoff (0.7, then 0.5)
+                    # scenario_id filter is handled automatically in search_entities_by_embedding
+                    for cutoff_attempt in [0.5]:
+                        semantic_matches = search_entities_by_embedding(
+                            embedding=embedding,
+                            project_id=project_id,
+                            # scenario_id=scenario_id if artifact_type != "base_case" else None, # DON't search for scenario_id
+                            artifact_type=artifact_type,
+                            entity_types=None,  # Remove type filter - rely on semantic similarity
+                            top_k=5,
+                            cutoff=cutoff_attempt,
+                        )
+
+                        if semantic_matches:
+                            cutoff_used = cutoff_attempt
+                            logger.info(
+                                f"Semantic search found {len(semantic_matches)} matches for '{entity_name}' "
+                                f"with cutoff {cutoff_attempt} "
+                                f"({'with scenario_id filter' if used_scenario_filter else 'without scenario_id filter (base_case)'})"
+                            )
+                            break
+                        else:
+                            logger.debug(
+                                f"Semantic search found no matches for '{entity_name}' "
+                                f"with cutoff {cutoff_attempt}, trying lower cutoff..."
+                            )
+
+                    # Log all match scores for debugging (even if filtered)
+                    if semantic_matches:
+                        score_details = [
+                            f"{m.get('id', 'unknown')}: {m.get('relevance_score', 0):.3f}"
+                            for m in semantic_matches
+                        ]
+                        logger.debug(
+                            f"Semantic match scores for '{entity_name}': {', '.join(score_details)}"
+                        )
+
+                        # Log stored entity text_content for comparison (first match)
+                        top_match = semantic_matches[0]
+                        stored_text = (
+                            top_match.get("properties", {}).get("text_content") or "N/A"
+                        )
+                        logger.debug(
+                            f"Stored entity text_content (first match) for '{entity_name}': "
+                            f"{stored_text[:300]}..."
+                        )
+
+                        # Compare MSIO hierarchies
+                        stored_props = top_match.get("properties", {})
+                        stored_msio = (
+                            f"{stored_props.get('discipline', 'N/A')} > "
+                            f"{stored_props.get('category', 'N/A')} > "
+                            f"{stored_props.get('subcategory', 'N/A')} > "
+                            f"{stored_props.get('entity', 'N/A')}"
+                        )
+                        query_msio = (
+                            f"{normalized_properties.get('discipline', 'N/A')} > "
+                            f"{normalized_properties.get('category', 'N/A')} > "
+                            f"{normalized_properties.get('subcategory', 'N/A')} > "
+                            f"{normalized_properties.get('entity', 'N/A')}"
+                        )
+                        logger.debug(
+                            f"MSIO comparison for '{entity_name}': "
+                            f"Stored: {stored_msio}, Query: {query_msio}"
+                        )
+
+                    # Filter results by scenario_id if not already filtered by Pinecone
+                    if semantic_matches:
+                        filtered_matches = []
+                        for match in semantic_matches:
+                            match_props = match.get("properties", {})
+                            match_scenario_id = match_props.get("scenario_id")
+
+                            if match_scenario_id == scenario_id:
+                                filtered_matches.append(match)
+                            else:
+                                logger.debug(
+                                    f"Filtered out match {match.get('id')} for '{entity_name}': "
+                                    f"scenario_id mismatch (expected: {scenario_id}, got: {match_scenario_id})"
+                                )
+
+                        if filtered_matches:
+                            # Use top match (already sorted by relevance_score)
+                            found_entity = filtered_matches[0]
+                            logger.info(
+                                f"Semantic search found entity for '{entity_name}': "
+                                f"id={found_entity.get('id')}, "
+                                f"score={found_entity.get('relevance_score', 0):.3f}, "
+                                f"cutoff={cutoff_used}"
+                            )
+                        elif semantic_matches:
+                            # If we have matches but none match scenario_id, use top match anyway
+                            # (scenario_id might not be in Pinecone metadata)
+                            found_entity = semantic_matches[0]
+                            logger.info(
+                                f"Semantic search found entity for '{entity_name}' "
+                                f"(scenario_id not verified): id={found_entity.get('id')}, "
+                                f"score={found_entity.get('relevance_score', 0):.3f}, "
+                                f"cutoff={cutoff_used}"
+                            )
+                    else:
+                        logger.debug(
+                            f"No semantic matches found for '{entity_name}' "
+                            f"even with cutoff 0.5"
+                        )
+
+                except Exception as e:
+                    logger.warning(
+                        f"Semantic search failed for entity '{entity_name}': {e}. "
+                        f"Falling back to MongoDB exact query."
+                    )
+
+                # Fallback to MongoDB exact query if semantic search didn't find a match
+                if not found_entity:
+                    query = {
+                        "properties.project_id": project_id,
+                        "properties.scenario_id": scenario_id,
+                        "properties.artifact_type": artifact_type,
+                    }
+
+                    # Match by entity name
+                    if entity_name:
+                        query["properties.name"] = {
+                            "$regex": entity_name,
+                            "$options": "i",
+                        }
+
+                    # Match by MSIO classification (directly from properties)
+                    if properties.get("discipline"):
+                        query["properties.discipline"] = properties["discipline"]
+                    if properties.get("category"):
+                        query["properties.category"] = properties["category"]
+                    if properties.get("subcategory"):
+                        query["properties.subcategory"] = properties["subcategory"]
+                    if properties.get("entity"):
+                        query["properties.entity"] = properties["entity"]
+
+                    # Match by entity type (at top level)
+                    if entity_type:
+                        query["type"] = entity_type
+
+                    # Query MongoDB
+                    found_entities = list(document_store._db.entities.find(query))
+
+                    if found_entities:
+                        found_entity = found_entities[0]  # Use first match
+                        logger.info(
+                            f"MongoDB exact query found {len(found_entities)} matching entities "
+                            f"for '{entity_name}'"
+                        )
+
+                # Add matched entity or create placeholder
+                if found_entity:
+                    matched_entities.append(found_entity)
                 else:
                     # Create placeholder entity
                     placeholder = self._create_placeholder_entity(
@@ -1955,7 +2226,8 @@ class ProjectOrchestrationService:
                     )
                     placeholder_entities.append(placeholder)
                     logger.info(
-                        f"Created placeholder entity for {entity_name or 'unknown'}"
+                        f"Created placeholder entity for '{entity_name}' "
+                        f"(no matches found via semantic search or MongoDB)"
                     )
 
             # Remove duplicates from matched_entities (by _id)
@@ -1968,8 +2240,8 @@ class ProjectOrchestrationService:
                     unique_matched.append(entity)
 
             logger.info(
-                f"Retrieved {len(unique_matched)} matched entities and "
-                f"created {len(placeholder_entities)} placeholder entities"
+                f"Retrieved {len(unique_matched)} matched entities (semantic search + MongoDB) "
+                f"and created {len(placeholder_entities)} placeholder entities"
             )
 
             return unique_matched + placeholder_entities
@@ -1981,7 +2253,6 @@ class ProjectOrchestrationService:
             )
             # Return placeholders even on error
             return placeholder_entities
-
 
     def _create_placeholder_entity(
         self,
@@ -2004,7 +2275,7 @@ class ProjectOrchestrationService:
         """
         # Use existing _id from entity_spec if available, otherwise generate new UUID
         entity_id = entity_spec.get("_id") or entity_spec.get("id") or str(uuid.uuid4())
-        
+
         # Extract properties from entity spec (format: {_id, type, properties: {...}})
         properties = entity_spec.get("properties", {})
         entity_name = properties.get("name", "Unknown Entity")
@@ -2032,12 +2303,16 @@ class ProjectOrchestrationService:
 
         # Preserve additional properties from entity_spec if available
         # (e.g., expected_attributes, evidence_locations, extraction_rationale, extraction_priority)
-        for key in ["expected_attributes", "evidence_locations", "extraction_rationale", "extraction_priority"]:
+        for key in [
+            "expected_attributes",
+            "evidence_locations",
+            "extraction_rationale",
+            "extraction_priority",
+        ]:
             if key in properties:
                 placeholder["properties"][key] = properties[key]
 
         return placeholder
-
 
     async def _store_recommendations_v3(
         self,
@@ -2049,6 +2324,7 @@ class ProjectOrchestrationService:
         global_objective_target: str,
         recommendations: List[Dict[str, Any]],
         relevant_entities: List[Dict[str, Any]],
+        overwrite: bool = True,
     ) -> str:
         """
         Store recommendations in MongoDB (V3 format).
@@ -2062,11 +2338,58 @@ class ProjectOrchestrationService:
             global_objective_target: Target magnitude of change
             recommendations: List of recommendation dictionaries
             relevant_entities: List of relevant entities from MongoDB query
+            overwrite: If True, update existing recommendation matching scenario_id, project_id, and document_id.
+                      If False, always create a new recommendation document. Default: True
 
         Returns:
             Recommendations document ID
         """
         try:
+            # If overwrite is True, check for existing recommendation
+            if overwrite:
+                existing_doc = db().base_case_recommendations.find_one(
+                    {
+                        "scenario_id": scenario_id,
+                        "project_id": project_id,
+                        "document_id": document_id,
+                        "workflow_version": "v3",
+                    }
+                )
+
+                if existing_doc:
+                    # Update existing document
+                    recommendations_id = existing_doc.get("_id") or existing_doc.get(
+                        "id"
+                    )
+                    existing_created_at = existing_doc.get("created_at")
+
+                    recommendations_doc = {
+                        "_id": recommendations_id,
+                        "id": recommendations_id,
+                        "document_id": document_id,
+                        "project_id": project_id,
+                        "scenario_id": scenario_id,
+                        "user_id": user_id,
+                        "global_objective_type": global_objective_type,
+                        "global_objective_target": global_objective_target,
+                        "recommendations": recommendations,
+                        "relevant_entities": relevant_entities,
+                        "workflow_version": "v3",
+                        "created_at": existing_created_at
+                        or datetime.now(timezone.utc).isoformat(),
+                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                    }
+
+                    db().base_case_recommendations.replace_one(
+                        {"_id": recommendations_id}, recommendations_doc
+                    )
+
+                    logger.info(
+                        f"Updated existing recommendations (V3) {recommendations_id} for document {document_id}"
+                    )
+                    return str(recommendations_id)
+
+            # Create new recommendation document (either overwrite=False or no existing doc found)
             recommendations_id = str(uuid.uuid4())
             recommendations_doc = {
                 "_id": recommendations_id,
@@ -2084,12 +2407,10 @@ class ProjectOrchestrationService:
                 "updated_at": datetime.now(timezone.utc).isoformat(),
             }
 
-            db().base_case_recommendations.replace_one(
-                {"_id": recommendations_id}, recommendations_doc, upsert=True
-            )
+            db().base_case_recommendations.insert_one(recommendations_doc)
 
             logger.info(
-                f"Stored recommendations (V3) {recommendations_id} for document {document_id}"
+                f"Stored new recommendations (V3) {recommendations_id} for document {document_id}"
             )
             return recommendations_id
 
