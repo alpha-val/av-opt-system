@@ -22,9 +22,10 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from ...adapters.mongo.client import db
 
 # Import parsing utilities
-from ..parsing.utils.llm_tools import TOOLS, is_valid_json, sanitize_for_json
+from ..parsing.utils.llm_tools import TOOLS, TOOLS_RECOMMENDATIONS, TOOLS_OBJECTIVE_DRIVEN, is_valid_json, sanitize_for_json
 from ..parsing.prompts.entity_extraction_prompt import (
     PROMPT_DISCIPLINE_STRUCTURED_SUMMARY,
+    get_recommendation_based_entity_extraction_prompt,
 )
 
 logger = logging.getLogger(__name__)
@@ -67,6 +68,34 @@ class ProjectOrchestrationService:
             max_tokens=4096,
             model_kwargs={
                 "tools": TOOLS,
+                "tool_choice": "auto",
+            },
+        )
+
+        # Initialize LLM for objective-driven entity extraction
+        self._llm_objective_driven = ChatOpenAI(
+            model=SETTINGS.llm_model_name or "gpt-4o",
+            api_key=SETTINGS.openai_api_key,
+            timeout=300,
+            max_retries=3,
+            temperature=0,
+            max_tokens=4096,
+            model_kwargs={
+                "tools": TOOLS_OBJECTIVE_DRIVEN,
+                "tool_choice": "auto",
+            },
+        )
+
+        # Initialize LLM for recommendations extraction
+        self._llm_recommendations = ChatOpenAI(
+            model=SETTINGS.llm_model_name or "gpt-5.1",
+            api_key=SETTINGS.openai_api_key,
+            timeout=300,
+            max_retries=3,
+            temperature=0,
+            max_tokens=4096,
+            model_kwargs={
+                "tools": TOOLS_RECOMMENDATIONS,
                 "tool_choice": "auto",
             },
         )
@@ -1862,7 +1891,7 @@ class ProjectOrchestrationService:
             - Categorize properly: Primary = direct high-impact solutions, Secondary = supporting changes, Other = alternatives/innovations.
             - Be thorough: Every significant system component, process step, and operational aspect should be considered.
             
-            Use the extract_recommendations tool to provide your analysis.
+            Return recommendations with extract_recommendations(recommendations=[...]) as per the output contract.
             """
 
             system_prompt = SystemMessage(
@@ -1871,7 +1900,7 @@ class ProjectOrchestrationService:
             human_message = HumanMessage(content=recommendations_prompt)
 
             messages = [system_prompt, human_message]
-            resp = self._llm.invoke(messages)
+            resp = self._llm_recommendations.invoke(messages)
 
             # Process tool calls
             recommendations = []
@@ -1924,6 +1953,292 @@ class ProjectOrchestrationService:
         except Exception as e:
             logger.error(
                 f"Error extracting recommendations (V3) for document {document_id}: {e}",
+                exc_info=True,
+            )
+            return {
+                "recommendations": [],
+                "entities_for_costing": [],
+            }
+
+    async def _extract_recommendations_v3_chunked(
+        self,
+        full_text: str,
+        global_objective_type: str,
+        global_objective_target: str,
+        objective_description: Optional[str],
+        document_id: str,
+    ) -> Dict[str, Any]:
+        """
+        Extract recommendations using LLM with chunking approach.
+        
+        This version chunks the base case text into 15000-character chunks with overlap,
+        processes each chunk separately, and merges the results.
+
+        Args:
+            full_text: Full text content of the document
+            global_objective_type: Type of global objective
+            global_objective_target: Target magnitude of change
+            objective_description: Optional description of the global objective
+            document_id: Document identifier
+
+        Returns:
+            Dictionary with recommendations and entities_for_costing (merged from all chunks)
+        """
+        logger.info(
+            f"Extracting recommendations (V3 chunked) for objective: {global_objective_type} ({global_objective_target})"
+        )
+
+        try:
+            # Import chunking utilities
+            import uuid
+
+            # Use same namespace as DocumentProcessingService
+            CHUNK_NAMESPACE = uuid.UUID("11111111-2222-3333-4444-555555555555")
+            
+            # Chunk the text with 15000 character limit and 20% overlap (3000 chars)
+            char_limit = 15000
+            overlap = 3000  # 20% overlap
+            
+            # Create chunks with overlap manually (CharacterChunker doesn't support overlap)
+            chunks = []
+            current_pos = 0
+            seq = 1
+            
+            while current_pos < len(full_text):
+                chunk_text = full_text[current_pos : current_pos + char_limit]
+                chunk_id = str(uuid.uuid5(CHUNK_NAMESPACE, f"{document_id}|{seq}"))
+                
+                chunks.append({
+                    "chunk_id": chunk_id,
+                    "doc_id": document_id,
+                    "seq": seq,
+                    "text": chunk_text,
+                    "start_pos": current_pos,
+                    "end_pos": current_pos + len(chunk_text),
+                })
+                
+                # Move forward by char_limit - overlap to create overlap
+                current_pos += (char_limit - overlap)
+                seq += 1
+                
+                # Break if we've reached the end
+                if current_pos >= len(full_text):
+                    break
+
+            logger.info(
+                f"Created {len(chunks)} chunks for recommendations extraction "
+                f"(char_limit: {char_limit}, overlap: {overlap})"
+            )
+
+            # Build objective context (same for all chunks)
+            objective_context = f"""
+                GLOBAL OBJECTIVE:
+                - Analyze the text to achieve the following objective: {global_objective_type}
+                - Target magnitude of change by: {global_objective_target}
+                """
+            if objective_description:
+                objective_context += f"- Description: {objective_description}\n"
+
+            # Process each chunk
+            all_recommendations = []
+            all_entities_for_costing = []
+            recommendation_ids_seen = set()
+            entity_ids_seen = set()
+
+            for chunk_idx, chunk in enumerate(chunks):
+                chunk_text = chunk["text"]
+                chunk_seq = chunk["seq"]
+                
+                logger.info(
+                    f"Processing chunk {chunk_seq}/{len(chunks)} "
+                    f"(positions {chunk['start_pos']}-{chunk['end_pos']}, "
+                    f"{len(chunk_text)} chars)"
+                )
+
+                recommendations_prompt = f"""
+            You are an expert process engineer and cost estimator analyzing a base case engineering report. You are tasked with analyzing the text to achieve the following objective: 
+            {objective_context}
+
+            TASK:
+            1. Comprehensively analyze this section of the base case document in the context of the objective: {global_objective_type} and target magnitude of change by: {global_objective_target}.
+            2. Generate a COMPREHENSIVE set of recommendations (aim for 15-30+ recommendations) categorized as:
+               - PRIMARY recommendations (5-10): High-impact, direct solutions that directly address the objective
+               - SECONDARY recommendations (5-10): Supporting changes that enhance or enable primary recommendations
+               - OTHER recommendations (5-10): Alternative approaches, lower-priority options, or innovative solutions
+            3. Explore ALL aspects of the system across multiple categories:
+               - Equipment Upgrades: Capacity increases, replacements, additions, technology upgrades
+               - Process Optimization: Flow improvements, efficiency gains, throughput enhancements
+               - Operational Changes: Shift patterns, staffing, procedures, scheduling
+               - Infrastructure: Utilities, buildings, site work, foundations, structures
+               - Material Changes: Raw materials, consumables, feedstocks, product specifications
+               - Control Systems: Automation, instrumentation, SCADA, control logic
+               - Energy Efficiency: Power consumption, heat recovery, waste minimization
+               - Maintenance Strategy: Reliability improvements, preventive maintenance, spare parts
+               - Safety Enhancements: Safety systems, procedures, equipment, training
+               - Environmental Improvements: Emissions reduction, waste treatment, compliance
+            4. For each recommendation, classify it with:
+               - recommendation_category: "primary", "secondary", or "other"
+               - type: Specific category (e.g., "Equipment Upgrade", "Process Optimization", etc.)
+               - estimated_cost_range: Rough cost estimate
+               - time_to_implement: Implementation timeline
+               - dependencies: Other recommendations this depends on (if any)
+               - alternative_to: Alternative approaches to other recommendations (if any)
+            5. Identify ALL entities relevant for achieving each recommendation.
+            6. For each relevant entity, provide a COMPLETE NODE STRUCTURE with:
+            - id: unique identifier for the entity
+            - type: entity type from NODE_TYPES
+            - properties: complete properties object including:
+                * name: entity name
+                * discipline, category, subcategory, entity: MSIO classification (REQUIRED)
+                * All applicable properties from NODE_PROPERTIES as found in the text
+                * expected_attributes: list of attribute names to extract
+                * evidence_locations: text snippets, page references, section anchors
+                * extraction_rationale: why this entity is relevant
+                * extraction_priority: priority level (high/medium/low)
+
+            BASE CASE TEXT (CHUNK {chunk_seq} of {len(chunks)}):
+            {chunk_text}
+
+            INSTRUCTIONS:
+            - THINK BROADLY: Don't just focus on obvious equipment upgrades. Explore all aspects:
+              * Equipment: pumps, tanks, vessels, reactors, heat exchangers, compressors, filters, separators
+              * Processes: reaction conditions, separation methods, purification steps, material handling
+              * Operations: work schedules, batch vs continuous, staffing levels, training
+              * Infrastructure: utilities (steam, cooling water, electricity), buildings, site improvements
+              * Materials: feed quality, product specifications, consumables, catalysts
+              * Controls: automation level, instrumentation, data collection, process control
+              * Energy: power consumption, heat integration, waste heat recovery, efficiency
+              * Maintenance: reliability, spare parts, preventive maintenance, condition monitoring
+              * Safety: safety systems, emergency response, hazard mitigation, personal protective equipment
+              * Environment: emissions, waste streams, treatment systems, compliance
+            - Generate MINIMUM 15 recommendations (ideally 20-30+), distributed across categories:
+              * 5-10 primary recommendations (direct, high-impact solutions)
+              * 5-10 secondary recommendations (supporting/enabling changes)
+              * 5-10 other recommendations (alternatives, innovations, lower priority)
+            - For each recommendation, identify ALL entities that should be modified/replaced/added.
+            - Prioritize recommendations based on impact, feasibility, and cost-effectiveness.
+            - For each relevant entity, exhaustively combine all possible information from the base case reports and provide a COMPLETE NODE STRUCTURE:
+                * Include id, type, and properties fields
+                * Include all applicable properties from NODE_PROPERTIES
+                * Include complete MSIO classification (discipline, category, subcategory, entity)
+                * Include expected_attributes, evidence_locations, extraction_rationale, extraction_priority in properties
+                * Explicitly encode based on the objective: {global_objective_type} and target magnitude of change by: {global_objective_target} whether the entity is a fixed or floating entity.
+                * Explicitly encode in the attributes the direction of the change: encode the direction of the change in the attributes. 
+                * Explicitly encode in the attributes the unit of the change: encode the unit of the change in the attributes.
+                * Explicitly encode in the attributes the basis year of the change: encode the basis year of the change in the attributes.
+                * Explicitly encode in the attributes the currency of the change: encode the currency of the change in the attributes.
+                * Explicitly encode in the attributes the source of the change: encode the source of the change in the attributes.
+                * Explicitly encode in the attributes the update frequency of the change: encode the update frequency of the change in the attributes.
+                * Explicitly encode in the attributes the effective life of the change: encode the effective life of the change in the attributes.
+                * Explicitly encode in the attributes the reclamation cost of the change: encode the reclamation cost of the change in the attributes.
+            - Include evidence locations (text snippets, page numbers, section references) to guide entity extraction.
+            - List expected attributes that should be extracted for each entity.
+            - Be COMPREHENSIVE: identify all entities relevant to ALL recommendations across ALL categories.
+            - ALL relevant_entities must follow the exact structure: id, type, properties (with all NODE_PROPERTIES)
+            - NOTE: This is chunk {chunk_seq} of {len(chunks)}. Focus on recommendations and entities found in this section, but consider how they relate to the overall objective.
+
+            EXAMPLES OF RECOMMENDATION TYPES TO EXPLORE:
+            - Equipment Upgrade: "Upgrade pump from 100 gpm to 125 gpm capacity"
+            - Process Optimization: "Optimize reaction temperature to increase yield by 10%"
+            - Operational Change: "Implement 24/7 operation with 3-shift schedule"
+            - Infrastructure: "Install additional cooling water system capacity"
+            - Material Change: "Switch to higher-grade feedstock for improved efficiency"
+            - Control System: "Implement advanced process control (APC) system"
+            - Energy Efficiency: "Install heat exchanger to recover waste heat"
+            - Maintenance Strategy: "Implement predictive maintenance program"
+            - Safety Enhancement: "Install automated emergency shutdown system"
+            - Environmental Improvement: "Add scrubber system to reduce emissions"
+
+            IMPORTANT:
+            - EXPLORE EXHAUSTIVELY: Think beyond the obvious. Consider all system components, processes, and operations.
+            - Generate a COMPREHENSIVE set: Aim for 15-30+ recommendations across all categories.
+            - Categorize properly: Primary = direct high-impact solutions, Secondary = supporting changes, Other = alternatives/innovations.
+            - Be thorough: Every significant system component, process step, and operational aspect should be considered.
+            
+            Return recommendations with extract_recommendations(recommendations=[...]) as per the output contract.
+            """
+
+                system_prompt = SystemMessage(
+                    content="You are an expert process engineer and cost estimator. Analyze base case documents and provide recommendations for system redesign based on global objectives, including queryable entity information for MongoDB lookup."
+                )
+                human_message = HumanMessage(content=recommendations_prompt)
+
+                messages = [system_prompt, human_message]
+                resp = self._llm_recommendations.invoke(messages)
+
+                # Process tool calls for this chunk
+                chunk_recommendations = []
+                chunk_entities = []
+
+                for call in resp.additional_kwargs.get("tool_calls", []):
+                    fn = call.get("function", {})
+                    name = fn.get("name")
+
+                    if name == "extract_recommendations":
+                        arguments = fn.get("arguments", "{}")
+                        if is_valid_json(arguments):
+                            payload = json.loads(arguments)
+                            payload = sanitize_for_json(payload)
+                            chunk_recommendations = payload.get("recommendations", [])
+                            chunk_entities = payload.get("relevant_entities", [])
+                            break
+
+                # Deduplicate and merge recommendations
+                for rec in chunk_recommendations:
+                    rec_id = rec.get("recommendation_id")
+                    if rec_id and rec_id not in recommendation_ids_seen:
+                        recommendation_ids_seen.add(rec_id)
+                        all_recommendations.append(rec)
+                    elif not rec_id:
+                        # If no ID, add with generated ID to avoid duplicates
+                        rec["recommendation_id"] = f"R{len(all_recommendations) + 1}"
+                        all_recommendations.append(rec)
+
+                # Deduplicate and merge entities
+                for entity in chunk_entities:
+                    entity_id = entity.get("id") or entity.get("_id")
+                    if entity_id and entity_id not in entity_ids_seen:
+                        entity_ids_seen.add(entity_id)
+                        all_entities_for_costing.append(entity)
+                    elif not entity_id:
+                        # If no ID, generate one and add
+                        entity["id"] = str(uuid.uuid4())
+                        all_entities_for_costing.append(entity)
+
+                logger.info(
+                    f"Chunk {chunk_seq}/{len(chunks)}: extracted {len(chunk_recommendations)} recommendations, "
+                    f"{len(chunk_entities)} entities (total so far: {len(all_recommendations)} recommendations, "
+                    f"{len(all_entities_for_costing)} entities)"
+                )
+
+            # Sort recommendations by category (primary first, then secondary, then other)
+            category_order = {"primary": 0, "secondary": 1, "other": 2}
+            all_recommendations.sort(
+                key=lambda r: (
+                    category_order.get(r.get("recommendation_category", "other"), 2),
+                    r.get("recommendation_id", "")
+                )
+            )
+
+            # Log recommendation counts by category
+            primary_count = sum(1 for r in all_recommendations if r.get("recommendation_category") == "primary")
+            secondary_count = sum(1 for r in all_recommendations if r.get("recommendation_category") == "secondary")
+            other_count = sum(1 for r in all_recommendations if r.get("recommendation_category") == "other")
+            
+            logger.info(
+                f"Extracted {len(all_recommendations)} total recommendations from {len(chunks)} chunks "
+                f"(Primary: {primary_count}, Secondary: {secondary_count}, Other: {other_count}) "
+                f"and {len(all_entities_for_costing)} entities for costing"
+            )
+
+            return {
+                "recommendations": all_recommendations,
+                "entities_for_costing": all_entities_for_costing,
+            }
+
+        except Exception as e:
+            logger.error(
+                f"Error extracting recommendations (V3 chunked) for document {document_id}: {e}",
                 exc_info=True,
             )
             return {
@@ -2011,15 +2326,22 @@ class ProjectOrchestrationService:
                 normalized_properties = properties.copy()
                 if "name" not in normalized_properties:
                     normalized_properties["name"] = entity_name
-
+                    
                 # Convert expected_attributes to readable format if present
                 if "expected_attributes" in normalized_properties:
                     expected_attrs = normalized_properties["expected_attributes"]
                     if isinstance(expected_attrs, list):
                         # Convert list to comma-separated string for better semantic matching
-                        normalized_properties["expected_attributes"] = ", ".join(
+                        normalized_properties["attributes"] = ", ".join(
                             str(attr) for attr in expected_attrs if attr
                         )
+
+                # Attributes to exclude
+                attributes_to_exclude = ["expected_attributes", "evidence_locations", "extraction_rationale", "extraction_priority"]
+                
+                for attr in attributes_to_exclude:
+                    if attr in normalized_properties:
+                        del normalized_properties[attr]
 
                 found_entity = None
 
@@ -2420,3 +2742,215 @@ class ProjectOrchestrationService:
                 exc_info=True,
             )
             return ""
+
+
+    async def _extract_objective_driven_nodes_and_relations_v4(
+        self,
+        full_text: str,
+        global_objective_type: str,
+        global_objective_target: str,
+        objective_description: Optional[str],
+        document_id: str,
+    ) -> Dict[str, Any]:
+        """
+        Extract objective-driven nodes and relations using V4 workflow.
+        
+        This method chunks the full text, uses recommendation-based entity extraction prompt,
+        and extracts nodes and edges using LLM with tools.
+
+        Args:
+            full_text: Full text content of the document
+            global_objective_type: Type of global objective
+            global_objective_target: Target magnitude of change
+            objective_description: Optional description of the global objective
+            document_id: Document identifier
+
+        Returns:
+            Dictionary with nodes and edges extracted from the document
+        """
+        logger.info(
+            f"Extracting objective-driven nodes and relations (V4) for objective: "
+            f"{global_objective_type} ({global_objective_target})"
+        )
+
+        try:
+            # Import chunking utilities
+            import uuid
+
+            # Use same namespace as DocumentProcessingService
+            CHUNK_NAMESPACE = uuid.UUID("11111111-2222-3333-4444-555555555555")
+            
+            # Chunk the text
+            char_limit = 10000
+            overlap = 1500  # 15% overlap
+            
+            # Create chunks with overlap manually
+            chunks = []
+            current_pos = 0
+            seq = 1
+            
+            while current_pos < len(full_text):
+                chunk_text = full_text[current_pos : current_pos + char_limit]
+                chunk_id = str(uuid.uuid5(CHUNK_NAMESPACE, f"{document_id}|{seq}"))
+                
+                chunks.append({
+                    "chunk_id": chunk_id,
+                    "doc_id": document_id,
+                    "seq": seq,
+                    "text": chunk_text,
+                    "start_pos": current_pos,
+                    "end_pos": current_pos + len(chunk_text),
+                })
+                
+                # Move forward by char_limit - overlap to create overlap
+                current_pos += (char_limit - overlap)
+                seq += 1
+                
+                # Break if we've reached the end
+                if current_pos >= len(full_text):
+                    break
+
+            logger.info(
+                f"Created {len(chunks)} chunks for entity extraction "
+                f"(char_limit: {char_limit}, overlap: {overlap})"
+            )
+
+            # Build objective context for the prompt
+            objective_context = f"""
+                GLOBAL OBJECTIVE:
+                - Objective type: {global_objective_type}
+                - Target magnitude of change: {global_objective_target}
+                """
+            if objective_description:
+                objective_context += f"- Description: {objective_description}\n"
+
+            # Get the recommendation-based entity extraction prompt
+            base_prompt = get_recommendation_based_entity_extraction_prompt()
+            
+            # Add objective context to the prompt
+            full_user_prompt = f"""{base_prompt}
+
+            {objective_context}
+            """
+
+            # Prepare system prompt
+            system_prompt = SystemMessage(content=full_user_prompt)
+
+            # Collect all extracted data
+            all_nodes = []
+            all_edges = []
+            node_ids_seen = set()
+            edge_ids_seen = set()
+
+            # Process each chunk
+            for chunk_idx, chunk in enumerate(chunks):
+                chunk_text = chunk["text"]
+                chunk_seq = chunk["seq"]
+                
+                logger.info(
+                    f"Processing chunk {chunk_seq}/{len(chunks)} "
+                    f"(positions {chunk['start_pos']}-{chunk['end_pos']}, "
+                    f"{len(chunk_text)} chars)"
+                )
+
+                try:
+                    # Prepare messages with chunk text (following entity_extractor pattern)
+                    human_message = HumanMessage(content=chunk_text)
+                    messages = [system_prompt, human_message]
+
+                    # Invoke LLM with tools
+                    resp = self._llm_objective_driven.invoke(messages)
+
+                    # Track counts for this chunk
+                    chunk_nodes_count = 0
+                    chunk_edges_count = 0
+
+                    # Process tool calls
+                    for call in resp.additional_kwargs.get("tool_calls", []):
+                        fn = call.get("function", {})
+                        name = fn.get("name")
+
+                        try:
+                            arguments = fn.get("arguments", "{}")
+                            if not is_valid_json(arguments):
+                                logger.error(f"Invalid JSON received for {name}: {arguments}")
+                                continue
+
+                            payload = json.loads(arguments)
+                            payload = sanitize_for_json(payload)
+
+                            if name == "extract_nodes":
+                                nodes = payload.get("nodes", [])
+                                # Deduplicate nodes by ID
+                                for node in nodes:
+                                    node_id = node.get("id") or node.get("_id")
+                                    if node_id and node_id not in node_ids_seen:
+                                        node_ids_seen.add(node_id)
+                                        all_nodes.append(node)
+                                        chunk_nodes_count += 1
+                                    elif not node_id:
+                                        # Generate ID if missing
+                                        node["id"] = str(uuid.uuid4())
+                                        all_nodes.append(node)
+                                        chunk_nodes_count += 1
+                                        logger.warning(
+                                            f"Generated ID for node without ID in chunk {chunk_seq}"
+                                        )
+
+                            elif name == "extract_edges":
+                                edges = payload.get("edges", [])
+                                # Deduplicate edges by ID
+                                for edge in edges:
+                                    edge_id = edge.get("id") or edge.get("_id")
+                                    if edge_id and edge_id not in edge_ids_seen:
+                                        edge_ids_seen.add(edge_id)
+                                        all_edges.append(edge)
+                                        chunk_edges_count += 1
+                                    elif not edge_id:
+                                        # Generate ID if missing
+                                        edge["id"] = str(uuid.uuid4())
+                                        all_edges.append(edge)
+                                        chunk_edges_count += 1
+                                        logger.warning(
+                                            f"Generated ID for edge without ID in chunk {chunk_seq}"
+                                        )
+
+                        except json.JSONDecodeError as e:
+                            logger.error(f"Failed to parse LLM JSON for {name}: {e}")
+                            continue
+                        except Exception as e:
+                            logger.error(f"Error processing tool call {name}: {e}")
+                            continue
+
+                except Exception as e:
+                    logger.error(
+                        f"Error processing chunk {chunk_seq}/{len(chunks)}: {e}",
+                        exc_info=True,
+                    )
+                    continue
+
+                logger.info(
+                    f"Chunk {chunk_seq}/{len(chunks)}: extracted {chunk_nodes_count} nodes, "
+                    f"{chunk_edges_count} edges (total: {len(all_nodes)} nodes, {len(all_edges)} edges)"
+                )
+
+            logger.info(
+                f"Extracted {len(all_nodes)} total nodes and {len(all_edges)} total edges "
+                f"from {len(chunks)} chunks"
+            )
+
+            return {
+                "nodes": all_nodes,
+                "edges": all_edges,
+            }
+
+        except Exception as e:
+            logger.error(
+                f"Error extracting objective-driven nodes and relations (V4) "
+                f"for document {document_id}: {e}",
+                exc_info=True,
+            )
+            return {
+                "nodes": [],
+                "edges": [],
+            }

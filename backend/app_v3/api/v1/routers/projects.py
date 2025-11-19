@@ -509,6 +509,7 @@ async def _process_uploaded_files_background(
     project_id: str,
     user_id: str,
     store_in_pinecone: bool,
+    process_base_case: bool = False,
 ):
     """Process uploaded files in background with progress updates.
 
@@ -581,7 +582,7 @@ async def _process_uploaded_files_background(
                     ),
                 )
 
-                if artifact_type == "base_case":
+                if artifact_type == "base_case" and process_base_case:
                     # Process the file
                     logger.info(
                         f"[Background Task] Calling orchestration.process_base_case_file for {filename}"

@@ -99,14 +99,14 @@ const BaseCaseRecommendationView: React.FC<BaseCaseRecommendationViewProps> = ({
     );
   }
 
-  if (!recommendationsData) {
-    return (
-      <Alert severity="info" sx={{ m: 1 }}>
-        No recommendations available for this scenario. Run analysis to generate
-        recommendations.
-      </Alert>
-    );
-  }
+  // if (!recommendationsData) {
+  //   return (
+  //     <Alert severity="info" sx={{ m: 1 }}>
+  //       No recommendations available for this scenario. Run analysis to generate
+  //       recommendations.
+  //     </Alert>
+  //   );
+  // }
 
   // Get the latest recommendation document
   let latestDoc: any = null;
@@ -138,15 +138,15 @@ const BaseCaseRecommendationView: React.FC<BaseCaseRecommendationViewProps> = ({
   const globalObjectiveTarget =
     latestDoc?.global_objective_target ||
     recommendationsData.global_objective_target;
-
-  if (recommendations.length === 0 && relevantEntities.length === 0) {
-    return (
-      <Alert severity="info" sx={{ m: 1 }}>
-        No recommendations found for this scenario. Run analysis to generate
-        recommendations.
-      </Alert>
-    );
-  }
+  // console.log("recommendations", recommendations);
+  // if (recommendations.length === 0 && relevantEntities.length === 0) {
+  //   return (
+  //     <Alert severity="info" sx={{ m: 1 }}>
+  //       No recommendations found for this scenario. Run analysis to generate
+  //       recommendations.
+  //     </Alert>
+  //   );
+  // }
 
   return (
     <Box>

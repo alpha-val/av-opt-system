@@ -109,6 +109,8 @@ ENTITY_ONTOLOGY: Dict[str, Any] = {
         "location",
         "sq_ft",
         "zoning",
+        # Recommendations
+        "recommendations",
         # Scenario
         "shelf_life_days",
         "cold_chain_required",
@@ -1240,6 +1242,15 @@ AV_MSIO_ONTOLOGY: Dict[str, Any] = {
                 },
             ],
         },
+        {
+            "name": "Miscellaneous",
+            "categories": [
+                {
+                    "name": "Outside MSIO",
+                    "subcategories": [{"name": "Outside MSIO", "entity": "Outside MSIO"}],
+                }
+            ],
+        }
     ],
 }
 

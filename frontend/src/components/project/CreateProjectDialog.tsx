@@ -17,9 +17,10 @@ import {
   Alert,
   LinearProgress,
 } from "@mui/material";
-import { ProjectCreate, ProjectStatus } from "../../types/api";
+import { ProjectCreate, ProjectStatus, ProjectUpdate } from "../../types/api";
 import {
   createProject,
+  updateProject,
   selectProjectCreating,
   selectProjectsError,
   clearError,
@@ -28,16 +29,28 @@ import {
 interface CreateProjectDialogProps {
   open: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (projectId?: string) => void;
+  // Edit mode props
+  projectId?: string;
+  initialName?: string;
+  initialDescription?: string;
 }
 
 const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   open,
   onClose,
   onSuccess,
+  projectId,
+  initialName,
+  initialDescription,
 }) => {
   const dispatch = useDispatch();
-  const loading = useSelector(selectProjectCreating);
+  const isEditMode = !!projectId;
+  const creating = useSelector(selectProjectCreating);
+  const updating = useSelector(
+    (state: any) => state.projects.loading.update
+  );
+  const loading = isEditMode ? updating : creating;
   const reduxError = useSelector(selectProjectsError);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -48,6 +61,31 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
     base_case_documents: [],
     tabular_data_documents: [],
   });
+
+  // Initialize form data when dialog opens or initial values change
+  useEffect(() => {
+    if (open) {
+      if (isEditMode) {
+        // Edit mode: use initial values
+        setFormData({
+          name: initialName || "",
+          description: initialDescription || "",
+          status: ProjectStatus.DRAFT,
+          base_case_documents: [],
+          tabular_data_documents: [],
+        });
+      } else {
+        // Create mode: reset to empty
+        setFormData({
+          name: "",
+          description: "",
+          status: ProjectStatus.DRAFT,
+          base_case_documents: [],
+          tabular_data_documents: [],
+        });
+      }
+    }
+  }, [open, isEditMode, initialName, initialDescription]);
 
   // Combine local and Redux errors
   const error = localError || reduxError;
@@ -102,36 +140,55 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       return;
     }
 
-    // Create project data (only name and description required)
-    const projectData: ProjectCreate = {
-      name: formData.name!,
-      description: formData.description || undefined,
-      status: ProjectStatus.DRAFT,
-      base_case_documents: [],
-      tabular_data_documents: [],
-    };
+    if (isEditMode && projectId) {
+      // Edit mode: update project
+      const projectData: ProjectUpdate = {
+        name: formData.name!,
+        description: formData.description || null,
+      };
 
-    // Dispatch Redux action (no files - they'll be uploaded in SystemBaseDesign view)
-    dispatch(createProject(projectData) as any).then((result: any) => {
-      if (createProject.fulfilled.match(result)) {
-        // Success - reset form and close dialog
-        setFormData({
-          name: "",
-          description: "",
-          status: ProjectStatus.DRAFT,
-          base_case_documents: [],
-          tabular_data_documents: [],
-        });
-        onSuccess();
-        onClose();
-      }
-    });
+      dispatch(updateProject({ projectId, projectData }) as any).then(
+        (result: any) => {
+          if (updateProject.fulfilled.match(result)) {
+            onSuccess(projectId);
+            onClose();
+          }
+        }
+      );
+    } else {
+      // Create mode: create new project
+      const projectData: ProjectCreate = {
+        name: formData.name!,
+        description: formData.description || undefined,
+        status: ProjectStatus.DRAFT,
+        base_case_documents: [],
+        tabular_data_documents: [],
+      };
+
+      dispatch(createProject(projectData) as any).then((result: any) => {
+        if (createProject.fulfilled.match(result)) {
+          // Success - reset form and close dialog
+          const createdProjectId = result.payload?.id;
+          setFormData({
+            name: "",
+            description: "",
+            status: ProjectStatus.DRAFT,
+            base_case_documents: [],
+            tabular_data_documents: [],
+          });
+          onSuccess(createdProjectId);
+          onClose();
+        }
+      });
+    }
   };
 
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Create New Project</DialogTitle>
+      <DialogTitle>
+        {isEditMode ? "Edit Project" : "Create New Project"}
+      </DialogTitle>
       <DialogContent>
         {loading && <LinearProgress sx={{ mb: 2 }} />}
         {error && (
@@ -175,11 +232,14 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
             helperText={`${formData.description?.length || 0}/80 characters`}
           />
 
-          <Alert severity="info" sx={{ mt: 1 }}>
-            <Typography variant="body2">
-              You can add objective details and upload documents in Project > Scenario Details view after creating the project.
-            </Typography>
-          </Alert>
+          {!isEditMode && (
+            <Alert severity="info" sx={{ mt: 1 }}>
+              <Typography variant="body2">
+                You can add objective details and upload documents in Project >
+                Scenario Details view after creating the project.
+              </Typography>
+            </Alert>
+          )}
         </Box>
       </DialogContent>
       <DialogActions>
@@ -191,7 +251,13 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
           variant="contained"
           disabled={loading || !isFormValid()}
         >
-          {loading ? "Creating..." : "Create Project"}
+          {loading
+            ? isEditMode
+              ? "Updating..."
+              : "Creating..."
+            : isEditMode
+            ? "Update Project"
+            : "Create Project"}
         </Button>
       </DialogActions>
     </Dialog>

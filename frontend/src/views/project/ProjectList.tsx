@@ -269,7 +269,7 @@ const ProjectList: React.FC = () => {
                         sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <Tooltip title="View System Design">
+                        <Tooltip title="View Project">
                           <IconButton
                             size="small"
                             onClick={() => {
@@ -279,7 +279,7 @@ const ProjectList: React.FC = () => {
                             <ViewIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="View Report">
+                        {/* <Tooltip title="View Report">
                           <IconButton
                             size="small"
                             onClick={() => {
@@ -288,8 +288,8 @@ const ProjectList: React.FC = () => {
                           >
                             <ReportIcon fontSize="small" />
                           </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Edit">
+                        </Tooltip> */}
+                        {/* <Tooltip title="Edit">
                           <IconButton
                             size="small"
                             onClick={(e) => {
@@ -300,7 +300,7 @@ const ProjectList: React.FC = () => {
                           >
                             <EditIcon fontSize="small" />
                           </IconButton>
-                        </Tooltip>
+                        </Tooltip> */}
                         <Tooltip title="Delete">
                           <IconButton
                             size="small"
@@ -328,8 +328,12 @@ const ProjectList: React.FC = () => {
       <CreateProjectDialog
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
-        onSuccess={() => {
+        onSuccess={(projectId) => {
           handleFetchProjects();
+          // Navigate to the newly created project dashboard
+          if (projectId) {
+            navigate(`/projects/${projectId}`);
+          }
         }}
       />
     </Box>

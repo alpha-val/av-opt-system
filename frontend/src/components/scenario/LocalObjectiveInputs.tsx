@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback, memo } from "react";
 import {
   Box,
   Chip,
@@ -37,7 +37,175 @@ interface AttributeRow {
   unit: string | null;
   type: "Fixed" | "Floating";
   redesignValue: number | null;
+  isPlaceholder: boolean;
 }
+
+interface AttributeRowComponentProps {
+  row: AttributeRow;
+  rowKey: string;
+  currentType: "Fixed" | "Floating";
+  currentRedesignValue: number | null;
+  currentPlaceholderText: string;
+  onTypeChange: (rowKey: string, newType: "Fixed" | "Floating") => void;
+  onRedesignValueChange: (rowKey: string, value: number | null) => void;
+  onPlaceholderTextChange: (rowKey: string, value: string) => void;
+  formatValue: (value: number | null, unit: string | null) => string;
+  calculateRedesignValue: (baseValue: number | null) => number | null;
+  showDivider: boolean;
+  showEntityName: boolean;
+  showEntityType: boolean;
+  rowSpan: number;
+}
+
+/**
+ * Memoized row component to prevent unnecessary re-renders
+ * Only re-renders when its own props change
+ */
+const AttributeRowComponent = memo<AttributeRowComponentProps>(({
+  row,
+  rowKey,
+  currentType,
+  currentRedesignValue,
+  currentPlaceholderText,
+  onTypeChange,
+  onRedesignValueChange,
+  onPlaceholderTextChange,
+  formatValue,
+  calculateRedesignValue,
+  showDivider,
+  showEntityName,
+  showEntityType,
+  rowSpan,
+}) => {
+  return (
+    <React.Fragment>
+      {showDivider && (
+        <TableRow>
+          <TableCell colSpan={7} sx={{ p: 0, border: 0 }}>
+            <Divider sx={{ my: 0.5 }} />
+          </TableCell>
+        </TableRow>
+      )}
+      <TableRow>
+        {showEntityName ? (
+          <TableCell 
+            rowSpan={rowSpan} 
+            sx={{ fontWeight: 600, py: 0.5, px: 1 }}
+          >
+            {row.entityName}
+          </TableCell>
+        ) : null}
+        {showEntityType ? (
+          <TableCell rowSpan={rowSpan} sx={{ py: 0.5, px: 1 }}>
+            <Chip label={row.entityType} size="small" />
+          </TableCell>
+        ) : null}
+        <TableCell sx={{ py: 0.5, px: 1 }}>{row.attributeLabel}</TableCell>
+        <TableCell sx={{ py: 0.5, px: 1 }}>
+          <FormControl size="small" sx={{ minWidth: 80 }}>
+            <Select
+              value={currentType}
+              onChange={(e) =>
+                onTypeChange(rowKey, e.target.value as "Fixed" | "Floating")
+              }
+              displayEmpty
+            >
+              <MenuItem value="Fixed">Fixed</MenuItem>
+              <MenuItem value="Floating">Floating</MenuItem>
+            </Select>
+          </FormControl>
+        </TableCell>
+        <TableCell align="right" sx={{ py: 0.5, px: 1 }}>
+          {row.isPlaceholder
+            ? "N/A"
+            : formatValue(row.attributeValue, row.unit)}
+        </TableCell>
+        <TableCell align="right" sx={{ py: 0.5, px: 1 }}>
+          {row.isPlaceholder ? (
+            <TextField
+              type="text"
+              size="small"
+              value={currentPlaceholderText}
+              onChange={(e) => {
+                onPlaceholderTextChange(rowKey, e.target.value);
+              }}
+              disabled={currentType === "Fixed"}
+              placeholder="Enter value"
+              sx={{ width: 200 }}
+            />
+          ) : row.attributeValue !== null ? (
+            <TextField
+              type="number"
+              size="small"
+              value={currentRedesignValue ?? ""}
+              onChange={(e) => {
+                const val =
+                  e.target.value === "" ? null : parseFloat(e.target.value);
+                onRedesignValueChange(
+                  rowKey,
+                  isNaN(val as number) ? null : val
+                );
+              }}
+              disabled={currentType === "Fixed"}
+              inputProps={{
+                min:
+                  row.attributeValue !== null
+                    ? row.attributeValue * -10
+                    : undefined,
+                max:
+                  row.attributeValue !== null
+                    ? row.attributeValue * 10
+                    : undefined,
+                step: "any",
+              }}
+              sx={{ width: 120 }}
+              error={
+                currentRedesignValue !== null &&
+                row.attributeValue !== null &&
+                (currentRedesignValue < row.attributeValue * -10 ||
+                  currentRedesignValue > row.attributeValue * 10)
+              }
+              helperText={
+                currentRedesignValue !== null &&
+                row.attributeValue !== null &&
+                (currentRedesignValue < row.attributeValue * -10 ||
+                  currentRedesignValue > row.attributeValue * 10)
+                  ? `Must be between ${row.attributeValue * -10} and ${
+                      row.attributeValue * 10
+                    }`
+                  : row.unit
+                  ? row.unit
+                  : ""
+              }
+            />
+          ) : (
+            formatValue(currentRedesignValue, row.unit)
+          )}
+        </TableCell>
+      </TableRow>
+    </React.Fragment>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison function - return true if props are equal (skip re-render)
+  // Return false if props changed (should re-render)
+  const propsEqual =
+    prevProps.rowKey === nextProps.rowKey &&
+    prevProps.currentType === nextProps.currentType &&
+    prevProps.currentRedesignValue === nextProps.currentRedesignValue &&
+    prevProps.currentPlaceholderText === nextProps.currentPlaceholderText &&
+    prevProps.showDivider === nextProps.showDivider &&
+    prevProps.showEntityName === nextProps.showEntityName &&
+    prevProps.showEntityType === nextProps.showEntityType &&
+    prevProps.rowSpan === nextProps.rowSpan &&
+    prevProps.row.entityId === nextProps.row.entityId &&
+    prevProps.row.attributeName === nextProps.row.attributeName &&
+    prevProps.row.attributeValue === nextProps.row.attributeValue &&
+    prevProps.row.unit === nextProps.row.unit;
+  
+  return propsEqual; // true = skip re-render, false = re-render
+});
+
+AttributeRowComponent.displayName = "AttributeRowComponent";
 
 /**
  * LocalObjectiveInputs Component
@@ -76,7 +244,10 @@ const LocalObjectiveInputs: React.FC<LocalObjectiveInputsProps> = ({
   const [redesignValues, setRedesignValues] = useState<
     Record<string, number | null>
   >({});
-  console.log("relevantEntities", relevantEntities);
+  const [placeholderTextValues, setPlaceholderTextValues] = useState<
+    Record<string, string>
+  >({});
+
   // Fetch recommendations and extract relevant_entities
   useEffect(() => {
     const fetchRelevantEntities = async () => {
@@ -193,6 +364,7 @@ const LocalObjectiveInputs: React.FC<LocalObjectiveInputsProps> = ({
     relevantEntities.forEach((entity) => {
       const entityName = entity.properties?.name || "Unknown Entity";
       const entityType = entity.type || "Unknown";
+      const isPlaceholder = entity.properties?.is_placeholder === true;
       let attributes: Array<{
         name: string;
         label: string;
@@ -200,119 +372,132 @@ const LocalObjectiveInputs: React.FC<LocalObjectiveInputsProps> = ({
         unit: string | null;
       }> = [];
 
-      // First, try to get attributes from properties.attributes array
-      if (
-        entity.properties?.attributes &&
-        Array.isArray(entity.properties.attributes)
-      ) {
-        attributes = entity.properties.attributes.map((attr: any) => ({
-          name: attr.name,
-          label: attr.name, // Use name as label
-          value: attr.value,
-          unit: attr.unit || null,
-        }));
-      } else {
-        // If no attributes array, check for expected_attributes and try to find matching values
+      // Handle placeholder entities
+      if (isPlaceholder) {
+        // For placeholder entities, use expected_attributes
         const expectedAttributes = entity.properties?.expected_attributes || [];
-
-        if (
-          Array.isArray(expectedAttributes) &&
-          expectedAttributes.length > 0
-        ) {
-          // For each expected attribute, try to find a matching property value
+        if (Array.isArray(expectedAttributes) && expectedAttributes.length > 0) {
           expectedAttributes.forEach((attrName: string) => {
-            // Try to find a property with this name or similar
-            const propValue = entity.properties[attrName];
-            if (
-              typeof propValue === "number" ||
-              (typeof propValue === "string" && !isNaN(parseFloat(propValue)))
-            ) {
-              const numValue =
-                typeof propValue === "number"
-                  ? propValue
-                  : parseFloat(propValue);
-              if (!isNaN(numValue)) {
-                attributes.push({
-                  name: attrName,
-                  label: attrName
-                    .replace(/_/g, " ")
-                    .replace(/\b\w/g, (l) => l.toUpperCase()),
-                  value: numValue,
-                  unit: null, // Unit not available from property
-                });
-              }
-            }
+            attributes.push({
+              name: attrName,
+              label: attrName
+                .replace(/_/g, " ")
+                .replace(/\b\w/g, (l) => l.toUpperCase()),
+              value: null, // Placeholder entities have no base values
+              unit: null,
+            });
           });
         }
+      } else {
+        // First, try to get attributes from properties.attributes array
+        if (
+          entity.properties?.attributes &&
+          Array.isArray(entity.properties.attributes) &&
+          entity.properties.attributes.length > 0
+        ) {
+          attributes = entity.properties.attributes.map((attr: any) => ({
+            name: attr.name,
+            label: attr.name, // Use name as label
+            value: attr.value,
+            unit: attr.unit || null,
+          }));
+        } else {
+          // If no attributes array, check for expected_attributes and try to find matching values
+          const expectedAttributes = entity.properties?.expected_attributes || [];
 
-        // If still no attributes, try to extract numeric properties (fallback)
-        if (attributes.length === 0) {
-          const excludedFields = new Set([
-            "name",
-            "discipline",
-            "category",
-            "subcategory",
-            "entity",
-            "confidence",
-            "evidence_text",
-            "scenario_id",
-            "project_id",
-            "doc_id",
-            "user_id",
-            "artifact_type",
-            "created_at",
-            "updated_at",
-            "extraction_priority",
-            "extraction_rationale",
-            "expected_attributes",
-            "evidence_locations",
-            "is_placeholder",
-            "attributes",
-          ]);
-
-          Object.entries(entity.properties || {}).forEach(([key, value]) => {
-            if (
-              !excludedFields.has(key) &&
-              (typeof value === "number" ||
-                (typeof value === "string" && !isNaN(parseFloat(value))))
-            ) {
-              const numValue =
-                typeof value === "number" ? value : parseFloat(value);
-              if (!isNaN(numValue)) {
-                attributes.push({
-                  name: key,
-                  label: key
-                    .replace(/_/g, " ")
-                    .replace(/\b\w/g, (l) => l.toUpperCase()),
-                  value: numValue,
-                  unit: null,
-                });
+          if (
+            Array.isArray(expectedAttributes) &&
+            expectedAttributes.length > 0
+          ) {
+            // For each expected attribute, try to find a matching property value
+            expectedAttributes.forEach((attrName: string) => {
+              // Try to find a property with this name or similar
+              const propValue = entity.properties[attrName];
+              if (
+                typeof propValue === "number" ||
+                (typeof propValue === "string" && !isNaN(parseFloat(propValue)))
+              ) {
+                const numValue =
+                  typeof propValue === "number"
+                    ? propValue
+                    : parseFloat(propValue);
+                if (!isNaN(numValue)) {
+                  attributes.push({
+                    name: attrName,
+                    label: attrName
+                      .replace(/_/g, " ")
+                      .replace(/\b\w/g, (l) => l.toUpperCase()),
+                    value: numValue,
+                    unit: null, // Unit not available from property
+                  });
+                }
               }
-            }
-          });
+            });
+          }
+
+          // If still no attributes, try to extract numeric properties (fallback)
+          if (attributes.length === 0) {
+            const excludedFields = new Set([
+              "name",
+              "discipline",
+              "category",
+              "subcategory",
+              "entity",
+              "confidence",
+              "evidence_text",
+              "scenario_id",
+              "project_id",
+              "doc_id",
+              "user_id",
+              "artifact_type",
+              "created_at",
+              "updated_at",
+              "extraction_priority",
+              "extraction_rationale",
+              "expected_attributes",
+              "evidence_locations",
+              "is_placeholder",
+              "attributes",
+            ]);
+
+            Object.entries(entity.properties || {}).forEach(([key, value]) => {
+              if (
+                !excludedFields.has(key) &&
+                (typeof value === "number" ||
+                  (typeof value === "string" && !isNaN(parseFloat(value))))
+              ) {
+                const numValue =
+                  typeof value === "number" ? value : parseFloat(value);
+                if (!isNaN(numValue)) {
+                  attributes.push({
+                    name: key,
+                    label: key
+                      .replace(/_/g, " ")
+                      .replace(/\b\w/g, (l) => l.toUpperCase()),
+                    value: numValue,
+                    unit: null,
+                  });
+                }
+              }
+            });
+          }
         }
       }
 
-      // Only add rows if entity has attributes
+      // Add rows for each attribute (structure only, values read in render)
       if (attributes.length > 0) {
         attributes.forEach((attr) => {
-          const rowKey = `${entity.id}-${attr.name}`;
-          // Use stored redesign value or calculate initial value
-          const redesignValue =
-            redesignValues[rowKey] !== undefined
-              ? redesignValues[rowKey]
-              : calculateRedesignValue(attr.value);
-
           rows.push({
             entityId: entity.id,
             entityName,
             entityType,
             attributeName: attr.name,
-            attributeLabel: attr.label,
-            attributeValue: attr.value,
+            attributeLabel: attr.label || null,
+            attributeValue: attr.value || null,
             unit: attr.unit || null,
-            type: attributeTypes[rowKey] || "Floating", // Default to Floating
-            redesignValue,
+            type: "Floating", // Default, will be read from state in render
+            redesignValue: null, // Will be read from state in render
+            isPlaceholder,
           });
         });
       }
@@ -325,12 +510,7 @@ const LocalObjectiveInputs: React.FC<LocalObjectiveInputsProps> = ({
       }
       return a.attributeName.localeCompare(b.attributeName);
     });
-  }, [
-    relevantEntities,
-    calculateRedesignValue,
-    attributeTypes,
-    redesignValues,
-  ]);
+  }, [relevantEntities]);
 
   // Initialize redesign values when relevantEntities change
   useEffect(() => {
@@ -339,6 +519,11 @@ const LocalObjectiveInputs: React.FC<LocalObjectiveInputsProps> = ({
         const initialValues: Record<string, number | null> = {};
 
         relevantEntities.forEach((entity) => {
+          // Skip placeholder entities - they don't get redesign values
+          if (entity.properties?.is_placeholder === true) {
+            return;
+          }
+
           let attributes: Array<{ name: string; value: number | null }> = [];
 
           if (
@@ -395,34 +580,55 @@ const LocalObjectiveInputs: React.FC<LocalObjectiveInputsProps> = ({
   /**
    * Handle attribute type change
    */
-  const handleTypeChange = (rowKey: string, newType: "Fixed" | "Floating") => {
+  const handleTypeChange = useCallback((rowKey: string, newType: "Fixed" | "Floating") => {
     setAttributeTypes((prev) => ({
       ...prev,
       [rowKey]: newType,
     }));
-  };
+  }, []);
 
   /**
    * Handle redesign value change
    */
-  const handleRedesignValueChange = (rowKey: string, value: number | null) => {
+  const handleRedesignValueChange = useCallback((rowKey: string, value: number | null) => {
     setRedesignValues((prev) => ({
       ...prev,
       [rowKey]: value,
     }));
-  };
+  }, []);
 
+  /**
+   * Handle placeholder text value change
+   */
+  const handlePlaceholderTextChange = useCallback((rowKey: string, value: string) => {
+    setPlaceholderTextValues((prev) => ({
+      ...prev,
+      [rowKey]: value,
+    }));
+  }, []);
+  
   /**
    * Format value for display
    */
-  const formatValue = (value: number | null, unit: string | null): string => {
+  const formatValue = useCallback((value: number | null, unit: string | null): string => {
     if (value === null || value === undefined) {
       return "N/A";
     }
     const formatted =
       typeof value === "number" ? value.toLocaleString() : String(value);
     return unit ? `${formatted} ${unit}` : formatted;
-  };
+  }, []);
+
+  // Group rows by entity for display (must be before early returns to follow Rules of Hooks)
+  const groupedRows = useMemo(() => {
+    return attributeRows.reduce((acc, row) => {
+      if (!acc[row.entityName]) {
+        acc[row.entityName] = [];
+      }
+      acc[row.entityName].push(row);
+      return acc;
+    }, {} as Record<string, AttributeRow[]>);
+  }, [attributeRows]);
 
   if (loading) {
     return (
@@ -461,62 +667,28 @@ const LocalObjectiveInputs: React.FC<LocalObjectiveInputsProps> = ({
       </Alert>
     );
   }
-
-  // Group rows by entity for display
-  const groupedRows = attributeRows.reduce((acc, row) => {
-    if (!acc[row.entityName]) {
-      acc[row.entityName] = [];
-    }
-    acc[row.entityName].push(row);
-    return acc;
-  }, {} as Record<string, AttributeRow[]>);
-
   return (
     <Box>
-      <Typography variant="h6" gutterBottom>
-        Local Objective Inputs
-      </Typography>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="body2" color="text.secondary" component="div">
-          Configure attribute types and review redesign values based on global
-          objective target.
-        </Typography>
-        {globalObjectiveTarget && (
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "row",
-              gap: 1,
-              alignItems: "center",
-              border: "1px solid",
-              borderColor: "divider",
-              padding: 1,
-              borderRadius: 1,
-              marginTop: 1,
-            }}
-          >
-            <Typography variant="body2" color="text.secondary">
-              Goal: <strong>{globalObjectiveType}</strong>
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Change by: <strong>{globalObjectiveTarget}</strong>
-            </Typography>
-          </Box>
-        )}
-      </Box>
-
       <TableContainer component={Paper} variant="outlined">
-        <Table>
+        <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: 600 }}>Entity Name</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Entity Type</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Attribute Name</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Fixed/Floating</TableCell>
-              <TableCell sx={{ fontWeight: 600 }} align="right">
+              <TableCell sx={{ fontWeight: 600, py: 1, px: 1 }}>
+                Entity Name
+              </TableCell>
+              <TableCell sx={{ fontWeight: 600, py: 1, px: 1 }}>
+                Entity Type
+              </TableCell>
+              <TableCell sx={{ fontWeight: 600, py: 1, px: 1 }}>
+                Attribute Name
+              </TableCell>
+              <TableCell sx={{ fontWeight: 600, py: 1, px: 1 }}>
+                Fixed/Floating
+              </TableCell>
+              <TableCell sx={{ fontWeight: 600, py: 1, px: 1 }} align="right">
                 Base Case Value
               </TableCell>
-              <TableCell sx={{ fontWeight: 600 }} align="right">
+              <TableCell sx={{ fontWeight: 600, py: 1, px: 1 }} align="right">
                 Updated Value (Based on objective target)
               </TableCell>
             </TableRow>
@@ -527,106 +699,33 @@ const LocalObjectiveInputs: React.FC<LocalObjectiveInputsProps> = ({
                 <React.Fragment key={entityName}>
                   {rows.map((row, index) => {
                     const rowKey = `${row.entityId}-${row.attributeName}`;
+                    // Read current values from state
+                    const currentType = attributeTypes[rowKey] || "Floating";
+                    const currentRedesignValue = row.isPlaceholder
+                      ? null
+                      : redesignValues[rowKey] !== undefined
+                      ? redesignValues[rowKey]
+                      : calculateRedesignValue(row.attributeValue);
+                    const currentPlaceholderText = placeholderTextValues[rowKey] || "";
+                    
                     return (
-                      <React.Fragment key={rowKey}>
-                        {index === 0 && entityIndex > 0 && (
-                          <TableRow>
-                            <TableCell colSpan={7} sx={{ p: 0, border: 0 }}>
-                              <Divider sx={{ my: 1 }} />
-                            </TableCell>
-                          </TableRow>
-                        )}
-                        <TableRow>
-                          {index === 0 ? (
-                            <TableCell
-                              rowSpan={rows.length}
-                              sx={{ fontWeight: 600 }}
-                            >
-                              {row.entityName}
-                            </TableCell>
-                          ) : null}
-                          {index === 0 ? (
-                            <TableCell rowSpan={rows.length}>
-                              <Chip label={row.entityType} size="small" />
-                            </TableCell>
-                          ) : null}
-                          <TableCell>{row.attributeLabel}</TableCell>
-                          <TableCell>
-                            <FormControl size="small" sx={{ minWidth: 120 }}>
-                              <Select
-                                value={row.type}
-                                onChange={(e) =>
-                                  handleTypeChange(
-                                    rowKey,
-                                    e.target.value as "Fixed" | "Floating"
-                                  )
-                                }
-                                displayEmpty
-                              >
-                                <MenuItem value="Fixed">Fixed</MenuItem>
-                                <MenuItem value="Floating">Floating</MenuItem>
-                              </Select>
-                            </FormControl>
-                          </TableCell>
-                          <TableCell align="right">
-                            {formatValue(row.attributeValue, row.unit)}
-                          </TableCell>
-                          <TableCell align="right">
-                            {row.attributeValue !== null ? (
-                              <TextField
-                                type="number"
-                                size="small"
-                                value={row.redesignValue ?? ""}
-                                onChange={(e) => {
-                                  const val =
-                                    e.target.value === ""
-                                      ? null
-                                      : parseFloat(e.target.value);
-                                  handleRedesignValueChange(
-                                    rowKey,
-                                    isNaN(val as number) ? null : val
-                                  );
-                                }}
-                                disabled={row.type === "Fixed"}
-                                inputProps={{
-                                  min:
-                                    row.attributeValue !== null
-                                      ? row.attributeValue * -10
-                                      : undefined,
-                                  max:
-                                    row.attributeValue !== null
-                                      ? row.attributeValue * 10
-                                      : undefined,
-                                  step: "any",
-                                }}
-                                sx={{ width: 120 }}
-                                error={
-                                  row.redesignValue !== null &&
-                                  row.attributeValue !== null &&
-                                  (row.redesignValue <
-                                    row.attributeValue * -10 ||
-                                    row.redesignValue > row.attributeValue * 10)
-                                }
-                                helperText={
-                                  row.attributeValue !== null &&
-                                  row.redesignValue !== null &&
-                                  (row.redesignValue <
-                                    row.attributeValue * -10 ||
-                                    row.redesignValue > row.attributeValue * 10)
-                                    ? `Must be between ${
-                                        row.attributeValue * -10
-                                      } and ${row.attributeValue * 10}`
-                                    : row.unit
-                                    ? row.unit
-                                    : ""
-                                }
-                              />
-                            ) : (
-                              formatValue(row.redesignValue, row.unit)
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      </React.Fragment>
+                      <AttributeRowComponent
+                        key={rowKey}
+                        row={row}
+                        rowKey={rowKey}
+                        currentType={currentType}
+                        currentRedesignValue={currentRedesignValue}
+                        currentPlaceholderText={currentPlaceholderText}
+                        onTypeChange={handleTypeChange}
+                        onRedesignValueChange={handleRedesignValueChange}
+                        onPlaceholderTextChange={handlePlaceholderTextChange}
+                        formatValue={formatValue}
+                        calculateRedesignValue={calculateRedesignValue}
+                        showDivider={index === 0 && entityIndex > 0}
+                        showEntityName={index === 0}
+                        showEntityType={index === 0}
+                        rowSpan={rows.length}
+                      />
                     );
                   })}
                 </React.Fragment>

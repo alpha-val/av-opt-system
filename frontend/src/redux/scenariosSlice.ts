@@ -130,7 +130,7 @@ export const runAnalysisV3 = createAsyncThunk(
   'scenarios/runAnalysisV3',
   async (scenarioId: string, { rejectWithValue }) => {
     try {
-      const data = await scenarioApi.runAnalysisV3(scenarioId);
+      const data = await scenarioApi.runAnalysisV4(scenarioId);
       // Fetch updated scenario to get new status
       const updatedScenario = await scenarioApi.getById(scenarioId);
       return { scenarioId, analysisResult: data, scenario: updatedScenario };

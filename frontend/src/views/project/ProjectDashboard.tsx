@@ -17,6 +17,8 @@ import {
   Divider,
   Breadcrumbs,
   Link,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import {
   Description as DescriptionIcon,
@@ -24,6 +26,7 @@ import {
   Storage as StorageIcon,
   CalendarToday as CalendarTodayIcon,
   Update as UpdateIcon,
+  Edit as EditIcon,
 } from "@mui/icons-material";
 import {
   fetchProjectById,
@@ -55,6 +58,7 @@ import ScenariosList from "../../components/scenario/ScenariosList";
 import ScenarioDetails from "../scenario/ScenarioDetails";
 import ProgressWidget from "../../components/common/ProgressWidget";
 import InspectDataView from "../../components/data/InspectDataView";
+import CreateProjectDialog from "../../components/project/CreateProjectDialog";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -116,6 +120,7 @@ const ProjectDashboard: React.FC = () => {
   const [clearFileUploadTrigger, setClearFileUploadTrigger] =
     useState<number>(0);
   const [uploadJobId, setUploadJobId] = useState<string | null>(null);
+  const [editProjectDialogOpen, setEditProjectDialogOpen] = useState(false);
 
   /**
    * Fetch project data and handle URL hash for tab navigation
@@ -153,7 +158,7 @@ const ProjectDashboard: React.FC = () => {
    * Clear selected scenario when switching away from Scenarios tab
    */
   useEffect(() => {
-    if (activeTab !== 2) {
+    if (activeTab !== 3) {
       setSelectedScenarioId(null);
     }
   }, [activeTab]);
@@ -276,11 +281,11 @@ const ProjectDashboard: React.FC = () => {
       if (uploadProjectFiles.fulfilled.match(result)) {
         const response = result.payload;
         // console.log("Upload response:", response);
-        
+
         // job_id is nested in uploadData
         const jobId = response.uploadData?.job_id || response.job_id;
         // console.log("job_id from response:", jobId);
-        
+
         // If job_id is present, processing is happening in background
         if (jobId) {
           // console.log("Setting uploadJobId to:", jobId);
@@ -288,13 +293,13 @@ const ProjectDashboard: React.FC = () => {
         } else {
           // console.log("No job_id in response, immediate processing");
         }
-        
+
         // Clear selected files
         setBaseCaseFiles([]);
         setTabularDataFiles([]);
         // Trigger FileUpload components to clear their internal selected files
         setClearFileUploadTrigger((prev) => prev + 1);
-        
+
         // Only refresh immediately if no background processing
         if (!jobId) {
           await dispatch(fetchProjectById(projectId) as any);
@@ -486,7 +491,9 @@ This action cannot be undone. Are you sure you want to delete this file?`,
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Typography color="secondary" sx={{ fontWeight: 600 }}>{project.name}</Typography>
+                <Typography color="secondary" sx={{ fontWeight: 600 }}>
+                  {project.name}
+                </Typography>
                 {/* {project && (
                   <Chip
                     label={project.status}
@@ -597,6 +604,11 @@ This action cannot be undone. Are you sure you want to delete this file?`,
               <Tabs
                 value={activeTab}
                 onChange={(_, newValue) => setActiveTab(newValue)}
+                sx={{
+                  "& .MuiTab-root": {
+                    color: "text.primary",
+                  },
+                }}
                 aria-label="project dashboard tabs"
               >
                 <Tab label="Overview" id="project-tab-0" />
@@ -617,23 +629,33 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                 <Card
                   sx={{
                     mb: 3,
-                    bgcolor: (theme) => theme.palette.mode === "dark" 
-                      ? "rgba(25, 118, 210, 0.08)" 
-                      : "rgba(25, 118, 210, 0.04)",
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark"
+                        ? "rgba(25, 118, 210, 0.08)"
+                        : "rgba(25, 118, 210, 0.04)",
                   }}
                 >
                   <CardContent>
                     <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                      <DescriptionIcon 
-                        sx={{ 
-                          mr: 1.5, 
+                      <DescriptionIcon
+                        sx={{
+                          mr: 1.5,
                           fontSize: 24,
                           color: "primary.main",
-                        }} 
+                        }}
                       />
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        Project Information
+                      <Typography variant="h6" sx={{ fontWeight: 600, flex: 1 }}>
+                        {project.name}
                       </Typography>
+                      <Tooltip title="Edit Project">
+                        <IconButton
+                          size="small"
+                          onClick={() => setEditProjectDialogOpen(true)}
+                          sx={{ ml: 1 }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     </Box>
                     <Typography variant="body1" sx={{ mb: 3 }}>
                       {project.description || "No description provided."}
@@ -641,13 +663,15 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                     <Divider sx={{ my: 2 }} />
                     <Grid container spacing={3}>
                       <Grid item xs={12} md={6}>
-                        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                          <CalendarTodayIcon 
-                            sx={{ 
-                              mr: 1, 
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", mb: 1 }}
+                        >
+                          <CalendarTodayIcon
+                            sx={{
+                              mr: 1,
                               fontSize: 18,
                               color: "text.secondary",
-                            }} 
+                            }}
                           />
                           <Typography
                             variant="subtitle2"
@@ -662,13 +686,15 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                         </Typography>
                       </Grid>
                       <Grid item xs={12} md={6}>
-                        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                          <UpdateIcon 
-                            sx={{ 
-                              mr: 1, 
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", mb: 1 }}
+                        >
+                          <UpdateIcon
+                            sx={{
+                              mr: 1,
                               fontSize: 18,
                               color: "text.secondary",
-                            }} 
+                            }}
                           />
                           <Typography
                             variant="subtitle2"
@@ -695,9 +721,10 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                     <Card
                       sx={{
                         height: "100%",
-                        bgcolor: (theme) => theme.palette.mode === "dark" 
-                          ? "rgba(25, 118, 210, 0.08)" 
-                          : "rgba(25, 118, 210, 0.04)",
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(25, 118, 210, 0.08)"
+                            : "rgba(25, 118, 210, 0.04)",
                         transition: "transform 0.2s, box-shadow 0.2s",
                         "&:hover": {
                           transform: "translateY(-2px)",
@@ -713,12 +740,12 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                             mb: 2,
                           }}
                         >
-                          <DescriptionIcon 
-                            sx={{ 
-                              mr: 1.5, 
+                          <DescriptionIcon
+                            sx={{
+                              mr: 1.5,
                               fontSize: 24,
                               color: "primary.main",
-                            }} 
+                            }}
                           />
                           <Typography
                             variant="subtitle2"
@@ -731,7 +758,10 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                         {filesLoading ? (
                           <CircularProgress size={24} />
                         ) : (
-                          <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, textAlign: "center" }}>
+                          <Typography
+                            variant="h3"
+                            sx={{ fontWeight: 700, mb: 1, textAlign: "center" }}
+                          >
                             {getDocumentCount()}
                           </Typography>
                         )}
@@ -751,9 +781,10 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                     <Card
                       sx={{
                         height: "100%",
-                        bgcolor: (theme) => theme.palette.mode === "dark" 
-                          ? "rgba(156, 39, 176, 0.08)" 
-                          : "rgba(156, 39, 176, 0.04)",
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(156, 39, 176, 0.08)"
+                            : "rgba(156, 39, 176, 0.04)",
                         transition: "transform 0.2s, box-shadow 0.2s",
                         "&:hover": {
                           transform: "translateY(-2px)",
@@ -769,12 +800,12 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                             mb: 2,
                           }}
                         >
-                          <FolderSpecialIcon 
-                            sx={{ 
-                              mr: 1.5, 
+                          <FolderSpecialIcon
+                            sx={{
+                              mr: 1.5,
                               fontSize: 24,
                               color: "secondary.main",
-                            }} 
+                            }}
                           />
                           <Typography
                             variant="subtitle2"
@@ -787,7 +818,10 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                         {scenariosLoading ? (
                           <CircularProgress size={24} />
                         ) : (
-                          <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, textAlign: "center" }}>
+                          <Typography
+                            variant="h3"
+                            sx={{ fontWeight: 700, mb: 1, textAlign: "center" }}
+                          >
                             {scenarios.length}
                           </Typography>
                         )}
@@ -805,9 +839,10 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                     <Card
                       sx={{
                         height: "100%",
-                        bgcolor: (theme) => theme.palette.mode === "dark" 
-                          ? "rgba(0, 150, 136, 0.08)" 
-                          : "rgba(0, 150, 136, 0.04)",
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(0, 150, 136, 0.08)"
+                            : "rgba(0, 150, 136, 0.04)",
                         transition: "transform 0.2s, box-shadow 0.2s",
                         "&:hover": {
                           transform: "translateY(-2px)",
@@ -823,12 +858,12 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                             mb: 2,
                           }}
                         >
-                          <StorageIcon 
-                            sx={{ 
-                              mr: 1.5, 
+                          <StorageIcon
+                            sx={{
+                              mr: 1.5,
                               fontSize: 24,
                               color: "success.main",
-                            }} 
+                            }}
                           />
                           <Typography
                             variant="subtitle2"
@@ -841,7 +876,10 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                         {filesLoading ? (
                           <CircularProgress size={24} />
                         ) : (
-                          <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, textAlign: "center" }}>
+                          <Typography
+                            variant="h3"
+                            sx={{ fontWeight: 700, mb: 1, textAlign: "center" }}
+                          >
                             {formatFileSize(calculateTotalDocumentSize())}
                           </Typography>
                         )}
@@ -980,14 +1018,20 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                 {(projectFiles?.base_case_files.length > 0 ||
                   projectFiles?.tabular_data_files.length > 0 ||
                   scenarios.length > 0) && (
-                  <Box sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: "divider" }}>
+                  <Box
+                    sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: "divider" }}
+                  >
                     <Alert severity="warning" sx={{ mb: 2 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: 600, mb: 1 }}
+                      >
                         Danger Zone
                       </Typography>
                       <Typography variant="body2">
-                        Clearing all project data will permanently delete all scenarios, files, 
-                        and extracted data. This action cannot be undone.
+                        Clearing all project data will permanently delete all
+                        scenarios, files, and extracted data. This action cannot
+                        be undone.
                       </Typography>
                     </Alert>
                     <Button
@@ -1012,7 +1056,7 @@ This action cannot be undone. Are you sure you want to delete this file?`,
 
             {/* Tab 3: Scenarios */}
             <TabPanel value={activeTab} index={3}>
-              <Box sx={{ p: 2 }}>
+              <Box sx={{ p: 1 }}>
                 {selectedScenarioId ? (
                   <ScenarioDetails
                     scenarioId={selectedScenarioId}
@@ -1033,6 +1077,23 @@ This action cannot be undone. Are you sure you want to delete this file?`,
         </>
       ) : (
         <Alert severity="warning">Project not found</Alert>
+      )}
+
+      {/* Edit Project Dialog */}
+      {project && (
+        <CreateProjectDialog
+          open={editProjectDialogOpen}
+          onClose={() => setEditProjectDialogOpen(false)}
+          onSuccess={(updatedProjectId) => {
+            // Refresh project data after successful update
+            if (projectId) {
+              dispatch(fetchProjectById(projectId) as any);
+            }
+          }}
+          projectId={project.id}
+          initialName={project.name}
+          initialDescription={project.description || undefined}
+        />
       )}
     </Box>
   );

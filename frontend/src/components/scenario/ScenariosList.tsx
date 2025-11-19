@@ -138,8 +138,12 @@ const ScenariosList: React.FC<ScenariosListProps> = ({
         setNewObjectiveType("");
         setNewTargetValue("");
         setNewTargetType("%");
-        // Navigate to scenario details
-        navigate(`/projects/${projectId}/scenarios/${newScenarioId}`);
+        // Navigate to scenario details or use callback
+        if (onScenarioSelect) {
+          onScenarioSelect(newScenarioId);
+        } else {
+          navigate(`/projects/${projectId}/scenarios/${newScenarioId}`);
+        }
       }
     });
   };
@@ -185,10 +189,14 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
 
   /**
    * Handle clicking on a scenario card
-   * Always navigates to scenario details page
+   * Uses onScenarioSelect callback if provided, otherwise navigates
    */
   const handleScenarioClick = (scenarioId: string) => {
-    navigate(`/projects/${projectId}/scenarios/${scenarioId}`);
+    if (onScenarioSelect) {
+      onScenarioSelect(scenarioId);
+    } else {
+      navigate(`/projects/${projectId}/scenarios/${scenarioId}`);
+    }
   };
 
   /**

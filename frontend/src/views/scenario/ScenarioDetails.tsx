@@ -35,6 +35,11 @@ import {
 } from "@mui/material";
 import { PlayArrow as PlayArrowIcon } from "@mui/icons-material";
 import {
+  ExpandMore as ExpandMoreIcon,
+  Input as InputIcon,
+  Calculate as CalculateIcon,
+} from "@mui/icons-material";
+import {
   Add as AddIcon,
   Delete as DeleteIcon,
   ArrowBack as ArrowBackIcon,
@@ -43,6 +48,7 @@ import ObjectiveDetailsForm from "../../components/scenario/ObjectiveDetailsForm
 import AnalysisOptionsForm from "../../components/scenario/AnalysisOptionsForm";
 import BaseCaseRecommendationView from "../../components/scenario/BaseCaseRecommendationView";
 import LocalObjectiveInputs from "../../components/scenario/LocalObjectiveInputs";
+import EntityAttributesWithRecommendations from "../../components/scenario/EntityAttributesWithRecommendations";
 import CreateCostEstimateDialog from "../../components/scenario/CreateCostEstimateDialog";
 import { useDialogs } from "../../hooks/useDialogs";
 import {
@@ -577,8 +583,9 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
         hidden={value !== index}
         id={`scenario-tabpanel-${index}`}
         aria-labelledby={`scenario-tab-${index}`}
+        style={{ height: "100%" }}
       >
-        {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+        {value === index && <Box sx={{ height: "100%" }}>{children}</Box>}
       </div>
     );
   };
@@ -687,7 +694,7 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
               size="small"
               sx={{ textTransform: "none" }}
             >
-              ← Back to Scenarios
+              ← Back to All Scenarios
             </Button>
             {scenario && (
               <Box
@@ -746,9 +753,9 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
           <CircularProgress />
         </Box>
       ) : scenario ? (
-        <Box sx={{ p: 2, pt: 0 }}>
+        <Box sx={{ p: 0 }}>
           {/* Scenario Info Panel */}
-          <Paper elevation={0} sx={{ p: 1, mb: 3, backgroundColor: "#f9f9f9" }}>
+          {/* <Paper elevation={0} sx={{ p: 1, mb: 3, backgroundColor: "#f9f9f9" }}>
             <Typography variant="h4" component="h1" gutterBottom>
               {scenario.name} ID: {scenario.id}
             </Typography>
@@ -758,78 +765,110 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                 {scenario.description || "No description available"}
               </Typography>
             )}
-          </Paper>
+          </Paper> */}
 
           {/* Tabbed Interface */}
-          <Paper sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
-            <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <Paper
+            elevation={0}
+            sx={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "row",
+              minHeight: "600px",
+              p: 0,
+            }}
+          >
+            {/* Left Side: Vertical Tabs */}
+            <Box
+              sx={{
+                borderRight: 1,
+                borderColor: "divider",
+                minWidth: 200,
+                backgroundColor: (theme) =>
+                  theme.palette.mode === "dark"
+                    ? "rgba(255, 255, 255, 0.05)"
+                    : "rgba(0, 0, 0, 0.02)",
+              }}
+            >
               <Tabs
                 value={activeTab}
+                orientation="vertical"
                 onChange={(_, newValue) => setActiveTab(newValue)}
                 aria-label="scenario details tabs"
+                sx={{
+                  "& .MuiTab-root": {
+                    fontSize: "small",
+                    alignItems: "flex-start",
+                    textAlign: "left",
+                    minHeight: 48,
+                    paddingLeft: 2,
+                  },
+                }}
               >
                 <Tab label="Objectives" id="scenario-tab-0" />
-                <Tab label="Recommendations" id="scenario-tab-1" />
+                <Tab label="System Design" id="scenario-tab-1" />
                 <Tab label="Cost Estimates" id="scenario-tab-2" />
                 <Tab label="Report" id="scenario-tab-3" />
               </Tabs>
             </Box>
 
-            {/* Tab 0: Objectives */}
-            <TabPanel value={activeTab} index={0}>
-              <Box sx={{ p: 3 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    mb: 3,
-                  }}
-                >
-                  <Typography variant="h6">Objective Details</Typography>
-                  <Tooltip title={getRunAnalysisTooltip()} arrow>
-                    <span>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        size="small"
-                        startIcon={
-                          runningAnalysis ? (
-                            <CircularProgress size={20} />
-                          ) : (
-                            <PlayArrowIcon />
-                          )
-                        }
-                        onClick={handleRunAnalysis}
-                        disabled={runningAnalysis || !canRunAnalysis()}
-                      >
-                        {runningAnalysis
-                          ? "Running Analysis..."
-                          : useV3Workflow
-                          ? "Run Analysis (V3)"
-                          : useV2Workflow
-                          ? "Run Analysis (V2)"
-                          : "Run Analysis"}
-                      </Button>
-                    </span>
-                  </Tooltip>
-                </Box>
-
-                {(objectiveError || analysisError) && (
-                  <Alert
-                    severity="error"
-                    sx={{ mb: 2 }}
-                    onClose={() => {
-                      setObjectiveError(null);
-                      setAnalysisError(null);
-                      dispatch(clearError());
+            {/* Right Side: Tab Content */}
+            <Box sx={{ flex: 1, overflow: "auto" }}>
+              {/* Tab 0: Objectives */}
+              <TabPanel value={activeTab} index={0}>
+                <Box sx={{ p: 3 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 3,
                     }}
                   >
-                    {objectiveError || analysisError}
-                  </Alert>
-                )}
+                    <Typography variant="h6">Objective Details</Typography>
+                    <Tooltip title={getRunAnalysisTooltip()} arrow>
+                      <span>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          size="small"
+                          startIcon={
+                            runningAnalysis ? (
+                              <CircularProgress size={20} />
+                            ) : (
+                              <PlayArrowIcon />
+                            )
+                          }
+                          onClick={handleRunAnalysis}
+                          disabled={runningAnalysis || !canRunAnalysis()}
+                        >
+                          {runningAnalysis
+                            ? "Running Analysis..."
+                            : useV3Workflow
+                            ? "Run Analysis (V3)"
+                            : useV2Workflow
+                            ? "Run Analysis (V2)"
+                            : "Run Analysis"}
+                        </Button>
+                      </span>
+                    </Tooltip>
+                  </Box>
 
-                {/* {!canRunAnalysis() && (
+                  {(objectiveError || analysisError) && (
+                    <Alert
+                      severity="error"
+                      sx={{ mb: 2 }}
+                      onClose={() => {
+                        setObjectiveError(null);
+                        setAnalysisError(null);
+                        dispatch(clearError());
+                      }}
+                    >
+                      {objectiveError || analysisError}
+                    </Alert>
+                  )}
+
+                  {/* {!canRunAnalysis() && (
                   <Alert severity="warning" sx={{ mb: 2 }}>
                     {!scenario || !project
                       ? "Scenario or project data not loaded"
@@ -841,232 +880,334 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                   </Alert>
                 )} */}
 
-                <ObjectiveDetailsForm
-                  objectiveForm={objectiveForm}
-                  extractionScope={extractionScope}
-                  onChange={handleObjectiveFormChange}
-                  onExtractionScopeChange={setExtractionScope}
-                  errors={objectiveError}
-                  updating={updating}
-                  scenarioId={scenarioId || ""}
-                  onSave={handleSaveObjectiveDetails}
-                />
+                  <ObjectiveDetailsForm
+                    objectiveForm={objectiveForm}
+                    extractionScope={extractionScope}
+                    onChange={handleObjectiveFormChange}
+                    onExtractionScopeChange={setExtractionScope}
+                    errors={objectiveError}
+                    updating={updating}
+                    scenarioId={scenarioId || ""}
+                    onSave={handleSaveObjectiveDetails}
+                  />
 
-                <AnalysisOptionsForm
-                  useV2Workflow={useV2Workflow}
-                  extractSummary={extractSummary}
-                  onUseV2WorkflowChange={setUseV2Workflow}
-                  onExtractSummaryChange={setExtractSummary}
-                />
-              </Box>
-            </TabPanel>
+                  {/* <AnalysisOptionsForm
+                    useV2Workflow={useV2Workflow}
+                    extractSummary={extractSummary}
+                    onUseV2WorkflowChange={setUseV2Workflow}
+                    onExtractSummaryChange={setExtractSummary}
+                  /> */}
+                </Box>
+              </TabPanel>
 
-            {/* Tab 1: Recommendations */}
-            <TabPanel value={activeTab} index={1}>
-              <Box sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  Recommendations
-                </Typography>
-                <BaseCaseRecommendationView scenarioId={scenarioId || ""} />
-              </Box>
-            </TabPanel>
+              {/* Tab 1: System Design */}
+              <TabPanel value={activeTab} index={1}>
+                <Box sx={{ p: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Base Case Entities with Recommendations
+                  </Typography>
+                  <EntityAttributesWithRecommendations
+                    scenarioId={scenarioId || ""}
+                    globalObjectiveType={scenarioObjectiveType}
+                    globalObjectiveTarget={scenarioObjectiveTarget}
+                  />
+                </Box>
+              </TabPanel>
 
-            {/* Tab 2: Cost Estimate */}
-            <TabPanel value={activeTab} index={2}>
-              <Box sx={{ p: 3 }}>
-                {selectedCostEstimateId && currentCostEstimate ? (
-                  /* Cost Estimate Details View */
-                  <Box>
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-                      <Button
-                        startIcon={<ArrowBackIcon />}
-                        onClick={() => {
-                          setSelectedCostEstimateId(null);
-                          dispatch(clearCurrentCostEstimate());
-                        }}
-                        sx={{ mr: 2 }}
-                      >
-                        Back to Cost Estimates
-                      </Button>
+              {/* Tab 2: Cost Estimate */}
+              <TabPanel value={activeTab} index={2}>
+                <Box sx={{ p: 3 }}>
+                  {selectedCostEstimateId && currentCostEstimate ? (
+                    /* Cost Estimate Details View */
+                    <Box>
+                      {/* Back Button */}
+                      <Box sx={{ mb: 2 }}>
+                        <Button
+                          startIcon={<ArrowBackIcon />}
+                          size="small"
+                          onClick={() => {
+                            setSelectedCostEstimateId(null);
+                            dispatch(clearCurrentCostEstimate());
+                          }}
+                        >
+                          Back to All Cost Estimates
+                        </Button>
+                      </Box>
+
+                      {/* Cost Estimate Header */}
+                      <Paper elevation={0} sx={{ p: 3, mb: 2 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                            gap: 2,
+                          }}
+                        >
+                          {/* Left: Cost Estimate Info */}
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            {/* Title and Description */}
+                            <Typography variant="h5" gutterBottom>
+                              {currentCostEstimate.name}
+                            </Typography>
+                            {currentCostEstimate.description && (
+                              <Typography
+                                variant="body1"
+                                color="text.secondary"
+                                sx={{ mb: 2 }}
+                              >
+                                {currentCostEstimate.description}
+                              </Typography>
+                            )}
+
+                            {/* Scenario Objective */}
+                            {scenario?.global_objective_target && (
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  flexDirection: "row",
+                                  gap: 1,
+                                  alignItems: "center",
+                                  mb: 2,
+                                  p: 1,
+                                  borderRadius: 1,
+                                  bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                      ? "rgba(255, 255, 255, 0.05)"
+                                      : "rgba(0, 0, 0, 0.02)",
+                                }}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  Scenario Objective:
+                                </Typography>
+                                <Typography variant="body2" fontWeight="medium">
+                                  {scenario?.global_objective_type}
+                                </Typography>
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  by
+                                </Typography>
+                                <Typography variant="body2" fontWeight="medium">
+                                  {scenario?.global_objective_target}
+                                </Typography>
+                              </Box>
+                            )}
+
+                            {/* Metadata */}
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              Created:{" "}
+                              {formatDate(currentCostEstimate.created_at)} |{" "}
+                              Updated:{" "}
+                              {formatDate(currentCostEstimate.updated_at)}
+                            </Typography>
+                          </Box>
+
+                          {/* Right: Actions */}
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "flex-end",
+                              gap: 1,
+                            }}
+                          >
+                            <Button
+                              variant="contained"
+                              size="small"
+                              startIcon={<CalculateIcon />}
+                            >
+                              Calculate Cost Estimate
+                            </Button>
+                            <IconButton
+                              color="error"
+                              size="small"
+                              onClick={() =>
+                                handleDeleteCostEstimate(currentCostEstimate.id)
+                              }
+                              disabled={deletingCostEstimate}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Box>
+                        </Box>
+                      </Paper>
+
+                      {/* Step 1: System Design Inputs */}
+                      <Accordion sx={{ backgroundColor: "#f9f9f9", mb: 1 }}>
+                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                          <InputIcon sx={{ mr: 1 }} />
+                          <Box>
+                            <Typography variant="h6" gutterBottom>
+                              Local Objective Inputs
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              Configure attribute types and review redesign
+                              values based on global objective target.
+                            </Typography>
+                          </Box>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                          <Box sx={{ mb: 4 }}>
+                            <LocalObjectiveInputs
+                              scenarioId={scenarioId || ""}
+                              globalObjectiveType={
+                                scenario?.global_objective_type
+                              }
+                              globalObjectiveTarget={
+                                scenario?.global_objective_target
+                              }
+                              costEstimateId={
+                                selectedCostEstimateId || undefined
+                              }
+                            />
+                          </Box>
+                        </AccordionDetails>{" "}
+                      </Accordion>
                     </Box>
-
-                    <Paper sx={{ p: 3, mb: 2 }}>
+                  ) : (
+                    /* Cost Estimates List View */
+                    <Box>
                       <Box
                         sx={{
                           display: "flex",
                           justifyContent: "space-between",
-                          alignItems: "flex-start",
-                          mb: 2,
+                          alignItems: "center",
+                          mb: 3,
                         }}
                       >
-                        <Box>
-                          <Typography variant="h5" gutterBottom>
-                            {currentCostEstimate.name}
-                          </Typography>
-                          {currentCostEstimate.description && (
-                            <Typography variant="body1" color="text.secondary">
-                              {currentCostEstimate.description}
-                            </Typography>
-                          )}
-                        </Box>
-                        <IconButton
-                          color="error"
-                          onClick={() =>
-                            handleDeleteCostEstimate(currentCostEstimate.id)
-                          }
-                          disabled={deletingCostEstimate}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Box>
-                      <Typography variant="caption" color="text.secondary">
-                        Created: {formatDate(currentCostEstimate.created_at)} |
-                        Updated: {formatDate(currentCostEstimate.updated_at)}
-                      </Typography>
-                    </Paper>
-
-                    {/* Step 1: System Design Inputs */}
-                    <Box sx={{ mb: 4 }}>
-                      <LocalObjectiveInputs
-                        scenarioId={scenarioId || ""}
-                        globalObjectiveType={scenario?.global_objective_type}
-                        globalObjectiveTarget={
-                          scenario?.global_objective_target
-                        }
-                        costEstimateId={selectedCostEstimateId || undefined}
-                      />
-                    </Box>
-                  </Box>
-                ) : (
-                  /* Cost Estimates List View */
-                  <Box>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        mb: 3,
-                      }}
-                    >
-                      <Typography variant="h6">
-                        Cost Estimates ({costEstimates.length})
-                      </Typography>
-                      <Button
-                        variant="contained"
-                        startIcon={<AddIcon />}
-                        onClick={() => setCreateCostEstimateDialogOpen(true)}
-                        disabled={creatingCostEstimate || !scenarioId}
-                      >
-                        New Cost Estimate
-                      </Button>
-                    </Box>
-
-                    {costEstimatesError && (
-                      <Alert
-                        severity="error"
-                        sx={{ mb: 2 }}
-                        onClose={() => dispatch(clearCostEstimatesError())}
-                      >
-                        {costEstimatesError}
-                      </Alert>
-                    )}
-
-                    {costEstimatesLoading.fetch ? (
-                      <Box
-                        sx={{ display: "flex", justifyContent: "center", p: 4 }}
-                      >
-                        <CircularProgress />
-                      </Box>
-                    ) : costEstimates.length === 0 ? (
-                      <Alert severity="info">
-                        <Typography variant="body2">
-                          No cost estimates created yet. Click "New Cost
-                          Estimate" to create one.
+                        <Typography variant="h6">
+                          Cost Estimates ({costEstimates.length})
                         </Typography>
-                      </Alert>
-                    ) : (
-                      <Grid container spacing={2}>
-                        {costEstimates.map((costEstimate) => (
-                          <Grid
-                            item
-                            xs={12}
-                            sm={6}
-                            md={4}
-                            key={costEstimate.id}
-                          >
-                            <Card
-                              variant="outlined"
-                              sx={{
-                                height: "100%",
-                                cursor: "pointer",
-                                transition: "transform 0.2s, box-shadow 0.2s",
-                                "&:hover": {
-                                  transform: "translateY(-2px)",
-                                  boxShadow: 3,
-                                },
-                              }}
-                              onClick={() =>
-                                handleCostEstimateClick(costEstimate.id)
-                              }
+                        <Button
+                          variant="contained"
+                          startIcon={<AddIcon />}
+                          onClick={() => setCreateCostEstimateDialogOpen(true)}
+                          disabled={creatingCostEstimate || !scenarioId}
+                        >
+                          New Cost Estimate
+                        </Button>
+                      </Box>
+
+                      {costEstimatesError && (
+                        <Alert
+                          severity="error"
+                          sx={{ mb: 2 }}
+                          onClose={() => dispatch(clearCostEstimatesError())}
+                        >
+                          {costEstimatesError}
+                        </Alert>
+                      )}
+
+                      {costEstimatesLoading.fetch ? (
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "center",
+                            p: 4,
+                          }}
+                        >
+                          <CircularProgress />
+                        </Box>
+                      ) : costEstimates.length === 0 ? (
+                        <Alert severity="info">
+                          <Typography variant="body2">
+                            No cost estimates created yet. Click "New Cost
+                            Estimate" to create one.
+                          </Typography>
+                        </Alert>
+                      ) : (
+                        <Grid container spacing={2}>
+                          {costEstimates.map((costEstimate) => (
+                            <Grid
+                              item
+                              xs={12}
+                              sm={6}
+                              md={4}
+                              key={costEstimate.id}
                             >
-                              <CardContent>
-                                <Typography
-                                  variant="h6"
-                                  component="h3"
-                                  sx={{ fontWeight: 600, mb: 1 }}
-                                >
-                                  {costEstimate.name}
-                                </Typography>
-                                {costEstimate.description && (
+                              <Card
+                                variant="outlined"
+                                sx={{
+                                  height: "100%",
+                                  cursor: "pointer",
+                                  transition: "transform 0.2s, box-shadow 0.2s",
+                                  "&:hover": {
+                                    transform: "translateY(-2px)",
+                                    boxShadow: 3,
+                                  },
+                                }}
+                                onClick={() =>
+                                  handleCostEstimateClick(costEstimate.id)
+                                }
+                              >
+                                <CardContent>
                                   <Typography
-                                    variant="body2"
-                                    color="text.secondary"
-                                    sx={{ mb: 2 }}
+                                    variant="h6"
+                                    component="h3"
+                                    sx={{ fontWeight: 600, mb: 1 }}
                                   >
-                                    {costEstimate.description}
+                                    {costEstimate.name}
                                   </Typography>
-                                )}
-                                <Typography
-                                  variant="caption"
-                                  color="text.secondary"
-                                >
-                                  Created: {formatDate(costEstimate.created_at)}
-                                </Typography>
-                              </CardContent>
-                            </Card>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    )}
-                  </Box>
-                )}
+                                  {costEstimate.description && (
+                                    <Typography
+                                      variant="body2"
+                                      color="text.secondary"
+                                      sx={{ mb: 2 }}
+                                    >
+                                      {costEstimate.description}
+                                    </Typography>
+                                  )}
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                  >
+                                    Created:{" "}
+                                    {formatDate(costEstimate.created_at)}
+                                  </Typography>
+                                </CardContent>
+                              </Card>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      )}
+                    </Box>
+                  )}
 
-                {/* Create Cost Estimate Dialog */}
-                <CreateCostEstimateDialog
-                  open={createCostEstimateDialogOpen}
-                  onClose={() => setCreateCostEstimateDialogOpen(false)}
-                  onCreate={handleCreateCostEstimate}
-                  creating={creatingCostEstimate}
-                  scenarioId={scenarioId || ""}
-                />
-              </Box>
-            </TabPanel>
+                  {/* Create Cost Estimate Dialog */}
+                  <CreateCostEstimateDialog
+                    open={createCostEstimateDialogOpen}
+                    onClose={() => setCreateCostEstimateDialogOpen(false)}
+                    onCreate={handleCreateCostEstimate}
+                    creating={creatingCostEstimate}
+                    scenarioId={scenarioId || ""}
+                  />
+                </Box>
+              </TabPanel>
 
-            {/* Tab 3: Report */}
-            <TabPanel value={activeTab} index={3}>
-              <Box sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  Scenario Report
-                </Typography>
-                <Alert severity="info" sx={{ mt: 2 }}>
-                  <Typography variant="body2">
-                    This is a placeholder for the scenario report view. The
-                    actual implementation will display the generated markdown
-                    report for this scenario.
+              {/* Tab 3: Report */}
+              <TabPanel value={activeTab} index={3}>
+                <Box sx={{ p: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Scenario Report
                   </Typography>
-                </Alert>
-              </Box>
-            </TabPanel>
+                  <Alert severity="info" sx={{ mt: 2 }}>
+                    <Typography variant="body2">
+                      This is a placeholder for the scenario report view. The
+                      actual implementation will display the generated markdown
+                      report for this scenario.
+                    </Typography>
+                  </Alert>
+                </Box>
+              </TabPanel>
+            </Box>
           </Paper>
         </Box>
       ) : (

@@ -499,6 +499,28 @@ export const scenarioApi = {
   },
 
   /**
+   * Run or re-run analysis for a scenario using V4 workflow
+   */
+  runAnalysisV4: async (
+    scenarioId: string
+  ): Promise<{
+    job_id: string;
+    scenario_id: string;
+    status: string;
+    websocket_url: string;
+    message: string;
+  }> => {
+    const response = await apiClient.post<{
+      job_id: string;
+      scenario_id: string;
+      status: string;
+      websocket_url: string;
+      message: string;
+    }>(`/api/v1/scenarios/${scenarioId}/run-analysis-v4`);
+    return response.data;
+  },
+
+  /**
    * Get recommendations for a scenario
    */
   getRecommendations: async (scenarioId: string): Promise<RecommendationsResponse> => {

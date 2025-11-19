@@ -47,6 +47,8 @@ _orchestration_service: Optional[ProjectOrchestrationService] = None
 _file_storage_service: Optional[FileStorageService] = None
 # Background task registry for V3 analysis
 _analysis_v3_tasks: Dict[str, asyncio.Task] = {}
+# Background task registry for V4 analysis
+_analysis_v4_tasks: Dict[str, asyncio.Task] = {}
 
 
 def set_orchestration_service(service: ProjectOrchestrationService) -> None:
@@ -943,7 +945,7 @@ async def _run_analysis_background_v3(
                 ),
             )
             
-            rec_result = await orchestration._extract_recommendations_v3(
+            rec_result = await orchestration._extract_recommendations_v3_chunked(
                 full_text=full_text,
                 global_objective_type=global_objective_type,
                 global_objective_target=global_objective_target,
@@ -1087,8 +1089,6 @@ async def _run_analysis_background_v3(
         if job_id in _analysis_v3_tasks:
             del _analysis_v3_tasks[job_id]
 
-
-# Run or re-run analysis for a scenario (V3 workflow)
 @scenarios_router.post(
     "/{scenario_id}/run-analysis-v3",
     summary="Run or re-run analysis for a scenario (V3 workflow)",
@@ -1213,3 +1213,376 @@ async def run_analysis_v3(
             detail=f"Failed to start analysis: {str(e)}",
         )
 
+
+@scenarios_router.post(
+    "/{scenario_id}/run-analysis-v4",
+    summary="Run or re-run analysis for a scenario (V4 workflow)",
+    description="Trigger document processing and analysis for a scenario using V4 workflow (Objective-driven nodes and relations extraction). Requires objective details and project documents to be uploaded.",
+)
+async def run_analysis_v4(
+    scenario_id: str = Path(..., description="Scenario ID (MongoDB ObjectId as string)"),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Run analysis for a scenario using V4 workflow.
+    
+    V4 workflow:
+    1. Reads base case documents from GridFS
+    2. Extracts objective-driven nodes and relations using LLM
+    3. Stores extracted entities and edges in MongoDB
+    
+    Args:
+        scenario_id: Scenario identifier
+        current_user: Authenticated user
+    
+    Returns:
+        Response with job_id, status, and websocket_url for progress tracking
+    """
+    try:
+        # Get user_id from authenticated user
+        user_id = str(current_user["_id"])
+        
+        # Validate scenario_id format
+        try:
+            from bson import ObjectId
+            ObjectId(scenario_id)
+        except Exception:
+            raise ValueError(f"Invalid scenario_id format: {scenario_id}")
+        
+        # Get scenario
+        scenario = await services.get(scenario_id)
+        if not scenario:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Scenario not found: {scenario_id}",
+            )
+        
+        # Validate objective requirements
+        if not scenario.global_objective_type or not scenario.global_objective_target:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Global objective details are required. Please set objective type and target first.",
+            )
+        
+        # Get project to access documents
+        project = await project_services.get(scenario.project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project not found: {scenario.project_id}",
+            )
+        
+        # Validate project has base case documents
+        if not project.base_case_documents or len(project.base_case_documents) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="At least one base case document is required. Please upload documents in the project Sources tab first.",
+            )
+        
+        # Update scenario status to processing
+        status_patch = ScenarioUpdate(status=ScenarioStatus.PROCESSING)
+        await services.update(scenario_id, status_patch)
+        
+        # Generate job_id
+        job_id = str(uuid.uuid4())
+        
+        # Create background task
+        task = asyncio.create_task(
+            _run_analysis_background_v4(
+                job_id=job_id,
+                scenario_id=scenario_id,
+                project_id=scenario.project_id,
+                user_id=user_id,
+                global_objective_type=scenario.global_objective_type,
+                global_objective_target=scenario.global_objective_target,
+                objective_description=scenario.objective_description,
+                base_case_document_ids=project.base_case_documents,
+            )
+        )
+        
+        # Store task in registry
+        _analysis_v4_tasks[job_id] = task
+        
+        # Yield control to allow task to start
+        await asyncio.sleep(0)
+        
+        # Return immediately with job_id
+        return {
+            "job_id": job_id,
+            "scenario_id": scenario_id,
+            "status": "queued",
+            "message": "Analysis started. Connect to WebSocket endpoint for progress updates.",
+            "websocket_url": f"/api/v1/ws/progress/{job_id}",
+        }
+        
+    except ValueError as e:
+        logger.warning(f"Invalid scenario_id format: {scenario_id}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except HTTPException:
+        raise
+    except RuntimeError as e:
+        logger.error(f"Service not initialized: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Service not available",
+        )
+    except Exception as e:
+        logger.error(f"Error starting V4 analysis for scenario {scenario_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to start analysis: {str(e)}",
+        )
+
+
+async def _run_analysis_background_v4(
+    job_id: str,
+    scenario_id: str,
+    project_id: str,
+    user_id: str,
+    global_objective_type: str,
+    global_objective_target: str,
+    objective_description: Optional[str],
+    base_case_document_ids: List[str],
+):
+    """
+    Background async function for V4 analysis.
+    
+    Args:
+        job_id: Unique job identifier for progress tracking
+        scenario_id: Scenario identifier
+        project_id: Project identifier
+        user_id: User identifier
+        global_objective_type: Type of global objective
+        global_objective_target: Target magnitude of change
+        objective_description: Optional description of the global objective
+        base_case_document_ids: List of base case document IDs
+    """
+    logger.info(
+        f"[Background Task] Starting V4 analysis for job {job_id}, scenario {scenario_id}"
+    )
+    try:
+        publisher = get_progress_publisher()
+        orchestration = _get_orchestration_service()
+        file_storage = _get_file_storage_service()
+        
+        from ....domain.parsing.utils.text_utils import extract_and_clean, extract_fulltext
+        from ....domain.parsing.storage.document_store import DocumentStore
+        
+        # Emit start event
+        publisher.publish(
+            job_id,
+            ProgressEvent(
+                job_id=job_id,
+                stage=Stage.PROCESSING,
+                status=Status.STARTED,
+                progress=0,
+                seq=0,
+                meta={
+                    "scenario_id": scenario_id,
+                    "project_id": project_id,
+                    "total_documents": len(base_case_document_ids),
+                    "current_stage": "Starting V4 analysis",
+                },
+            ),
+        )
+        
+        # Step 1: Read base case documents
+        publisher.publish(
+            job_id,
+            ProgressEvent(
+                job_id=job_id,
+                stage=Stage.PROCESSING,
+                status=Status.IN_PROGRESS,
+                progress=10,
+                seq=1,
+                meta={
+                    "current_stage": "Reading base case documents",
+                },
+            ),
+        )
+        
+        documents = await orchestration._read_base_case_documents_v3(
+            base_case_document_ids, file_storage
+        )
+        
+        if not documents:
+            raise ValueError("No base case documents could be retrieved")
+        
+        document_results = []
+        all_nodes = []
+        all_edges = []
+        
+        # Process each document
+        for idx, doc in enumerate(documents, 1):
+            document_id = doc["document_id"]
+            file_bytes = doc["file_bytes"]
+            filename = doc["filename"]
+            
+            # Extract text from PDF
+            publisher.publish(
+                job_id,
+                ProgressEvent(
+                    job_id=job_id,
+                    stage=Stage.PROCESSING,
+                    status=Status.IN_PROGRESS,
+                    progress=20 + int((idx - 1) / len(documents) * 30),
+                    seq=idx * 2,
+                    meta={
+                        "current_stage": f"Extracting text from document {idx}/{len(documents)}: {filename}",
+                        "document_id": document_id,
+                    },
+                ),
+            )
+            
+            _, _, _, pages_clean = extract_and_clean(file_bytes, filename)
+            full_text = extract_fulltext(pages_clean)
+            
+            # Step 2: Extract objective-driven nodes and relations
+            publisher.publish(
+                job_id,
+                ProgressEvent(
+                    job_id=job_id,
+                    stage=Stage.PROCESSING,
+                    status=Status.IN_PROGRESS,
+                    progress=50 + int((idx - 1) / len(documents) * 30),
+                    seq=idx * 2 + 1,
+                    meta={
+                        "current_stage": f"Extracting nodes and relations for document {idx}/{len(documents)}: {filename}",
+                        "document_id": document_id,
+                    },
+                ),
+            )
+            
+            extraction_result = await orchestration._extract_objective_driven_nodes_and_relations_v4(
+                full_text=full_text,
+                global_objective_type=global_objective_type,
+                global_objective_target=global_objective_target,
+                objective_description=objective_description,
+                document_id=document_id,
+            )
+            
+            nodes = extraction_result.get("nodes", [])
+            edges = extraction_result.get("edges", [])
+            
+            # Add metadata to nodes and edges
+            for node in nodes:
+                if "properties" not in node:
+                    node["properties"] = {}
+                node["properties"].update({
+                    "project_id": project_id,
+                    "scenario_id": scenario_id,
+                    "user_id": user_id,
+                    "doc_id": document_id,
+                    "artifact_type": "base_case",
+                })
+            
+            for edge in edges:
+                if "properties" not in edge:
+                    edge["properties"] = {}
+                edge["properties"].update({
+                    "project_id": project_id,
+                    "scenario_id": scenario_id,
+                    "user_id": user_id,
+                    "doc_id": document_id,
+                    "artifact_type": "base_case",
+                })
+            
+            all_nodes.extend(nodes)
+            all_edges.extend(edges)
+            
+            # Step 3: Store nodes and edges in MongoDB
+            publisher.publish(
+                job_id,
+                ProgressEvent(
+                    job_id=job_id,
+                    stage=Stage.PROCESSING,
+                    status=Status.IN_PROGRESS,
+                    progress=80 + int((idx - 1) / len(documents) * 15),
+                    seq=idx * 2 + 2,
+                    meta={
+                        "current_stage": f"Storing entities and relations for document {idx}/{len(documents)}",
+                        "document_id": document_id,
+                        "nodes_count": len(nodes),
+                        "edges_count": len(edges),
+                    },
+                ),
+            )
+            
+            document_store = DocumentStore()
+            entities_stored = document_store.bulk_upsert_entities(nodes)
+            edges_stored = document_store.bulk_upsert_relations(edges)
+            
+            document_results.append({
+                "document_id": document_id,
+                "filename": filename,
+                "status": "completed",
+                "nodes_count": len(nodes),
+                "edges_count": len(edges),
+                "entities_stored": entities_stored,
+                "edges_stored": edges_stored,
+            })
+        
+        # Update scenario status
+        status_patch = ScenarioUpdate(status=ScenarioStatus.COMPLETED)
+        await services.update(scenario_id, status_patch)
+        
+        # Emit completion event
+        publisher.publish(
+            job_id,
+            ProgressEvent(
+                job_id=job_id,
+                stage=Stage.COMPLETE,
+                status=Status.COMPLETED,
+                progress=100,
+                seq=len(documents) * 3 + 1,
+                meta={
+                    "current_stage": "Analysis completed",
+                    "documents_processed": len(document_results),
+                    "total_nodes": len(all_nodes),
+                    "total_edges": len(all_edges),
+                },
+            ),
+        )
+        
+        logger.info(
+            f"[Background Task] V4 analysis completed for job {job_id}, scenario {scenario_id}: "
+            f"{len(document_results)} documents processed, "
+            f"{len(all_nodes)} nodes, {len(all_edges)} edges extracted"
+        )
+        
+    except Exception as e:
+        logger.error(
+            f"[Background Task] Error in V4 analysis for job {job_id}, scenario {scenario_id}: {e}",
+            exc_info=True,
+        )
+        
+        # Update scenario status to failed
+        try:
+            status_patch = ScenarioUpdate(status=ScenarioStatus.FAILED)
+            await services.update(scenario_id, status_patch)
+        except Exception as update_error:
+            logger.error(f"Failed to update scenario status: {update_error}")
+        
+        # Emit failure event
+        publisher = get_progress_publisher()
+        publisher.publish(
+            job_id,
+            ProgressEvent(
+                job_id=job_id,
+                stage=Stage.ERROR,
+                status=Status.FAILED,
+                progress=0,
+                seq=999,
+                meta={
+                    "current_stage": "Analysis failed",
+                    "error": str(e),
+                },
+            ),
+        )
+    finally:
+        # Clean up task registry
+        if job_id in _analysis_v4_tasks:
+            del _analysis_v4_tasks[job_id]
