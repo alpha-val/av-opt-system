@@ -21,6 +21,7 @@ import {
   FormControl,
   IconButton,
   Tooltip,
+  Checkbox,
 } from "@mui/material";
 import { Info as InfoIcon } from "@mui/icons-material";
 import { scenarioApi } from "../../services/api";
@@ -29,6 +30,7 @@ interface EntityAttributesWithRecommendationsProps {
   scenarioId: string;
   globalObjectiveType?: string;
   globalObjectiveTarget?: string;
+  globalObjectiveUnit?: string;
 }
 
 interface Recommendation {
@@ -80,6 +82,8 @@ interface AttributeRow {
   confidence: number | null;
   recommendations: Recommendation[];
   attributeIndex: number; // Index to ensure unique keys
+  costValue: number | null;
+  costCurrency: string | null;
 }
 
 interface AttributeRowComponentProps {
@@ -96,7 +100,11 @@ interface AttributeRowComponentProps {
   showDivider: boolean;
   showEntityName: boolean;
   showEntityType: boolean;
+  showCost: boolean;
   showRecommendations: boolean;
+  showIncludeCheckbox: boolean;
+  isEntityIncluded: boolean;
+  onEntityInclusionToggle: (entityId: string) => void;
   rowSpan: number;
 }
 
@@ -192,7 +200,11 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
     showDivider,
     showEntityName,
     showEntityType,
+    showCost,
     showRecommendations,
+    showIncludeCheckbox,
+    isEntityIncluded,
+    onEntityInclusionToggle,
     rowSpan,
   }) => {
     const isValueNumeric =
@@ -206,12 +218,29 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
       <React.Fragment>
         {showDivider && (
           <TableRow>
-            <TableCell colSpan={9} sx={{ p: 0, border: 0 }}>
+            <TableCell colSpan={12} sx={{ p: 0, border: 0 }}>
               <Divider sx={{ my: 0.5 }} />
             </TableCell>
           </TableRow>
         )}
-        <TableRow>
+        <TableRow
+          sx={{
+            backgroundColor: !isEntityIncluded ? "rgba(0, 0, 0, 0.04)" : "inherit",
+            opacity: !isEntityIncluded ? 0.6 : 1,
+          }}
+        >
+          {showIncludeCheckbox ? (
+            <TableCell
+              rowSpan={rowSpan}
+              sx={{ px: 1, verticalAlign: "top" }}
+            >
+              <Checkbox
+                checked={isEntityIncluded}
+                onChange={() => onEntityInclusionToggle(row.entityId)}
+                size="small"
+              />
+            </TableCell>
+          ) : null}
           {showEntityName ? (
             <TableCell
               rowSpan={rowSpan}
@@ -225,13 +254,33 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
               rowSpan={rowSpan}
               sx={{ py: 0.5, px: 1, verticalAlign: "top" }}
             >
-              <Chip label={row.entityType} size="small" />
+              <Chip label={row.entityType} size="small" disabled={!isEntityIncluded} />
+            </TableCell>
+          ) : null}
+          {showCost ? (
+            <TableCell
+              rowSpan={rowSpan}
+              sx={{ py: 0.5, px: 1, verticalAlign: "top" }}
+            >
+              {row.costValue !== null && row.costValue !== undefined ? (
+                <Typography variant="body2">
+                  {row.costValue.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}{" "}
+                  {row.costCurrency || "USD"}
+                </Typography>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  —
+                </Typography>
+              )}
             </TableCell>
           ) : null}
           {showRecommendations ? (
             <TableCell
               rowSpan={rowSpan}
-              sx={{ py: 0.5, px: 1, verticalAlign: "top", width: "300px" }}
+              sx={{ py: 0.5, px: 1, verticalAlign: "top", width: "200px" }}
             >
               <RecommendationsCell recommendations={row.recommendations} />
             </TableCell>
@@ -244,6 +293,7 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
                   onTypeChange(rowKey, e.target.value as "Fixed" | "Floating")
                 }
                 displayEmpty
+                disabled={!isEntityIncluded}
               >
                 <MenuItem value="Fixed">Fixed</MenuItem>
                 <MenuItem value="Floating">Floating</MenuItem>
@@ -276,7 +326,7 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
                   step: 0.01,
                 }}
                 sx={{ width: 120 }}
-                disabled={currentType === "Fixed"}
+                disabled={!isEntityIncluded || currentType === "Fixed"}
               />
             ) : !isValueNA ? (
               <TextField
@@ -287,7 +337,7 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
                   onBaseValueChange(rowKey, e.target.value || null);
                 }}
                 sx={{ width: 120 }}
-                disabled={currentType === "Fixed"}
+                disabled={!isEntityIncluded || currentType === "Fixed"}
               />
             ) : (
               <Typography variant="body2" color="text.secondary">
@@ -328,7 +378,7 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
                 }
                 arrow
               >
-                <IconButton size="small" sx={{ p: 0.5 }}>
+                <IconButton size="small" sx={{ p: 0.5 }} disabled={!isEntityIncluded}>
                   <InfoIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
@@ -363,7 +413,7 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
                   step: 0.01,
                 }}
                 sx={{ width: 120 }}
-                disabled={currentType === "Fixed"}
+                disabled={!isEntityIncluded || currentType === "Fixed"}
                 error={
                   currentUpdatedValue !== null &&
                   typeof currentUpdatedValue === "number" &&
@@ -394,7 +444,7 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
                   onUpdatedValueChange(rowKey, e.target.value || null);
                 }}
                 sx={{ width: 120 }}
-                disabled={currentType === "Fixed"}
+                disabled={!isEntityIncluded || currentType === "Fixed"}
               />
             ) : (
               <Typography variant="body2" color="text.secondary">
@@ -416,7 +466,10 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
       prevProps.showDivider === nextProps.showDivider &&
       prevProps.showEntityName === nextProps.showEntityName &&
       prevProps.showEntityType === nextProps.showEntityType &&
+      prevProps.showCost === nextProps.showCost &&
       prevProps.showRecommendations === nextProps.showRecommendations &&
+      prevProps.showIncludeCheckbox === nextProps.showIncludeCheckbox &&
+      prevProps.isEntityIncluded === nextProps.isEntityIncluded &&
       prevProps.rowSpan === nextProps.rowSpan &&
       prevProps.row.entityId === nextProps.row.entityId &&
       prevProps.row.attributeName === nextProps.row.attributeName &&
@@ -438,7 +491,7 @@ AttributeRowComponent.displayName = "AttributeRowComponent";
  */
 const EntityAttributesWithRecommendations: React.FC<
   EntityAttributesWithRecommendationsProps
-> = ({ scenarioId, globalObjectiveType, globalObjectiveTarget }) => {
+> = ({ scenarioId, globalObjectiveType, globalObjectiveTarget, globalObjectiveUnit }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [entities, setEntities] = useState<Entity[]>([]);
@@ -450,6 +503,9 @@ const EntityAttributesWithRecommendations: React.FC<
   >({});
   const [attributeTypes, setAttributeTypes] = useState<
     Record<string, "Fixed" | "Floating">
+  >({});
+  const [includedEntities, setIncludedEntities] = useState<
+    Record<string, boolean>
   >({});
 
   // Fetch entities
@@ -498,14 +554,17 @@ const EntityAttributesWithRecommendations: React.FC<
         return baseValue;
       }
 
-      // Parse target (format: "5%", "$1000000", "10%", etc.)
-      const targetMatch = globalObjectiveTarget.match(/^([\d.]+)([%$])?$/);
-      if (!targetMatch) {
+      // Use separate target and unit fields
+      if (!globalObjectiveTarget) {
         return baseValue;
       }
 
-      const targetValue = parseFloat(targetMatch[1]);
-      const targetUnit = targetMatch[2] || "%";
+      const targetValue = parseFloat(globalObjectiveTarget);
+      const targetUnit = globalObjectiveUnit || "%";
+      
+      if (isNaN(targetValue)) {
+        return baseValue;
+      }
 
       // Determine direction based on objective type
       const isIncrease = globalObjectiveType
@@ -530,7 +589,7 @@ const EntityAttributesWithRecommendations: React.FC<
         return Math.round(result * 100) / 100;
       }
     };
-  }, [globalObjectiveTarget, globalObjectiveType]);
+  }, [globalObjectiveTarget, globalObjectiveUnit, globalObjectiveType]);
 
   /**
    * Extract and flatten attributes from entities
@@ -540,15 +599,85 @@ const EntityAttributesWithRecommendations: React.FC<
       return [];
     }
 
+    /**
+     * Get the highest priority recommendation relevance for an entity
+     * Returns: "primary" | "secondary" | "other" | "none"
+     */
+    const getHighestRecommendationPriority = (entity: Entity): string => {
+      const recommendations = entity.properties?.recommendations || [];
+      if (recommendations.length === 0) {
+        return "none";
+      }
+      
+      // Check for primary first
+      if (recommendations.some(rec => rec.relevance === "primary")) {
+        return "primary";
+      }
+      // Check for secondary
+      if (recommendations.some(rec => rec.relevance === "secondary")) {
+        return "secondary";
+      }
+      // Otherwise it's "other"
+      return "other";
+    };
+
+    // Sort entities: first by recommendation priority, then by entity name
+    const sortedEntities = [...entities].sort((a, b) => {
+      const priorityA = getHighestRecommendationPriority(a);
+      const priorityB = getHighestRecommendationPriority(b);
+      
+      // Priority order: primary > secondary > other > none
+      const priorityOrder: Record<string, number> = {
+        primary: 0,
+        secondary: 1,
+        other: 2,
+        none: 3,
+      };
+      
+      const priorityDiff = priorityOrder[priorityA] - priorityOrder[priorityB];
+      if (priorityDiff !== 0) {
+        return priorityDiff;
+      }
+      
+      // If same priority, sort by entity name
+      const nameA = (a.properties?.name || "Unknown Entity").toLowerCase();
+      const nameB = (b.properties?.name || "Unknown Entity").toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+
     const rows: AttributeRow[] = [];
 
-    entities.forEach((entity) => {
+    sortedEntities.forEach((entity) => {
       const entityName = entity.properties?.name || "Unknown Entity";
       const entityType = entity.type || "Unknown";
       const recommendations = entity.properties?.recommendations || [];
 
       // Get attributes from properties.attributes array
       const attributes = entity.properties?.attributes || [];
+
+      // Extract cost information from properties.cost_information object
+      let costValue: number | null = null;
+      let costCurrency: string | null = null;
+
+      const costInformation = entity.properties?.cost_information;
+      if (costInformation) {
+        // Extract cost_value
+        if (costInformation.cost_value !== null && costInformation.cost_value !== undefined) {
+          if (typeof costInformation.cost_value === "number") {
+            costValue = costInformation.cost_value;
+          } else if (typeof costInformation.cost_value === "string") {
+            const parsed = parseFloat(costInformation.cost_value.replace(/[,$]/g, ""));
+            if (!isNaN(parsed)) {
+              costValue = parsed;
+            }
+          }
+        }
+
+        // Extract cost_currency
+        if (costInformation.cost_currency !== null && costInformation.cost_currency !== undefined) {
+          costCurrency = String(costInformation.cost_currency);
+        }
+      }
 
       // Add rows for each attribute
       if (attributes.length > 0) {
@@ -581,6 +710,8 @@ const EntityAttributesWithRecommendations: React.FC<
             confidence: attr.confidence !== undefined ? attr.confidence : null,
             recommendations,
             attributeIndex: attrIndex, // Add index to make keys unique
+            costValue,
+            costCurrency,
           });
         });
       } else {
@@ -600,17 +731,15 @@ const EntityAttributesWithRecommendations: React.FC<
           confidence: null,
           recommendations,
           attributeIndex: 0,
+          costValue,
+          costCurrency,
         });
       }
     });
 
-    // Sort by entity name, then by attribute name
-    return rows.sort((a, b) => {
-      if (a.entityName !== b.entityName) {
-        return a.entityName.localeCompare(b.entityName);
-      }
-      return a.attributeName.localeCompare(b.attributeName);
-    });
+    // Rows are already sorted by entity (recommendation priority, then name)
+    // and attributes are processed in order, so no additional sorting needed
+    return rows;
   }, [entities, calculateUpdatedValue]);
 
   // Initialize base and updated values when attributeRows change
@@ -658,6 +787,21 @@ const EntityAttributesWithRecommendations: React.FC<
         }
         return prev;
       });
+
+      // Initialize included entities to true by default
+      setIncludedEntities((prev) => {
+        const initialIncluded: Record<string, boolean> = {};
+        const uniqueEntityIds = new Set(attributeRows.map((row) => row.entityId));
+        uniqueEntityIds.forEach((entityId) => {
+          if (prev[entityId] === undefined) {
+            initialIncluded[entityId] = true; // Default to included
+          }
+        });
+        if (Object.keys(initialIncluded).length > 0) {
+          return { ...prev, ...initialIncluded };
+        }
+        return prev;
+      });
     }
   }, [attributeRows]);
 
@@ -699,6 +843,16 @@ const EntityAttributesWithRecommendations: React.FC<
     },
     []
   );
+
+  /**
+   * Handle entity inclusion toggle
+   */
+  const handleEntityInclusionToggle = useCallback((entityId: string) => {
+    setIncludedEntities((prev) => ({
+      ...prev,
+      [entityId]: !prev[entityId],
+    }));
+  }, []);
 
   /**
    * Format value for display
@@ -781,6 +935,11 @@ const EntityAttributesWithRecommendations: React.FC<
           <TableHead>
             <TableRow>
               <TableCell
+                sx={{ fontWeight: 600, py: 1, px: 1, verticalAlign: "top", width: "50px" }}
+              >
+                Include
+              </TableCell>
+              <TableCell
                 sx={{ fontWeight: 600, py: 1, px: 1, verticalAlign: "top" }}
               >
                 Entity Name
@@ -789,6 +948,12 @@ const EntityAttributesWithRecommendations: React.FC<
                 sx={{ fontWeight: 600, py: 1, px: 1, verticalAlign: "top" }}
               >
                 Entity Type
+              </TableCell>
+              <TableCell
+                sx={{ fontWeight: 600, py: 1, px: 1, verticalAlign: "top" }}
+                align="right"
+              >
+                Cost
               </TableCell>
               <TableCell
                 sx={{ fontWeight: 600, py: 1, px: 1, verticalAlign: "top" }}
@@ -828,7 +993,7 @@ const EntityAttributesWithRecommendations: React.FC<
                 <Box>Revised Values</Box>
                 <Box>
                   <Chip
-                    label={`Based on: ${globalObjectiveType} ${globalObjectiveTarget}`}
+                    label={`Based on: ${globalObjectiveType} ${globalObjectiveTarget}${globalObjectiveUnit || ""}`}
                     size="small"
                     color="primary"
                     variant="outlined"
@@ -858,6 +1023,7 @@ const EntityAttributesWithRecommendations: React.FC<
                         updatedValues[rowKey] !== undefined
                           ? updatedValues[rowKey]
                           : row.updatedValue;
+                      const isEntityIncluded = includedEntities[row.entityId] !== false; // Default to true
 
                       return (
                         <AttributeRowComponent
@@ -875,7 +1041,11 @@ const EntityAttributesWithRecommendations: React.FC<
                           showDivider={index === 0 && entityIndex > 0}
                           showEntityName={index === 0}
                           showEntityType={index === 0}
+                          showCost={index === 0}
                           showRecommendations={index === 0}
+                          showIncludeCheckbox={index === 0}
+                          isEntityIncluded={isEntityIncluded}
+                          onEntityInclusionToggle={handleEntityInclusionToggle}
                           rowSpan={rowSpan}
                         />
                       );

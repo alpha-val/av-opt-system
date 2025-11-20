@@ -30,7 +30,7 @@ async def create_scenario(data: ScenarioCreate) -> ScenarioOut:
         # We'll update it to match _id after insertion
         from bson import ObjectId
         temp_id = str(ObjectId())
-        
+        print(f"[SCENARIO : : : Create] > {data}")
         # Build document for insertion
         # Include id field with temporary value to satisfy unique index
         doc = {
@@ -43,11 +43,14 @@ async def create_scenario(data: ScenarioCreate) -> ScenarioOut:
             ),
             "global_objective_type": data.global_objective_type,  # Can be None
             "global_objective_target": data.global_objective_target,  # Can be None
+            "global_objective_unit": data.global_objective_unit,  # Can be None
             "objective_description": data.objective_description,  # Can be None
             "configuration": data.configuration or {},
             "created_at": _now(),
             "updated_at": _now(),
         }
+        
+        logger.info(f"Creating scenario document with global_objective_unit: {data.global_objective_unit} (type: {type(data.global_objective_unit)})")
 
         # Insert into MongoDB
         collection = db().scenarios
@@ -97,6 +100,7 @@ async def list_scenarios(project_id: Optional[str] = None) -> List[ScenarioOut]:
                     status=doc.get("status", ScenarioStatus.DRAFT.value),
                     global_objective_type=doc.get("global_objective_type"),
                     global_objective_target=doc.get("global_objective_target"),
+                    global_objective_unit=doc.get("global_objective_unit"),
                     objective_description=doc.get("objective_description"),
                     configuration=doc.get("configuration", {}),
                     created_at=doc.get("created_at", _now()),
@@ -143,6 +147,7 @@ async def get_scenario(scenario_id: str) -> Optional[ScenarioOut]:
             status=doc.get("status", ScenarioStatus.DRAFT.value),
             global_objective_type=doc.get("global_objective_type"),
             global_objective_target=doc.get("global_objective_target"),
+            global_objective_unit=doc.get("global_objective_unit"),
             objective_description=doc.get("objective_description"),
             configuration=doc.get("configuration", {}),
             created_at=doc.get("created_at", _now()),
@@ -184,6 +189,8 @@ async def update_scenario(
             update_doc["global_objective_type"] = patch.global_objective_type
         if patch.global_objective_target is not None:
             update_doc["global_objective_target"] = patch.global_objective_target
+        if patch.global_objective_unit is not None:
+            update_doc["global_objective_unit"] = patch.global_objective_unit
         if patch.objective_description is not None:
             update_doc["objective_description"] = patch.objective_description
         if patch.configuration is not None:
@@ -204,6 +211,133 @@ async def update_scenario(
         raise
     except Exception as e:
         logger.error(f"Error updating scenario {scenario_id}: {e}", exc_info=True)
+        raise
+
+
+async def clear_scenario_data(scenario_id: str) -> dict:
+    """
+    Clear all data associated with a scenario, but keep the scenario itself.
+    
+    This deletes all related data including:
+    - Entities with properties.scenario_id matching scenario_id
+    - Relations with properties.scenario_id matching scenario_id
+    - Base case recommendations with scenario_id matching scenario_id
+    - Cost estimates with scenario_id matching scenario_id
+    - Pinecone vectors with scenario_id filter
+    
+    The scenario document itself is not deleted.
+    
+    Args:
+        scenario_id: String representation of MongoDB ObjectId
+        
+    Returns:
+        Dictionary with deletion counts for each collection
+        
+    Note:
+        This is a destructive operation. Use with caution.
+    """
+    try:
+        if not ObjectId.is_valid(scenario_id):
+            raise ValueError(f"Invalid scenario_id format: {scenario_id}")
+
+        # Get scenario to retrieve project_id
+        collection = db().scenarios
+        scenario = collection.find_one({"_id": ObjectId(scenario_id)})
+        if not scenario:
+            logger.warning(f"Scenario not found for data clearing: {scenario_id}")
+            return {
+                "scenario_id": scenario_id,
+                "error": "Scenario not found",
+                "deleted_counts": {},
+            }
+        
+        project_id = scenario.get("project_id")
+        
+        deleted_counts = {
+            "entities": 0,
+            "relations": 0,
+            "base_case_recommendations": 0,
+            "cost_estimates": 0,
+            "vectors": 0,
+        }
+        
+        # Delete entities with properties.scenario_id matching scenario_id
+        entities_collection = db().entities
+        entities_deleted = entities_collection.delete_many(
+            {"properties.scenario_id": scenario_id}
+        ).deleted_count
+        deleted_counts["entities"] = entities_deleted
+        if entities_deleted > 0:
+            logger.info(f"Deleted {entities_deleted} entities for scenario: {scenario_id}")
+        
+        # Delete relations with properties.scenario_id matching scenario_id
+        relations_collection = db().relations
+        relations_deleted = relations_collection.delete_many(
+            {"properties.scenario_id": scenario_id}
+        ).deleted_count
+        deleted_counts["relations"] = relations_deleted
+        if relations_deleted > 0:
+            logger.info(f"Deleted {relations_deleted} relations for scenario: {scenario_id}")
+        
+        # Delete base case recommendations with scenario_id matching scenario_id
+        base_case_recommendations_collection = db().base_case_recommendations
+        recommendations_deleted = base_case_recommendations_collection.delete_many(
+            {"scenario_id": scenario_id}
+        ).deleted_count
+        deleted_counts["base_case_recommendations"] = recommendations_deleted
+        if recommendations_deleted > 0:
+            logger.info(f"Deleted {recommendations_deleted} recommendations for scenario: {scenario_id}")
+        
+        # Delete cost estimates with scenario_id matching scenario_id
+        cost_estimates_collection = db().cost_estimates
+        cost_estimates_deleted = cost_estimates_collection.delete_many(
+            {"scenario_id": scenario_id}
+        ).deleted_count
+        deleted_counts["cost_estimates"] = cost_estimates_deleted
+        if cost_estimates_deleted > 0:
+            logger.info(f"Deleted {cost_estimates_deleted} cost estimates for scenario: {scenario_id}")
+        
+        # Delete vectors from Pinecone with scenario_id filter
+        if project_id:
+            try:
+                from ...domain.parsing.storage.vector_store import delete_vectors_by_filter
+                vectors_deleted = delete_vectors_by_filter(
+                    project_id=project_id,
+                    filter_dict={"scenario_id": {"$eq": scenario_id}}
+                )
+                deleted_counts["vectors"] = vectors_deleted
+                if vectors_deleted != 0:
+                    logger.info(
+                        f"Deleted {vectors_deleted} Pinecone vectors for scenario {scenario_id} "
+                        f"in project {project_id}"
+                    )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to delete Pinecone vectors for scenario {scenario_id}: {e}. "
+                    f"Continuing with data clearing."
+                )
+        else:
+            logger.warning(
+                f"Scenario {scenario_id} has no project_id. "
+                f"Skipping Pinecone vector deletion."
+            )
+        
+        logger.info(
+            f"Cleared data for scenario {scenario_id}: "
+            f"{entities_deleted} entities, {relations_deleted} relations, "
+            f"{recommendations_deleted} recommendations, {cost_estimates_deleted} cost estimates, "
+            f"{deleted_counts.get('vectors', 0)} vectors"
+        )
+        
+        return {
+            "scenario_id": scenario_id,
+            "deleted_counts": deleted_counts,
+        }
+        
+    except ValueError:
+        raise
+    except Exception as e:
+        logger.error(f"Error clearing scenario data {scenario_id}: {e}", exc_info=True)
         raise
 
 

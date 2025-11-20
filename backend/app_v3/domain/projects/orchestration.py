@@ -26,6 +26,7 @@ from ..parsing.utils.llm_tools import TOOLS, TOOLS_RECOMMENDATIONS, TOOLS_OBJECT
 from ..parsing.prompts.entity_extraction_prompt import (
     PROMPT_DISCIPLINE_STRUCTURED_SUMMARY,
     get_recommendation_based_entity_extraction_prompt,
+    get_recommendation_based_entity_extraction_prompt_v2,
 )
 
 logger = logging.getLogger(__name__)
@@ -74,7 +75,7 @@ class ProjectOrchestrationService:
 
         # Initialize LLM for objective-driven entity extraction
         self._llm_objective_driven = ChatOpenAI(
-            model=SETTINGS.llm_model_name or "gpt-4o",
+            model=SETTINGS.llm_model_name or "gpt-5-mini",
             api_key=SETTINGS.openai_api_key,
             timeout=300,
             max_retries=3,
@@ -695,6 +696,299 @@ class ProjectOrchestrationService:
                 )
 
         return entities_for_costing[:50]  # Limit to 50 entities
+
+    def _calculate_total_base_case_costs(
+        self,
+        entities: List[Dict[str, Any]],
+        project_id: str,
+        scenario_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Calculate total base case costs by aggregating cost_value from entity properties (not attributes).
+
+        Args:
+            entities: List of entity dictionaries with attributes array
+            project_id: Project identifier
+            scenario_id: Optional scenario identifier
+
+        Returns:
+            Dictionary with total cost information:
+            {
+                "total_cost_value": number,
+                "total_cost_currency": string,
+                "entity_count": number,
+                "costs_by_type": {"CAPEX": number, "OPEX": number, "Total": number, "Other": number},
+                "costs_by_currency": {"USD": number, "EUR": number, ...},
+                "entities_with_costs": number
+            }
+        """
+        try:
+            total_cost_by_currency = {}
+            costs_by_type = {"CAPEX": 0.0, "OPEX": 0.0, "Total": 0.0, "Other": 0.0}
+            entities_with_costs = 0
+            entity_count = len(entities)
+
+            for entity in entities:
+                props = entity.get("properties", {})
+
+                # Extract cost information from properties (not attributes array)
+                # Cost is now stored as direct properties: cost_value, cost_currency, cost_type, etc.
+                cost_value = props.get("cost_value")
+                cost_currency = props.get("cost_currency")
+                cost_type = props.get("cost_type")
+
+                # Handle cost_value if it's a string (convert to float)
+                if isinstance(cost_value, str):
+                    try:
+                        cost_value = float(cost_value.replace(",", "").replace("$", "").strip())
+                    except (ValueError, AttributeError):
+                        cost_value = None
+                elif cost_value is not None:
+                    try:
+                        cost_value = float(cost_value)
+                    except (ValueError, TypeError):
+                        cost_value = None
+
+                # Default currency to USD if not specified
+                if cost_currency is None:
+                    cost_currency = "USD"
+
+                # Default cost_type to "Other" if not specified
+                if cost_type is None:
+                    cost_type = "Other"
+
+                if cost_value is not None and cost_value > 0:
+                    entities_with_costs += 1
+                    currency = cost_currency or "USD"
+
+                    # Aggregate by currency
+                    if currency not in total_cost_by_currency:
+                        total_cost_by_currency[currency] = 0.0
+                    total_cost_by_currency[currency] += cost_value
+
+                    # Aggregate by type
+                    cost_type_key = cost_type if cost_type in costs_by_type else "Other"
+                    costs_by_type[cost_type_key] += cost_value
+
+            # Determine primary currency (most common or largest amount)
+            primary_currency = "USD"
+            if total_cost_by_currency:
+                primary_currency = max(
+                    total_cost_by_currency.items(),
+                    key=lambda x: x[1]
+                )[0]
+
+            total_cost_value = total_cost_by_currency.get(primary_currency, 0.0)
+
+            logger.info(
+                f"Calculated total base case costs: {total_cost_value} {primary_currency} "
+                f"from {entities_with_costs} entities with costs out of {entity_count} total entities"
+            )
+
+            return {
+                "total_cost_value": total_cost_value,
+                "total_cost_currency": primary_currency,
+                "entity_count": entity_count,
+                "costs_by_type": costs_by_type,
+                "costs_by_currency": total_cost_by_currency,
+                "entities_with_costs": entities_with_costs,
+            }
+
+        except Exception as e:
+            logger.error(
+                f"Error calculating total base case costs: {e}",
+                exc_info=True,
+            )
+            return {
+                "total_cost_value": 0.0,
+                "total_cost_currency": "USD",
+                "entity_count": len(entities),
+                "costs_by_type": {"CAPEX": 0.0, "OPEX": 0.0, "Total": 0.0, "Other": 0.0},
+                "costs_by_currency": {},
+                "entities_with_costs": 0,
+            }
+
+    def _extract_total_costs_from_entities(
+        self,
+        entities: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        """
+        Extract total costs from CostItem entities that have total_cost_value as properties.
+
+        Args:
+            entities: List of entity dictionaries
+
+        Returns:
+            List of extracted total cost entities with their values
+        """
+        try:
+            extracted_totals = []
+
+            for entity in entities:
+                entity_type = entity.get("type", "")
+                if entity_type != "CostItem":
+                    continue
+
+                props = entity.get("properties", {})
+
+                # Extract cost information from properties (not attributes array)
+                # For CostItem entities, we look for total_cost_value, total_cost_currency, etc. as direct properties
+                total_cost_value = props.get("total_cost_value") or props.get("cost_value")
+                total_cost_currency = props.get("total_cost_currency") or props.get("cost_currency")
+                cost_type = props.get("cost_type")
+
+                # Handle total_cost_value if it's a string (convert to float)
+                if isinstance(total_cost_value, str):
+                    try:
+                        total_cost_value = float(total_cost_value.replace(",", "").replace("$", "").strip())
+                    except (ValueError, AttributeError):
+                        total_cost_value = None
+                elif total_cost_value is not None:
+                    try:
+                        total_cost_value = float(total_cost_value)
+                    except (ValueError, TypeError):
+                        total_cost_value = None
+
+                # Default currency to USD if not specified
+                if total_cost_currency is None:
+                    total_cost_currency = "USD"
+
+                if total_cost_value is not None and total_cost_value > 0:
+                    extracted_totals.append({
+                        "entity_id": entity.get("id", ""),
+                        "entity_name": props.get("name", "Unknown"),
+                        "total_cost_value": total_cost_value,
+                        "total_cost_currency": total_cost_currency or "USD",
+                        "cost_type": cost_type,
+                    })
+
+            logger.info(
+                f"Extracted {len(extracted_totals)} total cost entities from {len(entities)} entities"
+            )
+
+            return extracted_totals
+
+        except Exception as e:
+            logger.error(
+                f"Error extracting total costs from entities: {e}",
+                exc_info=True,
+            )
+            return []
+
+    def _validate_total_costs(
+        self,
+        calculated_totals: Dict[str, Any],
+        extracted_totals: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """
+        Validate extracted totals against calculated totals.
+
+        Args:
+            calculated_totals: Result from _calculate_total_base_case_costs
+            extracted_totals: Result from _extract_total_costs_from_entities
+
+        Returns:
+            Validation report dictionary
+        """
+        try:
+            calculated_value = calculated_totals.get("total_cost_value", 0.0)
+            calculated_currency = calculated_totals.get("total_cost_currency", "USD")
+
+            validation_results = {
+                "calculated_total": {
+                    "value": calculated_value,
+                    "currency": calculated_currency,
+                },
+                "extracted_totals": extracted_totals,
+                "validation_status": "unknown",
+                "discrepancies": [],
+                "warnings": [],
+            }
+
+            if not extracted_totals:
+                validation_results["validation_status"] = "no_extracted_totals"
+                validation_results["warnings"].append(
+                    "No total cost entities (TIC, TCC) were extracted from the text. "
+                    "Only calculated totals are available."
+                )
+                return validation_results
+
+            # Find matching currency extracted total
+            matching_extracted = None
+            for extracted in extracted_totals:
+                if extracted.get("total_cost_currency") == calculated_currency:
+                    matching_extracted = extracted
+                    break
+
+            if not matching_extracted:
+                # Use first extracted total if no currency match
+                matching_extracted = extracted_totals[0] if extracted_totals else None
+                validation_results["warnings"].append(
+                    f"Currency mismatch: calculated in {calculated_currency}, "
+                    f"extracted in {matching_extracted.get('total_cost_currency') if matching_extracted else 'unknown'}"
+                )
+
+            if matching_extracted:
+                extracted_value = matching_extracted.get("total_cost_value", 0.0)
+                difference = abs(calculated_value - extracted_value)
+                percent_difference = (
+                    (difference / extracted_value * 100) if extracted_value > 0 else 0.0
+                )
+
+                validation_results["extracted_total"] = {
+                    "value": extracted_value,
+                    "currency": matching_extracted.get("total_cost_currency"),
+                }
+                validation_results["difference"] = {
+                    "absolute": difference,
+                    "percent": percent_difference,
+                }
+
+                # Determine validation status
+                if percent_difference < 1.0:
+                    validation_results["validation_status"] = "excellent_match"
+                elif percent_difference < 5.0:
+                    validation_results["validation_status"] = "good_match"
+                elif percent_difference < 10.0:
+                    validation_results["validation_status"] = "acceptable_match"
+                    validation_results["warnings"].append(
+                        f"Cost difference of {percent_difference:.2f}% between calculated and extracted totals"
+                    )
+                else:
+                    validation_results["validation_status"] = "significant_discrepancy"
+                    validation_results["discrepancies"].append(
+                        {
+                            "type": "cost_mismatch",
+                            "message": (
+                                f"Significant difference between calculated ({calculated_value} {calculated_currency}) "
+                                f"and extracted ({extracted_value} {matching_extracted.get('total_cost_currency')}) totals: "
+                                f"{percent_difference:.2f}%"
+                            ),
+                            "calculated": calculated_value,
+                            "extracted": extracted_value,
+                            "difference_percent": percent_difference,
+                        }
+                    )
+
+            logger.info(
+                f"Cost validation status: {validation_results['validation_status']}, "
+                f"calculated: {calculated_value} {calculated_currency}, "
+                f"extracted: {len(extracted_totals)} total(s)"
+            )
+
+            return validation_results
+
+        except Exception as e:
+            logger.error(
+                f"Error validating total costs: {e}",
+                exc_info=True,
+            )
+            return {
+                "validation_status": "error",
+                "error": str(e),
+                "calculated_total": calculated_totals,
+                "extracted_totals": extracted_totals,
+            }
 
     async def _store_summary(
         self,
@@ -2751,6 +3045,9 @@ class ProjectOrchestrationService:
         global_objective_target: str,
         objective_description: Optional[str],
         document_id: str,
+        project_id: str,
+        scenario_id: Optional[str] = None,
+        global_objective_unit: str = "%",
     ) -> Dict[str, Any]:
         """
         Extract objective-driven nodes and relations using V4 workflow.
@@ -2764,13 +3061,13 @@ class ProjectOrchestrationService:
             global_objective_target: Target magnitude of change
             objective_description: Optional description of the global objective
             document_id: Document identifier
-
+            global_objective_unit: Unit of the global objective
         Returns:
             Dictionary with nodes and edges extracted from the document
         """
         logger.info(
             f"Extracting objective-driven nodes and relations (V4) for objective: "
-            f"{global_objective_type} ({global_objective_target})"
+            f"{global_objective_type} ({global_objective_target} {global_objective_unit})"
         )
 
         try:
@@ -2781,8 +3078,8 @@ class ProjectOrchestrationService:
             CHUNK_NAMESPACE = uuid.UUID("11111111-2222-3333-4444-555555555555")
             
             # Chunk the text
-            char_limit = 10000
-            overlap = 1500  # 15% overlap
+            char_limit = 5000
+            overlap = 1000
             
             # Create chunks with overlap manually
             chunks = []
@@ -2819,13 +3116,14 @@ class ProjectOrchestrationService:
             objective_context = f"""
                 GLOBAL OBJECTIVE:
                 - Objective type: {global_objective_type}
-                - Target magnitude of change: {global_objective_target}
+                - Target magnitude of change: {global_objective_target} {global_objective_unit}
                 """
             if objective_description:
                 objective_context += f"- Description: {objective_description}\n"
 
             # Get the recommendation-based entity extraction prompt
-            base_prompt = get_recommendation_based_entity_extraction_prompt()
+            # base_prompt = get_recommendation_based_entity_extraction_prompt(objective_type=global_objective_type, objective_target=global_objective_target)
+            base_prompt = get_recommendation_based_entity_extraction_prompt_v2(objective_type=global_objective_type, objective_target=global_objective_target, objective_unit=global_objective_unit)
             
             # Add objective context to the prompt
             full_user_prompt = f"""{base_prompt}
@@ -2939,9 +3237,23 @@ class ProjectOrchestrationService:
                 f"from {len(chunks)} chunks"
             )
 
+            # Calculate and validate total costs
+            calculated_totals = self._calculate_total_base_case_costs(
+                entities=all_nodes,
+                project_id=project_id,
+                scenario_id=scenario_id,
+            )
+            extracted_totals = self._extract_total_costs_from_entities(all_nodes)
+            cost_validation = self._validate_total_costs(calculated_totals, extracted_totals)
+
             return {
                 "nodes": all_nodes,
                 "edges": all_edges,
+                "cost_summary": {
+                    "calculated_totals": calculated_totals,
+                    "extracted_totals": extracted_totals,
+                    "validation": cost_validation,
+                },
             }
 
         except Exception as e:

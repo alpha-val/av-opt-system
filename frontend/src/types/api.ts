@@ -129,6 +129,7 @@ export interface ScenarioBase {
   // Global objective fields (optional - can be set later)
   global_objective_type?: string | null;
   global_objective_target?: string | null;
+  global_objective_unit?: string | null;
   objective_description?: string | null;
   configuration?: Record<string, any> | null;
 }
@@ -147,6 +148,7 @@ export interface ScenarioUpdate {
   status?: ScenarioStatus;
   global_objective_type?: string;
   global_objective_target?: string;
+  global_objective_unit?: string;
   objective_description?: string | null;
   configuration?: Record<string, any> | null;
 }

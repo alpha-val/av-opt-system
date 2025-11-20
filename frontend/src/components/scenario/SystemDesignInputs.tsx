@@ -22,6 +22,7 @@ interface SystemDesignInputsProps {
   scenarioId: string;
   globalObjectiveType?: string;
   globalObjectiveTarget?: string;
+  globalObjectiveUnit?: string;
   costEstimateId?: string;
 }
 
@@ -46,6 +47,7 @@ const SystemDesignInputs: React.FC<SystemDesignInputsProps> = ({
   scenarioId,
   globalObjectiveType,
   globalObjectiveTarget,
+  globalObjectiveUnit,
   costEstimateId,
 }) => {
   const [loading, setLoading] = useState<boolean>(true);
@@ -108,14 +110,17 @@ const SystemDesignInputs: React.FC<SystemDesignInputsProps> = ({
         return baseValue;
       }
 
-      // Parse target (format: "5%", "$1000000", "10%", etc.)
-      const targetMatch = globalObjectiveTarget.match(/^([\d.]+)([%$])?$/);
-      if (!targetMatch) {
+      // Use separate target and unit fields
+      if (!globalObjectiveTarget) {
         return baseValue;
       }
 
-      const targetValue = parseFloat(targetMatch[1]);
-      const targetUnit = targetMatch[2] || "%";
+      const targetValue = parseFloat(globalObjectiveTarget);
+      const targetUnit = globalObjectiveUnit || "%";
+      
+      if (isNaN(targetValue)) {
+        return baseValue;
+      }
 
       // Determine direction based on objective type
       const isIncrease = globalObjectiveType
@@ -134,7 +139,7 @@ const SystemDesignInputs: React.FC<SystemDesignInputsProps> = ({
         return baseValue + change;
       }
     };
-  }, [globalObjectiveTarget, globalObjectiveType]);
+  }, [globalObjectiveTarget, globalObjectiveUnit, globalObjectiveType]);
 
   /**
    * Flatten attributes from entities and group by entity

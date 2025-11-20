@@ -32,3 +32,8 @@ async def delete(scenario_id: str) -> bool:
     """Delete a scenario."""
     return await repo.delete_scenario(scenario_id)
 
+
+async def clear_data(scenario_id: str) -> dict:
+    """Clear all data associated with a scenario, but keep the scenario itself."""
+    return await repo.clear_scenario_data(scenario_id)
+

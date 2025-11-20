@@ -36,7 +36,11 @@ class ScenarioBase(BaseModel):
     )
     global_objective_target: Optional[str] = Field(
         None,
-        description="Target magnitude of change (e.g., '3%', '5%', '$1000000')",
+        description="Target magnitude of change (numeric value, e.g., '3', '5', '1000000')",
+    )
+    global_objective_unit: Optional[str] = Field(
+        None,
+        description="Unit of the global objective target (e.g., '%', '$', 'tpd', 'gpm')",
     )
     objective_description: Optional[str] = Field(
         None, max_length=500, description="Additional context on global objective"
@@ -66,7 +70,10 @@ class ScenarioUpdate(BaseModel):
         None, description="Type of global objective"
     )
     global_objective_target: Optional[str] = Field(
-        None, description="Target magnitude of change"
+        None, description="Target magnitude of change (numeric value)"
+    )
+    global_objective_unit: Optional[str] = Field(
+        None, description="Unit of the global objective target (e.g., '%', '$', 'tpd', 'gpm')"
     )
     objective_description: Optional[str] = Field(
         None, max_length=500, description="Additional context on global objective"

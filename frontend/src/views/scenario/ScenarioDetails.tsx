@@ -32,6 +32,7 @@ import {
   Card,
   CardContent,
   IconButton,
+  Divider,
 } from "@mui/material";
 import { PlayArrow as PlayArrowIcon } from "@mui/icons-material";
 import {
@@ -231,19 +232,9 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
         const newObjectiveType = scenario.global_objective_type || "";
         const newObjectiveDescription = scenario.objective_description || "";
 
-        // Parse target value and type from global_objective_target
-        let newTargetValue = "";
-        let newTargetType: "%" | "$" = "%";
-        if (scenario.global_objective_target) {
-          const match =
-            scenario.global_objective_target.match(/^([\d.]+)([%$])$/);
-          if (match) {
-            newTargetValue = match[1];
-            newTargetType = match[2] as "%" | "$";
-          } else {
-            newTargetValue = scenario.global_objective_target;
-          }
-        }
+        // Use separate target and unit fields
+        const newTargetValue = scenario.global_objective_target || "";
+        const newTargetType = (scenario.global_objective_unit || "%") as "%" | "$" | "tpd" | "gpm";
 
         // Set initial values using combined state
         setObjectiveForm({
@@ -357,13 +348,11 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
       return;
     }
 
-    // Build global objective target string
-    const globalObjectiveTarget = `${formData.targetValue}${formData.targetType}`;
-
-    // Create update payload
+    // Create update payload with separate target and unit
     const updateData: ScenarioUpdate = {
       global_objective_type: formData.type,
-      global_objective_target: globalObjectiveTarget,
+      global_objective_target: formData.targetValue,
+      global_objective_unit: formData.targetType,
       objective_description: description || undefined,
     };
 
@@ -523,8 +512,8 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
     // Save objective details if they've changed
     if (
       scenario.global_objective_type !== objectiveForm.type ||
-      scenario.global_objective_target !==
-        `${objectiveForm.targetValue}${objectiveForm.targetType}`
+      scenario.global_objective_target !== objectiveForm.targetValue ||
+      scenario.global_objective_unit !== objectiveForm.targetType
     ) {
       await handleSaveObjectiveDetails();
       // Refresh scenario data
@@ -689,13 +678,11 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Button
-              onClick={onBack}
-              size="small"
-              sx={{ textTransform: "none" }}
-            >
-              ← Back to All Scenarios
-            </Button>
+            <Box sx={{ mr: 6 }}>
+              <Button onClick={onBack} sx={{ textTransform: "none" }}>
+                ← Back to All Scenarios
+              </Button>
+            </Box>
             {scenario && (
               <Box
                 sx={{
@@ -813,7 +800,16 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
             </Box>
 
             {/* Right Side: Tab Content */}
-            <Box sx={{ flex: 1, overflow: "auto" }}>
+            <Box sx={{ flex: 1, overflow: "auto", ml: 2 }}>
+              <Box sx={{ p: 2, pb: 0, pt: 0, mb: 2 }}>
+                <Typography variant="h6">Scenario Details</Typography>
+                <Typography variant="body1" color="text.secondary">
+                  {scenario.global_objective_type} by{" "}
+                  {scenario.global_objective_target}
+                  {scenario.global_objective_unit}
+                </Typography>
+              </Box>
+              <Divider />
               {/* Tab 0: Objectives */}
               <TabPanel value={activeTab} index={0}>
                 <Box sx={{ p: 3 }}>
@@ -910,6 +906,7 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                     scenarioId={scenarioId || ""}
                     globalObjectiveType={scenarioObjectiveType}
                     globalObjectiveTarget={scenarioObjectiveTarget}
+                    globalObjectiveUnit={scenario?.global_objective_unit}
                   />
                 </Box>
               </TabPanel>
@@ -1063,6 +1060,9 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                               }
                               globalObjectiveTarget={
                                 scenario?.global_objective_target
+                              }
+                              globalObjectiveUnit={
+                                scenario?.global_objective_unit
                               }
                               costEstimateId={
                                 selectedCostEstimateId || undefined

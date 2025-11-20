@@ -25,7 +25,7 @@ interface ObjectiveDetailsFormProps {
   objectiveForm: {
     type: string;
     targetValue: string;
-    targetType: "%" | "$";
+    targetType: "%" | "$" | "tpd" | "gpm";
     description: string;
   };
   extractionScope: "exact" | "with_relationships" | "with_context";
@@ -142,6 +142,8 @@ const ObjectiveDetailsForm: React.FC<ObjectiveDetailsFormProps> = memo(({
               >
                 <MenuItem value="%">%</MenuItem>
                 <MenuItem value="$">$</MenuItem>
+                <MenuItem value="tpd">tpd</MenuItem>
+                <MenuItem value="gpm">gpm</MenuItem>
               </Select>
             </FormControl>
           </Box>

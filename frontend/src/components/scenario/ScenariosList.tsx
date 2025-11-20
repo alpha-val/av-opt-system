@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
@@ -87,11 +87,18 @@ const ScenariosList: React.FC<ScenariosListProps> = ({
   const deleting = useSelector(selectScenarioDeleting);
   const error = useSelector(selectScenariosError);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [newScenarioName, setNewScenarioName] = useState("");
-  const [newScenarioDescription, setNewScenarioDescription] = useState("");
+
+  // Use refs for text inputs to prevent re-renders on every keystroke
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const descriptionInputRef = useRef<HTMLTextAreaElement>(null);
+  const targetValueInputRef = useRef<HTMLInputElement>(null);
+  const objectiveDescriptionInputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Keep state only for Select components (they need to display selected value)
   const [newObjectiveType, setNewObjectiveType] = useState("");
-  const [newTargetValue, setNewTargetValue] = useState("");
-  const [newTargetType, setNewTargetType] = useState<"%" | "$">("%");
+  const [newTargetType, setNewTargetType] = useState<"%" | "$" | "tpd" | "gpm">(
+    "%"
+  );
 
   /**
    * Fetch scenarios for the project
@@ -104,7 +111,14 @@ const ScenariosList: React.FC<ScenariosListProps> = ({
    * Handle creating a new scenario
    */
   const handleCreateScenario = () => {
-    if (!newScenarioName.trim()) {
+    // Read values from refs (only when submitting)
+    const name = nameInputRef.current?.value.trim() || "";
+    const description = descriptionInputRef.current?.value.trim() || "";
+    const targetValue = targetValueInputRef.current?.value.trim() || "";
+    const objectiveDescription =
+      objectiveDescriptionInputRef.current?.value.trim() || "";
+
+    if (!name) {
       return;
     }
 
@@ -112,31 +126,33 @@ const ScenariosList: React.FC<ScenariosListProps> = ({
     if (!newObjectiveType.trim()) {
       return;
     }
-    if (!newTargetValue.trim()) {
+    if (!targetValue) {
       return;
     }
 
-    const globalObjectiveTarget = `${newTargetValue}${newTargetType}`;
-
     const scenarioData: ScenarioCreate = {
-      name: newScenarioName.trim(),
-      description: "", // Always empty string as per requirements
+      name,
+      description: description || undefined,
       project_id: projectId,
       status: ScenarioStatus.DRAFT,
       global_objective_type: newObjectiveType,
-      global_objective_target: globalObjectiveTarget,
+      global_objective_target: targetValue,
+      global_objective_unit: newTargetType,
+      objective_description: objectiveDescription || undefined,
       configuration: {},
     };
 
     dispatch(createScenario(scenarioData) as any).then((result: any) => {
       if (createScenario.fulfilled.match(result)) {
         const newScenarioId = result.payload.id;
-        // Clear form state
+        // Clear form inputs
         setCreateDialogOpen(false);
-        setNewScenarioName("");
-        setNewScenarioDescription("");
+        if (nameInputRef.current) nameInputRef.current.value = "";
+        if (descriptionInputRef.current) descriptionInputRef.current.value = "";
+        if (targetValueInputRef.current) targetValueInputRef.current.value = "";
+        if (objectiveDescriptionInputRef.current)
+          objectiveDescriptionInputRef.current.value = "";
         setNewObjectiveType("");
-        setNewTargetValue("");
         setNewTargetType("%");
         // Navigate to scenario details or use callback
         if (onScenarioSelect) {
@@ -199,6 +215,10 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
     }
   };
 
+  const handleDeleteAllScenarios = () => {
+    // dispatch(deleteAllScenarios(projectId) as any);
+  };
+
   /**
    * Get status color for chip
    */
@@ -240,6 +260,25 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
       return dateString;
     }
   };
+  /**
+   * Reset form inputs when dialog opens/closes
+   */
+  useEffect(() => {
+    if (createDialogOpen) {
+      // Clear inputs when dialog opens
+      if (nameInputRef.current) nameInputRef.current.value = "";
+      if (descriptionInputRef.current) descriptionInputRef.current.value = "";
+      if (targetValueInputRef.current) targetValueInputRef.current.value = "";
+      if (objectiveDescriptionInputRef.current)
+        objectiveDescriptionInputRef.current.value = "";
+      setNewObjectiveType("");
+      setNewTargetType("%");
+      // Focus on name input when dialog opens
+      setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 100);
+    }
+  }, [createDialogOpen]);
 
   return (
     <Box>
@@ -302,20 +341,33 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
           <Box
             sx={{
               display: "flex",
-              justifyContent: "space-between",
+              justifyContent: "flex-start",
               alignItems: "center",
               mb: 3,
+              gap: 4,
             }}
           >
             <Typography variant="h6">Scenarios ({scenarios.length})</Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setCreateDialogOpen(true)}
-              disabled={creating}
-            >
-              Create New Scenario
-            </Button>
+            <Box>
+              {/* <Button
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={() => handleDeleteAllScenarios()}
+                disabled={creating}
+                sx={{ mr: 1 }}
+              >
+                Delete All Scenarios
+              </Button> */}
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setCreateDialogOpen(true)}
+                disabled={creating}
+              >
+                Create New Scenario
+              </Button>
+            </Box>
           </Box>
 
           <Grid container spacing={3}>
@@ -331,13 +383,14 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
                     transition: "transform 0.2s, box-shadow 0.2s",
                     border: "1px solid",
                     borderColor: "divider",
-                    bgcolor: (theme) => theme.palette.mode === "dark" 
-                      ? "rgba(156, 39, 176, 0.08)" 
-                      : "rgba(156, 39, 176, 0.04)",
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark"
+                        ? "rgba(25, 118, 210, 0.08)"
+                        : "rgba(156, 39, 176, 0.04)",
                     "&:hover": {
                       transform: "translateY(-2px)",
                       boxShadow: 3,
-                      borderColor: "secondary.main",
+                      // borderColor: "secondary.main",
                     },
                   }}
                   onClick={() => handleScenarioClick(scenario.id)}
@@ -397,7 +450,11 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
                       >
                         <DescriptionIcon
                           fontSize="small"
-                          sx={{ color: "text.secondary", mt: 0.5, flexShrink: 0 }}
+                          sx={{
+                            color: "text.secondary",
+                            mt: 0.5,
+                            flexShrink: 0,
+                          }}
                         />
                         <Typography
                           variant="body2"
@@ -425,9 +482,10 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
                           mb: 2,
                           p: 1.5,
                           borderRadius: 1,
-                          bgcolor: (theme) => theme.palette.mode === "dark" 
-                            ? "rgba(25, 118, 210, 0.12)" 
-                            : "rgba(25, 118, 210, 0.06)",
+                          bgcolor: (theme) =>
+                            theme.palette.mode === "dark"
+                              ? "rgba(25, 118, 210, 0.08)"
+                              : "rgba(25, 118, 210, 0.04)",
                         }}
                       >
                         <ObjectiveIcon
@@ -537,14 +595,23 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
             <TextField
+              inputRef={nameInputRef}
               label="Scenario Name"
               required
               fullWidth
-              value={newScenarioName}
-              onChange={(e) => setNewScenarioName(e.target.value)}
+              defaultValue=""
               inputProps={{ maxLength: 200 }}
-              helperText={`${newScenarioName.length}/200 characters`}
             />
+            {/* Scenario Description */}
+            {/* <TextField
+              inputRef={descriptionInputRef}
+              label="Description (Optional)"
+              fullWidth
+              multiline
+              rows={2}
+              defaultValue=""
+              inputProps={{ maxLength: 500 }}
+            /> */}
             {/* Objective Type */}
             <FormControl fullWidth required>
               <InputLabel>Global Objective Type</InputLabel>
@@ -569,18 +636,20 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
               }}
             >
               <TextField
+                inputRef={targetValueInputRef}
                 label="Global Objective Target"
                 required
                 type="number"
-                value={newTargetValue}
-                onChange={(e) => setNewTargetValue(e.target.value)}
+                defaultValue=""
                 sx={{ flex: 1 }}
               />
               <FormControl sx={{ minWidth: 80 }}>
                 <Select
                   value={newTargetType}
                   onChange={(e) =>
-                    setNewTargetType(e.target.value as "%" | "$")
+                    setNewTargetType(
+                      e.target.value as "%" | "$" | "tpd" | "gpm"
+                    )
                   }
                 >
                   <MenuItem value="%">%</MenuItem>
@@ -588,17 +657,31 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
                 </Select>
               </FormControl>
             </Box>
-            {/* Description field hidden but state maintained */}
+            {/* Objective Description */}
+            <TextField
+              inputRef={objectiveDescriptionInputRef}
+              label="Provide additional details about the objective (optional)"
+              multiline
+              rows={3}
+              fullWidth
+              defaultValue=""
+              inputProps={{ maxLength: 500 }}
+            />
           </Box>
         </DialogContent>
         <DialogActions>
           <Button
             onClick={() => {
               setCreateDialogOpen(false);
-              setNewScenarioName("");
-              setNewScenarioDescription("");
+              // Clear form inputs
+              if (nameInputRef.current) nameInputRef.current.value = "";
+              if (descriptionInputRef.current)
+                descriptionInputRef.current.value = "";
+              if (targetValueInputRef.current)
+                targetValueInputRef.current.value = "";
+              if (objectiveDescriptionInputRef.current)
+                objectiveDescriptionInputRef.current.value = "";
               setNewObjectiveType("");
-              setNewTargetValue("");
               setNewTargetType("%");
             }}
             disabled={creating}
@@ -608,12 +691,7 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
           <Button
             onClick={handleCreateScenario}
             variant="contained"
-            disabled={
-              creating ||
-              !newScenarioName.trim() ||
-              !newObjectiveType.trim() ||
-              !newTargetValue.trim()
-            }
+            disabled={creating || !newObjectiveType.trim()}
           >
             {creating ? "Creating..." : "Create"}
           </Button>

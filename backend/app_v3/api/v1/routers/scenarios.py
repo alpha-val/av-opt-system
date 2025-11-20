@@ -102,7 +102,6 @@ async def create_scenario(data: ScenarioCreate):
     try:
         # Validate project exists (optional - can be added if needed)
         # For now, we'll just create the scenario
-        
         scenario = await services.create(data)
         return scenario
         
@@ -362,6 +361,11 @@ async def run_analysis(
         status_patch = ScenarioUpdate(status=ScenarioStatus.PROCESSING)
         await services.update(scenario_id, status_patch)
         
+        # Clear all data associated with this scenario before re-running analysis
+        logger.info(f"Clearing existing data for scenario {scenario_id} before re-running analysis")
+        clear_result = await services.clear_data(scenario_id)
+        logger.info(f"Cleared scenario data: {clear_result.get('deleted_counts', {})}")
+        
         # Get orchestration service
         orchestration = _get_orchestration_service()
         
@@ -546,6 +550,11 @@ async def run_analysis_v2(
         # Update scenario status to processing
         status_patch = ScenarioUpdate(status=ScenarioStatus.PROCESSING)
         await services.update(scenario_id, status_patch)
+        
+        # Clear all data associated with this scenario before re-running analysis
+        logger.info(f"Clearing existing data for scenario {scenario_id} before re-running analysis (V2)")
+        clear_result = await services.clear_data(scenario_id)
+        logger.info(f"Cleared scenario data: {clear_result.get('deleted_counts', {})}")
         
         # Get orchestration service
         orchestration = _get_orchestration_service()
@@ -1160,6 +1169,11 @@ async def run_analysis_v3(
         status_patch = ScenarioUpdate(status=ScenarioStatus.PROCESSING)
         await services.update(scenario_id, status_patch)
         
+        # Clear all data associated with this scenario before re-running analysis
+        logger.info(f"Clearing existing data for scenario {scenario_id} before re-running analysis (V3)")
+        clear_result = await services.clear_data(scenario_id)
+        logger.info(f"Cleared scenario data: {clear_result.get('deleted_counts', {})}")
+        
         # Generate job_id
         job_id = str(uuid.uuid4())
         
@@ -1258,12 +1272,11 @@ async def run_analysis_v4(
             )
         
         # Validate objective requirements
-        if not scenario.global_objective_type or not scenario.global_objective_target:
+        if not scenario.global_objective_type or not scenario.global_objective_target or not scenario.global_objective_unit:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Global objective details are required. Please set objective type and target first.",
+                detail="Global objective details are required. Please set objective type, target and unit first.",
             )
-        
         # Get project to access documents
         project = await project_services.get(scenario.project_id)
         if not project:
@@ -1283,6 +1296,11 @@ async def run_analysis_v4(
         status_patch = ScenarioUpdate(status=ScenarioStatus.PROCESSING)
         await services.update(scenario_id, status_patch)
         
+        # Clear all data associated with this scenario before re-running analysis
+        logger.info(f"Clearing existing data for scenario {scenario_id} before re-running analysis (V4)")
+        clear_result = await services.clear_data(scenario_id)
+        logger.info(f"Cleared scenario data: {clear_result.get('deleted_counts', {})}")
+        
         # Generate job_id
         job_id = str(uuid.uuid4())
         
@@ -1295,6 +1313,7 @@ async def run_analysis_v4(
                 user_id=user_id,
                 global_objective_type=scenario.global_objective_type,
                 global_objective_target=scenario.global_objective_target,
+                global_objective_unit=scenario.global_objective_unit,
                 objective_description=scenario.objective_description,
                 base_case_document_ids=project.base_case_documents,
             )
@@ -1345,6 +1364,7 @@ async def _run_analysis_background_v4(
     global_objective_type: str,
     global_objective_target: str,
     objective_description: Optional[str],
+    global_objective_unit: str,
     base_case_document_ids: List[str],
 ):
     """
@@ -1457,15 +1477,19 @@ async def _run_analysis_background_v4(
             )
             
             extraction_result = await orchestration._extract_objective_driven_nodes_and_relations_v4(
+                project_id=project_id,
+                scenario_id=scenario_id,
                 full_text=full_text,
                 global_objective_type=global_objective_type,
                 global_objective_target=global_objective_target,
                 objective_description=objective_description,
+                global_objective_unit=global_objective_unit,
                 document_id=document_id,
             )
             
             nodes = extraction_result.get("nodes", [])
             edges = extraction_result.get("edges", [])
+            cost_summary = extraction_result.get("cost_summary", {})
             
             # Add metadata to nodes and edges
             for node in nodes:
@@ -1523,6 +1547,7 @@ async def _run_analysis_background_v4(
                 "edges_count": len(edges),
                 "entities_stored": entities_stored,
                 "edges_stored": edges_stored,
+                "cost_summary": cost_summary,
             })
         
         # Update scenario status

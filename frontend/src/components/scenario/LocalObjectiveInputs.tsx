@@ -25,6 +25,8 @@ interface LocalObjectiveInputsProps {
   scenarioId: string;
   globalObjectiveType?: string;
   globalObjectiveTarget?: string;
+  globalObjectiveUnit?: string;
+  costEstimateId?: string;
 }
 
 interface AttributeRow {
@@ -218,6 +220,7 @@ const LocalObjectiveInputs: React.FC<LocalObjectiveInputsProps> = ({
   scenarioId,
   globalObjectiveType,
   globalObjectiveTarget,
+  globalObjectiveUnit,
 }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -320,14 +323,17 @@ const LocalObjectiveInputs: React.FC<LocalObjectiveInputsProps> = ({
         return baseValue;
       }
 
-      // Parse target (format: "5%", "$1000000", "10%", etc.)
-      const targetMatch = globalObjectiveTarget.match(/^([\d.]+)([%$])?$/);
-      if (!targetMatch) {
+      // Use separate target and unit fields
+      if (!globalObjectiveTarget) {
         return baseValue;
       }
 
-      const targetValue = parseFloat(targetMatch[1]);
-      const targetUnit = targetMatch[2] || "%";
+      const targetValue = parseFloat(globalObjectiveTarget);
+      const targetUnit = globalObjectiveUnit || "%";
+      
+      if (isNaN(targetValue)) {
+        return baseValue;
+      }
 
       // Determine direction based on objective type
       const isIncrease = globalObjectiveType
@@ -348,7 +354,7 @@ const LocalObjectiveInputs: React.FC<LocalObjectiveInputsProps> = ({
         return baseValue + change;
       }
     };
-  }, [globalObjectiveTarget, globalObjectiveType]);
+  }, [globalObjectiveTarget, globalObjectiveUnit, globalObjectiveType]);
 
   /**
    * Flatten attributes from relevant_entities

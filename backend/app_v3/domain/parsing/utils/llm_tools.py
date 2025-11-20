@@ -454,7 +454,8 @@ TOOLS = [
 # Filter out "Recommendation" from NODE_TYPES for objective-driven extraction
 # Recommendations must be embedded in entity properties, not created as separate nodes
 _objective_driven_node_types = [
-    nt for nt in _ont["NODE_TYPES"] 
+    nt
+    for nt in _ont["NODE_TYPES"]
     if nt.lower() not in ["recommendation", "recommendations"]
 ]
 
@@ -477,9 +478,9 @@ TOOLS_OBJECTIVE_DRIVEN = [
                             "properties": {
                                 "id": {"type": "string"},
                                 "type": {
-                                    "type": "string", 
+                                    "type": "string",
                                     "enum": _objective_driven_node_types,
-                                    "description": "Entity type from NODE_TYPES. MUST NOT be 'Recommendation' - recommendations are embedded in properties.recommendations array, not as separate nodes."
+                                    "description": "Entity type from NODE_TYPES. MUST NOT be 'Recommendation' - recommendations are embedded in properties.recommendations array, not as separate nodes.",
                                 },
                                 "properties": {
                                     "type": "object",
@@ -492,100 +493,187 @@ TOOLS_OBJECTIVE_DRIVEN = [
                                         # Explicitly add recommendations array for objective-driven extraction
                                         "recommendations": {
                                             "type": "array",
-                                            "description": "Array of recommendations for achieving the global objective that relate to this entity",
+                                            "description": "Array of recommendations for achieving the global objective that relate to this entity. IMPORTANT: When cost information is available for a recommendation, include estimated_cost_value, estimated_cost_currency, cost_type, cost_basis_year, cost_impact_direction, and cost_impact_magnitude fields.",
                                             "items": {
                                                 "type": "object",
                                                 "properties": {
                                                     "id": {
                                                         "type": "string",
-                                                        "description": "Unique identifier for the recommendation"
+                                                        "description": "Unique identifier for the recommendation",
                                                     },
                                                     "type": {
                                                         "type": "string",
-                                                        "description": "Type of recommendation (e.g., 'Equipment Upgrade', 'Process Optimization', 'Operational Change', etc.)"
+                                                        "description": "Type of recommendation (e.g., 'Equipment Upgrade', 'Process Optimization', 'Operational Change', etc.)",
                                                     },
                                                     "name": {
                                                         "type": "string",
-                                                        "description": "Name or title of the recommendation"
+                                                        "description": "Name or title of the recommendation",
                                                     },
                                                     "rationale": {
                                                         "type": "string",
-                                                        "description": "Explanation of why this recommendation is relevant to achieving the global objective"
+                                                        "description": "Explanation of why this recommendation is relevant to achieving the global objective. Include a detailed rationale for the recommendation.",
                                                     },
                                                     "relevance": {
                                                         "type": "string",
-                                                        "enum": ["primary", "secondary", "other"],
-                                                        "description": "Relevance level: primary (direct high-impact), secondary (supporting/enabling), or other (alternative/innovative)"
+                                                        "enum": [
+                                                            "primary",
+                                                            "secondary",
+                                                            "other",
+                                                        ],
+                                                        "description": "Relevance level: primary (direct high-impact), secondary (supporting/enabling), or other (alternative/innovative)",
                                                     },
                                                     "change_direction": {
                                                         "type": "string",
-                                                        "enum": ["increase", "decrease", "no change"],
-                                                        "description": "Direction of change needed for this entity"
+                                                        "enum": [
+                                                            "increase",
+                                                            "decrease",
+                                                            "no change",
+                                                        ],
+                                                        "description": "Direction of change needed for this entity",
                                                     },
                                                     "change_unit": {
                                                         "type": "string",
-                                                        "description": "Unit of measurement for the change (e.g., 'gpm', 'tons/hr', 'units/day')"
+                                                        "description": "Unit of measurement for the change (e.g., 'gpm', 'tons/hr', 'units/day')",
                                                     },
                                                     "change_magnitude": {
                                                         "type": "string",
-                                                        "description": "Magnitude of change (numeric value as string)"
+                                                        "description": "Magnitude of change (numeric value as string)",
                                                     },
                                                     "change_magnitude_unit": {
                                                         "type": "string",
-                                                        "description": "Unit for the change magnitude"
+                                                        "description": "Unit for the change magnitude",
                                                     },
                                                     "change_magnitude_direction": {
                                                         "type": "string",
-                                                        "enum": ["increase", "decrease", "no change"],
-                                                        "description": "Direction of the magnitude change"
+                                                        "enum": [
+                                                            "increase",
+                                                            "decrease",
+                                                            "no change",
+                                                        ],
+                                                        "description": "Direction of the magnitude change",
                                                     },
                                                     "evidence_text": {
                                                         "type": "string",
-                                                        "description": "Text snippet, page reference, or section anchor that supports this recommendation"
+                                                        "description": "Elaborate text (~200 words) supporting the recommendation",
+                                                    },
+                                                    "evidence_prov": {
+                                                        "type": "string",
+                                                        "description": "Providing the source of the evidence (e.g., 'Section 3.2.1', 'Figure 4', 'Table 2', 'Page 100', 'Appendix A', 'Reference 1', 'Reference 2', etc.)",
                                                     },
                                                     "confidence": {
                                                         "type": "number",
                                                         "minimum": 0.0,
                                                         "maximum": 1.0,
-                                                        "description": "Confidence score for this recommendation (0.0 to 1.0)"
-                                                    }
+                                                        "description": "Confidence score for this recommendation (0.0 to 1.0)",
+                                                    },
                                                 },
-                                                "required": ["id", "type", "name", "rationale", "relevance"],
-                                            }
+                                                "required": [
+                                                    "id",
+                                                    "type",
+                                                    "name",
+                                                    "rationale",
+                                                    "relevance",
+                                                    "evidence_text",
+                                                    "evidence_prov",
+                                                ],
+                                            },
+                                        },
+                                        "cost_information": {
+                                            "type": "object",
+                                            "description": "Cost information for the entity. Include when cost information is available.",
+                                            "properties": {
+                                                "cost_value": {
+                                                    "type": ["number", "null"],
+                                                    "description": "Numeric cost value for the entity. Include when cost information is available.",
+                                                },
+                                                "cost_currency": {
+                                                    "type": ["string", "null"],
+                                                    "description": "Currency code for the cost (e.g., 'USD', 'EUR'). Use ISO currency codes. Include when cost information is available.",
+                                                },
+                                                "cost_basis_year": {
+                                                    "type": ["number", "null"],
+                                                    "description": "Basis year for the cost estimate (e.g., 2020, 2024). Include if mentioned in the text.",
+                                                },
+                                                "cost_type": {
+                                                    "type": ["string", "null"],
+                                                    "enum": [
+                                                        "CAPEX",
+                                                        "OPEX",
+                                                        "Total",
+                                                        "Other",
+                                                        None,
+                                                    ],
+                                                    "description": "Type of cost: CAPEX (capital expenditure), OPEX (operating expenditure), Total, or Other. Include when cost information is available.",
+                                                },
+                                                "annual_op_cost": {
+                                                    "type": ["number", "null"],
+                                                    "description": "Annual operating cost if applicable. Include when mentioned in the text.",
+                                                },
+                                                "reclamation_cost": {
+                                                    "type": ["number", "null"],
+                                                    "description": "Reclamation cost if applicable. Include when mentioned in the text.",
+                                                },
+                                                "annual_op_cost": {
+                                                    "type": ["number", "null"],
+                                                    "description": "Annual operating cost if applicable. Include when mentioned in the text.",
+                                                },
+                                                "reclamation_cost": {
+                                                    "type": ["number", "null"],
+                                                    "description": "Reclamation cost if applicable. Include when mentioned in the text.",
+                                                },
+                                                "cost_impact_direction": {
+                                                    "type": ["string", "null"],
+                                                    "description": "Direction of the cost impact: increase, decrease, or no change.",
+                                                },
+                                                "cost_impact_magnitude": {
+                                                    "type": ["number", "null"],
+                                                    "description": "Magnitude of the cost impact (numeric value as string). Include when cost information is available.",
+                                                },
+                                            },
+                                            "required": [
+                                                "cost_value",
+                                                "cost_currency",
+                                                "cost_basis_year",
+                                                "cost_type",
+                                            ],
                                         },
                                         # Explicitly add attributes array for objective-driven extraction (MANDATORY)
                                         "attributes": {
                                             "type": "array",
-                                            "description": "MANDATORY: Array of attributes for this entity (e.g., capacity_value, capacity_unit, description, etc.). This field is required and must be present for all entities.",
+                                            "description": "MANDATORY: Array of technical and operational attributes for this entity. This field is required and must be present for all entities. Extract all relevant attributes. NOTE: Cost information (cost_value, cost_currency, cost_basis_year, cost_type) should be stored as direct properties, NOT in the attributes array.",
                                             "items": {
                                                 "type": "object",
                                                 "properties": {
                                                     "name": {
                                                         "type": "string",
-                                                        "description": "Attribute name (e.g., 'capacity_value', 'capacity_unit', 'description')"
+                                                        "description": "Attribute name",
                                                     },
                                                     "value": {
-                                                        "type": ["number", "string", "null"],
-                                                        "description": "Attribute value (numeric or string)"
+                                                        "type": [
+                                                            "number",
+                                                            "string",
+                                                            "null",
+                                                        ],
+                                                        "description": "Attribute value (numeric or string)",
                                                     },
                                                     "unit": {
                                                         "type": ["string", "null"],
-                                                        "description": "Unit of measurement for the attribute (if applicable)"
+                                                        "description": "Unit of measurement for the attribute (if applicable)",
                                                     },
                                                     "evidence_text": {
                                                         "type": ["string", "null"],
-                                                        "description": "Text snippet, page reference, or section anchor where this attribute value was found"
+                                                        "description": "Text snippet, page reference, or section anchor where this attribute value was found",
                                                     },
                                                     "confidence": {
                                                         "type": "number",
                                                         "minimum": 0.0,
                                                         "maximum": 1.0,
-                                                        "description": "Confidence score for this attribute (0.0 to 1.0)"
-                                                    }
+                                                        "description": "Confidence score for this attribute (0.0 to 1.0)",
+                                                    },
                                                 },
                                                 "required": ["name"],
-                                            }
-                                        }
+                                            },
+                                        },
                                     },
                                     "additionalProperties": False,
                                 },

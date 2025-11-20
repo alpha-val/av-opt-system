@@ -306,9 +306,19 @@ const scenariosSlice = createSlice({
       })
 
       // Run analysis
-      .addCase(runAnalysis.pending, (state) => {
+      .addCase(runAnalysis.pending, (state, action) => {
         state.loading.runAnalysis = true;
         state.error = null;
+        // Optimistically update scenario status to "Processing"
+        const scenarioId = action.meta.arg;
+        const scenario = state.currentScenario;
+        if (scenario && scenario.id === scenarioId) {
+          state.currentScenario = { ...scenario, status: "processing" as any };
+        }
+        const index = state.scenarios.findIndex((s) => s.id === scenarioId);
+        if (index !== -1) {
+          state.scenarios[index] = { ...state.scenarios[index], status: "processing" as any };
+        }
       })
       .addCase(runAnalysis.fulfilled, (state, action) => {
         state.loading.runAnalysis = false;
@@ -333,9 +343,19 @@ const scenariosSlice = createSlice({
       })
 
       // Run analysis V2
-      .addCase(runAnalysisV2.pending, (state) => {
+      .addCase(runAnalysisV2.pending, (state, action) => {
         state.loading.runAnalysisV2 = true;
         state.error = null;
+        // Optimistically update scenario status to "Processing"
+        const scenarioId = action.meta.arg.scenarioId;
+        const scenario = state.currentScenario;
+        if (scenario && scenario.id === scenarioId) {
+          state.currentScenario = { ...scenario, status: "processing" as any };
+        }
+        const index = state.scenarios.findIndex((s) => s.id === scenarioId);
+        if (index !== -1) {
+          state.scenarios[index] = { ...state.scenarios[index], status: "processing" as any };
+        }
       })
       .addCase(runAnalysisV2.fulfilled, (state, action) => {
         state.loading.runAnalysisV2 = false;
@@ -360,9 +380,19 @@ const scenariosSlice = createSlice({
       })
 
       // Run analysis V3
-      .addCase(runAnalysisV3.pending, (state) => {
+      .addCase(runAnalysisV3.pending, (state, action) => {
         state.loading.runAnalysisV3 = true;
         state.error = null;
+        // Optimistically update scenario status to "Processing"
+        const scenarioId = action.meta.arg;
+        const scenario = state.currentScenario;
+        if (scenario && scenario.id === scenarioId) {
+          state.currentScenario = { ...scenario, status: "processing" as any };
+        }
+        const index = state.scenarios.findIndex((s) => s.id === scenarioId);
+        if (index !== -1) {
+          state.scenarios[index] = { ...state.scenarios[index], status: "processing" as any };
+        }
       })
       .addCase(runAnalysisV3.fulfilled, (state, action) => {
         state.loading.runAnalysisV3 = false;
