@@ -655,6 +655,25 @@ export const costEstimateApi = {
   delete: async (costEstimateId: string): Promise<void> => {
     await apiClient.delete(`/api/v1/cost-estimates/${costEstimateId}`);
   },
+
+  /**
+   * Calculate cost estimate - triggers cost estimation workflow
+   */
+  calculateCost: async (payload: {
+    scenario_description: string;
+    project_id: string;
+    scenario_id: string;
+    selected_entities: string[];
+    entity_selection_state: Record<string, boolean>;
+    top_k?: number;
+  }): Promise<CostEstimateOut> => {
+    console.log('! ! ! ! ! \n\n Calculating cost estimate:', payload);
+    const response = await apiClient.post<CostEstimateOut>(
+      "/api/v1/cost-estimates",
+      payload
+    );
+    return response.data;
+  },
 };
 
 /**

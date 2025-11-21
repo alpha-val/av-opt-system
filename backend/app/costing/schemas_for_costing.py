@@ -51,6 +51,12 @@ class CostEstimateRequest(BaseModel):
     selected_entities: Optional[List[str]] = Field(
         None, description="List of user-selected entity IDs"
     )
+    top_k: int = Field(
+        3, description="Number of top matching tabular entities to return per base entity"
+    )
+    entity_selection_state: Optional[Dict[str, bool]] = Field(
+        None, description="Checkbox selections for entity inclusion (entity_id -> bool)"
+    )
 
 
 class CostEstimateResponse(BaseModel):

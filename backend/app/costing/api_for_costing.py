@@ -69,6 +69,8 @@ async def create_cost_estimate(
             uncertainties=request.uncertainties,
             selected_entities=request.selected_entities,
             user_id=user_id,
+            top_k=request.top_k,
+            entity_selection_state=request.entity_selection_state,
         )
 
         estimate["created_at"] = datetime.utcnow()

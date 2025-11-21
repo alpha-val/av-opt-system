@@ -222,6 +222,8 @@ def cost_estimation(
     user_id: Optional[str] = None,
     cutoff: Optional[float] = 0.5,
     selected_entities: Optional[List[str]] = None,  # Now explicitly a list of IDs
+    top_k: int = 3,
+    entity_selection_state: Optional[Dict[str, bool]] = None,
 ):
     """
     Perform cost estimation based on scenario description and other parameters.
@@ -235,6 +237,8 @@ def cost_estimation(
         uncertainties: Uncertainty parameters
         user_id: ID of the user requesting the estimation
         selected_entities: List of entity IDs to consider
+        top_k: Number of top matching tabular entities to return per base entity
+        entity_selection_state: Checkbox selections for entity inclusion
     """
     if (
         not scenario_description
@@ -253,11 +257,26 @@ def cost_estimation(
 
     base_entities = list(reference_entities)
 
+    # Helper function to extract cost information from an entity
+    def extract_cost_info(entity: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract cost information from entity properties."""
+        props = entity.get("properties", {}) or {}
+        cost_info = props.get("cost_information", {}) or {}
+        return {
+            "value": cost_info.get("cost_value"),
+            "currency": cost_info.get("cost_currency", "USD"),
+            "unit": cost_info.get("cost_unit"),
+            "basis": cost_info.get("cost_basis"),
+        }
+
     # Retrieve tabular entities based on selected entities using embedding
     tabular_entities = []
 
     # Keep track of matched entities for reporting
     matched_entities = []
+    
+    # Build cost comparison report
+    cost_comparison_report = []
 
     # Keep track of ids we've already added so we only add unique tabular entities
     seen_tabular_ids = set()
@@ -265,10 +284,20 @@ def cost_estimation(
     for entity in base_entities:
         entity_id = entity.get("id")
         if entity:
+            entity_name = entity.get("properties", {}).get("name", "Unknown")
+            entity_type = entity.get("type", "Unknown")
+            
+            # Extract base case cost
+            base_cost_info = extract_cost_info(entity)
+            
             matches = {"base_entity": entity, "tabular_entities": []}
             related = find_related_tabular_entities_by_embedding(
-                entity, project_id, top_k=5, cutoff=cutoff
+                entity, project_id, top_k=top_k, cutoff=cutoff
             )
+            
+            # Build tabular matches list with cost info and scores
+            tabular_matches = []
+            
             # only extend with unique entities (by id)
             for r in related:
                 rid = r.get("id")
@@ -276,10 +305,31 @@ def cost_estimation(
                     if rid not in seen_tabular_ids:
                         seen_tabular_ids.add(rid)
                         tabular_entities.append(r)
-                        matches["tabular_entities"].append(r)
+                    
+                    # Extract tabular entity cost and match score
+                    tabular_cost_info = extract_cost_info(r)
+                    tabular_match = {
+                        "entity_id": rid,
+                        "entity_name": r.get("properties", {}).get("name", "Unknown"),
+                        "entity_type": r.get("type", "Unknown"),
+                        "cost_info": tabular_cost_info,
+                        "score": r.get("score", 0.0),  # Match score from vector search
+                    }
+                    tabular_matches.append(tabular_match)
+                    matches["tabular_entities"].append(r)
                 else:
                     raise ValueError("Related entity missing 'id' field.")
+            
             matched_entities.append(matches)
+            
+            # Add row to cost comparison report
+            cost_comparison_report.append({
+                "entity_id": entity_id,
+                "entity_name": entity_name,
+                "entity_type": entity_type,
+                "base_cost_info": base_cost_info,
+                "tabular_matches": tabular_matches,
+            })
         else:
             raise ValueError(f"Selected entity with id {entity_id} not found.")
 
@@ -294,6 +344,8 @@ def cost_estimation(
         "status": "completed",
         "metadata": {
             "confidence": "medium",
+            "entity_selection_state": entity_selection_state or {},
+            "cost_comparison_report": cost_comparison_report,
             "cost_details": {
                 "base_entities": base_entities,
                 "tabular_entities": tabular_entities,

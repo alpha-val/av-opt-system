@@ -51,6 +51,8 @@ import BaseCaseRecommendationView from "../../components/scenario/BaseCaseRecomm
 import LocalObjectiveInputs from "../../components/scenario/LocalObjectiveInputs";
 import EntityAttributesWithRecommendations from "../../components/scenario/EntityAttributesWithRecommendations";
 import CreateCostEstimateDialog from "../../components/scenario/CreateCostEstimateDialog";
+import CalculateCostDialog from "../../components/scenario/CalculateCostDialog";
+import CostComparisonReport from "../../components/scenario/CostComparisonReport";
 import ProgressWidget from "../../components/common/ProgressWidget";
 import { useDialogs } from "../../hooks/useDialogs";
 import { useProgress } from "../../hooks/useProgress";
@@ -92,12 +94,33 @@ import {
   ScenarioUpdate,
   CostEstimateCreate,
 } from "../../types/api";
+import { costEstimateApi, scenarioApi } from "../../services/api";
 
 interface ScenarioDetailsProps {
   scenarioId?: string;
   projectId?: string;
   onBack?: () => void;
 }
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`scenario-tabpanel-${index}`}
+      aria-labelledby={`scenario-tab-${index}`}
+      style={{ height: "100%" }}
+    >
+      {value === index && <Box sx={{ height: "100%" }}>{children}</Box>}
+    </div>
+  );
+};
 
 /**
  * Scenario Details page - placeholder for scenario details view.
@@ -199,6 +222,9 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
   const [selectedCostEstimateId, setSelectedCostEstimateId] = useState<
     string | null
   >(null);
+  const [calculateCostDialogOpen, setCalculateCostDialogOpen] = useState(false);
+  const [calculating, setCalculating] = useState(false);
+  const [entitySelections, setEntitySelections] = useState<Record<string, boolean>>({});
 
   // Cost estimates data
   const costEstimatesSelector = useMemo(
@@ -251,12 +277,17 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
         dispatch(fetchProjectById(projectId) as any);
       }
     }
-    // Fetch cost estimates for this scenario (only once per scenarioId change)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scenarioId, projectId]); // Only depend on IDs, not on loaded data
+
+  /**
+   * Fetch cost estimates when scenario changes
+   */
+  useEffect(() => {
     if (scenarioId) {
       dispatch(fetchCostEstimates(scenarioId) as any);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scenarioId, projectId]); // Only depend on IDs, not on loaded data
+  }, [scenarioId, dispatch]);
 
   /**
    * Initialize form with scenario data when scenario loads
@@ -532,6 +563,74 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
   };
 
   /**
+   * Handle calculating cost
+   */
+  const handleCalculateCost = async (data: {
+    name: string;
+    description?: string;
+    topK: number;
+  }) => {
+    console.log('! ! ! ! ! \n\n Handling calculate cost:', data);
+    if (!scenario || !projectId || !scenarioId) {
+      return;
+    }
+    console.log('! ! ! ! ! \n\n Scenario, projectId, scenarioId:', scenario, projectId, scenarioId);
+    setCalculating(true);
+    try {
+      // Get list of selected entities
+      const selectedEntities = Object.keys(entitySelections).filter(
+        (id) => entitySelections[id] !== false
+      );
+
+      if (selectedEntities.length === 0) {
+        alert("Please select at least one entity to calculate costs");
+        return;
+      }
+
+      // Call the cost estimation API
+      const result = await costEstimateApi.calculateCost({
+        scenario_description: data.description || `Cost estimate for ${scenario.name}`,
+        project_id: projectId,
+        scenario_id: scenarioId,
+        selected_entities: selectedEntities,
+        entity_selection_state: entitySelections,
+        top_k: data.topK,
+      });
+
+      // Create a cost estimate record with the calculated data
+      const costEstimateData: CostEstimateCreate = {
+        name: data.name,
+        description: data.description,
+        scenario_id: scenarioId,
+      };
+      
+      await dispatch(createCostEstimate(costEstimateData) as any);
+      
+      // Refresh cost estimates list
+      await dispatch(fetchCostEstimates(scenarioId) as any);
+      
+      // Close dialog and switch to Cost Estimates tab
+      setCalculateCostDialogOpen(false);
+      setActiveTab(2);
+    } catch (error) {
+      console.error("Failed to calculate cost:", error);
+      alert("Failed to calculate cost. Please try again.");
+    } finally {
+      setCalculating(false);
+    }
+  };
+
+  /**
+   * Handle entity selection change from EntityAttributesWithRecommendations
+   */
+  const handleEntitySelectionChange = useCallback(
+    (selections: Record<string, boolean>) => {
+      setEntitySelections(selections);
+    },
+    []
+  );
+
+  /**
    * Handle running analysis
    */
   const handleRunAnalysis = async (): Promise<void> => {
@@ -620,26 +719,6 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
         }
       });
     }
-  };
-
-  interface TabPanelProps {
-    children?: React.ReactNode;
-    index: number;
-    value: number;
-  }
-
-  const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
-    return (
-      <div
-        role="tabpanel"
-        hidden={value !== index}
-        id={`scenario-tabpanel-${index}`}
-        aria-labelledby={`scenario-tab-${index}`}
-        style={{ height: "100%" }}
-      >
-        {value === index && <Box sx={{ height: "100%" }}>{children}</Box>}
-      </div>
-    );
   };
 
   // If embedded (onBack provided), show a simpler header with back button
@@ -909,24 +988,19 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                             onClick={async () => {
                               if (currentAnalysisJobId && scenarioId) {
                                 try {
-                                  const result = await dispatch(
+                                  // cancelAnalysisV4 already fetches and updates the scenario
+                                  await dispatch(
                                     cancelAnalysisV4({
                                       scenarioId,
                                       jobId: currentAnalysisJobId,
                                     }) as any
                                   );
-                                  // Clear job ID immediately
+                                  // Clear job ID after cancellation
                                   dispatch(clearAnalysisJobId());
-                                  // Refresh scenario data to show updated status
-                                  if (scenarioId) {
-                                    dispatch(fetchScenarioById(scenarioId) as any);
-                                  }
                                 } catch (error) {
                                   console.error("Failed to cancel analysis:", error);
-                                  // Still refresh scenario data even on error
-                                  if (scenarioId) {
-                                    dispatch(fetchScenarioById(scenarioId) as any);
-                                  }
+                                  // Clear job ID even on error
+                                  dispatch(clearAnalysisJobId());
                                 }
                               }
                             }}
@@ -1009,14 +1083,26 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
               {/* Tab 1: System Design */}
               <TabPanel value={activeTab} index={1}>
                 <Box sx={{ p: 3 }}>
-                  <Typography variant="h6" gutterBottom>
-                    Base Case Entities with Recommendations
-                  </Typography>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                    <Typography variant="h6" gutterBottom>
+                      Base Case Entities with Recommendations
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<CalculateIcon />}
+                      onClick={() => setCalculateCostDialogOpen(true)}
+                      disabled={Object.keys(entitySelections).length === 0}
+                    >
+                      Calculate Cost
+                    </Button>
+                  </Box>
                   <EntityAttributesWithRecommendations
                     scenarioId={scenarioId || ""}
                     globalObjectiveType={scenarioObjectiveType}
                     globalObjectiveTarget={scenarioObjectiveTarget}
                     globalObjectiveUnit={scenario?.global_objective_unit}
+                    onEntitySelectionChange={handleEntitySelectionChange}
                   />
                 </Box>
               </TabPanel>
@@ -1179,7 +1265,31 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                               }
                             />
                           </Box>
-                        </AccordionDetails>{" "}
+                        </AccordionDetails>
+                      </Accordion>
+
+                      {/* Step 2: Cost Comparison Report */}
+                      <Accordion sx={{ backgroundColor: "#f9f9f9", mb: 1 }}>
+                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                          <CalculateIcon sx={{ mr: 1 }} />
+                          <Box>
+                            <Typography variant="h6" gutterBottom>
+                              Cost Comparison Report
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              Compare base case costs with matching tabular entity costs.
+                            </Typography>
+                          </Box>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                          <Box sx={{ mb: 2 }}>
+                            <CostComparisonReport
+                              reportData={
+                                currentCostEstimate?.metadata?.cost_comparison_report || []
+                              }
+                            />
+                          </Box>
+                        </AccordionDetails>
                       </Accordion>
                     </Box>
                   ) : (
@@ -1298,6 +1408,15 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                     onCreate={handleCreateCostEstimate}
                     creating={creatingCostEstimate}
                     scenarioId={scenarioId || ""}
+                  />
+
+                  {/* Calculate Cost Dialog */}
+                  <CalculateCostDialog
+                    open={calculateCostDialogOpen}
+                    onClose={() => setCalculateCostDialogOpen(false)}
+                    onCalculate={handleCalculateCost}
+                    calculating={calculating}
+                    defaultName={scenario?.name ? `${scenario.name} - Cost Estimate` : ""}
                   />
                 </Box>
               </TabPanel>

@@ -31,6 +31,7 @@ interface EntityAttributesWithRecommendationsProps {
   globalObjectiveType?: string;
   globalObjectiveTarget?: string;
   globalObjectiveUnit?: string;
+  onEntitySelectionChange?: (selections: Record<string, boolean>) => void;
 }
 
 interface Recommendation {
@@ -491,7 +492,13 @@ AttributeRowComponent.displayName = "AttributeRowComponent";
  */
 const EntityAttributesWithRecommendations: React.FC<
   EntityAttributesWithRecommendationsProps
-> = ({ scenarioId, globalObjectiveType, globalObjectiveTarget, globalObjectiveUnit }) => {
+> = ({ 
+  scenarioId, 
+  globalObjectiveType, 
+  globalObjectiveTarget, 
+  globalObjectiveUnit,
+  onEntitySelectionChange 
+}) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [entities, setEntities] = useState<Entity[]>([]);
@@ -535,6 +542,13 @@ const EntityAttributesWithRecommendations: React.FC<
 
     fetchEntities();
   }, [scenarioId]);
+
+  // Notify parent of entity selection changes
+  useEffect(() => {
+    if (onEntitySelectionChange) {
+      onEntitySelectionChange(includedEntities);
+    }
+  }, [includedEntities, onEntitySelectionChange]);
 
   /**
    * Calculate updated value based on global objective target magnitude

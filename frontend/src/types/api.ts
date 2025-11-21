@@ -197,6 +197,38 @@ export interface RelevantEntity {
 }
 
 /**
+ * Cost information structure
+ */
+export interface CostInfo {
+  value?: number | null;
+  currency?: string | null;
+  unit?: string | null;
+  basis?: string | null;
+}
+
+/**
+ * Tabular match for cost comparison
+ */
+export interface TabularMatch {
+  entity_id: string;
+  entity_name: string;
+  entity_type: string;
+  cost_info: CostInfo;
+  score: number;
+}
+
+/**
+ * Cost comparison row
+ */
+export interface CostComparisonRow {
+  entity_id: string;
+  entity_name: string;
+  entity_type: string;
+  base_cost_info: CostInfo;
+  tabular_matches: TabularMatch[];
+}
+
+/**
  * Cost estimate base interface
  */
 export interface CostEstimateBase {
@@ -225,6 +257,11 @@ export interface CostEstimateOut extends CostEstimateBase {
   id: string;
   created_at: string;
   updated_at: string;
+  metadata?: {
+    entity_selection_state?: Record<string, boolean>;
+    cost_comparison_report?: CostComparisonRow[];
+    [key: string]: any;
+  };
 }
 
 /**
