@@ -16,6 +16,7 @@ class ScenarioStatus(str, Enum):
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 class ScenarioBase(BaseModel):

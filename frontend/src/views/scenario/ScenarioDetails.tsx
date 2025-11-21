@@ -34,7 +34,7 @@ import {
   IconButton,
   Divider,
 } from "@mui/material";
-import { PlayArrow as PlayArrowIcon } from "@mui/icons-material";
+import { PlayArrow as PlayArrowIcon, Stop as StopIcon } from "@mui/icons-material";
 import {
   ExpandMore as ExpandMoreIcon,
   Input as InputIcon,
@@ -51,7 +51,9 @@ import BaseCaseRecommendationView from "../../components/scenario/BaseCaseRecomm
 import LocalObjectiveInputs from "../../components/scenario/LocalObjectiveInputs";
 import EntityAttributesWithRecommendations from "../../components/scenario/EntityAttributesWithRecommendations";
 import CreateCostEstimateDialog from "../../components/scenario/CreateCostEstimateDialog";
+import ProgressWidget from "../../components/common/ProgressWidget";
 import { useDialogs } from "../../hooks/useDialogs";
+import { useProgress } from "../../hooks/useProgress";
 import {
   fetchScenarioById,
   selectCurrentScenario,
@@ -60,9 +62,12 @@ import {
   updateScenario,
   runAnalysis,
   runAnalysisV2,
-  runAnalysisV3,
+  runAnalysisV4,
+  cancelAnalysisV4,
   selectScenarioRunningAnalysis,
+  selectCurrentAnalysisJobId,
   clearError,
+  clearAnalysisJobId,
 } from "../../redux/scenariosSlice";
 import {
   fetchCostEstimates,
@@ -125,8 +130,51 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
   const project = useSelector(selectCurrentProject);
   const loading = useSelector(selectScenariosLoading);
   const error = useSelector(selectScenariosError);
-  const runningAnalysis = useSelector(selectScenarioRunningAnalysis);
+  const runningAnalysisFromRedux = useSelector(selectScenarioRunningAnalysis);
+  const currentAnalysisJobId = useSelector(selectCurrentAnalysisJobId);
   const updating = useSelector((state: any) => state.scenarios.loading.update);
+  
+  // Connect to WebSocket for progress updates
+  const progress = useProgress(currentAnalysisJobId);
+  
+  // Determine if analysis is running: check Redux state, scenario status, or WebSocket status
+  // Analysis is NOT running if WebSocket status is "completed" or "failed"
+  const runningAnalysis = useMemo(() => {
+    // If WebSocket is connected and reports completed or failed, analysis is definitely not running
+    if (progress.connected && (progress.status === "completed" || progress.status === "failed")) {
+      return false;
+    }
+    // If WebSocket is connected and reports in_progress or started, analysis is running
+    if (progress.connected && (progress.status === "in_progress" || progress.status === "started")) {
+      return true;
+    }
+    // Otherwise, check Redux state and scenario status (fallback when WebSocket not connected)
+    return runningAnalysisFromRedux || scenario?.status === "processing";
+  }, [runningAnalysisFromRedux, scenario?.status, progress.status, progress.connected]);
+  
+  // Track if we've already handled completion to avoid multiple refreshes
+  const completionHandledRef = useRef<string | null>(null);
+  
+  // Refresh scenario data when analysis completes
+  useEffect(() => {
+    if ((progress.status === "completed" || progress.status === "failed") && 
+        currentAnalysisJobId && 
+        completionHandledRef.current !== currentAnalysisJobId) {
+      // Mark as handled
+      completionHandledRef.current = currentAnalysisJobId;
+      
+      // Refresh scenario to get updated status
+      if (scenarioId) {
+        dispatch(fetchScenarioById(scenarioId) as any);
+      }
+      
+      // Clear job ID after a short delay to allow UI to update
+      setTimeout(() => {
+        dispatch(clearAnalysisJobId());
+        completionHandledRef.current = null;
+      }, 1000);
+    }
+  }, [progress.status, currentAnalysisJobId, scenarioId, dispatch]);
 
   // Memoize extracted scenario properties to prevent unnecessary re-renders
   // Only recalculate when the actual scenario data changes, not when object reference changes
@@ -192,20 +240,23 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
    */
   useEffect(() => {
     if (scenarioId) {
-      if (!scenarioIdFromStore || scenarioIdFromStore !== scenarioId) {
+      // Only fetch if scenario is not loaded or ID doesn't match
+      if (!scenario || scenario.id !== scenarioId) {
         dispatch(fetchScenarioById(scenarioId) as any);
       }
     }
     if (projectId) {
+      // Only fetch if project is not loaded or ID doesn't match
       if (!project || project.id !== projectId) {
         dispatch(fetchProjectById(projectId) as any);
       }
     }
-    // Fetch cost estimates for this scenario
+    // Fetch cost estimates for this scenario (only once per scenarioId change)
     if (scenarioId) {
       dispatch(fetchCostEstimates(scenarioId) as any);
     }
-  }, [scenarioId, projectId, scenarioIdFromStore, project?.id, dispatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scenarioId, projectId]); // Only depend on IDs, not on loaded data
 
   /**
    * Initialize form with scenario data when scenario loads
@@ -278,6 +329,8 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
         return "success";
       case ScenarioStatus.FAILED:
         return "error";
+      case ScenarioStatus.CANCELLED:
+        return "default";
       default:
         return "default";
     }
@@ -361,10 +414,10 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
       (result: any) => {
         if (updateScenario.fulfilled.match(result)) {
         } else {
-          console.log(
-            "[ScenarioDetails] updateScenario rejected",
-            result.error
-          );
+          // console.log(
+          //   "[ScenarioDetails] updateScenario rejected",
+          //   result.error
+          // );
         }
       }
     );
@@ -533,11 +586,21 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
 
     // Dispatch run analysis action (V3, V2, or V1)
     if (useV3Workflow) {
-      dispatch(runAnalysisV3(scenarioId) as any).then((result: any) => {
-        if (runAnalysisV3.rejected.match(result)) {
-          setAnalysisError(result.payload as string);
-        }
-      });
+      // console.log('[ScenarioDetails] Starting V3 analysis for scenario:', scenarioId);
+      // console.log('[ScenarioDetails] useV3Workflow is:', useV3Workflow);
+      const result = await dispatch(runAnalysisV4(scenarioId) as any);
+      // console.log('[ScenarioDetails] runAnalysisV4 result:', result);
+      // console.log('[ScenarioDetails] runAnalysisV4 result type:', result.type);
+      if (runAnalysisV4.fulfilled.match(result)) {
+        // console.log('[ScenarioDetails] Analysis started successfully, payload:', result.payload);
+        // console.log('[ScenarioDetails] analysisResult from payload:', result.payload?.analysisResult);
+        // console.log('[ScenarioDetails] job_id from analysisResult:', result.payload?.analysisResult?.job_id);
+      } else if (runAnalysisV4.rejected.match(result)) {
+        // console.error('[ScenarioDetails] Analysis failed:', result.payload);
+        setAnalysisError(result.payload as string);
+      } else {
+        // console.warn('[ScenarioDetails] Unexpected result type:', result.type);
+      }
     } else if (useV2Workflow) {
       dispatch(
         runAnalysisV2({
@@ -727,6 +790,19 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
         </Alert>
       )}
 
+      {/* Progress Widget - Show when analysis is running */}
+      {currentAnalysisJobId && runningAnalysis && (
+        <Box sx={{ mb: 2, px: 0 }}>
+          <ProgressWidget
+            jobId={currentAnalysisJobId}
+            title="Scenario Analysis Progress"
+            onDismiss={() => {
+              dispatch(clearAnalysisJobId());
+            }}
+          />
+        </Box>
+      )}
+
       {/* Loading State */}
       {loading && !scenario ? (
         <Box
@@ -822,32 +898,65 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                     }}
                   >
                     <Typography variant="h6">Objective Details</Typography>
-                    <Tooltip title={getRunAnalysisTooltip()} arrow>
-                      <span>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          size="small"
-                          startIcon={
-                            runningAnalysis ? (
-                              <CircularProgress size={20} />
-                            ) : (
-                              <PlayArrowIcon />
-                            )
-                          }
-                          onClick={handleRunAnalysis}
-                          disabled={runningAnalysis || !canRunAnalysis()}
-                        >
-                          {runningAnalysis
-                            ? "Running Analysis..."
-                            : useV3Workflow
-                            ? "Run Analysis (V3)"
-                            : useV2Workflow
-                            ? "Run Analysis (V2)"
-                            : "Run Analysis"}
-                        </Button>
-                      </span>
-                    </Tooltip>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      {runningAnalysis && currentAnalysisJobId && (
+                        <Tooltip title="Cancel running analysis" arrow>
+                          <Button
+                            variant="outlined"
+                            color="error"
+                            size="small"
+                            startIcon={<StopIcon />}
+                            onClick={async () => {
+                              if (currentAnalysisJobId && scenarioId) {
+                                try {
+                                  const result = await dispatch(
+                                    cancelAnalysisV4({
+                                      scenarioId,
+                                      jobId: currentAnalysisJobId,
+                                    }) as any
+                                  );
+                                  // Clear job ID immediately
+                                  dispatch(clearAnalysisJobId());
+                                  // Refresh scenario data to show updated status
+                                  if (scenarioId) {
+                                    dispatch(fetchScenarioById(scenarioId) as any);
+                                  }
+                                } catch (error) {
+                                  console.error("Failed to cancel analysis:", error);
+                                  // Still refresh scenario data even on error
+                                  if (scenarioId) {
+                                    dispatch(fetchScenarioById(scenarioId) as any);
+                                  }
+                                }
+                              }
+                            }}
+                            disabled={!currentAnalysisJobId}
+                          >
+                            Cancel Analysis
+                          </Button>
+                        </Tooltip>
+                      )}
+                      <Tooltip title={getRunAnalysisTooltip()} arrow>
+                        <span>
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            startIcon={
+                              runningAnalysis ? (
+                                <CircularProgress size={20} color="inherit" />
+                              ) : (
+                                <PlayArrowIcon />
+                              )
+                            }
+                            onClick={handleRunAnalysis}
+                            disabled={runningAnalysis || !canRunAnalysis()}
+                          >
+                            {runningAnalysis ? "Running..." : "Run Analysis"}
+                          </Button>
+                        </span>
+                      </Tooltip>
+                    </Box>
                   </Box>
 
                   {(objectiveError || analysisError) && (
@@ -885,6 +994,7 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                     updating={updating}
                     scenarioId={scenarioId || ""}
                     onSave={handleSaveObjectiveDetails}
+                    disabled={runningAnalysis}
                   />
 
                   {/* <AnalysisOptionsForm

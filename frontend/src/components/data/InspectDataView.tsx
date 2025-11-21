@@ -11,12 +11,12 @@ interface InspectDataViewProps {
 /**
  * InspectDataView Component
  *
- * Fetches and displays base case entities for a given project.
+ * Fetches and displays tabular data entities for a given project.
  * Uses EntityDetailsTable to display the entities in a structured table format.
  */
 const InspectDataView: React.FC<InspectDataViewProps> = ({
   projectId,
-  artifactType = "base_case",
+  artifactType = "tabular_data",
 }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);

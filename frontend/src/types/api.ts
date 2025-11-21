@@ -116,6 +116,7 @@ export enum ScenarioStatus {
   PROCESSING = "processing",
   COMPLETED = "completed",
   FAILED = "failed",
+  CANCELLED = "cancelled",
 }
 
 /**

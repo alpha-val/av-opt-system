@@ -12,6 +12,7 @@ import logging
 from datetime import datetime, timezone
 import uuid
 import json
+import asyncio
 
 # Import LLM components
 from app_v2.adapters.config import SETTINGS
@@ -3048,6 +3049,9 @@ class ProjectOrchestrationService:
         project_id: str,
         scenario_id: Optional[str] = None,
         global_objective_unit: str = "%",
+        job_id: Optional[str] = None,
+        publisher = None,
+        base_seq: int = 0,
     ) -> Dict[str, Any]:
         """
         Extract objective-driven nodes and relations using V4 workflow.
@@ -3070,6 +3074,18 @@ class ProjectOrchestrationService:
             f"{global_objective_type} ({global_objective_target} {global_objective_unit})"
         )
 
+        # # Get progress publisher if job_id is provided
+        # publisher = None
+        # if job_id:
+        #     try:
+        #         from ....api.v1.routers.websocket import get_progress_publisher
+        #         from ..progress.events import ProgressEvent, Stage, Status
+        #         publisher = get_progress_publisher()
+        #     except Exception as e:
+        #         logger.warning(f"Could not get progress publisher for job_id {job_id}: {e}")
+        # Import progress event types if publisher is provided
+        if publisher and job_id:
+            from ..progress.events import ProgressEvent, Stage, Status
         try:
             # Import chunking utilities
             import uuid
@@ -3111,6 +3127,28 @@ class ProjectOrchestrationService:
                 f"Created {len(chunks)} chunks for entity extraction "
                 f"(char_limit: {char_limit}, overlap: {overlap})"
             )
+            
+            # Publish event after chunking
+            if publisher and job_id:
+                try:
+                    publisher.publish(
+                        job_id,
+                        ProgressEvent(
+                            job_id=job_id,
+                            stage=Stage.PROCESSING,
+                            status=Status.IN_PROGRESS,
+                            progress=50,
+                            seq=base_seq,
+                            meta={
+                                "document_id": document_id,
+                                "total_chunks": len(chunks),
+                                "base_seq": base_seq,
+                                "message": "Chunking text for entity extraction",
+                            }
+                        )
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to publish progress event: {e}")
 
             # Build objective context for the prompt
             objective_context = f"""
@@ -3142,6 +3180,12 @@ class ProjectOrchestrationService:
 
             # Process each chunk
             for chunk_idx, chunk in enumerate(chunks):
+                # Check for cancellation at the start of each chunk iteration
+                # This allows the task to be cancelled between chunks
+                # Note: We check cancellation by attempting to access the task registry
+                # If the task was cancelled, it will raise CancelledError when awaited
+                # We'll catch it in the outer try-except block
+                
                 chunk_text = chunk["text"]
                 chunk_seq = chunk["seq"]
                 
@@ -3150,6 +3194,30 @@ class ProjectOrchestrationService:
                     f"(positions {chunk['start_pos']}-{chunk['end_pos']}, "
                     f"{len(chunk_text)} chars)"
                 )
+                
+                # Publish event before processing chunk
+                if publisher and job_id:
+                    try:
+                        progress_chunk = 50 + int(chunk_idx * 40 / len(chunks))
+                        publisher.publish(
+                            job_id,
+                            ProgressEvent(
+                                job_id=job_id,
+                                stage=Stage.PROCESSING,
+                                status=Status.IN_PROGRESS,
+                                progress=progress_chunk,
+                                seq=base_seq + chunk_idx + 1,
+                                meta={
+                                    "document_id": document_id,
+                                    "chunk_index": chunk_idx + 1,
+                                    "total_chunks": len(chunks),
+                                    "base_seq": base_seq,
+                                    "message": f"Extracting entities from text > processing text chunk {chunk_idx + 1} of {len(chunks)}",
+                                }
+                            )
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to publish progress event: {e}")
 
                 try:
                     # Prepare messages with chunk text (following entity_extractor pattern)
@@ -3157,7 +3225,7 @@ class ProjectOrchestrationService:
                     messages = [system_prompt, human_message]
 
                     # Invoke LLM with tools
-                    resp = self._llm_objective_driven.invoke(messages)
+                    resp = await self._llm_objective_driven.ainvoke(messages)
 
                     # Track counts for this chunk
                     chunk_nodes_count = 0
@@ -3236,6 +3304,29 @@ class ProjectOrchestrationService:
                 f"Extracted {len(all_nodes)} total nodes and {len(all_edges)} total edges "
                 f"from {len(chunks)} chunks"
             )
+            
+            # Publish event after all chunks processed
+            if publisher and job_id:
+                try:
+                    publisher.publish(
+                        job_id,
+                        ProgressEvent(
+                            job_id=job_id,
+                            stage=Stage.PROCESSING,
+                            status=Status.IN_PROGRESS,
+                            progress=90,
+                            seq=base_seq + len(chunks) + 1,
+                            meta={
+                                "document_id": document_id,
+                                "total_nodes": len(all_nodes),
+                                "total_edges": len(all_edges),
+                                "base_seq": base_seq,
+                                "message": "Completed entity extraction",
+                            }
+                        )
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to publish progress event: {e}")
 
             # Calculate and validate total costs
             calculated_totals = self._calculate_total_base_case_costs(
@@ -3249,6 +3340,7 @@ class ProjectOrchestrationService:
             return {
                 "nodes": all_nodes,
                 "edges": all_edges,
+                "num_chunks": len(chunks),  # Return chunk count for sequence number tracking
                 "cost_summary": {
                     "calculated_totals": calculated_totals,
                     "extracted_totals": extracted_totals,
@@ -3256,6 +3348,31 @@ class ProjectOrchestrationService:
                 },
             }
 
+        except asyncio.CancelledError:
+            logger.info(
+                f"Extraction cancelled for document {document_id} (job_id: {job_id})"
+            )
+            # Publish cancellation event if publisher is available
+            if publisher and job_id:
+                try:
+                    publisher.publish(
+                        job_id,
+                        ProgressEvent(
+                            job_id=job_id,
+                            stage=Stage.ERROR,
+                            status=Status.FAILED,
+                            progress=0,
+                            seq=base_seq + len(chunks) + 2,
+                            meta={
+                                "document_id": document_id,
+                                "message": "Extraction cancelled by user",
+                            },
+                        ),
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to publish cancellation event: {e}")
+            # Re-raise to propagate cancellation
+            raise
         except Exception as e:
             logger.error(
                 f"Error extracting objective-driven nodes and relations (V4) "
@@ -3265,4 +3382,5 @@ class ProjectOrchestrationService:
             return {
                 "nodes": [],
                 "edges": [],
+                "num_chunks": 0,
             }

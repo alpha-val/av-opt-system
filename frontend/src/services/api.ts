@@ -479,7 +479,7 @@ export const scenarioApi = {
   /**
    * Run or re-run analysis for a scenario using V3 workflow
    */
-  runAnalysisV3: async (
+  runAnalysisV4: async (
     scenarioId: string
   ): Promise<{
     job_id: string;
@@ -517,6 +517,27 @@ export const scenarioApi = {
       websocket_url: string;
       message: string;
     }>(`/api/v1/scenarios/${scenarioId}/run-analysis-v4`);
+    return response.data;
+  },
+
+  /**
+   * Cancel a running V4 analysis job
+   */
+  cancelAnalysisV4: async (
+    scenarioId: string,
+    jobId: string
+  ): Promise<{
+    job_id: string;
+    scenario_id: string;
+    status: string;
+    message: string;
+  }> => {
+    const response = await apiClient.post<{
+      job_id: string;
+      scenario_id: string;
+      status: string;
+      message: string;
+    }>(`/api/v1/scenarios/${scenarioId}/cancel-analysis-v4?job_id=${jobId}`);
     return response.data;
   },
 

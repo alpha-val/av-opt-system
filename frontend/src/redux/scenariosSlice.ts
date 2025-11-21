@@ -126,17 +126,38 @@ export const runAnalysisV2 = createAsyncThunk(
   }
 );
 
-export const runAnalysisV3 = createAsyncThunk(
-  'scenarios/runAnalysisV3',
+export const runAnalysisV4 = createAsyncThunk(
+  'scenarios/runAnalysisV4',
   async (scenarioId: string, { rejectWithValue }) => {
     try {
+      console.log('[Redux Thunk] runAnalysisV4 - Calling API for scenarioId:', scenarioId);
       const data = await scenarioApi.runAnalysisV4(scenarioId);
+      console.log('[Redux Thunk] runAnalysisV4 - API response data:', data);
+      console.log('[Redux Thunk] runAnalysisV4 - data.job_id:', data?.job_id);
       // Fetch updated scenario to get new status
       const updatedScenario = await scenarioApi.getById(scenarioId);
+      console.log('[Redux Thunk] runAnalysisV4 - Returning payload with analysisResult:', data);
       return { scenarioId, analysisResult: data, scenario: updatedScenario };
     } catch (error) {
+      console.error('[Redux Thunk] runAnalysisV4 - Error:', error);
       return rejectWithValue(
         error instanceof Error ? error.message : 'Failed to run analysis (V3)'
+      );
+    }
+  }
+);
+
+export const cancelAnalysisV4 = createAsyncThunk(
+  'scenarios/cancelAnalysisV4',
+  async ({ scenarioId, jobId }: { scenarioId: string; jobId: string }, { rejectWithValue }) => {
+    try {
+      const data = await scenarioApi.cancelAnalysisV4(scenarioId, jobId);
+      // Fetch updated scenario to get new status
+      const updatedScenario = await scenarioApi.getById(scenarioId);
+      return { scenarioId, cancelResult: data, scenario: updatedScenario };
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Failed to cancel analysis'
       );
     }
   }
@@ -146,6 +167,7 @@ export const runAnalysisV3 = createAsyncThunk(
 interface ScenariosState {
   scenarios: ScenarioOut[];
   currentScenario: ScenarioOut | null;
+  currentAnalysisJobId: string | null;
   loading: {
     fetch: boolean;
     fetchById: boolean;
@@ -154,7 +176,8 @@ interface ScenariosState {
     delete: boolean;
     runAnalysis: boolean;
     runAnalysisV2: boolean;
-    runAnalysisV3: boolean;
+    runAnalysisV4: boolean;
+    cancelAnalysisV4: boolean;
   };
   error: string | null;
 }
@@ -162,6 +185,7 @@ interface ScenariosState {
 const initialState: ScenariosState = {
   scenarios: [],
   currentScenario: null,
+  currentAnalysisJobId: null,
   loading: {
     fetch: false,
     fetchById: false,
@@ -170,7 +194,7 @@ const initialState: ScenariosState = {
     delete: false,
     runAnalysis: false,
     runAnalysisV2: false,
-    runAnalysisV3: false,
+    runAnalysisV4: false,
   },
   error: null,
 };
@@ -191,6 +215,9 @@ const scenariosSlice = createSlice({
     },
     clearScenarios: (state) => {
       state.scenarios = [];
+    },
+    clearAnalysisJobId: (state) => {
+      state.currentAnalysisJobId = null;
     },
   },
   extraReducers: (builder) => {
@@ -380,8 +407,8 @@ const scenariosSlice = createSlice({
       })
 
       // Run analysis V3
-      .addCase(runAnalysisV3.pending, (state, action) => {
-        state.loading.runAnalysisV3 = true;
+      .addCase(runAnalysisV4.pending, (state, action) => {
+        state.loading.runAnalysisV4 = true;
         state.error = null;
         // Optimistically update scenario status to "Processing"
         const scenarioId = action.meta.arg;
@@ -394,9 +421,23 @@ const scenariosSlice = createSlice({
           state.scenarios[index] = { ...state.scenarios[index], status: "processing" as any };
         }
       })
-      .addCase(runAnalysisV3.fulfilled, (state, action) => {
-        state.loading.runAnalysisV3 = false;
-        const { scenario } = action.payload;
+      .addCase(runAnalysisV4.fulfilled, (state, action) => {
+        state.loading.runAnalysisV4 = false;
+        // console.log('[Redux] runAnalysisV4.fulfilled - Full action payload:', JSON.stringify(action.payload, null, 2));
+        const { scenario, analysisResult } = action.payload;
+        
+        // Store job_id from analysis result for WebSocket connection
+        // console.log('[Redux] runAnalysisV4.fulfilled - analysisResult:', analysisResult);
+        // console.log('[Redux] runAnalysisV4.fulfilled - analysisResult type:', typeof analysisResult);
+        // console.log('[Redux] runAnalysisV4.fulfilled - analysisResult.job_id:', analysisResult?.job_id);
+        
+        if (analysisResult?.job_id) {
+          // console.log('[Redux] Storing job_id:', analysisResult.job_id);
+          state.currentAnalysisJobId = analysisResult.job_id;
+        } else {
+          // console.warn('[Redux] No job_id found in analysisResult. Keys:', analysisResult ? Object.keys(analysisResult) : 'analysisResult is null/undefined');
+          // console.warn('[Redux] Full analysisResult:', analysisResult);
+        }
         
         // Update scenario in list and current scenario
         if (scenario) {
@@ -411,9 +452,37 @@ const scenariosSlice = createSlice({
         
         state.error = null;
       })
-      .addCase(runAnalysisV3.rejected, (state, action) => {
-        state.loading.runAnalysisV3 = false;
+      .addCase(runAnalysisV4.rejected, (state, action) => {
+        state.loading.runAnalysisV4 = false;
         state.error = action.payload as string;
+        // Clear job_id on error
+        state.currentAnalysisJobId = null;
+      })
+      .addCase(cancelAnalysisV4.pending, (state) => {
+        state.loading.cancelAnalysisV4 = true;
+      })
+      .addCase(cancelAnalysisV4.fulfilled, (state, action) => {
+        state.loading.cancelAnalysisV4 = false;
+        const { scenario, cancelResult } = action.payload;
+        // Clear the job ID since analysis is cancelled
+        state.currentAnalysisJobId = null;
+        // Update scenario if provided (stay on same view, just update data)
+        if (scenario) {
+          const index = state.scenarios.findIndex((s) => s.id === scenario.id);
+          if (index !== -1) {
+            state.scenarios[index] = scenario;
+          }
+          if (state.currentScenario?.id === scenario.id) {
+            state.currentScenario = scenario;
+          }
+        }
+        state.error = null;
+      })
+      .addCase(cancelAnalysisV4.rejected, (state, action) => {
+        state.loading.cancelAnalysisV4 = false;
+        state.error = action.payload as string;
+        // Still clear job ID even on error
+        state.currentAnalysisJobId = null;
       });
   },
 });
@@ -424,7 +493,10 @@ export const {
   clearCurrentScenario,
   setCurrentScenario,
   clearScenarios,
+  clearAnalysisJobId,
 } = scenariosSlice.actions;
+
+// Note: runAnalysisV4 and cancelAnalysisV4 are already exported at their definition above
 
 // Base selectors
 export const selectScenarios = (state: { scenarios: ScenariosState }) =>
@@ -439,10 +511,16 @@ export const selectScenarioCreating = (state: { scenarios: ScenariosState }) =>
   state.scenarios.loading.create;
 export const selectScenarioDeleting = (state: { scenarios: ScenariosState }) =>
   state.scenarios.loading.delete;
-export const selectScenarioRunningAnalysis = (state: { scenarios: ScenariosState }) =>
-  state.scenarios.loading.runAnalysis || 
-  state.scenarios.loading.runAnalysisV2 || 
-  state.scenarios.loading.runAnalysisV3;
+export const selectScenarioRunningAnalysis = (state: { scenarios: ScenariosState }) => {
+  const loading = state.scenarios.loading.runAnalysis || 
+    state.scenarios.loading.runAnalysisV2 || 
+    state.scenarios.loading.runAnalysisV4;
+  // Also check if scenario status is "processing"
+  const statusProcessing = state.scenarios.currentScenario?.status === "processing";
+  return loading || statusProcessing;
+};
+export const selectCurrentAnalysisJobId = (state: { scenarios: ScenariosState }) =>
+  state.scenarios.currentAnalysisJobId;
 
 // Memoized selector for scenarios by project
 export const selectScenariosByProject = (projectId: string) =>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Box,
   Card,
@@ -30,13 +30,13 @@ const ProgressWidget: React.FC<ProgressWidgetProps> = React.memo(({
   onDismiss,
   onComplete,
 }) => {
-  console.log("ProgressWidget rendered with jobId:", jobId, "title:", title);
+  // console.log("ProgressWidget rendered with jobId:", jobId, "title:", title);
   const { connected, progress, stage, status, error, meta, reconnectAttempts } =
     useProgress(jobId);
   const [autoHideTimer, setAutoHideTimer] = useState<NodeJS.Timeout | null>(null);
   const [isVisible, setIsVisible] = useState(true);
   
-  console.log("ProgressWidget state:", { connected, progress, stage, status, isVisible, jobId });
+  // console.log("ProgressWidget state:", { connected, progress, stage, status, isVisible, jobId });
 
   useEffect(() => {
     if (status === "completed" && progress === 100 && stage === "complete") {
@@ -45,7 +45,7 @@ const ProgressWidget: React.FC<ProgressWidgetProps> = React.memo(({
       }
       
       const timer = setTimeout(() => {
-        console.log("Auto-hiding progress widget");
+        // console.log("Auto-hiding progress widget");
         setIsVisible(false);
         if (onDismiss) {
           onDismiss();
@@ -98,6 +98,10 @@ const ProgressWidget: React.FC<ProgressWidgetProps> = React.memo(({
   };
 
   const getStageDescription = (): string => {
+    // Prioritize message from meta if available
+    if (meta?.message) {
+      return meta.message;
+    }
     if (meta?.current_stage) {
       return meta.current_stage;
     }
@@ -122,20 +126,23 @@ const ProgressWidget: React.FC<ProgressWidgetProps> = React.memo(({
   };
 
   const hasErrors = error || (meta?.errors && meta.errors.length > 0);
-  console.log("ProgressWidget", { jobId, title, isVisible, progress, stage, status, error, meta, reconnectAttempts });
+  // console.log("ProgressWidget", { jobId, title, isVisible, progress, stage, status, error, meta, reconnectAttempts });
   return (
-    <Collapse in={isVisible}>
+    <Collapse in={isVisible} timeout={300}>
       <Card
         sx={{
-          mb: 2,
+          mb: 0,
+          boxShadow: 1,
+          border: "none",
+          borderRadius: 0,
           bgcolor: (theme) =>
             theme.palette.mode === "dark"
               ? "rgba(25, 118, 210, 0.08)"
               : "rgba(25, 118, 210, 0.04)",
         }}
       >
-        <CardContent>
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+        <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 {title}
@@ -162,7 +169,7 @@ const ProgressWidget: React.FC<ProgressWidgetProps> = React.memo(({
             )}
           </Box>
 
-          <Box sx={{ mb: 2 }}>
+          <Box sx={{ mb: 0 }}>
             <LinearProgress
               variant="determinate"
               value={progress}

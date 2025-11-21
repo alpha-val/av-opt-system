@@ -35,6 +35,7 @@ interface ObjectiveDetailsFormProps {
   updating?: boolean;
   scenarioId: string;
   onSave: (data?: { localDescription: string; objectiveForm: ObjectiveDetailsFormProps['objectiveForm'] }) => void;
+  disabled?: boolean;
 }
 
 /**
@@ -52,6 +53,7 @@ const ObjectiveDetailsForm: React.FC<ObjectiveDetailsFormProps> = memo(({
   updating = false,
   scenarioId,
   onSave,
+  disabled = false,
 }) => {
   // Local state for description to prevent re-renders while typing
   const [localDescription, setLocalDescription] = useState(objectiveForm.description);
@@ -110,6 +112,7 @@ const ObjectiveDetailsForm: React.FC<ObjectiveDetailsFormProps> = memo(({
               value={objectiveForm.type}
               onChange={(e) => onChange("type", e.target.value)}
               label="Global Objective Type"
+              disabled={disabled}
             >
               {OBJECTIVE_TYPES.map((type) => (
                 <MenuItem key={type} value={type}>
@@ -134,11 +137,13 @@ const ObjectiveDetailsForm: React.FC<ObjectiveDetailsFormProps> = memo(({
               value={objectiveForm.targetValue}
               onChange={(e) => onChange("targetValue", e.target.value)}
               sx={{ flex: 1 }}
+              disabled={disabled}
             />
             <FormControl sx={{ minWidth: 80 }}>
               <Select
                 value={objectiveForm.targetType}
                 onChange={(e) => onChange("targetType", e.target.value)}
+                disabled={disabled}
               >
                 <MenuItem value="%">%</MenuItem>
                 <MenuItem value="$">$</MenuItem>
@@ -158,6 +163,7 @@ const ObjectiveDetailsForm: React.FC<ObjectiveDetailsFormProps> = memo(({
             onChange={handleDescriptionChange}
             inputProps={{ maxLength: 500 }}
             helperText={`${localDescription.length}/500 characters`}
+            disabled={disabled}
           />
 
           {/* Extraction Scope */}
@@ -197,7 +203,7 @@ const ObjectiveDetailsForm: React.FC<ObjectiveDetailsFormProps> = memo(({
             <Button
               variant="outlined"
               onClick={handleSave}
-              disabled={updating}
+              disabled={updating || disabled}
             >
               {updating ? "Saving..." : "Save Objective Details"}
             </Button>

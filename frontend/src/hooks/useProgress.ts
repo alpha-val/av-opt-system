@@ -76,29 +76,29 @@ export function useProgress(jobId: string | null): UseProgressReturn {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
       }
-
+      console.log("! ! ! ! ! \n\n Connecting WebSocket for job:", jobId);
       try {
         const wsUrl = getWebSocketUrl(jobId);
-        console.log(`Connecting WebSocket for job ${jobId} at ${new Date().toISOString()}:`, wsUrl);
+        // console.log(`Connecting WebSocket for job ${jobId} at ${new Date().toISOString()}:`, wsUrl);
         const ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
-          console.log(`WebSocket connected for job ${jobId} at ${new Date().toISOString()}`);
+          // console.log(`WebSocket connected for job ${jobId} at ${new Date().toISOString()}`);
           setConnected(true);
           setError(null);
           setReconnectAttempts(0);
-          console.log(`WebSocket ready to receive progress events for job ${jobId}`);
+          // console.log(`WebSocket ready to receive progress events for job ${jobId}`);
         };
 
         ws.onmessage = (event) => {
           try {
             const data: ProgressEvent = JSON.parse(event.data);
-            console.log(
-              `Progress event received for job ${jobId}:`,
-              `stage=${data.stage}, status=${data.status}, progress=${data.progress}%`,
-              `seq=${data.seq}`,
-              data
-            );
+            // console.log(
+            //   `Progress event received for job ${jobId}:`,
+            //   `stage=${data.stage}, status=${data.status}, progress=${data.progress}%`,
+            //   `seq=${data.seq}`,
+            //   data
+            // );
 
             setProgress(data.progress);
             setStage(data.stage);
@@ -111,18 +111,18 @@ export function useProgress(jobId: string | null): UseProgressReturn {
               setError(data.meta.error);
             }
           } catch (err) {
-            console.error("Failed to parse progress event:", err, event.data);
+            // console.error("Failed to parse progress event:", err, event.data);
             setError("Failed to parse progress update");
           }
         };
 
         ws.onerror = (event) => {
-          console.error("WebSocket error:", event);
+          // console.error("WebSocket error:", event);
           setError("WebSocket connection error");
         };
 
         ws.onclose = (event) => {
-          console.log(`WebSocket closed for job ${jobId}:`, event.code, event.reason);
+          // console.log(`WebSocket closed for job ${jobId}:`, event.code, event.reason);
           setConnected(false);
           wsRef.current = null;
 
@@ -130,9 +130,9 @@ export function useProgress(jobId: string | null): UseProgressReturn {
             setReconnectAttempts((prevAttempts) => {
               if (prevAttempts < maxReconnectAttempts) {
                 const delay = baseReconnectDelay * Math.pow(2, prevAttempts);
-                console.log(
-                  `Attempting to reconnect in ${delay}ms (attempt ${prevAttempts + 1}/${maxReconnectAttempts})`
-                );
+                // console.log(
+                //   `Attempting to reconnect in ${delay}ms (attempt ${prevAttempts + 1}/${maxReconnectAttempts})`
+                // );
 
                 reconnectTimeoutRef.current = setTimeout(() => {
                   connect(jobId);
@@ -149,7 +149,7 @@ export function useProgress(jobId: string | null): UseProgressReturn {
 
         wsRef.current = ws;
       } catch (err) {
-        console.error("Failed to create WebSocket connection:", err);
+        // console.error("Failed to create WebSocket connection:", err);
         setError("Failed to establish WebSocket connection");
         setConnected(false);
       }
@@ -177,11 +177,11 @@ export function useProgress(jobId: string | null): UseProgressReturn {
     const prevJobId = currentJobIdRef.current;
     
     if (jobId !== prevJobId) {
-      console.log(`[useEffect] JobId changed from ${prevJobId} to ${jobId}`);
+      // console.log(`[useEffect] JobId changed from ${prevJobId} to ${jobId}`);
       currentJobIdRef.current = jobId;
       
       if (jobId) {
-        console.log(`[useEffect] Connecting to job ${jobId}`);
+        // console.log(`[useEffect] Connecting to job ${jobId}`);
         connect(jobId);
       } else {
         console.log(`[useEffect] Disconnecting (no jobId)`);
@@ -193,7 +193,7 @@ export function useProgress(jobId: string | null): UseProgressReturn {
         setMeta(null);
       }
     } else {
-      console.log(`[useEffect] JobId unchanged (${jobId}), skipping reconnect`);
+      // console.log(`[useEffect] JobId unchanged (${jobId}), skipping reconnect`);
     }
 
     return () => {
