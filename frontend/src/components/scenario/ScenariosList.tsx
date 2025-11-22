@@ -599,7 +599,7 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
               label="Scenario Name"
               required
               fullWidth
-              defaultValue=""
+              defaultValue="New Scenario"
               inputProps={{ maxLength: 200 }}
             />
             {/* Scenario Description */}
@@ -617,6 +617,8 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
               <InputLabel>Global Objective Type</InputLabel>
               <Select
                 value={newObjectiveType}
+                defaultValue="increase production"
+                placeholder="increase production"
                 onChange={(e) => setNewObjectiveType(e.target.value)}
                 label="Global Objective Type"
               >
@@ -640,7 +642,7 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
                 label="Global Objective Target"
                 required
                 type="number"
-                defaultValue=""
+                defaultValue="10"
                 sx={{ flex: 1 }}
               />
               <FormControl sx={{ minWidth: 80 }}>

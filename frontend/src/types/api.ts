@@ -240,7 +240,13 @@ export interface CostEstimateBase {
 /**
  * Cost estimate creation request payload
  */
-export interface CostEstimateCreate extends CostEstimateBase {}
+export interface CostEstimateCreate extends CostEstimateBase {
+  // Optional fields for cost calculation
+  scenario_description?: string;
+  selected_entities?: string[];
+  entity_selection_state?: Record<string, boolean>;
+  top_k?: number;
+}
 
 /**
  * Cost estimate update request payload (all fields optional for PATCH)

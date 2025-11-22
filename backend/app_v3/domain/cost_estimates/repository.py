@@ -132,6 +132,8 @@ async def get_cost_estimate(cost_estimate_id: str) -> Optional[CostEstimateOut]:
             updated_at=doc.get("updated_at", _now()),
         )
 
+        # Compute the cost estimate
+        
         return cost_estimate
 
     except ValueError:
@@ -208,5 +210,55 @@ async def delete_cost_estimate(cost_estimate_id: str) -> bool:
         raise
     except Exception as e:
         logger.error(f"Error deleting cost estimate: {e}", exc_info=True)
+        raise
+
+
+async def update_cost_estimate_metadata(
+    cost_estimate_id: str, metadata: dict
+) -> CostEstimateOut:
+    """
+    Update the metadata field of a cost estimate.
+    
+    Args:
+        cost_estimate_id: Cost estimate identifier
+        metadata: Metadata dictionary to store (e.g., cost comparison report)
+        
+    Returns:
+        Updated cost estimate object
+        
+    Raises:
+        ValueError: If cost estimate not found or invalid ID format
+    """
+    try:
+        # Validate ObjectId format
+        try:
+            object_id = ObjectId(cost_estimate_id)
+        except Exception:
+            raise ValueError(f"Invalid cost_estimate_id format: {cost_estimate_id}")
+
+        collection = db().cost_estimates
+
+        # Check if cost estimate exists
+        existing = collection.find_one({"_id": object_id})
+        if not existing:
+            raise ValueError(f"Cost estimate not found: {cost_estimate_id}")
+
+        # Update metadata field
+        update_doc = {
+            "updated_at": _now(),
+            "metadata": metadata,
+        }
+
+        collection.update_one({"_id": object_id}, {"$set": update_doc})
+
+        logger.info(f"Updated metadata for cost estimate: {cost_estimate_id}")
+
+        # Fetch and return the updated cost estimate
+        return await get_cost_estimate(cost_estimate_id)
+
+    except ValueError:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating cost estimate metadata: {e}", exc_info=True)
         raise
 

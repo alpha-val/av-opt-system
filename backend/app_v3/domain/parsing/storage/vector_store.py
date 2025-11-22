@@ -237,27 +237,27 @@ class EntityVectorStore(VectorStore):
         parts = []
 
         # Core fields
-        name = entity.get("name") or entity.get("id", "Unknown")
-        parts.append(f"Name: {name}")
+        name = entity.get("properties", {}).get("name", "Unknown")
+        parts.append(f"name: {name}")
 
         entity_type = entity.get("type", "unknown")
-        parts.append(f"Type: {entity_type}")
+        parts.append(f"type: {entity_type}")
 
         # MSIO hierarchy fields (critical for ontology alignment)
         props = entity.get("properties", {})
         msio_fields_added = set()
-        
+
         if "discipline" in props:
-            parts.append(f"Discipline: {props['discipline']}")
+            parts.append(f"discipline: {props['discipline']}")
             msio_fields_added.add("discipline")
         if "category" in props:
-            parts.append(f"Category: {props['category']}")
+            parts.append(f"category: {props['category']}")
             msio_fields_added.add("category")
         if "subcategory" in props:
-            parts.append(f"Subcategory: {props['subcategory']}")
+            parts.append(f"subcategory: {props['subcategory']}")
             msio_fields_added.add("subcategory")
         if "entity" in props:
-            parts.append(f"Entity: {props['entity']}")
+            parts.append(f"entity: {props['entity']}")
             msio_fields_added.add("entity")
 
         # Handle attributes specially - expand into readable text
@@ -269,7 +269,7 @@ class EntityVectorStore(VectorStore):
                     attr_name = attr.get("name", "Unknown")
                     attr_value = attr.get("value")
                     attr_unit = attr.get("unit", "")
-                    
+
                     # Build readable attribute text
                     if attr_value is not None:
                         attr_text = f"{attr_name}: {attr_value}"
@@ -277,23 +277,31 @@ class EntityVectorStore(VectorStore):
                             attr_text += f" {attr_unit}"
                         attr_texts.append(attr_text)
             if attr_texts:
-                parts.append(f"Attributes: {', '.join(attr_texts)}")
+                parts.append(f"attributes: {', '.join(attr_texts)}")
+
+        if "cost_information" in props and isinstance(props["cost_information"], dict):
+            cost_information_texts = []
+            for key, value in props["cost_information"].items():
+                if value is not None:
+                    cost_information_text = f"{key}: {value}"
+                    cost_information_texts.append(cost_information_text)
+            parts.append(f"cost_information: {', '.join(cost_information_texts)}")
 
         # Flatten all properties dynamically (exclude IDs, confidence, status, and already-added MSIO fields)
-        for key, value in props.items():
-            if (
-                value is not None
-                and not key.lower().endswith("_id")
-                and key != "confidence"
-                and key != "status"
-                and key not in msio_fields_added  # Skip MSIO fields already added above
-            ):
-                # Format key-value pairs
-                parts.append(f"{key.replace('_', ' ').capitalize()}: {value}")
+        # for key, value in props.items():
+        #     if (
+        #         value is not None
+        #         and not key.lower().endswith("_id")
+        #         and key != "confidence"
+        #         and key != "status"
+        #         and key not in msio_fields_added  # Skip MSIO fields already added above
+        #     ):
+        #         # Format key-value pairs
+        #         parts.append(f"{key}: {value}")
 
         # Join all parts into a single text string
         text = ". ".join(parts)
-        return text if text else name
+        return text if text else "Unknown"
 
     def normalize_entity_for_vector_db(
         self, entity: Dict[str, Any], project_id: str, artifact_type: str
@@ -317,7 +325,7 @@ class EntityVectorStore(VectorStore):
             "project_id": project_id,
             "artifact_type": artifact_type,
             "entity_type": entity.get("type", "unknown"),
-            "name": entity.get("name", entity.get("id", "Unknown")),
+            "name": props.get("name", "Unknown"),
             "created_at": datetime.utcnow().isoformat(),
             "updated_at": datetime.utcnow().isoformat(),
         }
@@ -345,7 +353,13 @@ class EntityVectorStore(VectorStore):
             for k, v in props.items()
             if v is not None
             and not k.lower().endswith("_id")
-            and k not in ["confidence", "status", "attributes", "scenario_id"]  # Exclude attributes and scenario_id from metadata flattening
+            and k
+            not in [
+                "confidence",
+                "status",
+                "attributes",
+                "scenario_id",
+            ]  # Exclude attributes and scenario_id from metadata flattening
             and k
             not in [
                 "discipline",
@@ -401,6 +415,8 @@ class EntityVectorStore(VectorStore):
                 logger.error(f"Failed to normalize entity {entity.get('id')}: {e}")
                 continue
 
+        # REMOVE THIS LATER
+        return 0
         if not normalized_entities:
             logger.warning("No entities to upsert after normalization")
             return 0
@@ -482,7 +498,7 @@ def search_entities_by_embedding(
             f"Querying Pinecone with filter: {pinecone_filter}, "
             f"namespace: {project_id}, top_k: {top_k}"
         )
-        
+
         results = index.query(
             vector=embedding,
             top_k=top_k,
@@ -496,11 +512,11 @@ def search_entities_by_embedding(
             f"Pinecone returned {len(results.matches)} raw matches "
             f"(before cutoff {cutoff} filtering)"
         )
-        
+
         if results.matches:
             raw_scores = [f"{m.id}: {m.score:.3f}" for m in results.matches[:5]]
             logger.debug(f"Raw match scores (top 5): {', '.join(raw_scores)}")
-            
+
             # Log metadata from first match to check structure
             first_match = results.matches[0]
             logger.debug(
@@ -515,14 +531,14 @@ def search_entities_by_embedding(
                 )
 
         # Filter matches based on the cutoff score
-        filtered_matches = [
-            match for match in results.matches if match.score >= cutoff
-        ]
+        filtered_matches = [match for match in results.matches if match.score >= cutoff]
 
         if not filtered_matches:
             if results.matches:
                 # Log that we had matches but they were below cutoff
-                max_score = max(m.score for m in results.matches) if results.matches else 0
+                max_score = (
+                    max(m.score for m in results.matches) if results.matches else 0
+                )
                 logger.info(
                     f"No entities found above cutoff {cutoff} for project {project_id}, "
                     f"artifact_type {artifact_type}. "
@@ -577,48 +593,48 @@ def search_entities_by_embedding(
 def delete_vectors_by_namespace(project_id: str) -> int:
     """
     Delete all vectors in a Pinecone namespace (project_id).
-    
+
     Args:
         project_id: Project identifier (used as Pinecone namespace)
-    
+
     Returns:
         Number of vectors deleted (0 if deletion failed or namespace doesn't exist)
     """
     try:
         index = _get_pinecone_index()
-        
+
         # Get index stats to check if namespace exists and get vector count
         try:
             index_stats = index.describe_index_stats()
             namespaces = index_stats.get("namespaces", {})
-            
+
             if project_id not in namespaces:
                 logger.info(
                     f"Namespace '{project_id}' does not exist in Pinecone. "
                     f"No vectors to delete."
                 )
                 return 0
-            
+
             # Get vector count before deletion
             vector_count = namespaces[project_id].get("vector_count", 0)
-            
+
             if vector_count == 0:
                 logger.info(
                     f"Namespace '{project_id}' exists but has no vectors. "
                     f"No deletion needed."
                 )
                 return 0
-            
+
             # Delete all vectors in the namespace
             index.delete(delete_all=True, namespace=project_id)
-            
+
             logger.info(
                 f"Successfully deleted {vector_count} vectors from Pinecone "
                 f"namespace '{project_id}'"
             )
-            
+
             return vector_count
-            
+
         except Exception as stats_error:
             logger.warning(
                 f"Failed to get index stats for namespace '{project_id}': {stats_error}. "
@@ -631,7 +647,7 @@ def delete_vectors_by_namespace(project_id: str) -> int:
                 f"(count unknown due to stats error)"
             )
             return -1  # Indicates deletion attempted but count unknown
-            
+
     except Exception as e:
         logger.error(
             f"Error deleting vectors from Pinecone namespace '{project_id}': {e}",
@@ -640,27 +656,25 @@ def delete_vectors_by_namespace(project_id: str) -> int:
         return 0
 
 
-def delete_vectors_by_filter(
-    project_id: str, filter_dict: Dict[str, Any]
-) -> int:
+def delete_vectors_by_filter(project_id: str, filter_dict: Dict[str, Any]) -> int:
     """
     Delete vectors from Pinecone by metadata filter.
-    
+
     Args:
         project_id: Project identifier (used as Pinecone namespace)
         filter_dict: Pinecone metadata filter (e.g., {"scenario_id": {"$eq": "scenario_123"}})
-    
+
     Returns:
         Number of vectors deleted (0 if deletion failed or no vectors matched)
     """
     try:
         index = _get_pinecone_index()
-        
+
         # Get index stats to check if namespace exists
         try:
             index_stats = index.describe_index_stats()
             namespaces = index_stats.get("namespaces", {})
-            
+
             if project_id not in namespaces:
                 logger.info(
                     f"Namespace '{project_id}' does not exist in Pinecone. "
@@ -672,19 +686,19 @@ def delete_vectors_by_filter(
                 f"Failed to get index stats for namespace '{project_id}': {stats_error}. "
                 f"Attempting deletion anyway."
             )
-        
+
         # Delete vectors matching the filter
         index.delete(filter=filter_dict, namespace=project_id)
-        
+
         logger.info(
             f"Deleted vectors from Pinecone namespace '{project_id}' "
             f"matching filter: {filter_dict}"
         )
-        
+
         # Note: Pinecone delete() doesn't return count, so we return -1 to indicate success
         # but unknown count
         return -1
-        
+
     except Exception as e:
         logger.error(
             f"Error deleting vectors from Pinecone namespace '{project_id}' "

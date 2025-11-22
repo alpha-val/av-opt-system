@@ -61,6 +61,10 @@ class DocumentProcessingService:
         validate_msio: bool = True,
         strict_validation: bool = False,
         store_in_pinecone: bool = False,
+        objective_type: Optional[str] = None,
+        objective_target: Optional[str] = None,
+        objective_unit: Optional[str] = None,
+        objective_description: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Process a base case document through the complete pipeline.
@@ -345,16 +349,54 @@ class DocumentProcessingService:
             logger.info(f"Created {len(table_chunks)} table chunks")
 
             # Stage 4: Entity extraction from tables
-            extraction_result = self.entity_extractor.extract(table_chunks)
+            extraction_result = self.entity_extractor.extract(artifact_type="tabular_data", chunks=table_chunks)
             nodes = extraction_result.get("nodes", [])
             edges = extraction_result.get("edges", [])
 
-            # Add source metadata to entities
+            # Add source metadata to entities and ensure node IDs are UUIDs
+            # Create mapping of old IDs to new UUIDs for edge reference updates
+            node_id_mapping = {}
+            
             for node in nodes:
+                # Ensure node has a unique UUID as ID
+                old_id = node.get("id")
+                if not old_id:
+                    # Generate new UUID if node doesn't have an ID
+                    new_id = str(uuid.uuid4())
+                    node["id"] = new_id
+                else:
+                    # Check if existing ID is a valid UUID format
+                    try:
+                        # Validate UUID format
+                        uuid.UUID(old_id)
+                        new_id = old_id  # Keep existing UUID
+                    except (ValueError, TypeError):
+                        # Generate new UUID if existing ID is not valid UUID format
+                        new_id = str(uuid.uuid4())
+                        node["id"] = new_id
+                        node_id_mapping[old_id] = new_id
+                
                 node.setdefault("properties", {})
                 node["properties"].update(chunk_metadata)
 
             for edge in edges:
+                # Update edge source and target to use new UUIDs if mapping exists
+                if "source" in edge and edge["source"] in node_id_mapping:
+                    edge["source"] = node_id_mapping[edge["source"]]
+                if "target" in edge and edge["target"] in node_id_mapping:
+                    edge["target"] = node_id_mapping[edge["target"]]
+                
+                # Ensure edge has a unique UUID as ID
+                if "id" not in edge:
+                    edge["id"] = str(uuid.uuid4())
+                else:
+                    # Validate edge ID is a valid UUID format
+                    try:
+                        uuid.UUID(edge["id"])
+                    except (ValueError, TypeError):
+                        # Generate new UUID if existing ID is not valid UUID format
+                        edge["id"] = str(uuid.uuid4())
+                
                 edge.setdefault("properties", {})
                 edge["properties"].update(chunk_metadata)
 

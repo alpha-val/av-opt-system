@@ -12,8 +12,7 @@ import json
 import uuid
 import logging
 from ..prompts.entity_extraction_prompt import (
-    get_entity_extraction_prompt,
-    get_targeted_entity_extraction_prompt,
+    generate_prompt,
 )
 from ..utils.llm_tools import (
     TOOLS,
@@ -46,7 +45,7 @@ class EntityExtractor:
         )
 
     def extract(
-        self, chunks: List[Dict[str, Any]], rules: Optional[List[str]] = None
+        self, chunks: List[Dict[str, Any]], artifact_type: str = "base_case", rules: Optional[List[str]] = None
     ) -> Dict[str, List[Dict[str, Any]]]:
         """
         Extract entities and edges from text chunks.
@@ -80,7 +79,7 @@ class EntityExtractor:
             ]
 
         # Build prompt with rules
-        user_prompt = get_entity_extraction_prompt(rules=rules)
+        user_prompt = generate_prompt(artifact_type=artifact_type, rules=rules)
         system_prompt = SystemMessage(content=user_prompt)
 
         # Collect all extracted data
@@ -324,12 +323,13 @@ class EntityExtractor:
                 "UNITS_NORMALIZATION",
             ]
 
-        # Build targeted prompt
-        user_prompt = get_targeted_entity_extraction_prompt(
-            relevant_entities=relevant_entities,
-            extraction_scope=extraction_scope,
-            rules=rules,
-        )
+        # # Build targeted prompt
+        # user_prompt = get_targeted_entity_extraction_prompt(
+        #     relevant_entities=relevant_entities,
+        #     extraction_scope=extraction_scope,
+        #     rules=rules,
+        # )
+        user_prompt = ""
         system_prompt = SystemMessage(content=user_prompt)
 
         # Collect all extracted data

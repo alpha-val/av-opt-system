@@ -1574,8 +1574,29 @@ async def _run_analysis_background_v4(
             num_chunks = extraction_result.get("num_chunks", 0)
             seq += num_chunks + 2
 
-            # Add metadata to nodes and edges
+            # Add metadata to nodes and edges, and ensure node IDs are UUIDs
+            # Create mapping of old IDs to new UUIDs for edge reference updates
+            node_id_mapping = {}
+            
             for node in nodes:
+                # Ensure node has a unique UUID as ID
+                old_id = node.get("id")
+                if not old_id:
+                    # Generate new UUID if node doesn't have an ID
+                    new_id = str(uuid.uuid4())
+                    node["id"] = new_id
+                else:
+                    # Check if existing ID is a valid UUID format
+                    try:
+                        # Validate UUID format
+                        uuid.UUID(old_id)
+                        new_id = old_id  # Keep existing UUID
+                    except (ValueError, TypeError):
+                        # Generate new UUID if existing ID is not valid UUID format
+                        new_id = str(uuid.uuid4())
+                        node["id"] = new_id
+                        node_id_mapping[old_id] = new_id
+                
                 if "properties" not in node:
                     node["properties"] = {}
                 node["properties"].update(
@@ -1589,6 +1610,23 @@ async def _run_analysis_background_v4(
                 )
 
             for edge in edges:
+                # Update edge source and target to use new UUIDs if mapping exists
+                if "source" in edge and edge["source"] in node_id_mapping:
+                    edge["source"] = node_id_mapping[edge["source"]]
+                if "target" in edge and edge["target"] in node_id_mapping:
+                    edge["target"] = node_id_mapping[edge["target"]]
+                
+                # Ensure edge has a unique UUID as ID
+                if "id" not in edge:
+                    edge["id"] = str(uuid.uuid4())
+                else:
+                    # Validate edge ID is a valid UUID format
+                    try:
+                        uuid.UUID(edge["id"])
+                    except (ValueError, TypeError):
+                        # Generate new UUID if existing ID is not valid UUID format
+                        edge["id"] = str(uuid.uuid4())
+                
                 if "properties" not in edge:
                     edge["properties"] = {}
                 edge["properties"].update(

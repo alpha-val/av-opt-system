@@ -31,7 +31,18 @@ def _get_ontology_dict() -> Dict[str, Any]:
 # Get ontology for TOOLS definition
 _ont = _get_ontology_dict()
 
+
 # OpenAI function calling schemas for node/edge extraction
+# Filter out "Recommendation" from NODE_TYPES for objective-driven extraction
+# Recommendations must be embedded in entity properties, not created as separate nodes
+_objective_driven_node_types = [
+    nt
+    for nt in _ont["NODE_TYPES"]
+    if nt.lower() not in ["recommendation", "recommendations"]
+]
+
+# OpenAI function calling schemas for node/edge extraction
+# ! ! ! KEEP BELOW FOR TABULAR DATA EXTRACTION ! ! !
 TOOLS = [
     # -------------------------------------------------------------------------
     # 1. Node extraction
@@ -50,17 +61,130 @@ TOOLS = [
                             "type": "object",
                             "properties": {
                                 "id": {"type": "string"},
-                                "type": {"type": "string", "enum": _ont["NODE_TYPES"]},
+                                "type": {
+                                    "type": "string",
+                                    "enum": _objective_driven_node_types,
+                                    "description": "Entity type from NODE_TYPES.",
+                                },
                                 "properties": {
                                     "type": "object",
                                     "properties": {
-                                        p: {"type": "string"}
-                                        for p in _ont["NODE_PROPERTIES"]
+                                        # Include all ontology node properties
+                                        **{
+                                            p: {"type": "string"}
+                                            for p in _ont["NODE_PROPERTIES"]
+                                        },
+                                        "cost_information": {
+                                            "type": "object",
+                                            "description": "Cost information for the entity. Include when cost information is available.",
+                                            "properties": {
+                                                "cost_value": {
+                                                    "type": ["number", "null"],
+                                                    "description": "Numeric cost value for the entity. Include when cost information is available.",
+                                                },
+                                                "cost_currency": {
+                                                    "type": ["string", "null"],
+                                                    "description": "Currency code for the cost (e.g., 'USD', 'EUR'). Use ISO currency codes. Include when cost information is available.",
+                                                },
+                                                "cost_basis_year": {
+                                                    "type": ["number", "null"],
+                                                    "description": "Basis year for the cost estimate (e.g., 2020, 2024). Include if mentioned in the text.",
+                                                },
+                                                "cost_type": {
+                                                    "type": ["string", "null"],
+                                                    "enum": [
+                                                        "CAPEX",
+                                                        "OPEX",
+                                                        "Total",
+                                                        "Other",
+                                                        None,
+                                                    ],
+                                                    "description": "Type of cost: CAPEX (capital expenditure), OPEX (operating expenditure), Total, or Other. Include when cost information is available.",
+                                                },
+                                                "annual_op_cost": {
+                                                    "type": ["number", "null"],
+                                                    "description": "Annual operating cost if applicable. Include when mentioned in the text.",
+                                                },
+                                                "reclamation_cost": {
+                                                    "type": ["number", "null"],
+                                                    "description": "Reclamation cost if applicable. Include when mentioned in the text.",
+                                                },
+                                                "annual_op_cost": {
+                                                    "type": ["number", "null"],
+                                                    "description": "Annual operating cost if applicable. Include when mentioned in the text.",
+                                                },
+                                                "reclamation_cost": {
+                                                    "type": ["number", "null"],
+                                                    "description": "Reclamation cost if applicable. Include when mentioned in the text.",
+                                                },
+                                                "cost_impact_direction": {
+                                                    "type": ["string", "null"],
+                                                    "description": "Direction of the cost impact: increase, decrease, or no change.",
+                                                },
+                                                "cost_impact_magnitude": {
+                                                    "type": ["number", "null"],
+                                                    "description": "Magnitude of the cost impact (numeric value as string). Include when cost information is available.",
+                                                },
+                                            },
+                                            "required": [
+                                                "cost_value",
+                                                "cost_currency",
+                                                "cost_basis_year",
+                                                "cost_type",
+                                            ],
+                                        },
+                                        # Explicitly add attributes array for objective-driven extraction (MANDATORY)
+                                        "attributes": {
+                                            "type": "array",
+                                            "description": "MANDATORY: Array of technical and operational attributes for this entity. This field is required and must be present for all entities. Extract all relevant attributes. NOTE: Cost information (cost_value, cost_currency, cost_basis_year, cost_type) should be stored as direct properties, NOT in the attributes array.",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "name": {
+                                                        "type": "string",
+                                                        "description": "Attribute name",
+                                                    },
+                                                    "value": {
+                                                        "type": [
+                                                            "number",
+                                                            "string",
+                                                            "null",
+                                                        ],
+                                                        "description": "Attribute value (numeric or string)",
+                                                    },
+                                                    "unit": {
+                                                        "type": ["string", "null"],
+                                                        "description": "Unit of measurement for the attribute (if applicable)",
+                                                    },
+                                                    "evidence_text": {
+                                                        "type": ["string", "null"],
+                                                        "description": "Text snippet, page reference, or section anchor where this attribute value was found",
+                                                    },
+                                                    "confidence": {
+                                                        "type": "number",
+                                                        "minimum": 0.0,
+                                                        "maximum": 1.0,
+                                                        "description": "Confidence score for this attribute (0.0 to 1.0)",
+                                                    },
+                                                },
+                                                "required": ["name", "value", "unit"],
+                                            },
+                                        },
                                     },
                                     "additionalProperties": False,
+                                    "required": [
+                                        "name",
+                                        "attributes",
+                                        "cost_information",
+                                        "discipline",
+                                        "category",
+                                        "subcategory",
+                                        "entity",
+                                        "outside_msio",
+                                    ],
                                 },
                             },
-                            "required": ["type"],
+                            "required": ["id", "type", "properties"],
                         },
                     }
                 },
@@ -68,6 +192,38 @@ TOOLS = [
             },
         },
     },
+    # {
+    #     "type": "function",
+    #     "function": {
+    #         "name": "extract_nodes",
+    #         "description": "Extract nodes (entities) from the text according to ontology.",
+    #         "parameters": {
+    #             "type": "object",
+    #             "properties": {
+    #                 "nodes": {
+    #                     "type": "array",
+    #                     "items": {
+    #                         "type": "object",
+    #                         "properties": {
+    #                             "id": {"type": "string"},
+    #                             "type": {"type": "string", "enum": _ont["NODE_TYPES"]},
+    #                             "properties": {
+    #                                 "type": "object",
+    #                                 "properties": {
+    #                                     p: {"type": "string"}
+    #                                     for p in _ont["NODE_PROPERTIES"]
+    #                                 },
+    #                                 "additionalProperties": False,
+    #                             },
+    #                         },
+    #                         "required": ["type"],
+    #                     },
+    #                 }
+    #             },
+    #             "required": ["nodes"],
+    #         },
+    #     },
+    # },
     # -------------------------------------------------------------------------
     # 2. Edge extraction
     # -------------------------------------------------------------------------
@@ -450,15 +606,6 @@ TOOLS = [
     },
 ]
 
-# OpenAI function calling schemas for node/edge extraction
-# Filter out "Recommendation" from NODE_TYPES for objective-driven extraction
-# Recommendations must be embedded in entity properties, not created as separate nodes
-_objective_driven_node_types = [
-    nt
-    for nt in _ont["NODE_TYPES"]
-    if nt.lower() not in ["recommendation", "recommendations"]
-]
-
 TOOLS_OBJECTIVE_DRIVEN = [
     # -------------------------------------------------------------------------
     # 1. Node extraction
@@ -474,6 +621,7 @@ TOOLS_OBJECTIVE_DRIVEN = [
                     "nodes": {
                         "type": "array",
                         "items": {
+                            "id": {"type": "string"},
                             "type": "object",
                             "properties": {
                                 "id": {"type": "string"},
@@ -671,14 +819,15 @@ TOOLS_OBJECTIVE_DRIVEN = [
                                                         "description": "Confidence score for this attribute (0.0 to 1.0)",
                                                     },
                                                 },
-                                                "required": ["name"],
+                                                "required": ["name", "value", "unit", "evidence_text", "confidence"],
                                             },
                                         },
                                     },
                                     "additionalProperties": False,
+                                    "required": ["name", "attributes", "cost_information", "recommendations", "discipline", "category", "subcategory", "entity", "outside_msio"],
                                 },
                             },
-                            "required": ["type"],
+                            "required": ["id", "type", "properties"],
                         },
                     }
                 },

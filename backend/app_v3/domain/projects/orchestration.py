@@ -23,11 +23,16 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from ...adapters.mongo.client import db
 
 # Import parsing utilities
-from ..parsing.utils.llm_tools import TOOLS, TOOLS_RECOMMENDATIONS, TOOLS_OBJECTIVE_DRIVEN, is_valid_json, sanitize_for_json
+from ..parsing.utils.llm_tools import (
+    TOOLS,
+    TOOLS_RECOMMENDATIONS,
+    TOOLS_OBJECTIVE_DRIVEN,
+    is_valid_json,
+    sanitize_for_json,
+)
 from ..parsing.prompts.entity_extraction_prompt import (
     PROMPT_DISCIPLINE_STRUCTURED_SUMMARY,
-    get_recommendation_based_entity_extraction_prompt,
-    get_recommendation_based_entity_extraction_prompt_v2,
+    generate_prompt,
 )
 
 logger = logging.getLogger(__name__)
@@ -741,7 +746,9 @@ class ProjectOrchestrationService:
                 # Handle cost_value if it's a string (convert to float)
                 if isinstance(cost_value, str):
                     try:
-                        cost_value = float(cost_value.replace(",", "").replace("$", "").strip())
+                        cost_value = float(
+                            cost_value.replace(",", "").replace("$", "").strip()
+                        )
                     except (ValueError, AttributeError):
                         cost_value = None
                 elif cost_value is not None:
@@ -775,8 +782,7 @@ class ProjectOrchestrationService:
             primary_currency = "USD"
             if total_cost_by_currency:
                 primary_currency = max(
-                    total_cost_by_currency.items(),
-                    key=lambda x: x[1]
+                    total_cost_by_currency.items(), key=lambda x: x[1]
                 )[0]
 
             total_cost_value = total_cost_by_currency.get(primary_currency, 0.0)
@@ -804,7 +810,12 @@ class ProjectOrchestrationService:
                 "total_cost_value": 0.0,
                 "total_cost_currency": "USD",
                 "entity_count": len(entities),
-                "costs_by_type": {"CAPEX": 0.0, "OPEX": 0.0, "Total": 0.0, "Other": 0.0},
+                "costs_by_type": {
+                    "CAPEX": 0.0,
+                    "OPEX": 0.0,
+                    "Total": 0.0,
+                    "Other": 0.0,
+                },
                 "costs_by_currency": {},
                 "entities_with_costs": 0,
             }
@@ -834,14 +845,20 @@ class ProjectOrchestrationService:
 
                 # Extract cost information from properties (not attributes array)
                 # For CostItem entities, we look for total_cost_value, total_cost_currency, etc. as direct properties
-                total_cost_value = props.get("total_cost_value") or props.get("cost_value")
-                total_cost_currency = props.get("total_cost_currency") or props.get("cost_currency")
+                total_cost_value = props.get("total_cost_value") or props.get(
+                    "cost_value"
+                )
+                total_cost_currency = props.get("total_cost_currency") or props.get(
+                    "cost_currency"
+                )
                 cost_type = props.get("cost_type")
 
                 # Handle total_cost_value if it's a string (convert to float)
                 if isinstance(total_cost_value, str):
                     try:
-                        total_cost_value = float(total_cost_value.replace(",", "").replace("$", "").strip())
+                        total_cost_value = float(
+                            total_cost_value.replace(",", "").replace("$", "").strip()
+                        )
                     except (ValueError, AttributeError):
                         total_cost_value = None
                 elif total_cost_value is not None:
@@ -855,13 +872,15 @@ class ProjectOrchestrationService:
                     total_cost_currency = "USD"
 
                 if total_cost_value is not None and total_cost_value > 0:
-                    extracted_totals.append({
-                        "entity_id": entity.get("id", ""),
-                        "entity_name": props.get("name", "Unknown"),
-                        "total_cost_value": total_cost_value,
-                        "total_cost_currency": total_cost_currency or "USD",
-                        "cost_type": cost_type,
-                    })
+                    extracted_totals.append(
+                        {
+                            "entity_id": entity.get("id", ""),
+                            "entity_name": props.get("name", "Unknown"),
+                            "total_cost_value": total_cost_value,
+                            "total_cost_currency": total_cost_currency or "USD",
+                            "cost_type": cost_type,
+                        }
+                    )
 
             logger.info(
                 f"Extracted {len(extracted_totals)} total cost entities from {len(entities)} entities"
@@ -2086,7 +2105,7 @@ class ProjectOrchestrationService:
             #     full_text[:15000] if len(full_text) > 15000 else full_text
             # )
             text_for_analysis = full_text
-            
+
             recommendations_prompt = f"""
             You are an expert process engineer and cost estimator analyzing a base case engineering report. You are tasked with analyzing the text to achieve the following objective: 
             {objective_context}
@@ -2225,15 +2244,27 @@ class ProjectOrchestrationService:
             recommendations.sort(
                 key=lambda r: (
                     category_order.get(r.get("recommendation_category", "other"), 2),
-                    r.get("recommendation_id", "")
+                    r.get("recommendation_id", ""),
                 )
             )
 
             # Log recommendation counts by category
-            primary_count = sum(1 for r in recommendations if r.get("recommendation_category") == "primary")
-            secondary_count = sum(1 for r in recommendations if r.get("recommendation_category") == "secondary")
-            other_count = sum(1 for r in recommendations if r.get("recommendation_category") == "other")
-            
+            primary_count = sum(
+                1
+                for r in recommendations
+                if r.get("recommendation_category") == "primary"
+            )
+            secondary_count = sum(
+                1
+                for r in recommendations
+                if r.get("recommendation_category") == "secondary"
+            )
+            other_count = sum(
+                1
+                for r in recommendations
+                if r.get("recommendation_category") == "other"
+            )
+
             logger.info(
                 f"Extracted {len(recommendations)} total recommendations "
                 f"(Primary: {primary_count}, Secondary: {secondary_count}, Other: {other_count}) "
@@ -2265,7 +2296,7 @@ class ProjectOrchestrationService:
     ) -> Dict[str, Any]:
         """
         Extract recommendations using LLM with chunking approach.
-        
+
         This version chunks the base case text into 15000-character chunks with overlap,
         processes each chunk separately, and merges the results.
 
@@ -2289,33 +2320,35 @@ class ProjectOrchestrationService:
 
             # Use same namespace as DocumentProcessingService
             CHUNK_NAMESPACE = uuid.UUID("11111111-2222-3333-4444-555555555555")
-            
+
             # Chunk the text with 15000 character limit and 20% overlap (3000 chars)
             char_limit = 15000
             overlap = 3000  # 20% overlap
-            
+
             # Create chunks with overlap manually (CharacterChunker doesn't support overlap)
             chunks = []
             current_pos = 0
             seq = 1
-            
+
             while current_pos < len(full_text):
                 chunk_text = full_text[current_pos : current_pos + char_limit]
                 chunk_id = str(uuid.uuid5(CHUNK_NAMESPACE, f"{document_id}|{seq}"))
-                
-                chunks.append({
-                    "chunk_id": chunk_id,
-                    "doc_id": document_id,
-                    "seq": seq,
-                    "text": chunk_text,
-                    "start_pos": current_pos,
-                    "end_pos": current_pos + len(chunk_text),
-                })
-                
+
+                chunks.append(
+                    {
+                        "chunk_id": chunk_id,
+                        "doc_id": document_id,
+                        "seq": seq,
+                        "text": chunk_text,
+                        "start_pos": current_pos,
+                        "end_pos": current_pos + len(chunk_text),
+                    }
+                )
+
                 # Move forward by char_limit - overlap to create overlap
-                current_pos += (char_limit - overlap)
+                current_pos += char_limit - overlap
                 seq += 1
-                
+
                 # Break if we've reached the end
                 if current_pos >= len(full_text):
                     break
@@ -2343,7 +2376,7 @@ class ProjectOrchestrationService:
             for chunk_idx, chunk in enumerate(chunks):
                 chunk_text = chunk["text"]
                 chunk_seq = chunk["seq"]
-                
+
                 logger.info(
                     f"Processing chunk {chunk_seq}/{len(chunks)} "
                     f"(positions {chunk['start_pos']}-{chunk['end_pos']}, "
@@ -2511,15 +2544,27 @@ class ProjectOrchestrationService:
             all_recommendations.sort(
                 key=lambda r: (
                     category_order.get(r.get("recommendation_category", "other"), 2),
-                    r.get("recommendation_id", "")
+                    r.get("recommendation_id", ""),
                 )
             )
 
             # Log recommendation counts by category
-            primary_count = sum(1 for r in all_recommendations if r.get("recommendation_category") == "primary")
-            secondary_count = sum(1 for r in all_recommendations if r.get("recommendation_category") == "secondary")
-            other_count = sum(1 for r in all_recommendations if r.get("recommendation_category") == "other")
-            
+            primary_count = sum(
+                1
+                for r in all_recommendations
+                if r.get("recommendation_category") == "primary"
+            )
+            secondary_count = sum(
+                1
+                for r in all_recommendations
+                if r.get("recommendation_category") == "secondary"
+            )
+            other_count = sum(
+                1
+                for r in all_recommendations
+                if r.get("recommendation_category") == "other"
+            )
+
             logger.info(
                 f"Extracted {len(all_recommendations)} total recommendations from {len(chunks)} chunks "
                 f"(Primary: {primary_count}, Secondary: {secondary_count}, Other: {other_count}) "
@@ -2621,7 +2666,7 @@ class ProjectOrchestrationService:
                 normalized_properties = properties.copy()
                 if "name" not in normalized_properties:
                     normalized_properties["name"] = entity_name
-                    
+
                 # Convert expected_attributes to readable format if present
                 if "expected_attributes" in normalized_properties:
                     expected_attrs = normalized_properties["expected_attributes"]
@@ -2632,8 +2677,13 @@ class ProjectOrchestrationService:
                         )
 
                 # Attributes to exclude
-                attributes_to_exclude = ["expected_attributes", "evidence_locations", "extraction_rationale", "extraction_priority"]
-                
+                attributes_to_exclude = [
+                    "expected_attributes",
+                    "evidence_locations",
+                    "extraction_rationale",
+                    "extraction_priority",
+                ]
+
                 for attr in attributes_to_exclude:
                     if attr in normalized_properties:
                         del normalized_properties[attr]
@@ -3038,7 +3088,6 @@ class ProjectOrchestrationService:
             )
             return ""
 
-
     async def _extract_objective_driven_nodes_and_relations_v4(
         self,
         full_text: str,
@@ -3050,12 +3099,12 @@ class ProjectOrchestrationService:
         scenario_id: Optional[str] = None,
         global_objective_unit: str = "%",
         job_id: Optional[str] = None,
-        publisher = None,
+        publisher=None,
         base_seq: int = 0,
     ) -> Dict[str, Any]:
         """
         Extract objective-driven nodes and relations using V4 workflow.
-        
+
         This method chunks the full text, uses recommendation-based entity extraction prompt,
         and extracts nodes and edges using LLM with tools.
 
@@ -3092,33 +3141,35 @@ class ProjectOrchestrationService:
 
             # Use same namespace as DocumentProcessingService
             CHUNK_NAMESPACE = uuid.UUID("11111111-2222-3333-4444-555555555555")
-            
+
             # Chunk the text
             char_limit = 5000
             overlap = 1000
-            
+
             # Create chunks with overlap manually
             chunks = []
             current_pos = 0
             seq = 1
-            
+
             while current_pos < len(full_text):
                 chunk_text = full_text[current_pos : current_pos + char_limit]
                 chunk_id = str(uuid.uuid5(CHUNK_NAMESPACE, f"{document_id}|{seq}"))
-                
-                chunks.append({
-                    "chunk_id": chunk_id,
-                    "doc_id": document_id,
-                    "seq": seq,
-                    "text": chunk_text,
-                    "start_pos": current_pos,
-                    "end_pos": current_pos + len(chunk_text),
-                })
-                
+
+                chunks.append(
+                    {
+                        "chunk_id": chunk_id,
+                        "doc_id": document_id,
+                        "seq": seq,
+                        "text": chunk_text,
+                        "start_pos": current_pos,
+                        "end_pos": current_pos + len(chunk_text),
+                    }
+                )
+
                 # Move forward by char_limit - overlap to create overlap
-                current_pos += (char_limit - overlap)
+                current_pos += char_limit - overlap
                 seq += 1
-                
+
                 # Break if we've reached the end
                 if current_pos >= len(full_text):
                     break
@@ -3127,7 +3178,7 @@ class ProjectOrchestrationService:
                 f"Created {len(chunks)} chunks for entity extraction "
                 f"(char_limit: {char_limit}, overlap: {overlap})"
             )
-            
+
             # Publish event after chunking
             if publisher and job_id:
                 try:
@@ -3144,8 +3195,8 @@ class ProjectOrchestrationService:
                                 "total_chunks": len(chunks),
                                 "base_seq": base_seq,
                                 "message": "Chunking text for entity extraction",
-                            }
-                        )
+                            },
+                        ),
                     )
                 except Exception as e:
                     logger.warning(f"Failed to publish progress event: {e}")
@@ -3160,9 +3211,19 @@ class ProjectOrchestrationService:
                 objective_context += f"- Description: {objective_description}\n"
 
             # Get the recommendation-based entity extraction prompt
-            # base_prompt = get_recommendation_based_entity_extraction_prompt(objective_type=global_objective_type, objective_target=global_objective_target)
-            base_prompt = get_recommendation_based_entity_extraction_prompt_v2(objective_type=global_objective_type, objective_target=global_objective_target, objective_unit=global_objective_unit)
-            
+            rules = [
+                "NODES_AND_RELATIONS",
+                "PROVENANCE_AND_CONFIDENCE",
+                "UNITS_NORMALIZATION",
+            ]
+            base_prompt = generate_prompt(
+                artifact_type="base_case",
+                objective_type=global_objective_type,
+                objective_target=global_objective_target,
+                objective_unit=global_objective_unit,
+                rules=rules,
+            )
+
             # Add objective context to the prompt
             full_user_prompt = f"""{base_prompt}
 
@@ -3185,16 +3246,16 @@ class ProjectOrchestrationService:
                 # Note: We check cancellation by attempting to access the task registry
                 # If the task was cancelled, it will raise CancelledError when awaited
                 # We'll catch it in the outer try-except block
-                
+
                 chunk_text = chunk["text"]
                 chunk_seq = chunk["seq"]
-                
+
                 logger.info(
                     f"Processing chunk {chunk_seq}/{len(chunks)} "
                     f"(positions {chunk['start_pos']}-{chunk['end_pos']}, "
                     f"{len(chunk_text)} chars)"
                 )
-                
+
                 # Publish event before processing chunk
                 if publisher and job_id:
                     try:
@@ -3213,8 +3274,8 @@ class ProjectOrchestrationService:
                                     "total_chunks": len(chunks),
                                     "base_seq": base_seq,
                                     "message": f"Extracting entities from text > processing text chunk {chunk_idx + 1} of {len(chunks)}",
-                                }
-                            )
+                                },
+                            ),
                         )
                     except Exception as e:
                         logger.warning(f"Failed to publish progress event: {e}")
@@ -3239,7 +3300,9 @@ class ProjectOrchestrationService:
                         try:
                             arguments = fn.get("arguments", "{}")
                             if not is_valid_json(arguments):
-                                logger.error(f"Invalid JSON received for {name}: {arguments}")
+                                logger.error(
+                                    f"Invalid JSON received for {name}: {arguments}"
+                                )
                                 continue
 
                             payload = json.loads(arguments)
@@ -3304,7 +3367,7 @@ class ProjectOrchestrationService:
                 f"Extracted {len(all_nodes)} total nodes and {len(all_edges)} total edges "
                 f"from {len(chunks)} chunks"
             )
-            
+
             # Publish event after all chunks processed
             if publisher and job_id:
                 try:
@@ -3322,8 +3385,8 @@ class ProjectOrchestrationService:
                                 "total_edges": len(all_edges),
                                 "base_seq": base_seq,
                                 "message": "Completed entity extraction",
-                            }
-                        )
+                            },
+                        ),
                     )
                 except Exception as e:
                     logger.warning(f"Failed to publish progress event: {e}")
@@ -3335,12 +3398,16 @@ class ProjectOrchestrationService:
                 scenario_id=scenario_id,
             )
             extracted_totals = self._extract_total_costs_from_entities(all_nodes)
-            cost_validation = self._validate_total_costs(calculated_totals, extracted_totals)
+            cost_validation = self._validate_total_costs(
+                calculated_totals, extracted_totals
+            )
 
             return {
                 "nodes": all_nodes,
                 "edges": all_edges,
-                "num_chunks": len(chunks),  # Return chunk count for sequence number tracking
+                "num_chunks": len(
+                    chunks
+                ),  # Return chunk count for sequence number tracking
                 "cost_summary": {
                     "calculated_totals": calculated_totals,
                     "extracted_totals": extracted_totals,

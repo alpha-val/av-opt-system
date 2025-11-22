@@ -461,7 +461,7 @@ entity_deduplication_block = """
     Merged output (SINGLE NODE):
     ```json
     {
-      "id": "salt_slurry_process_001",
+      "id": "550e8400-e29b-41d4-a716-446655440000",  // MUST be a valid UUID
       "type": "Process",
       "properties": {
         "name": "Salt Slurry Process",
@@ -522,7 +522,7 @@ entity_deduplication_block = """
     Merged output (SINGLE NODE):
     ```json
     {
-      "id": "pump_001",
+      "id": "550e8400-e29b-41d4-a716-446655440001",  // MUST be a valid UUID
       "type": "Equipment",
       "properties": {
         "name": "Centrifugal Pump",
@@ -583,6 +583,7 @@ nodes_and_relations_extraction_directives = """
     - Use only node/edge property names that appear in the ontology metadata lists.
     - Attach evidence and a confidence score to every node and edge using the
     allowed property names from NODE_PROPERTIES / EDGE_PROPERTIES.
+    - **CRITICAL: Every node MUST have an "id" field that is a valid UUID in RFC 4122 format (e.g., "550e8400-e29b-41d4-a716-446655440000"). Edge "source" and "target" fields MUST also be valid UUIDs referencing node IDs.**
     - Normalize entity names and deduplicate obvious variants.
     - EVERY node MUST have MSIO (Mining System Integration Ontology) ontology classification (discipline, category, subcategory, entity)
     - EVERY node MUST match the MSIO ontology hierarchy as closely as possible
@@ -600,7 +601,7 @@ nodes_and_relations_extraction_directives = """
 
     OUTPUT CONTRACT (strict):
     Node object (each item in extract_nodes.nodes) MUST have:
-    - "id": stable unique string identifier (uuid)
+    - "id": MUST be a valid UUID (RFC 4122 format, e.g., "550e8400-e29b-41d4-a716-446655440000")
     - "type": one of NODE_TYPES; a Node object must have a type
     - "properties": object/dict containing:
         • MANDATORY MSIO fields (all must be present and match ontology):
@@ -638,8 +639,8 @@ nodes_and_relations_extraction_directives = """
       - "confidence": 0.0-1.0 (confidence score for this attribute)
 
     Edge object (each item in extract_edges.edges) MUST have:
-    - "source": node id
-    - "target": node id
+    - "source": node id (MUST be a valid UUID referencing a node)
+    - "target": node id (MUST be a valid UUID referencing a node)
     - "type": one of EDGE_TYPES
     - "properties": object/dict containing ONLY:
         • the allowed meta-keys from EDGE_PROPERTIES for evidence/confidence, and
@@ -652,7 +653,7 @@ nodes_and_relations_extraction_directives = """
 
 
     QUALITY GATE (pre-return):
-    - Every node: non-empty, unique 'id' (uuid), valid 'type', and a 'properties' dict.
+    - Every node: non-empty, unique 'id' (MUST be a valid UUID in RFC 4122 format), valid 'type', and a 'properties' dict.
     - Every node has a 'name' property; populate it with the proper entity name.
     - Every node has a 'type' property that matches NODE_TYPES.
     - Every node property key matches NODE_PROPERTIES.
@@ -691,7 +692,7 @@ nodes_and_relations_extraction_directives = """
 
     - nodes: array of entities. Each node:
     {{
-        "id": "uuid-or-stable",                 // Unique identifier for the node
+        "id": "550e8400-e29b-41d4-a716-446655440000",  // MUST be a valid UUID (RFC 4122 format)
         "type": "<EntityType>",                 // One of NODE_TYPES from the ontology
         "properties": {{
             "name": "string",                   // Human-readable name
@@ -724,9 +725,9 @@ nodes_and_relations_extraction_directives = """
     (Create nodes for Subcategory/Category/Discipline as needed if referenced.)
     Example edge:
     {{
-        "id": "uuid-or-stable",
-        "source": "<node_id_element>",
-        "target": "<node_id_subcategory>",
+        "id": "550e8400-e29b-41d4-a716-446655440001",  // MUST be a valid UUID (RFC 4122 format)
+        "source": "550e8400-e29b-41d4-a716-446655440000",  // MUST be a valid UUID referencing a node
+        "target": "550e8400-e29b-41d4-a716-446655440002",  // MUST be a valid UUID referencing a node
         "type": "PART_OF",
         "properties": {{
             "created_at": "ISO-8601-timestamp",
@@ -759,7 +760,7 @@ nodes_and_relations_extraction_directives = """
 
     Nodes: [
         {{
-        "id": "mech_pump_001",
+        "id": "550e8400-e29b-41d4-a716-446655440000",  // MUST be a valid UUID
         "type": "Equipment",
         "properties": {{
             "name": "Centrifugal Pump 500 gpm",
@@ -1413,765 +1414,526 @@ nodes_and_relations_extraction_block = f"""\
   {nodes_and_relations_extraction_directives}
   """
 
-
-def get_entity_extraction_prompt(rules: Optional[List[str]] = None) -> str:
-    """Builds a prompt for base-case extraction with a simple ontology mapper."""
-
-    prompt = f"""\
-      --------------------------------------------------------------------------------
-      BASE-CASE EXTRACTION
-      --------------------------------------------------------------------------------
-
-      ROLE
-      Produce a clean, deduplicated entities and relationships for mining/process-engineering content aligned to the configured Mining System Integration Ontology (MSIO/msio). You read a base-case report (text/tables) and extract entities that match the MSIO hierarchy (Discipline → Category → Subcategory → Entity). If an entity cannot be matched to MSIO ontology, create a new node with the entity name and the MSIO hierarchy that is closest to the entity name (e.g., "Concrete Spread Footings" -> "Concrete" -> "Foundations" -> "Footings" -> "Spread footings") and set the attribute "outside_msio" to true. You then emit a single JSON object with nodes and edges, plus evidence and confidence.
-
-      --------------------------------------------------------------------------------
-      INPUTS AND OUTPUTS
-      --------------------------------------------------------------------------------
-      # NODES & RELATIONS EXTRACTION RULES
-      {nodes_and_relations_extraction_block}
-
-      # ONTOLOGY MAPPING
-      {msio_classification_workflow}
-
-
-      # ENTITY DEDUPLICATION (MANDATORY - MERGE DUPLICATE NODES)
-      {entity_deduplication_block}
-      
-      # PROVENANCE & CONFIDENCE
-      {prov_conf_block if "PROVENANCE_AND_CONFIDENCE" in (rules or []) else ""}
-    
-      # UNIT NORMALIZATION & DEDUPLICATION
-      {units_normalization_block if "UNITS_NORMALIZATION" in (rules or []) else ""}
-      --------------------------------------------------------------------------------
-
-      Optional:
-      --------------------------------------------------------------------------------
-      # TABLE EXTRACTION RULES
-      {table_extraction_block if "TABLE_EXTRACTION" in (rules or []) else ""}
-
-      # SCENARIO EXTRACTION RULES
-      {scenario_extraction_block if "SCENARIO_EXTRACTION" in (rules or []) else ""}
-
-      # GLOBAL OBJECTIVES
-      {global_objectives_block if "GLOBAL_OBJECTIVES" in (rules or []) else ""}
-      --------------------------------------------------------------------------------
-      
-      # SUMMARY EXTRACTION
-      {PROMPT_DISCIPLINE_STRUCTURED_SUMMARY if "STRUCTURED_REPORT" in (rules or []) else ""}
-      
-      --------------------------------------------------------------------------------
-      DO / DO NOT
-      --------------------------------------------------------------------------------
-      ✓ Do: map each mention to the most specific ontology Entity available.
-      ✓ Do: in the MSIO hierarchy,split only the Entity/Element field on “/” when classifying ontology rows.
-      ✓ Do: extract attributes near the mention; split number/unit when clear.
-
-      
-      ✗ Don’t: invent elements or attributes not evidenced in the text/table.
-      ✗ Don’t: split on “/” in other MSIO hierarchy fields (Subcategory, Category, Discipline).
-
-
-      --------------------------------------------------------------------------------
-      FINAL VALIDATION REMINDER
-      --------------------------------------------------------------------------------
-      Before calling extract_nodes(), verify:
-      1. Every possible entities are found
-      2. Map entities to MSIO Ontology: discipline/category/subcategory/entity values exist, else set to "Miscellaneous"
-      3. Confidence scores reflect MSIO matching quality (exact match = 0.9-1.0, partial = 0.7-0.8, inferred = <0.7)
-
-
-      --------------------------------------------------------------------------------
-      FINAL DELIVERABLE
-      --------------------------------------------------------------------------------
-      Return nodes with extract_nodes(nodes=[...]), edges with extract_edges(edges=[...]), 
-      scenarios with extract_scenarios(scenarios=[...]), recommendations with extract_recommendations(recommendations=[...]), and extract structured report with extract_structured_report(base_case_report={{...}}) as per the output contract.
-      """
-
-    return prompt
-
-
-def get_targeted_entity_extraction_prompt(
-    relevant_entities: Optional[List[Dict[str, Any]]] = None,
-    extraction_scope: str = "exact",
-    rules: Optional[List[str]] = None,
-) -> str:
-    """
-    Build a prompt for targeted entity extraction based on relevant entities.
-
-    Args:
-        relevant_entities: List of entity specifications from recommendations
-        extraction_scope: "exact" (only specified entities), "with_relationships"
-        (entities + direct relationships), or "with_context"
-        (entities + related entities in same context)
-        rules: Optional list of extraction rules to enable
-
-    Returns:
-        Prompt string for targeted entity extraction
-    """
-    # Get base prompt
-    base_prompt = get_entity_extraction_prompt(rules=rules)
-
-    if not relevant_entities:
-        # If no relevant entities provided, return base prompt
-        return base_prompt
-
-    # Build targeted extraction section
-    entities_spec = []
-    for idx, entity in enumerate(relevant_entities, 1):
-        # Handle full node structure
-        entity_id = entity.get("id", f"entity_{idx}")
-        entity_type = entity.get("type", "Unknown")
-        props = entity.get("properties", {})
-
-        # Extract fields from properties
-        entity_name = props.get("name", "Unknown")
-        discipline = props.get("discipline", "N/A")
-        category = props.get("category", "N/A")
-        subcategory = props.get("subcategory", "N/A")
-        msio_entity = props.get("entity", "N/A")
-        expected_attrs = props.get("expected_attributes", [])
-        evidence_locs = props.get("evidence_locations", [])
-        rationale = props.get("extraction_rationale", "")
-        priority = props.get("extraction_priority", "medium")
-
-        spec = f"""
-    Entity {idx} (ID: {entity_id}):
-    - Type: {entity_type}
-    - Name: {entity_name}
-    - MSIO Classification:
-      * Discipline: {discipline}
-      * Category: {category}
-      * Subcategory: {subcategory}
-      * Entity: {msio_entity}
-    - Priority: {priority}
-    - Expected Attributes: {', '.join(expected_attrs) if expected_attrs else 'All relevant attributes from ontology'}
-    - Evidence Locations: {', '.join(evidence_locs[:5]) if evidence_locs else 'Search entire document'}
-    - Rationale: {rationale[:200] if rationale else 'N/A'}...
-    - Additional Properties: Extract all applicable properties from NODE_PROPERTIES as found in the text
-"""
-        entities_spec.append(spec)
-
-    entities_list = "\n".join(entities_spec)
-
-    # Determine extraction scope instructions
-    if extraction_scope == "exact":
-        scope_instruction = """
-    EXTRACTION SCOPE: EXACT ENTITIES ONLY
-    - Extract ONLY the entities listed above
-    - Do NOT extract other entities, even if mentioned in the text
-    - Focus on extracting comprehensive information for the specified entities
-    - Extract all attributes, relationships, and properties for these entities
-    - Penalize extracting fewer entities or sparse information
-"""
-    elif extraction_scope == "with_relationships":
-        scope_instruction = """
-    EXTRACTION SCOPE: SPECIFIED ENTITIES + DIRECT RELATIONSHIPS
-    - Extract the entities listed above
-    - Also extract entities that have direct relationships (edges) with the specified entities
-    - Extract relationships between specified entities and related entities
-    - Focus on comprehensive extraction for all entities in scope
-"""
-    else:  # with_context
-        scope_instruction = """
-    EXTRACTION SCOPE: SPECIFIED ENTITIES + RELATED CONTEXT ENTITIES
-    - Extract the entities listed above
-    - Also extract entities mentioned in the same context/sections as the specified entities
-    - Extract entities that are part of the same system or process as specified entities
-    - Extract comprehensive information for all entities in scope
-"""
-
-    targeted_section = f"""
-    --------------------------------------------------------------------------------
-    TARGETED ENTITY EXTRACTION MODE
-    --------------------------------------------------------------------------------
-    You are extracting entities in TARGETED MODE. This means you should focus on
-    extracting specific entities that have been identified as relevant to the
-    analysis objectives.
-    
-    {scope_instruction}
-    
-    RELEVANT ENTITIES TO EXTRACT:
-    {entities_list}
-    
-    EXTRACTION REQUIREMENTS:
-    - Extract ONLY entities that match the specifications above (or related entities if scope allows)
-    - For each specified entity, extract as a COMPLETE NODE following the extract_nodes structure:
-      * REQUIRED: id (unique identifier), type (from NODE_TYPES), properties (object)
-      * REQUIRED: properties.name (entity name)
-      * REQUIRED: properties.discipline, properties.category, properties.subcategory, properties.entity (MSIO classification)
-      * REQUIRED: properties.attributes (array of attribute objects with name, value, unit, evidence_text, confidence)
-      * Extract ALL applicable properties from NODE_PROPERTIES as found in the text
-      * All attributes mentioned in expected_attributes list
-      * All additional attributes found in the text
-      * All relationships (edges) to other entities
-      * Evidence text and confidence scores for all extracted information
-    - Be comprehensive: extract as much detail as possible for each entity
-    - Do NOT skip entities or extract sparse information
-    - If an entity is mentioned multiple times, merge information from all mentions
-    - Prioritize high-priority entities but extract all specified entities
-    - ALL extracted nodes MUST follow the exact structure from extract_nodes tool:
-      * id: string (unique identifier)
-      * type: string (from NODE_TYPES enum)
-      * properties: object containing all applicable NODE_PROPERTIES
-      * properties must include MSIO classification (discipline, category, subcategory, entity)
-      * properties must include attributes array with full attribute objects
-    - Map ALL nodes to MSIO ontology following the matching workflow in nodes_and_relations_extraction_directives
-    
-    DEDUPLICATION (MANDATORY):
-    - Apply Entity Deduplication and Merging Policy (see above)
-    - Merge duplicate entities with same MSIO classification and similar names
-    - Consolidate information from multiple chunks/mentions into single nodes
-    - Store alternative units as separate attribute entries (e.g., GPM and gal/hr)
-    - Preserve all evidence and information when merging
-    - Return only deduplicated nodes (no duplicates)
-    
-    QUALITY REQUIREMENTS:
-    ✓ Extract comprehensive information for each specified entity as COMPLETE NODES
-    ✓ Include all attributes, relationships, and properties following extract_nodes structure
-    ✓ Provide evidence text for all extracted information
-    ✓ Set appropriate confidence scores based on MSIO match quality
-    ✓ All nodes must have complete MSIO classification (discipline, category, subcategory, entity)
-    ✓ All nodes must follow the exact extract_nodes structure with id, type, and properties
-    ✓ DEDUPLICATE entities - merge duplicates following the deduplication policy
-    ✓ Store alternative units as separate attributes (e.g., 3733 GPM and 223975 gal/hr as two attribute objects)
-    ✓ Consolidate cross-chunk mentions into single nodes
-    ✗ Do NOT extract entities not in the relevant_entities list (unless scope allows)
-    ✗ Do NOT extract sparse or incomplete entity information
-    ✗ Do NOT skip expected attributes if they are mentioned in the text
-    ✗ Do NOT extract nodes without complete structure (id, type, properties)
-    ✗ Do NOT create duplicate nodes for the same entity (same MSIO + similar name)
-    ✗ Do NOT lose information when merging duplicates
-    
-    --------------------------------------------------------------------------------
-"""
-
-    # Insert targeted section after base prompt's role section but before ontology section
-    # Find a good insertion point - after the role/objective section
-    insertion_marker = "Required output:"
-    if insertion_marker in base_prompt:
-        parts = base_prompt.split(insertion_marker, 1)
-        return parts[0] + targeted_section + insertion_marker + parts[1]
-    else:
-        # Fallback: prepend to base prompt
-        return targeted_section + "\n" + base_prompt
-
-
 ##### Recommendation-based entity extraction prompt #####
 
-# Nodes and relations extraction block
-objective_driven_nodes_and_relations_extraction_directives = f"""
+# Objective-driven extraction additions (only what's different from base extraction)
+objective_driven_extraction_additions = """
     --------------------------------------------------------------------------------
-    OBJECTIVE-DRIVEN NODES AND RELATIONS EXTRACTION
+    OBJECTIVE-DRIVEN EXTRACTION REQUIREMENTS
     --------------------------------------------------------------------------------
 
-    Extract all nodes and relationships relevant to the objective goal and target using 
-    NODE_TYPES and EDGE_TYPES from the ontology. Include all relevant metadata and provenance.
+    **CRITICAL DIFFERENCES FOR OBJECTIVE-DRIVEN EXTRACTION:**
 
-    REQUIREMENTS:
-    - Extract only what is explicitly or strongly implied by the input text
-    - Use only node/edge types and property names from the ontology
-    - Attach evidence_text and confidence to every node and edge
-    - Normalize entity names and deduplicate variants
-    - Map all nodes to MSIO ontology (discipline → category → subcategory → entity)
-    - If MSIO match not found, use closest hierarchy match and set "outside_msio": true
-    - Extract cost information when available (store in properties.cost_information)
-    - Deduplicate entities following Entity Deduplication Policy
-    - **CRITICAL: NEVER create nodes with type='Recommendation'. Embed recommendations 
-      in entity.properties.recommendations arrays only.**
+    1. **Focus on Objective Relevance:**
+       - Extract all nodes and relationships relevant to achieving the objective goal and target
+       - Prioritize entities that directly or indirectly support the objective
+       - Consider both current state and potential modifications
 
-    ONTOLOGY REFERENCE:
-    Node types: {NODE_TYPES}
-    Node properties: {NODE_PROPERTIES}
-    Edge types: {EDGE_TYPES}
-    Edge properties: {EDGE_PROPERTIES}
+    2. **Recommendations Integration:**
+       - **CRITICAL: NEVER create nodes with type='Recommendation'. Embed recommendations 
+         in entity.properties.recommendations arrays only.**
+       - Each node MUST have a "recommendations" array in properties (can be empty)
+       - Recommendations should be embedded within relevant entity nodes
 
-    OUTPUT CONTRACT:
-    Each node MUST have:
-    - "id": unique string identifier (uuid)
-    - "type": one of NODE_TYPES
-    - "name": human-readable name
-    - "properties": object containing:
-        • MSIO fields (MANDATORY): discipline, category, subcategory, entity (all must match MSIO ontology)
-        • "attributes": array of attribute objects with: name, value, unit, evidence_text, confidence
-        • "recommendations": array of recommendation objects (can be empty)
-        • "cost_information": object with: cost_value, cost_currency, cost_basis_year, cost_type, 
-          annual_op_cost, reclamation_cost (all nullable if not found)
-        • "outside_msio": boolean (true if entity doesn't match MSIO ontology)
-        • Other properties from NODE_PROPERTIES as applicable
-        • evidence_text and confidence (MANDATORY)
+    3. **Enhanced Cost Information:**
+       - Extract cost data when available (store in properties.cost_information)
+       - Include cost impact direction and magnitude for recommendations
 
-
-    EDGES:
-    Each edge MUST have:
-    - "source": source node id
-    - "target": target node id
-    - "type": one of EDGE_TYPES
-    - "properties": object with evidence_text, confidence, and any domain attributes from EDGE_PROPERTIES
+    4. **All other extraction rules from the base extraction prompt apply:**
+       - Use NODE_TYPES and EDGE_TYPES from ontology (already provided above)
+       - Follow MSIO classification requirements
+       - Apply deduplication policies
+       - Include evidence_text and confidence for all nodes and edges
+       - Use UUID format for all IDs
 
     --------------------------------------------------------------------------------
-    QUALITY VALIDATION
+    QUALITY VALIDATION (Additional Checks)
     --------------------------------------------------------------------------------
-    ✓ Every node has: unique id, valid type (from NODE_TYPES), name, properties dict
-    ✓ Every node has MSIO classification: discipline, category, subcategory, entity (all match ontology)
-    ✓ Every node has attributes array (can contain null values for missing attributes)
     ✓ Every node has recommendations array (can be empty)
-    ✓ Cost information stored in properties.cost_information (not in attributes)
     ✓ NO nodes with type='Recommendation' (recommendations only in properties.recommendations)
-    ✓ Every edge has: valid source, target, type (from EDGE_TYPES), properties dict
-    ✓ All nodes and edges have evidence_text and confidence scores
-    ✓ All property keys match NODE_PROPERTIES / EDGE_PROPERTIES
-    ✓ No hallucinated entities, relationships, or properties
-
-    Return nodes with extract_nodes(nodes=[...]) and edges with extract_edges(edges=[...])
-
-    --------------------------------------------------------------------------------
-    EXAMPLE
-    --------------------------------------------------------------------------------
-
-    Input: "Two base pump units (centrifugal) sized for 500 gpm at 120 ft head with
-    mechanical seals. Cost: $400,000 USD (2024 basis). Flow to pump box: 4724 GPM.
-    Motor efficiency: 90%. Pump efficiency: 60%. Required motor HP: 596."
-
-    Output Node:
-    {{
-        "id": "mech_pump_001",
-        "type": "Equipment",
-        "name": "Centrifugal Pump 500 gpm",
-        "properties": {{
-            "discipline": "Mechanical Equipment",
-            "category": "Pumps",
-            "subcategory": "Centrifugal",
-            "entity": "Base pump unit",
-            "cost_information": {{
-                "cost_value": 400000,
-                "cost_currency": "USD",
-                "cost_basis_year": 2024,
-                "cost_type": "CAPEX",
-                "annual_op_cost": null,
-                "reclamation_cost": null
-            }},
-            "attributes": [
-                {{"name": "Design flowrate", "value": 500, "unit": "gpm", "evidence_text": "sized for 500 gpm", "confidence": 0.95}},
-                {{"name": "Flow To Pump Box", "value": 4724, "unit": "GPM", "evidence_text": "flow to pump box: 4724 GPM", "confidence": 0.95}},
-                {{"name": "Motor Efficiency", "value": 90, "unit": "%", "evidence_text": "motor efficiency: 90%", "confidence": 0.95}},
-                {{"name": "Pump Efficiency", "value": 60, "unit": "%", "evidence_text": "pump efficiency: 60%", "confidence": 0.95}},
-                {{"name": "Required Motor HP", "value": 596, "unit": "HP", "evidence_text": "required motor HP: 596", "confidence": 0.95}},
-                {{"name": "Head", "value": 120, "unit": "ft", "evidence_text": "at 120 ft head", "confidence": 0.95}}
-            ],
-            "recommendations": [],
-            "evidence_text": "...500 gpm at 120 ft head with mechanical seals...",
-            "confidence": 0.92
-        }}
-    }}
-
-    Output Edge:
-    {{
-        "source": "mech_pump_001",
-        "target": "subcat_centrifugal",
-        "type": "PART_OF",
-        "properties": {{
-            "evidence_text": "...500 gpm at 120 ft head...",
-            "confidence": 1.0
-        }}
-    }}
+    ✓ Cost information stored in properties.cost_information (not in attributes)
+    ✓ All entities are relevant to achieving the stated objective
 """
 
+# def get_entity_extraction_prompt(rules: Optional[List[str]] = None) -> str:
+#     """Builds a prompt for base-case extraction with a simple ontology mapper."""
 
-def get_recommendation_based_entity_extraction_prompt(
-    objective_type: str = "increase production",
-    objective_target: str = "10%",
-    objective_unit: str = "%",
-) -> str:
-    """
-    Build a prompt for recommendation-based entity extraction.
+#     prompt = f"""\
+#       --------------------------------------------------------------------------------
+#       BASE-CASE EXTRACTION
+#       --------------------------------------------------------------------------------
 
-    The prompt directs the LLM to:
-    1. Exhaustively find all possible ways to achieve the global objective (goal type and target magnitude)
-    2. Generate comprehensive recommendations (primary, secondary, other)
-    3. Extract entities relevant to each recommendation
-    4. Embed recommendations within entity properties (not as separate nodes)
-    5. Return structured nodes and edges following the output contract
-    """
+#       ROLE
+#       Produce a clean, deduplicated entities and relationships for mining/process-engineering content aligned to the configured Mining System Integration Ontology (MSIO/msio). You read a base-case report (text/tables) and extract entities that match the MSIO hierarchy (Discipline → Category → Subcategory → Entity). If an entity cannot be matched to MSIO ontology, create a new node with the entity name and the MSIO hierarchy that is closest to the entity name (e.g., "Concrete Spread Footings" -> "Concrete" -> "Foundations" -> "Footings" -> "Spread footings") and set the attribute "outside_msio" to true. You then emit a single JSON object with nodes and edges, plus evidence and confidence.
 
-    base_prompt = f"""
-      --------------------------------------------------------------------------------
-      RECOMMENDATION-BASED ENTITY EXTRACTION
-      --------------------------------------------------------------------------------
+#       --------------------------------------------------------------------------------
+#       INPUTS AND OUTPUTS
+#       --------------------------------------------------------------------------------
+#       # NODES & RELATIONS EXTRACTION RULES
+#       {nodes_and_relations_extraction_block}
 
-      CONTEXT
-      Engineers in the [mining] industry use system design reports (here referred to as base case documents) to design and optimize systems to plan capital-intensive installations and operations. The reports consist of details on technical requirements, equipment and material, process, operations, capital (CAPEX) and operating (OPEX) costs, constraints, assumptions, exclusions, and policy information on project requirements. Our system (Alpha-Val) is designed to read the reports and extract all the relevant information and factors (hereon referred to as extracted entities), which is then used for cost estimation and analysis. Entities are structured data about factors such as equipment, material, process, constraints, cost items, and other relevant factors. Our system employs an ontology to map the extracted entities to a standard classification system (hereon referred to as MSIO ontology) and to extract the relevant information and factors.
+#       # ONTOLOGY MAPPING
+#       {msio_classification_workflow}
+
+
+#       # ENTITY DEDUPLICATION (MANDATORY - MERGE DUPLICATE NODES)
+#       {entity_deduplication_block}
       
-      ROLE
-      You are an expert process engineer and cost estimator. Analyze the base case document thoroughly and exhaustively 
-      to identify all possible factors to achieve the global objective ({objective_type} by {objective_target} {objective_unit}).
+#       # PROVENANCE & CONFIDENCE
+#       {prov_conf_block if "PROVENANCE_AND_CONFIDENCE" in (rules or []) else ""}
+    
+#       # UNIT NORMALIZATION & DEDUPLICATION
+#       {units_normalization_block if "UNITS_NORMALIZATION" in (rules or []) else ""}
+#       --------------------------------------------------------------------------------
 
-      OBJECTIVE
-      Extract entities and recommendations that support achieving the global objective:
-      Step 1. Identify the goal type and target magnitude of the global objective
-      Step 2. Identify comprehensive recommendations (primary, secondary, other) (aim for 15-30+) across all system aspects
-      Step 3. Extract all entities relevant to each recommendation
-      Step 4. Embed recommendations within entity properties (never as separate nodes)
-      Step 5. Return clean, deduplicated entities following MSIO ontology
+#       Optional:
+#       --------------------------------------------------------------------------------
+#       # TABLE EXTRACTION RULES
+#       {table_extraction_block if "TABLE_EXTRACTION" in (rules or []) else ""}
 
-      --------------------------------------------------------------------------------
-      RECOMMENDATIONS
-      --------------------------------------------------------------------------------
+#       # SCENARIO EXTRACTION RULES
+#       {scenario_extraction_block if "SCENARIO_EXTRACTION" in (rules or []) else ""}
 
-      Generate recommendations across these categories:
-      - Equipment: Upgrades, replacements, additions, technology improvements
-      - Process: Flow improvements, efficiency gains, throughput enhancements
-      - Operations: Shift patterns, staffing, procedures, scheduling
-      - Infrastructure: Utilities, buildings, site work, foundations, structures
-      - Materials: Raw materials, consumables, feedstocks, product specifications
-      - Controls: Automation, instrumentation, SCADA, control logic
-      - Energy: Power consumption, heat recovery, waste minimization
-      - Maintenance: Reliability improvements, preventive maintenance, spare parts
-      - Safety: Safety systems, procedures, equipment, training
-      - Environmental: Emissions reduction, waste treatment, compliance
-      - All other categories as applicable
+#       # GLOBAL OBJECTIVES
+#       {global_objectives_block if "GLOBAL_OBJECTIVES" in (rules or []) else ""}
+#       --------------------------------------------------------------------------------
+      
+#       # SUMMARY EXTRACTION
+#       {PROMPT_DISCIPLINE_STRUCTURED_SUMMARY if "STRUCTURED_REPORT" in (rules or []) else ""}
+      
+#       --------------------------------------------------------------------------------
+#       DO / DO NOT
+#       --------------------------------------------------------------------------------
+#       ✓ Do: map each mention to the most specific ontology Entity available.
+#       ✓ Do: in the MSIO hierarchy,split only the Entity/Element field on “/” when classifying ontology rows.
+#       ✓ Do: extract attributes near the mention; split number/unit when clear.
 
-      Categorize each recommendation as:
-      - PRIMARY (5-10): High-impact, direct solutions addressing the objective
-      - SECONDARY (5-10): Supporting changes that enhance primary recommendations
-      - OTHER (5-10): Alternative approaches, lower-priority options, innovative solutions
-
-      For each recommendation, include:
-      - id, type, name, rationale, relevance (primary/secondary/other)
-      - change_direction, change_magnitude, evidence_text, confidence
-      - Cost information (when available): cost_value, cost_currency, cost_basis_year, 
-        cost_type, annual_op_cost, reclamation_cost, cost_impact_direction, cost_impact_magnitude
-      - Do a post-analysis: Ensure that the recommendation matches the entity and its attribute
-
-      CRITICAL: Embed recommendations in entity.properties.recommendations arrays. 
-      NEVER create separate nodes with type='Recommendation' or type='Recommendations'.
-
-      --------------------------------------------------------------------------------
-      ENTITY EXTRACTION
-      --------------------------------------------------------------------------------
-
-      Extract all entities (Equipment, Process, Material, Control, Infrastructure, etc.) 
-      relevant to achieving the global objective. For each entity:
-
-      1. MSIO Classification (MANDATORY):
-        - Map to MSIO hierarchy: Discipline → Category → Subcategory → Entity
-        - Use exact matches from MSIO ontology when possible
-        - If no match, use closest hierarchy match and set "outside_msio": true
-
-      2. Attributes (MANDATORY):
-        - Extract all technical/operational attributes (flow_rate, efficiency, power, 
-          capacity, head, pressure, temperature, dimensions, etc.)
-        - Store in properties.attributes array with: name, value, unit, evidence_text, confidence
-        - Include all attributes even if some values are null
-
-      3. Cost Information:
-        - Extract cost data from text when available
-        - Store in properties.cost_information object (NOT in attributes array):
-          * cost_value, cost_currency, cost_basis_year, cost_type
-          * annual_op_cost, reclamation_cost (if applicable)
-        - For Total Installed Cost (TIC) or Total Capital Cost (TCC), create separate 
-          CostItem entities with total_cost_value and total_cost_currency
-
-      4. Recommendations:
-        - Embed relevant recommendations in properties.recommendations array
-        - Array can be empty if no recommendations found for that entity
-
-      5. Relationships:
-        - Create edges connecting entities using EDGE_TYPES from ontology
-        - Include evidence_text and confidence for all edges
-
-      --------------------------------------------------------------------------------
-      EXTRACTION RULES
-      --------------------------------------------------------------------------------
-
-      # NODES & RELATIONS EXTRACTION
-      {objective_driven_nodes_and_relations_extraction_directives}
-
-      # ONTOLOGY MAPPING
-      {msio_classification_workflow}
-
-      # COST EXTRACTION
-      {cost_extraction_block}
-
-      # ENTITY DEDUPLICATION
-      {entity_deduplication_block}
-
-      # PROVENANCE & CONFIDENCE
-      {prov_conf_block}
-
-      # UNIT NORMALIZATION
-      {units_normalization_block}
-
-      --------------------------------------------------------------------------------
-      REQUIREMENTS
-      --------------------------------------------------------------------------------
-
-      ✓ DO:
-        - Extract only what is explicitly or strongly implied in the text
-        - Generate 15-30+ recommendations across all categories
-        - Embed recommendations in entity.properties.recommendations (never as separate nodes)
-        - Extract entities relevant to the global objective (goal type and target magnitude)
-        - Extract entities for primary, secondary, and other recommendations
-        - Map all entities to MSIO ontology with highest specificity
-        - Extract all attributes and store in attributes array
-        - Store cost information in properties.cost_information object
-        - Deduplicate entities following Entity Deduplication Policy
-        - Include evidence_text, evidence_prov, and confidence for all extractions
-        - Follow strict output contract: single JSON with nodes and edges
-
-      ✗ DON'T:
-        - Create nodes with type='Recommendation' or type='Recommendations'
-        - Store cost information in attributes array
-        - Hallucinate entities, relationships, or properties not in text
-        - Infer information not explicitly or strongly implied
-        - Create duplicate entities (merge instead)
-        - Create recommendations as separate nodes
-
-      --------------------------------------------------------------------------------
-      OUTPUT
-      --------------------------------------------------------------------------------
-
-      Return nodes with extract_nodes(nodes=[...]) and edges with extract_edges(edges=[...]) 
-      following the output contract specified in the extraction rules above.
-
-      """
-
-    return base_prompt
+      
+#       ✗ Don’t: invent elements or attributes not evidenced in the text/table.
+#       ✗ Don’t: split on “/” in other MSIO hierarchy fields (Subcategory, Category, Discipline).
 
 
-def get_recommendation_based_entity_extraction_prompt_v2(
-    objective_type: str = "increase production",
-    objective_target: str = "10%",
-    objective_unit: str = "%",
+#       --------------------------------------------------------------------------------
+#       FINAL VALIDATION REMINDER
+#       --------------------------------------------------------------------------------
+#       Before calling extract_nodes(), verify:
+#       1. Every possible entities are found
+#       2. Map entities to MSIO Ontology: discipline/category/subcategory/entity values exist, else set to "Miscellaneous"
+#       3. Confidence scores reflect MSIO matching quality (exact match = 0.9-1.0, partial = 0.7-0.8, inferred = <0.7)
+
+
+#       --------------------------------------------------------------------------------
+#       FINAL DELIVERABLE
+#       --------------------------------------------------------------------------------
+#       Return nodes with extract_nodes(nodes=[...]), edges with extract_edges(edges=[...]), 
+#       scenarios with extract_scenarios(scenarios=[...]), recommendations with extract_recommendations(recommendations=[...]), and extract structured report with extract_structured_report(base_case_report={{...}}) as per the output contract.
+#       """
+
+#     return prompt
+
+# def get_recommendation_based_entity_extraction_prompt(
+#     objective_type: str = "increase production",
+#     objective_target: str = "10%",
+#     objective_unit: str = "%",
+# ) -> str:
+#     """
+#     Build a prompt for recommendation-based entity extraction.
+
+#     The prompt directs the LLM to:
+#     1. Exhaustively find all possible ways to achieve the global objective (goal type and target magnitude)
+#     2. Generate comprehensive recommendations (primary, secondary, other)
+#     3. Extract entities relevant to each recommendation
+#     4. Embed recommendations within entity properties (not as separate nodes)
+#     5. Return structured nodes and edges following the output contract
+#     """
+
+#     base_prompt = f"""
+#       --------------------------------------------------------------------------------
+#       RECOMMENDATION-BASED ENTITY EXTRACTION
+#       --------------------------------------------------------------------------------
+
+#       CONTEXT
+#       Engineers in the [mining] industry use system design reports (here referred to as base case documents) to design and optimize systems to plan capital-intensive installations and operations. The reports consist of details on technical requirements, equipment and material, process, operations, capital (CAPEX) and operating (OPEX) costs, constraints, assumptions, exclusions, and policy information on project requirements. Our system (Alpha-Val) is designed to read the reports and extract all the relevant information and factors (hereon referred to as extracted entities), which is then used for cost estimation and analysis. Entities are structured data about factors such as equipment, material, process, constraints, cost items, and other relevant factors. Our system employs an ontology to map the extracted entities to a standard classification system (hereon referred to as MSIO ontology) and to extract the relevant information and factors.
+      
+#       ROLE
+#       You are an expert process engineer and cost estimator. Analyze the base case document thoroughly and exhaustively 
+#       to identify all possible factors to achieve the global objective ({objective_type} by {objective_target} {objective_unit}).
+
+#       OBJECTIVE
+#       Extract entities and recommendations that support achieving the global objective:
+#       Step 1. Identify the goal type and target magnitude of the global objective
+#       Step 2. Identify comprehensive recommendations (primary, secondary, other) (aim for 15-30+) across all system aspects
+#       Step 3. Extract all entities relevant to each recommendation
+#       Step 4. Embed recommendations within entity properties (never as separate nodes)
+#       Step 5. Return clean, deduplicated entities following MSIO ontology
+
+#       --------------------------------------------------------------------------------
+#       RECOMMENDATIONS
+#       --------------------------------------------------------------------------------
+
+#       Generate recommendations across these categories:
+#       - Equipment: Upgrades, replacements, additions, technology improvements
+#       - Process: Flow improvements, efficiency gains, throughput enhancements
+#       - Operations: Shift patterns, staffing, procedures, scheduling
+#       - Infrastructure: Utilities, buildings, site work, foundations, structures
+#       - Materials: Raw materials, consumables, feedstocks, product specifications
+#       - Controls: Automation, instrumentation, SCADA, control logic
+#       - Energy: Power consumption, heat recovery, waste minimization
+#       - Maintenance: Reliability improvements, preventive maintenance, spare parts
+#       - Safety: Safety systems, procedures, equipment, training
+#       - Environmental: Emissions reduction, waste treatment, compliance
+#       - All other categories as applicable
+
+#       Categorize each recommendation as:
+#       - PRIMARY (5-10): High-impact, direct solutions addressing the objective
+#       - SECONDARY (5-10): Supporting changes that enhance primary recommendations
+#       - OTHER (5-10): Alternative approaches, lower-priority options, innovative solutions
+
+#       For each recommendation, include:
+#       - id, type, name, rationale, relevance (primary/secondary/other)
+#       - change_direction, change_magnitude, evidence_text, confidence
+#       - Cost information (when available): cost_value, cost_currency, cost_basis_year, 
+#         cost_type, annual_op_cost, reclamation_cost, cost_impact_direction, cost_impact_magnitude
+#       - Do a post-analysis: Ensure that the recommendation matches the entity and its attribute
+
+#       CRITICAL: Embed recommendations in entity.properties.recommendations arrays. 
+#       NEVER create separate nodes with type='Recommendation' or type='Recommendations'.
+
+#       --------------------------------------------------------------------------------
+#       ENTITY EXTRACTION
+#       --------------------------------------------------------------------------------
+
+#       Extract all entities (Equipment, Process, Material, Control, Infrastructure, etc.) 
+#       relevant to achieving the global objective. For each entity:
+
+#       1. MSIO Classification (MANDATORY):
+#         - Map to MSIO hierarchy: Discipline → Category → Subcategory → Entity
+#         - Use exact matches from MSIO ontology when possible
+#         - If no match, use closest hierarchy match and set "outside_msio": true
+
+#       2. Attributes (MANDATORY):
+#         - Extract all technical/operational attributes (flow_rate, efficiency, power, 
+#           capacity, head, pressure, temperature, dimensions, etc.)
+#         - Store in properties.attributes array with: name, value, unit, evidence_text, confidence
+#         - Include all attributes even if some values are null
+
+#       3. Cost Information:
+#         - Extract cost data from text when available
+#         - Store in properties.cost_information object (NOT in attributes array):
+#           * cost_value, cost_currency, cost_basis_year, cost_type
+#           * annual_op_cost, reclamation_cost (if applicable)
+#         - For Total Installed Cost (TIC) or Total Capital Cost (TCC), create separate 
+#           CostItem entities with total_cost_value and total_cost_currency
+
+#       4. Recommendations:
+#         - Embed relevant recommendations in properties.recommendations array
+#         - Array can be empty if no recommendations found for that entity
+
+#       5. Relationships:
+#         - Create edges connecting entities using EDGE_TYPES from ontology
+#         - Include evidence_text and confidence for all edges
+
+#       --------------------------------------------------------------------------------
+#       EXTRACTION RULES
+#       --------------------------------------------------------------------------------
+#       Follow all extraction rules from the base extraction prompt. Additionally:
+#       - Focus on entities relevant to achieving the objective
+#       - Embed recommendations within entity properties
+#       - Extract cost information when available
+#       - Use UUID format for all node and edge IDs (as specified in base prompt)
+
+#     Example edge:
+#     {{
+#       "source": "550e8400-e29b-41d4-a716-446655440000",  // MUST be a valid UUID
+#       "target": "550e8400-e29b-41d4-a716-446655440001",  // MUST be a valid UUID
+#       "type": "AFFECTS_COST",
+#       "properties": {{"evidence_text": "CAPEX per pump ≈ $200,000 (2024 USD)", "confidence": 0.95}}
+#     }}
+
+#     --------------------------------------------------------------------------------
+#     BEGIN EXTRACTION NOW
+#     --------------------------------------------------------------------------------
+#     """
+
+#     return base_prompt
+
+
+# def generate_prompt(
+#     artifact_type: str = "base_case",
+#     objective_type: Optional[str] = None,
+#     objective_target: Optional[str] = None,
+#     objective_unit: Optional[str] = None,
+#     rules: Optional[List[str]] = None,
+# ) -> str:
+#     """
+#     Generate a unified prompt that merges base entity extraction with recommendation-based extraction.
+    
+#     This function combines the capabilities of `get_entity_extraction_prompt` and 
+#     `get_recommendation_based_entity_extraction_prompt`. When artifact_type is "base_case",
+#     it includes recommendation-based extraction capabilities.
+    
+#     The function is modular and avoids redundancy by:
+#     - Using the base extraction prompt which already includes ontology and output contract
+#     - Only adding objective-driven specific requirements (recommendations, objective focus)
+#     - Avoiding duplication of ontology references, node/edge types, and output contracts
+    
+#     Args:
+#         artifact_type: Type of artifact being processed (e.g., "base_case")
+#         objective_type: Objective type/goal (e.g., "increase production", "reduce capex")
+#         objective_target: Objective target value (e.g., "10%", "5%")
+#         objective_unit: Objective unit (e.g., "%", "USD")
+#         rules: Optional list of extraction rules to enable
+        
+#     Returns:
+#         Combined prompt string for entity extraction with optional recommendation support
+#     """
+#     # Get the base entity extraction prompt (includes ontology, output contract, examples)
+#     base_prompt = get_entity_extraction_prompt(rules=rules)
+    
+#     # If artifact_type is "base_case", add objective-driven and recommendation-specific content
+#     if artifact_type == "base_case":
+#         # Get recommendation-based extraction prompt (focuses on recommendations, not ontology)
+#         recommendation_prompt = get_recommendation_based_entity_extraction_prompt(
+#             objective_type=objective_type or "increase production",
+#             objective_target=objective_target or "10%",
+#             objective_unit=objective_unit or "%",
+#         )
+        
+#         # Merge the prompts: base extraction + objective-driven additions + recommendations
+#         # Note: We don't repeat ontology/contract info as it's already in base_prompt
+#         merged_prompt = f"""\
+# {base_prompt}
+
+# {objective_driven_extraction_additions}
+
+# {recommendation_prompt}
+# """
+#         return merged_prompt
+    
+#     # For non-base_case artifact types, return just the base prompt
+#     return base_prompt
+
+def generate_prompt(
+    artifact_type: str = "base_case",
+    objective_type: Optional[str] = None,
+    objective_target: Optional[str] = None,
+    objective_unit: Optional[str] = None,
+    objective_description: Optional[str] = None,
+    add_edges: bool = False,
+    rules: Optional[List[str]] = ["NODES_AND_RELATIONS", "PROVENANCE_AND_CONFIDENCE", "UNITS_NORMALIZATION"],
 ) -> str:
-    base_prompt = f"""
-    --------------------------------------------------------------------------------
-    ALPHA-VAL OPTIONALITY — OBJECTIVE-DRIVEN ENTITY & RELATION EXTRACTION (v2)
-    --------------------------------------------------------------------------------
-
-    CONTEXT
-    Engineers in the [mining] industry use system design reports (here referred to as base case documents), which capture design and system configurations, to plan capital-intensive installations and industrial operations. The reports consist of details on technical requirements, equipment and material, process, operations, capital (CAPEX) and operating (OPEX) costs, constraints, assumptions, exclusions, and policy information on project requirements. Our system (Alpha-Val) is designed to read the reports and extract all the relevant information and factors (hereon referred to as extracted entities), which is then used for cost estimation and analysis. Entities are structured data about factors such as equipment, material, process, constraints, cost items, and other relevant factors. Our system employs an ontology to map the extracted entities to a standard classification system (hereon referred to as MSIO ontology). Furthermore, Large Language Models (LLMs) are used to generate recommendations and relevant entities for optionality estimation objectives from the base case documents. 
-
-    ROLE
-    You are a senior process engineer + cost estimator extracting structured entities and edges from a *base case* document to support cost-sensitive optionality.
-    Follow the ontology and output contract exactly. Do not guess.
-
-    GLOBAL OBJECTIVE
-    Improve against: {objective_type} by {objective_target} (amount) {objective_unit} (unit).
-    Start by identifying recommendations for "local objectives" that are relevant to the global objective. 
-    Next, translate the local objectives into entities and relations.
-    Only extract entities/relations that are explicitly present or *strongly implied*
-    as relevant to achieving this objective.
-
-    ONTOLOGY (SOURCE OF TRUTH)
-    - Node types: {NODE_TYPES}
-    - Node properties: {NODE_PROPERTIES}
-    - Edge types: {EDGE_TYPES}
-    - Edge properties: {EDGE_PROPERTIES}
-
-    MSIO ONTOLOGY (CLASSIFICATION)
-    - Disciplines (valid): {MSIO_DISCIPLINE_NAMES_STRING}
-    - Full MSIO JSON: {MSIO_ONTOLOGY_TEXT}
-
-    --------------------------------------------------------------------------------
-    TOP-LEVEL PRINCIPLES (READ CAREFULLY)
-    --------------------------------------------------------------------------------
-    1) Zero Hallucination: Extract only facts supported by text/evidence.
-    2) Ontology-Strict: Use only types/properties present in the MSIO ontology.
-    3) Recommendations are NOT nodes: embed them in node.properties.recommendations[].
-    4) Costs live ONLY in node.properties.cost_information (never inside attributes).
-    5) Provenance Everywhere: evidence_text + evidence_prov + confidence are mandatory.
-    6) Deterministic JSON: Return *only* the two tool calls: extract_nodes(...) and extract_edges(...).
-
-    --------------------------------------------------------------------------------
-    WHAT TO EXTRACT
-    --------------------------------------------------------------------------------
-    A) Recommendations (embedded inside entities)
-      • Create 15–30+ recommendations spanning:
-        Equipment, Process, Operations, Infrastructure, Materials, Controls, Energy,
-        Maintenance, Safety, Environmental, and other relevant aspects.
-      • For each, include: id, type, name, rationale, relevance(primary|secondary|other),
-        change_direction(↑/↓/→), change_magnitude (number|string), evidence_text, confidence,
-        optional cost fields (see Cost block), and a short "post_check" note that it
-        logically matches the host entity and attribute context.
-      • NEVER create nodes with type="Recommendation". Always embed in the related entity.
-
-    B) Entities (Equipment, Process, Material, Control, Infrastructure, CostItem, etc.)
-      For each entity:
-      1. MSIO mapping (MANDATORY)
-          - Map Discipline → Category → Subcategory → Entity using MSIO.
-          - If exact entity not found, choose closest within hierarchy and set outside_msio=true.
-      2. Attributes (MANDATORY)
-          - Extract all technical/operational attributes relevant to the entity and objective:
-            flow_rate, throughput, efficiency, power, head/pressure, capacity, temperature,
-            dimensions, NPSH, speed, seal_type, materials, etc.
-          - Each attribute object must include: name, value, unit, evidence_text, confidence.
-          - If an expected attribute is not present in the text but is listed in ontology,
-            include it with null value and null unit (keep evidence_text empty and confidence=0.0).
-          - Unit policy:
-            * Normalize *labels only* (e.g., "gph"→"gal/hr"). DO NOT convert numeric values.
-            * If two mentions use different units, keep both as separate attribute entries.
-            * For ranges, supply capacity_value_min/max (numbers) and capacity_unit; retain the original text as an additional attribute entry.
-      3. Cost Information (MANDATORY WHEN AVAILABLE)
-          - Store in properties.cost_information (object) ONLY:
-            cost_value, cost_currency(ISO), cost_basis_year, cost_type('CAPEX','OPEX','Total','Other'),
-            annual_op_cost, reclamation_cost (nullable).
-          - For totals like TIC/TCC, create a separate node type="CostItem"
-            with total_cost_value and total_cost_currency, and link with HAS_COST/AFFECTS_COST.
-      4. Recommendations (Embedded)
-          - Add zero or more recommendation objects (see A) into properties.recommendations[].
-      5. Provenance & Confidence
-          - properties.evidence_text: ≤200 chars snippet supporting the entity.
-          - properties.evidence_prov: object source doc, page, table, etc..
-          - properties.confidence: float in [0.0,1.0].
-
-    C) Relations (Edges)
-      - Connect entities using only {{EDGE_TYPES}}.
-      - Each edge must have: source(id), target(id), type, properties{{evidence_text, confidence, ...domain fields}}.
-      - Add AFFECTS_COST between domain entities and CostItem totals when appropriate.
-      - Add functional relations that are *explicitly stated or strongly implied* (e.g., FEEDS, PART_OF, CONNECTS_TO).
-
-    --------------------------------------------------------------------------------
-    COST EXTRACTION (CONSISTENT POLICY)
-    --------------------------------------------------------------------------------
-    - Extract numeric value and currency separately; set unknowns to null.
-    - Do not place any cost fields in attributes[].
-    - For unit rates in text (e.g., $/kW, $/ton), store as attributes with name/value/unit; link to costs via the entity context.
-    - For totals (e.g., "TIC = $12.3M (2024 USD)"): create type="CostItem", set total_cost_value=12300000, cost_currency="USD",
-      cost_basis_year=2024, and edge AFFECTS_COST from relevant entities to this CostItem.
-
-    --------------------------------------------------------------------------------
-    PROVENANCE & CONFIDENCE RUBRIC
-    --------------------------------------------------------------------------------
-    - Confidence scoring:
-      0.90–1.00: Direct quote or table cell with matching attribute & unit.
-      0.70–0.89: Direct mention but partial details or mild synonymy.
-      0.50–0.69: Strongly implied (within same paragraph/table context), entity inferred.
-      <0.50: Omit.
-    - Always fill: evidence_text, evidence_prov{{sourceDoc, sourcePage?, table_ref?}}, confidence.
-
-    --------------------------------------------------------------------------------
-    DEDUPLICATION & MERGE POLICY
-    --------------------------------------------------------------------------------
-    Two entities are duplicates if:
-      (1) Same MSIO 4-tuple (discipline/category/subcategory/entity), AND
-      (2) Same or highly similar name (case-insensitive), AND
-      (3) ≥60% attribute overlap (matching names; treat different units as separate entries).
-    Merge strategy:
-      • Keep most specific/complete name; keep highest confidence.
-      • Preserve *all* attribute entries (do NOT convert values; keep each unit as-is).
-      • Concatenate/choose best evidence_text; preserve all source snippets in a list if needed.
-      • Redirect all edges to the merged node and remove duplicate edges (same source,target,type).
-
-    Workflow:
-      1) Extract candidates → 2) Group by MSIO 4-tuple → 3) Similar name cluster →
-      4) Apply merge → 5) Update edges → 6) Return deduped nodes.
-
-    --------------------------------------------------------------------------------
-    MSIO MATCHING WORKFLOW (FAST, ROBUST)
-    --------------------------------------------------------------------------------
-    1) Identify the mention and local context (sentence/row).
-    2) Case-insensitive match to Discipline; then Category; then Subcategory; then Entity.
-    3) Apply simple synonym folding (e.g., "pump"→"Pumps").
-    4) If ambiguous at Entity, return top-2 candidates within the same Subcategory with reduced confidence.
-    5) Set outside_msio=true when only a closest match can be made.
-
-    --------------------------------------------------------------------------------
-    VALIDATION GATE (MUST PASS BEFORE RETURN)
-    --------------------------------------------------------------------------------
-    ✓ Each node: id(uuid), type∈{{NODE_TYPES}}, name, properties{{NODE_PROPERTIES}}
-    ✓ Each node.properties has: discipline, category, subcategory, entity (MSIO), outside_msio(boolean)
-    ✓ Each node.properties has: attributes[] (objects with name, value, unit, evidence_text, confidence)
-    ✓ Each node.properties has: cost_information{{cost_value, cost_currency, cost_basis_year, cost_type, annual_op_cost, reclamation_cost}}
-    ✓ Each node.properties has: recommendations[] (embedded) — NO nodes of type="Recommendation"
-    ✓ Each node.properties has: evidence_text, evidence_prov, confidence
-    ✓ Each edge: valid source/target ids, type∈{{EDGE_TYPES}}, properties with evidence_text, confidence
-    ✓ All property keys match {{NODE_PROPERTIES}} / {{EDGE_PROPERTIES}}
-    ✓ CRITICAL: Explore all possible recommendations and entities that are relevant to the global objective
-    ✓ CRITICAL: Extract all possible matching entities and their properties and attributes
-    ✓ No hallucinated facts; no unreferenced ids
-    ✓ Deduplication applied; edges updated post-merge
-
-    --------------------------------------------------------------------------------
-    OUTPUT FORMAT (STRICT)
-    --------------------------------------------------------------------------------
-    Return ONLY:
-      extract_nodes(nodes=[{{...}}])
-      extract_edges(edges=[{{...}}])
-
-    No prose, no extra keys, no comments.
-
-    --------------------------------------------------------------------------------
-    MINI EXAMPLE (COMPLIANT)
-    --------------------------------------------------------------------------------
-    Input snippet:
-    "Two centrifugal base pump units sized for 500 gpm at 120 ft head with mechanical seals.
-    CAPEX per pump ≈ $200,000 (2024 USD). Pump efficiency 60%."
-
-    Example node (1 of N):
-    {{
-      "id": "pump_cen_001",
-      "type": "Equipment",
-      "name": "Centrifugal Pump 500 gpm",
-      "properties": {{
-        "discipline": "Mechanical Equipment",
-        "category": "Pumps",
-        "subcategory": "Centrifugal",
-        "entity": "Base pump unit",
-        "outside_msio": false,
-        "attributes": [
-          {{"name":"Design flowrate","value":500,"unit":"gal/min","evidence_text":"500 gpm","confidence":0.95}},
-          {{"name":"Head","value":120,"unit":"ft","evidence_text":"120 ft head","confidence":0.95}},
-          {{"name":"Pump Efficiency","value":60,"unit":"%","evidence_text":"Pump efficiency 60%","confidence":0.90}},
-          {{"name":"Seal type","value":"mechanical","unit":null,"evidence_text":"mechanical seals","confidence":0.95}}
-        ],
-        "cost_information": {{
-          "cost_value": 200000,
-          "cost_currency": "USD",
-          "cost_basis_year": 2024,
-          "cost_type": "CAPEX",
-          "annual_op_cost": null,
-          "reclamation_cost": null
-        }},
-        "recommendations": [
-          {{
-            "id":"rec_pump_eff_01",
-            "type":"Upgrade Impeller/Trim",
-            "name":"Optimize impeller for BEP",
-            "rationale":"Shift duty toward best efficiency point to meet objective with lower power draw",
-            "relevance":"primary",
-            "change_direction":"↑",
-            "change_magnitude":"+5% efficiency",
-            "evidence_text":"Efficiency currently 60%",
-            "confidence":0.75,
-            "cost_value": null,
-            "cost_currency": null,
-            "cost_basis_year": null,
-            "cost_type": null,
-            "annual_op_cost": null,
-            "reclamation_cost": null,
-            "cost_impact_direction":"↓",
-            "cost_impact_magnitude":"OPEX −2–4%",
-            "post_check":"Matches pump entity and efficiency attribute"
-          }}
-        ],
-        "evidence_text":"...500 gpm at 120 ft head with mechanical seals...",
-        "evidence_prov":{{"sourceDoc":"base_case.pdf","sourcePage":12}},
-        "confidence":0.92
-      }}
-    }}
-
-    Example edge:
-    {{
-      "source":"pump_cen_001",
-      "target":"cost_tic_2024",
-      "type":"AFFECTS_COST",
-      "properties":{{"evidence_text":"CAPEX per pump ≈ $200,000 (2024 USD)","confidence":0.95}}
-    }}
-
-    --------------------------------------------------------------------------------
-    BEGIN EXTRACTION NOW
-    --------------------------------------------------------------------------------
     """
+    Generate a single, compact, aggregated prompt for entity extraction.
+    
+    This is a unified prompt that combines all extraction capabilities into one text,
+    with conditional sections for recommendations (if artifact_type is base_case).
+    Recommendations section comes before entity extraction.
+    
+    Args:
+        artifact_type: Type of artifact being processed (e.g., "base_case")
+        objective_type: Objective type/goal (e.g., "increase production", "reduce capex")
+        objective_target: Objective target value (e.g., "10%", "5%")
+        objective_unit: Objective unit (e.g., "%", "USD")
+        add_edges: Whether to extract edges/relationships (default: False)
+        rules: Optional list of extraction rules to enable
+        
+    Returns:
+        Single aggregated prompt string
+    """
+    
+    # Build conditional recommendation section
+    recommendation_section = ""
+    if artifact_type == "base_case" and objective_type:
+        recommendation_section = f"""
+        -------------------------------------------------------------------------------
+        RECOMMENDATION GENERATION (STEP 1 - DO THIS FIRST)
+        -------------------------------------------------------------------------------
+        CONTEXT
+        Engineers in the [mining] industry use system design reports (here referred to as base case documents) to design and optimize systems to plan capital-intensive installations and operations. The reports consist of details on technical requirements, equipment and material, process, operations, capital (CAPEX) and operating (OPEX) costs, constraints, assumptions, exclusions, and policy information on project requirements. Our system (Alpha-Val) is designed to read the reports and extract all the relevant information and factors (hereon referred to as extracted entities), which is then used for cost estimation and analysis. Entities are structured data about factors such as equipment, material, process, constraints, cost items, and other relevant factors. Our system employs an ontology to map the extracted entities to a standard classification system (hereon referred to as MSIO ontology) and to extract the relevant information and factors.
 
-    return base_prompt
+        OBJECTIVE: {objective_type} by {objective_target} {objective_unit or "%"} {objective_description or ""}
+
+        Before extracting entities, identify comprehensive recommendations to achieve this objective.
+
+        Generate 15-30+ recommendations across:
+        - Equipment: Upgrades, replacements, additions, technology improvements
+        - Process: Flow improvements, efficiency gains, throughput enhancements
+        - Operations: Shift patterns, staffing, procedures, scheduling
+        - Infrastructure: Utilities, buildings, site work, foundations, structures
+        - Materials: Raw materials, consumables, feedstocks, product specifications
+        - Controls: Automation, instrumentation, SCADA, control logic
+        - Energy: Power consumption, heat recovery, waste minimization
+        - Maintenance: Reliability improvements, preventive maintenance, spare parts
+        - Safety: Safety systems, procedures, equipment, training
+        - Environmental: Emissions reduction, waste treatment, compliance
+
+        Categorize as:
+        - PRIMARY (5-10): High-impact, direct solutions
+        - SECONDARY (5-10): Supporting changes
+        - OTHER (5-10): Alternative approaches
+
+        For each recommendation: id, type, name, rationale, relevance, change_direction, 
+        change_magnitude, evidence_text, confidence, cost information (if available).
+
+        CRITICAL: Recommendations will be embedded in entity.properties.recommendations arrays.
+        NEVER create separate nodes with type='Recommendation'.
+
+        """
+    
+    # Build edges section conditionally
+    edges_section = ""
+    if add_edges:
+        edge_types_str = json.dumps(ontology_nodes_and_relations.get("EDGE_TYPES", []), indent=1)
+        edges_section = f"""
+          -------------------------------------------------------------------------------
+          EDGES/RELATIONSHIPS EXTRACTION
+          -------------------------------------------------------------------------------
+          Extract relationships between entities using EDGE_TYPES: {edge_types_str}
+
+          Each edge MUST have:
+          - "id": valid UUID (RFC 4122 format)
+          - "source": source node UUID
+          - "target": target node UUID  
+          - "type": one of EDGE_TYPES
+          - "properties": object with evidence_text, confidence, and domain attributes
+
+          """
+    
+    # Build rules sections conditionally
+    rules_sections = ""
+    if rules:
+        if "UNITS_NORMALIZATION" in rules:
+            rules_sections += f"{units_normalization_block}\n\n"
+        if "TABLE_EXTRACTION" in rules:
+            rules_sections += f"{table_extraction_block}\n\n"
+        if "GLOBAL_OBJECTIVES" in rules:
+            rules_sections += f"{global_objectives_block}\n\n"
+        if "PROVENANCE_AND_CONFIDENCE" in rules:
+            rules_sections += f"{prov_conf_block}\n\n"
+    
+    # Main prompt
+    prompt = f"""\
+      -------------------------------------------------------------------------------
+      ENTITY EXTRACTION PROMPT
+      -------------------------------------------------------------------------------
+
+      ROLE
+      Extract clean, deduplicated entities from mining/process-engineering content aligned 
+      to Mining System Integration Ontology (MSIO). Map entities to MSIO hierarchy 
+      (Discipline → Category → Subcategory → Entity). If no MSIO match, use closest 
+      hierarchy match and set "outside_msio": true.
+
+      {recommendation_section}
+      -------------------------------------------------------------------------------
+      ONTOLOGY REFERENCE
+      -------------------------------------------------------------------------------
+      NODE_TYPES: {json.dumps(ontology_nodes_and_relations.get("NODE_TYPES", []), indent=1)}
+      EDGE_TYPES: {json.dumps(ontology_nodes_and_relations.get("EDGE_TYPES", []), indent=1)}
+      NODE_PROPERTIES: {json.dumps(ontology_nodes_and_relations.get("NODE_PROPERTIES", []), indent=1)}
+      EDGE_PROPERTIES: {json.dumps(ontology_nodes_and_relations.get("EDGE_PROPERTIES", []), indent=1)}
+
+      MSIO Disciplines: {MSIO_DISCIPLINE_NAMES_STRING}
+      Full MSIO Ontology: {MSIO_ONTOLOGY_TEXT}
+
+      -------------------------------------------------------------------------------
+      EXTRACTION REQUIREMENTS
+      -------------------------------------------------------------------------------
+
+      MANDATORY:
+      - Extract only what is explicitly or strongly implied by input text
+      - Every node MUST have "id" as valid UUID (RFC 4122 format, e.g., "550e8400-e29b-41d4-a716-446655440000")
+      - Every node MUST have MSIO classification: discipline, category, subcategory, entity
+      - Use case-insensitive matching for MSIO hierarchy
+      - If no match, set to "Miscellaneous" at that level
+      - Extract all attributes from text (flow_rate, efficiency, power, capacity, head, pressure, etc.)
+      - Store attributes in properties.attributes array: name, value, unit, evidence_text, confidence
+      - Cost information stored in properties.cost_information (NOT in attributes): cost_value, 
+        cost_currency, cost_basis_year, cost_type, annual_op_cost, reclamation_cost
+      - Normalize units per units normalization rules
+      - Deduplicate entities: merge duplicates with same MSIO classification and similar names
+      - Include evidence_text and confidence (0.0-1.0) for all nodes
+      - Map to most specific MSIO Entity available
+      - Split only Entity/Element field on "/" in MSIO hierarchy
+
+      OUTPUT CONTRACT:
+      Each node MUST have:
+      - "id": valid UUID
+      - "type": one of NODE_TYPES
+      - "properties": object containing:
+        • discipline, category, subcategory, entity (MSIO classification)
+        • "name": human-readable name
+        • "attributes": array of {{
+            "name": string,
+            "value": number|null,
+            "unit": string|null,
+            "evidence_text": string|null,
+            "confidence": 0.0-1.0
+          }}
+        • "cost_information": {{cost_value, cost_currency, cost_basis_year, cost_type, ...}} (if available)
+        • "recommendations": array (if artifact_type is base_case, can be empty)
+        • "outside_msio": boolean (true if no MSIO match)
+        • evidence_text, confidence (MANDATORY)
+
+      {rules_sections}
+      {edges_section}
+      -------------------------------------------------------------------------------
+      MSIO CLASSIFICATION WORKFLOW
+      -------------------------------------------------------------------------------
+
+      STEP 1: Identify entity name/description from text
+      STEP 2: Match to Discipline (case-insensitive, fallback to "Miscellaneous")
+      STEP 3: Match to Category within Discipline (fallback to "Miscellaneous")
+      STEP 4: Match to Subcategory within Category (fallback to "Miscellaneous")
+      STEP 5: Match to Entity within Subcategory (fallback to "Miscellaneous")
+      STEP 6: Extract attributes from NODE_PROPERTIES and MSIO ontology
+        - Create attribute objects: name, value, unit, evidence_text, confidence
+        - If attribute not present, set value and unit to null
+        - Store cost info in properties.cost_information (not attributes array)
+
+      Examples:
+      - "Two centrifugal pumps 500 gpm at 120 ft head"
+        → Discipline: "Mechanical Equipment", Category: "Pumps", Subcategory: "Centrifugal", 
+          Entity: "Base pump unit", Attributes: Design flowrate (500 gpm), Head (120 ft)
+
+      - "Storage tank with fixed roof"
+        → Discipline: "Mechanical Equipment", Category: "Tanks", Subcategory: "Storage Tank", 
+          Entity: "Fixed Roof"
+
+      -------------------------------------------------------------------------------
+      VALIDATION
+      -------------------------------------------------------------------------------
+      ✓ Every node has: unique UUID id, valid type, properties object with name, MSIO classification, attributes array
+      ✓ All MSIO fields match ontology or set to "Miscellaneous"
+      ✓ Attributes array contains all relevant attributes (null values allowed)
+      ✓ Cost information in properties.cost_information (not attributes)
+      ✓ Evidence and confidence for all nodes
+      ✓ No hallucinated entities or properties
+      {"✓ Recommendations array in properties (can be empty)" if artifact_type == "base_case" else ""}
+      {"✓ Edges extracted with valid UUIDs and types" if add_edges else ""}
+
+      -------------------------------------------------------------------------------
+      OUTPUT
+      -------------------------------------------------------------------------------
+      Return nodes with extract_nodes(nodes=[...]){" and edges with extract_edges(edges=[...])" if add_edges else ""}.
+
+      Each node example:
+      {{
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "type": "Equipment",
+        "properties": {{
+          "name": "Centrifugal Pump 500 gpm",
+          "discipline": "Mechanical Equipment",
+          "category": "Pumps",
+          "subcategory": "Centrifugal",
+          "entity": "Base pump unit",
+          "attributes": [
+            {{"name": "Design flowrate", "value": 500, "unit": "gpm", "evidence_text": "500 gpm", "confidence": 0.95}}
+          ],
+          "cost_information": {{"cost_value": 400000, "cost_currency": "USD", "cost_basis_year": 2024, "cost_type": "CAPEX"}},{f'\n    "recommendations": [],' if artifact_type == "base_case" else ""}
+          "evidence_text": "...",
+          "confidence": 0.92
+        }}
+      }}
+      """
+    
+    return prompt

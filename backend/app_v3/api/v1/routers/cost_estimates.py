@@ -17,6 +17,8 @@ from ....domain.cost_estimates.schemas import (
     CostEstimateUpdate,
     CostEstimateOut,
 )
+from ....domain.cost_estimates import repository
+from ....domain.scenarios import services as scenario_services
 # Import auth for user authentication
 from .auth import get_current_user
 
@@ -40,20 +42,85 @@ async def create_cost_estimate(
     current_user: dict = Depends(get_current_user),
 ):
     """
-    Create a new cost estimate.
+    Create a new cost estimate and optionally calculate costs.
+    
+    If calculation parameters are provided (selected_entities, scenario_description),
+    this endpoint will:
+    1. Create the cost estimate entry
+    2. Fetch base case entities by their IDs
+    3. Use semantic search to find matching tabular_data entities
+    4. Extract cost information from both base and tabular entities
+    5. Build a cost comparison report
+    6. Store results in the cost estimate metadata
     
     Args:
-        data: Cost estimate creation data
+        data: Cost estimate creation data (may include calculation parameters)
         current_user: Authenticated user
         
     Returns:
-        Created cost estimate object
+        Created cost estimate object with metadata if calculation was performed
         
     Raises:
         HTTPException: If validation fails (400) or scenario not found (404)
     """
     try:
+        # Create the cost estimate entry first
         cost_estimate = await services.create(data)
+        
+        # If calculation parameters are provided, perform cost calculation
+        if data.selected_entities and len(data.selected_entities) > 0:
+            logger.info(
+                f"Cost calculation requested for estimate {cost_estimate.id} "
+                f"with {len(data.selected_entities)} entities"
+            )
+            
+            # Get scenario to retrieve project_id
+            scenario = await scenario_services.get(data.scenario_id)
+            if not scenario:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Scenario not found: {data.scenario_id}",
+                )
+            
+            project_id = scenario.project_id
+            if not project_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Scenario missing project_id",
+                )
+            
+            # Perform cost calculation
+            calculation_result = await services.calculate_cost_estimate(
+                cost_estimate_id=cost_estimate.id,
+                project_id=project_id,
+                selected_entities=data.selected_entities,
+                top_k=data.top_k or 3,
+                cutoff=0.25,  # Default cutoff matching old implementation
+            )
+            
+            # Build metadata with calculation results
+            metadata = {
+                "scenario_description": data.scenario_description,
+                "entity_selection_state": data.entity_selection_state or {},
+                "cost_comparison_report": calculation_result["cost_comparison_report"],
+                "cost_details": {
+                    "base_entities": calculation_result["base_entities"],
+                    "tabular_entities": calculation_result["tabular_entities"],
+                    "matched_entities": calculation_result["matched_entities"],
+                },
+                "status": "completed",
+            }
+            
+            # Update cost estimate with metadata
+            cost_estimate = await repository.update_cost_estimate_metadata(
+                cost_estimate.id, metadata
+            )
+            
+            logger.info(
+                f"Cost calculation completed for estimate {cost_estimate.id}: "
+                f"{len(calculation_result['cost_comparison_report'])} entities processed"
+            )
+        
         return cost_estimate
         
     except ValueError as e:
@@ -62,6 +129,8 @@ async def create_cost_estimate(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error creating cost estimate: {e}", exc_info=True)
         raise HTTPException(

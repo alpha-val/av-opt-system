@@ -944,6 +944,9 @@ const EntityAttributesWithRecommendations: React.FC<
 
   return (
     <Box>
+      <Typography variant="h6" gutterBottom>
+        Total entities: {entities.length}
+      </Typography>
       <TableContainer component={Paper} variant="outlined">
         <Table size="small">
           <TableHead>
