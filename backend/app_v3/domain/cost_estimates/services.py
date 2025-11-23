@@ -107,6 +107,7 @@ async def calculate_cost_estimate(
     selected_entities: List[str],
     top_k: int = 3,
     cutoff: float = 0.25,
+    revised_values: Optional[List[Dict[str, Any]]] = [],
 ) -> Dict[str, Any]:
     """
     Calculate cost estimate by finding matching tabular entities for base case entities.
@@ -117,6 +118,14 @@ async def calculate_cost_estimate(
         selected_entities: List of base case entity IDs to calculate costs for
         top_k: Number of top matching tabular entities to return per base entity
         cutoff: Minimum similarity score threshold for semantic search
+        revised_values: Optional list of revised attribute values. Each item contains:
+            {
+                "entity_id": str,
+                "attributes": [
+                    {"attr_name": str, "revised_val": number | string | null},
+                    ...
+                ]
+            }
         
     Returns:
         Dictionary containing:
@@ -155,7 +164,7 @@ async def calculate_cost_estimate(
     
     # For each base entity, find related tabular entities
     matched_tabular_entities: Dict[str, List[Dict[str, Any]]] = {}
-    all_tabular_entities = []
+    all_unique_tabular_entities = []
     seen_tabular_ids = set()
     
     for base_entity in base_entities:
@@ -172,6 +181,7 @@ async def calculate_cost_estimate(
             project_id=project_id,
             top_k=top_k,
             cutoff=cutoff,
+            revised_values=revised_values,
         )
         
         # Track unique tabular entities
@@ -179,9 +189,14 @@ async def calculate_cost_estimate(
             tabular_id = tabular_entity.get("id")
             if tabular_id and tabular_id not in seen_tabular_ids:
                 seen_tabular_ids.add(tabular_id)
-                all_tabular_entities.append(tabular_entity)
+                all_unique_tabular_entities.append(tabular_entity)
         
-        matched_tabular_entities[entity_id] = related_tabular
+        # matched_tabular_entities[entity_id] = related_tabular
+        # Insert matched tabular entities into matched_tabular_entities dictionary in base_entity["tabular_entities"]
+        # Initialize "tabular_entities" key if it doesn't exist
+        if "tabular_entities" not in base_entity:
+            base_entity["tabular_entities"] = []
+        base_entity["tabular_entities"].extend(related_tabular)
         
         logger.debug(
             f"Found {len(related_tabular)} tabular entities for base entity {entity_id}"
@@ -190,7 +205,6 @@ async def calculate_cost_estimate(
     # Build cost comparison report
     cost_comparison_report = build_cost_comparison_report(
         base_entities=base_entities,
-        matched_tabular_entities=matched_tabular_entities,
     )
     
     # Build matched entities structure for metadata
@@ -204,13 +218,13 @@ async def calculate_cost_estimate(
     
     logger.info(
         f"Cost calculation completed: {len(cost_comparison_report)} entities processed, "
-        f"{len(all_tabular_entities)} unique tabular entities found"
+        f"{len(all_unique_tabular_entities)} unique tabular entities found"
     )
     
     return {
         "cost_comparison_report": cost_comparison_report,
         "base_entities": base_entities,
-        "tabular_entities": all_tabular_entities,
+        "tabular_entities": all_unique_tabular_entities,
         "matched_entities": matched_entities,
     }
 

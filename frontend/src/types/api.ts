@@ -246,6 +246,13 @@ export interface CostEstimateCreate extends CostEstimateBase {
   selected_entities?: string[];
   entity_selection_state?: Record<string, boolean>;
   top_k?: number;
+  revised_values?: Array<{
+    entity_id: string;
+    attributes: Array<{
+      attr_name: string;
+      revised_val: number | string | null;
+    }>;
+  }>;
 }
 
 /**

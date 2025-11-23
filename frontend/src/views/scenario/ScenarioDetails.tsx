@@ -34,7 +34,10 @@ import {
   IconButton,
   Divider,
 } from "@mui/material";
-import { PlayArrow as PlayArrowIcon, Stop as StopIcon } from "@mui/icons-material";
+import {
+  PlayArrow as PlayArrowIcon,
+  Stop as StopIcon,
+} from "@mui/icons-material";
 import {
   ExpandMore as ExpandMoreIcon,
   Input as InputIcon,
@@ -54,6 +57,8 @@ import CreateCostEstimateDialog from "../../components/scenario/CreateCostEstima
 import CalculateCostDialog from "../../components/scenario/CalculateCostDialog";
 import CostComparisonReport from "../../components/scenario/CostComparisonReport";
 import ProgressWidget from "../../components/common/ProgressWidget";
+import CostEstimatesList from "../../components/scenario/CostEstimatesList";
+import CostEstimateDetails from "../../components/scenario/CostEstimateDetails";
 import { useDialogs } from "../../hooks/useDialogs";
 import { useProgress } from "../../hooks/useProgress";
 import {
@@ -156,41 +161,54 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
   const runningAnalysisFromRedux = useSelector(selectScenarioRunningAnalysis);
   const currentAnalysisJobId = useSelector(selectCurrentAnalysisJobId);
   const updating = useSelector((state: any) => state.scenarios.loading.update);
-  
+
   // Connect to WebSocket for progress updates
   const progress = useProgress(currentAnalysisJobId);
-  
+
   // Determine if analysis is running: check Redux state, scenario status, or WebSocket status
   // Analysis is NOT running if WebSocket status is "completed" or "failed"
   const runningAnalysis = useMemo(() => {
     // If WebSocket is connected and reports completed or failed, analysis is definitely not running
-    if (progress.connected && (progress.status === "completed" || progress.status === "failed")) {
+    if (
+      progress.connected &&
+      (progress.status === "completed" || progress.status === "failed")
+    ) {
       return false;
     }
     // If WebSocket is connected and reports in_progress or started, analysis is running
-    if (progress.connected && (progress.status === "in_progress" || progress.status === "started")) {
+    if (
+      progress.connected &&
+      (progress.status === "in_progress" || progress.status === "started")
+    ) {
       return true;
     }
     // Otherwise, check Redux state and scenario status (fallback when WebSocket not connected)
     return runningAnalysisFromRedux || scenario?.status === "processing";
-  }, [runningAnalysisFromRedux, scenario?.status, progress.status, progress.connected]);
-  
+  }, [
+    runningAnalysisFromRedux,
+    scenario?.status,
+    progress.status,
+    progress.connected,
+  ]);
+
   // Track if we've already handled completion to avoid multiple refreshes
   const completionHandledRef = useRef<string | null>(null);
-  
+
   // Refresh scenario data when analysis completes
   useEffect(() => {
-    if ((progress.status === "completed" || progress.status === "failed") && 
-        currentAnalysisJobId && 
-        completionHandledRef.current !== currentAnalysisJobId) {
+    if (
+      (progress.status === "completed" || progress.status === "failed") &&
+      currentAnalysisJobId &&
+      completionHandledRef.current !== currentAnalysisJobId
+    ) {
       // Mark as handled
       completionHandledRef.current = currentAnalysisJobId;
-      
+
       // Refresh scenario to get updated status
       if (scenarioId) {
         dispatch(fetchScenarioById(scenarioId) as any);
       }
-      
+
       // Clear job ID after a short delay to allow UI to update
       setTimeout(() => {
         dispatch(clearAnalysisJobId());
@@ -224,8 +242,12 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
   >(null);
   const [calculateCostDialogOpen, setCalculateCostDialogOpen] = useState(false);
   const [calculating, setCalculating] = useState(false);
-  const [costCalculationError, setCostCalculationError] = useState<string | null>(null);
-  const [entitySelections, setEntitySelections] = useState<Record<string, boolean>>({});
+  const [costCalculationError, setCostCalculationError] = useState<
+    string | null
+  >(null);
+  const [entitySelections, setEntitySelections] = useState<
+    Record<string, boolean>
+  >({});
 
   // Cost estimates data
   const costEstimatesSelector = useMemo(
@@ -317,7 +339,11 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
 
         // Use separate target and unit fields
         const newTargetValue = scenario.global_objective_target || "";
-        const newTargetType = (scenario.global_objective_unit || "%") as "%" | "$" | "tpd" | "gpm";
+        const newTargetType = (scenario.global_objective_unit || "%") as
+          | "%"
+          | "$"
+          | "tpd"
+          | "gpm";
 
         // Set initial values using combined state
         setObjectiveForm({
@@ -571,41 +597,135 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
     description?: string;
     topK: number;
   }) => {
-    console.log('[CalculateCost] Starting cost calculation:', { data, scenarioId, projectId });
-    
+    console.log("[CalculateCost] Starting cost calculation:", {
+      data,
+      scenarioId,
+      projectId,
+    });
+
     // Clear any previous errors
     setCostCalculationError(null);
-    
+
     // Validate input data parameter
     if (!data || !data.name) {
-      const errorMsg = "Invalid input data. Please ensure all required fields are filled.";
-      console.error('[CalculateCost] Invalid data parameter:', data);
+      const errorMsg =
+        "Invalid input data. Please ensure all required fields are filled.";
+      console.error("[CalculateCost] Invalid data parameter:", data);
       setCostCalculationError(errorMsg);
       return;
     }
-    
+
     // Validate required data BEFORE setting loading state
     if (!scenario || !projectId || !scenarioId) {
-      const errorMsg = "Missing required data. Please ensure scenario and project are loaded.";
-      console.error('[CalculateCost] Validation failed:', { scenario: !!scenario, projectId, scenarioId });
+      const errorMsg =
+        "Missing required data. Please ensure scenario and project are loaded.";
+      console.error("[CalculateCost] Validation failed:", {
+        scenario: !!scenario,
+        projectId,
+        scenarioId,
+      });
       setCostCalculationError(errorMsg);
       return;
     }
-    
+
     // Get list of selected entities BEFORE setting loading state
     const selectedEntities = Object.keys(entitySelections).filter(
       (id) => entitySelections[id] !== false
     );
-    
-    console.log('[CalculateCost] Entity selections:', { 
-      entitySelections, 
+
+    console.log("[CalculateCost] Entity selections:", {
+      entitySelections,
       selectedEntities,
-      count: selectedEntities.length 
+      count: selectedEntities.length,
     });
+
+    // Get the revised values for attributes of selected entities
+    // Fetch entities and create objects with attribute names and revised values
+    const revisedValues = await Promise.all(
+      selectedEntities.map(async (entityId) => {
+        try {
+          // Fetch entity data
+          const entitiesData = await scenarioApi.getEntities(
+            scenarioId,
+            "base_case"
+          );
+          const entity = entitiesData.entities.find((e: any) => e.id === entityId);
+          
+          if (!entity) {
+            return { entity_id: entityId, attributes: [] };
+          }
+
+          // Get attributes from entity
+          const attributes = entity.properties?.attributes || [];
+          
+          // Calculate revised values based on global objective
+          const globalObjectiveTarget = scenario?.global_objective_target
+            ? parseFloat(scenario.global_objective_target)
+            : null;
+          const globalObjectiveUnit = scenario?.global_objective_unit || "%";
+          const globalObjectiveType = scenario?.global_objective_type || "";
+          
+          // Determine if it's an increase based on objective type
+          const isIncrease = globalObjectiveType
+            ? globalObjectiveType.toLowerCase().includes("increase") ||
+              globalObjectiveType.toLowerCase().includes("improve") ||
+              globalObjectiveType.toLowerCase().includes("optimize")
+            : true;
+
+          // Create array of objects with attr_name and revised_val for each attribute
+          const attributeArray = attributes.map((attr: any) => {
+            const attrName = attr.name || "";
+            const baseValue = attr.value;
+            
+            // Calculate revised value for numeric attributes
+            let revisedValue: number | string | null = baseValue;
+            
+            if (
+              typeof baseValue === "number" &&
+              !isNaN(baseValue) &&
+              globalObjectiveTarget !== null &&
+              !isNaN(globalObjectiveTarget)
+            ) {
+              if (globalObjectiveUnit === "%") {
+                // Percentage change: multiply base value by (1 +/- targetValue/100)
+                const multiplier = isIncrease
+                  ? 1 + globalObjectiveTarget / 100
+                  : 1 - globalObjectiveTarget / 100;
+                revisedValue = baseValue * multiplier;
+                // Round to 2 decimal places
+                revisedValue = Math.round(revisedValue * 100) / 100;
+              } else {
+                // Absolute change: add/subtract target value
+                const change = isIncrease ? globalObjectiveTarget : -globalObjectiveTarget;
+                revisedValue = baseValue + change;
+                // Round to 2 decimal places
+                revisedValue = Math.round(revisedValue * 100) / 100;
+              }
+            }
+            
+            return {
+              attr_name: attrName,
+              revised_val: revisedValue,
+              unit: attr.unit,
+            };
+          });
+
+          return {
+            entity_id: entityId,
+            attributes: attributeArray,
+          };
+        } catch (error) {
+          console.error(`[CalculateCost] Error fetching entity ${entityId}:`, error);
+          return { entity_id: entityId, attributes: [] };
+        }
+      })
+    );
+
+    console.log("[CalculateCost] Revised values:", revisedValues);
 
     if (selectedEntities.length === 0) {
       const errorMsg = "Please select at least one entity to calculate costs.";
-      console.warn('[CalculateCost] No entities selected');
+      console.warn("[CalculateCost] No entities selected");
       setCostCalculationError(errorMsg);
       return;
     }
@@ -613,7 +733,7 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
     // All validations passed, now set loading state and proceed
     setCalculating(true);
     try {
-      console.log('[CalculateCost] Creating cost estimate with calculation:', {
+      console.log("[CalculateCost] Creating cost estimate with calculation:", {
         name: data.name,
         description: data.description,
         scenario_id: scenarioId,
@@ -627,30 +747,38 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
         name: data.name,
         description: data.description,
         scenario_id: scenarioId,
-        scenario_description: data.description || `Cost estimate for ${scenario.name}`,
+        scenario_description:
+          data.description || `Cost estimate for ${scenario.name}`,
         selected_entities: selectedEntities,
         entity_selection_state: entitySelections,
         top_k: data.topK,
+        revised_values: revisedValues,
       };
-      
-      console.log('[CalculateCost] Calling API to create cost estimate with calculation');
+
+      console.log(
+        "[CalculateCost] Calling API to create cost estimate with calculation"
+      );
       const result = await costEstimateApi.create(costEstimateData);
-      
-      console.log('[CalculateCost] Cost estimate created with calculation result:', result);
-      
+
+      console.log(
+        "[CalculateCost] Cost estimate created with calculation result:",
+        result
+      );
+
       // Refresh cost estimates list
-      console.log('[CalculateCost] Refreshing cost estimates list');
+      console.log("[CalculateCost] Refreshing cost estimates list");
       await dispatch(fetchCostEstimates(scenarioId) as any);
-      
+
       // Close dialog and switch to Cost Estimates tab
       setCalculateCostDialogOpen(false);
       setActiveTab(2);
-      console.log('[CalculateCost] Cost calculation completed successfully');
+      console.log("[CalculateCost] Cost calculation completed successfully");
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : "Failed to calculate cost estimate. Please try again.";
-      console.error('[CalculateCost] Error during cost calculation:', error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to calculate cost estimate. Please try again.";
+      console.error("[CalculateCost] Error during cost calculation:", error);
       setCostCalculationError(errorMessage);
     } finally {
       setCalculating(false);
@@ -986,6 +1114,7 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
               >
                 <Tab label="Objectives" id="scenario-tab-0" />
                 <Tab label="System Design" id="scenario-tab-1" />
+                <Tab label="Cost Estimates" id="scenario-tab-2" />
                 <Tab label="Report" id="scenario-tab-3" />
               </Tabs>
             </Box>
@@ -1034,7 +1163,10 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                                   // Clear job ID after cancellation
                                   dispatch(clearAnalysisJobId());
                                 } catch (error) {
-                                  console.error("Failed to cancel analysis:", error);
+                                  console.error(
+                                    "Failed to cancel analysis:",
+                                    error
+                                  );
                                   // Clear job ID even on error
                                   dispatch(clearAnalysisJobId());
                                 }
@@ -1119,7 +1251,14 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
               {/* Tab 1: System Design */}
               <TabPanel value={activeTab} index={1}>
                 <Box sx={{ p: 3 }}>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 2,
+                    }}
+                  >
                     <Typography variant="h6" gutterBottom>
                       Base Case Entities with Recommendations
                     </Typography>
@@ -1155,6 +1294,27 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                 </Box>
               </TabPanel>
 
+              {/* Tab 2: Cost Estimates */}
+              <TabPanel value={activeTab} index={2}>
+                <Box sx={{ p: 3 }}>
+                  {selectedCostEstimateId ? (
+                    <CostEstimateDetails
+                      costEstimateId={selectedCostEstimateId}
+                      scenarioId={scenarioId || undefined}
+                      onBack={() => {
+                        setSelectedCostEstimateId(null);
+                        dispatch(clearCurrentCostEstimate());
+                      }}
+                    />
+                  ) : (
+                    <CostEstimatesList
+                      scenarioId={scenarioId || ""}
+                      onCostEstimateSelect={handleCostEstimateClick}
+                    />
+                  )}
+                </Box>
+              </TabPanel>
+
               {/* Tab 3: Report */}
               <TabPanel value={activeTab} index={2}>
                 <Box sx={{ p: 3 }}>
@@ -1172,14 +1332,16 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
               </TabPanel>
             </Box>
           </Paper>
-          
+
           {/* Calculate Cost Dialog */}
           <CalculateCostDialog
             open={calculateCostDialogOpen}
             onClose={() => setCalculateCostDialogOpen(false)}
             onCalculate={handleCalculateCost}
             calculating={calculating}
-            defaultName={scenario?.name ? `${scenario.name} - Cost Estimate` : ""}
+            defaultName={
+              scenario?.name ? `${scenario.name} - Cost Estimate` : ""
+            }
           />
         </Box>
       ) : (

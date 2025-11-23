@@ -126,10 +126,10 @@ async def get_cost_estimate(cost_estimate_id: str) -> Optional[CostEstimateOut]:
         cost_estimate = CostEstimateOut(
             id=cost_estimate_id_str,
             name=doc.get("name", ""),
-            description=doc.get("description"),
             scenario_id=doc.get("scenario_id", ""),
             created_at=doc.get("created_at", _now()),
             updated_at=doc.get("updated_at", _now()),
+            metadata=doc.get("metadata", {}),
         )
 
         # Compute the cost estimate

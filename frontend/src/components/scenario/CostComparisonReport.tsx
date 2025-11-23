@@ -127,7 +127,7 @@ const CostComparisonRowComponent: React.FC<{ row: CostComparisonRow }> = ({
 
   return (
     <>
-      <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
+      <TableRow sx={{ "& > *": { borderBottom: "unset" }, backgroundColor: open ? "secondary.veryLight" : "transparent" }}>
         <TableCell>
           <IconButton
             aria-label="expand row"

@@ -449,7 +449,7 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
               />
             ) : (
               <Typography variant="body2" color="text.secondary">
-                N/A
+                N/A ! ! !
               </Typography>
             )}
           </TableCell>
@@ -802,13 +802,15 @@ const EntityAttributesWithRecommendations: React.FC<
         return prev;
       });
 
-      // Initialize included entities to true by default
+      // Initialize included entities - all unchecked by default
       setIncludedEntities((prev) => {
         const initialIncluded: Record<string, boolean> = {};
         const uniqueEntityIds = new Set(attributeRows.map((row) => row.entityId));
+        
         uniqueEntityIds.forEach((entityId) => {
           if (prev[entityId] === undefined) {
-            initialIncluded[entityId] = true; // Default to included
+            // All entities are unchecked by default
+            initialIncluded[entityId] = false;
           }
         });
         if (Object.keys(initialIncluded).length > 0) {
@@ -817,7 +819,7 @@ const EntityAttributesWithRecommendations: React.FC<
         return prev;
       });
     }
-  }, [attributeRows]);
+  }, [attributeRows, entities]);
 
   /**
    * Handle attribute type change
@@ -1040,7 +1042,8 @@ const EntityAttributesWithRecommendations: React.FC<
                         updatedValues[rowKey] !== undefined
                           ? updatedValues[rowKey]
                           : row.updatedValue;
-                      const isEntityIncluded = includedEntities[row.entityId] !== false; // Default to true
+                      // Check if entity is included (defaults to false if not explicitly set)
+                      const isEntityIncluded = includedEntities[row.entityId] === true;
 
                       return (
                         <AttributeRowComponent

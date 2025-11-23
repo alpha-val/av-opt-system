@@ -330,9 +330,9 @@ const ProjectList: React.FC = () => {
         onClose={() => setCreateDialogOpen(false)}
         onSuccess={(projectId) => {
           handleFetchProjects();
-          // Navigate to the newly created project dashboard
+          // Navigate to the newly created project dashboard with Sources tab active
           if (projectId) {
-            navigate(`/projects/${projectId}`);
+            navigate(`/projects/${projectId}#sources`);
           }
         }}
       />

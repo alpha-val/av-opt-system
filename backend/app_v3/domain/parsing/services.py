@@ -358,23 +358,13 @@ class DocumentProcessingService:
             node_id_mapping = {}
             
             for node in nodes:
-                # Ensure node has a unique UUID as ID
+                # Always generate a new UUID for each node, overriding existing IDs
                 old_id = node.get("id")
-                if not old_id:
-                    # Generate new UUID if node doesn't have an ID
-                    new_id = str(uuid.uuid4())
-                    node["id"] = new_id
-                else:
-                    # Check if existing ID is a valid UUID format
-                    try:
-                        # Validate UUID format
-                        uuid.UUID(old_id)
-                        new_id = old_id  # Keep existing UUID
-                    except (ValueError, TypeError):
-                        # Generate new UUID if existing ID is not valid UUID format
-                        new_id = str(uuid.uuid4())
-                        node["id"] = new_id
-                        node_id_mapping[old_id] = new_id
+                new_id = str(uuid.uuid4())
+                node["id"] = new_id
+                # Map old ID to new ID for edge reference updates
+                if old_id:
+                    node_id_mapping[old_id] = new_id
                 
                 node.setdefault("properties", {})
                 node["properties"].update(chunk_metadata)
@@ -386,16 +376,8 @@ class DocumentProcessingService:
                 if "target" in edge and edge["target"] in node_id_mapping:
                     edge["target"] = node_id_mapping[edge["target"]]
                 
-                # Ensure edge has a unique UUID as ID
-                if "id" not in edge:
-                    edge["id"] = str(uuid.uuid4())
-                else:
-                    # Validate edge ID is a valid UUID format
-                    try:
-                        uuid.UUID(edge["id"])
-                    except (ValueError, TypeError):
-                        # Generate new UUID if existing ID is not valid UUID format
-                        edge["id"] = str(uuid.uuid4())
+                # Always generate a new UUID for each edge, overriding existing IDs
+                edge["id"] = str(uuid.uuid4())
                 
                 edge.setdefault("properties", {})
                 edge["properties"].update(chunk_metadata)

@@ -35,6 +35,9 @@ class CostEstimateCreate(CostEstimateBase):
     top_k: Optional[int] = Field(
         3, description="Number of top matching tabular entities to return per base entity"
     )
+    revised_values: Optional[List[Dict[str, Any]]] = Field(
+        None, description="Revised attribute values for selected entities. Each item contains entity_id and attributes array with attr_name and revised_val"
+    )
 
 
 class CostEstimateUpdate(BaseModel):

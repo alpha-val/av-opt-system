@@ -3312,37 +3312,25 @@ class ProjectOrchestrationService:
                                 nodes = payload.get("nodes", [])
                                 # Deduplicate nodes by ID
                                 for node in nodes:
-                                    node_id = node.get("id") or node.get("_id")
-                                    if node_id and node_id not in node_ids_seen:
-                                        node_ids_seen.add(node_id)
-                                        all_nodes.append(node)
-                                        chunk_nodes_count += 1
-                                    elif not node_id:
-                                        # Generate ID if missing
-                                        node["id"] = str(uuid.uuid4())
-                                        all_nodes.append(node)
-                                        chunk_nodes_count += 1
-                                        logger.warning(
-                                            f"Generated ID for node without ID in chunk {chunk_seq}"
-                                        )
+                                    # Generate ID
+                                    node["id"] = str(uuid.uuid4())
+                                    all_nodes.append(node)
+                                    chunk_nodes_count += 1
+                                    logger.warning(
+                                        f"Generated ID for node without ID in chunk {chunk_seq}"
+                                    )
 
                             elif name == "extract_edges":
                                 edges = payload.get("edges", [])
                                 # Deduplicate edges by ID
                                 for edge in edges:
-                                    edge_id = edge.get("id") or edge.get("_id")
-                                    if edge_id and edge_id not in edge_ids_seen:
-                                        edge_ids_seen.add(edge_id)
-                                        all_edges.append(edge)
-                                        chunk_edges_count += 1
-                                    elif not edge_id:
-                                        # Generate ID if missing
-                                        edge["id"] = str(uuid.uuid4())
-                                        all_edges.append(edge)
-                                        chunk_edges_count += 1
-                                        logger.warning(
-                                            f"Generated ID for edge without ID in chunk {chunk_seq}"
-                                        )
+                                    # Generate ID
+                                    edge["id"] = str(uuid.uuid4())
+                                    all_edges.append(edge)
+                                    chunk_edges_count += 1
+                                    logger.warning(
+                                        f"Generated ID for edge without ID in chunk {chunk_seq}"
+                                    )
 
                         except json.JSONDecodeError as e:
                             logger.error(f"Failed to parse LLM JSON for {name}: {e}")

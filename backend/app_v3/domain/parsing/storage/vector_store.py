@@ -221,7 +221,7 @@ class EntityVectorStore(VectorStore):
     Vectorizes entity documents for entity similarity search.
     """
 
-    def build_text_for_embedding(self, entity: Dict[str, Any]) -> str:
+    def build_text_for_embedding(self, entity: Dict[str, Any], revised_values: Optional[List[Dict[str, Any]]] = []) -> str:
         """
         Build text representation of entity for embedding.
 
@@ -230,7 +230,12 @@ class EntityVectorStore(VectorStore):
 
         Args:
             entity: Entity dictionary
-
+            revised_values: List of revised attribute values. Each item contains:
+                [
+                    {"attr_name": str, "revised_val": number | string | null},
+                    ...
+                ]
+                
         Returns:
             Text string suitable for embedding
         """
@@ -261,23 +266,39 @@ class EntityVectorStore(VectorStore):
             msio_fields_added.add("entity")
 
         # Handle attributes specially - expand into readable text
-        if "attributes" in props and isinstance(props["attributes"], list):
-            msio_fields_added.add("attributes")  # Skip in the loop below
-            attr_texts = []
-            for attr in props["attributes"]:
-                if isinstance(attr, dict):
-                    attr_name = attr.get("name", "Unknown")
-                    attr_value = attr.get("value")
-                    attr_unit = attr.get("unit", "")
+        attr_texts = []
+        
+        if revised_values:
+            for revised_value in revised_values:
+                attr_name = revised_value.get("attr_name", "Unknown")
+                attr_value = revised_value.get("revised_val")
+                attr_unit = revised_value.get("unit", "")
+                if attr_value is not None:
+                    attr_text = f"{attr_name}: {attr_value}"
+                    if attr_unit:
+                        attr_text += f" {attr_unit}"
+                    attr_texts.append(attr_text)
+        
+        if not revised_values:
+            if "attributes" in props and isinstance(props["attributes"], list):
+                msio_fields_added.add("attributes")  # Skip in the loop below
+                attr_texts = []
+                for attr in props["attributes"]:
+                    if isinstance(attr, dict):
+                        attr_name = attr.get("name", "Unknown")
+                        attr_value = attr.get("value")
+                        attr_unit = attr.get("unit", "")
 
-                    # Build readable attribute text
-                    if attr_value is not None:
-                        attr_text = f"{attr_name}: {attr_value}"
-                        if attr_unit:
-                            attr_text += f" {attr_unit}"
-                        attr_texts.append(attr_text)
-            if attr_texts:
-                parts.append(f"attributes: {', '.join(attr_texts)}")
+                        # Build readable attribute text
+                        if attr_value is not None:
+                            attr_text = f"{attr_name}: {attr_value}"
+                            if attr_unit:
+                                attr_text += f" {attr_unit}"
+                            attr_texts.append(attr_text)
+        
+        # Append attributes to parts if any were collected
+        if attr_texts:
+            parts.append(f"attributes: {', '.join(attr_texts)}")
 
         if "cost_information" in props and isinstance(props["cost_information"], dict):
             cost_information_texts = []
@@ -415,8 +436,6 @@ class EntityVectorStore(VectorStore):
                 logger.error(f"Failed to normalize entity {entity.get('id')}: {e}")
                 continue
 
-        # REMOVE THIS LATER
-        return 0
         if not normalized_entities:
             logger.warning("No entities to upsert after normalization")
             return 0

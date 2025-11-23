@@ -95,13 +95,15 @@ async def create_cost_estimate(
                 project_id=project_id,
                 selected_entities=data.selected_entities,
                 top_k=data.top_k or 3,
-                cutoff=0.25,  # Default cutoff matching old implementation
+                cutoff=0.5,  # Default cutoff matching old implementation
+                revised_values=data.revised_values,
             )
             
             # Build metadata with calculation results
             metadata = {
                 "scenario_description": data.scenario_description,
                 "entity_selection_state": data.entity_selection_state or {},
+                "revised_values": data.revised_values or [],
                 "cost_comparison_report": calculation_result["cost_comparison_report"],
                 "cost_details": {
                     "base_entities": calculation_result["base_entities"],
