@@ -31,13 +31,15 @@ class EntityExtractor:
 
     def __init__(self):
         """Initialize extractor with LLM configuration."""
+        # Use configurable max_tokens, default to 16384 to handle large responses
+        max_tokens = getattr(SETTINGS, 'llm_max_tokens', 16384)
         self.llm = ChatOpenAI(
             model=SETTINGS.llm_model_name or "gpt-4o",
             api_key=SETTINGS.openai_api_key,
             timeout=300,
             max_retries=3,
             temperature=0,
-            max_tokens=4096,
+            max_tokens=max_tokens,
             model_kwargs={
                 "tools": TOOLS,
                 "tool_choice": "auto",
@@ -70,13 +72,15 @@ class EntityExtractor:
 
         # Default rules if not provided
         if rules is None:
-            rules = [
+            rules = [                
+                "COST_EXTRACTION",
                 "MSIO_ONTOLOGY",
                 "NODES_AND_RELATIONS",
                 "PROVENANCE_AND_CONFIDENCE",
                 "UNITS_NORMALIZATION",
-                # "TABLE_EXTRACTION",
             ]
+        # if artifact_type == "tabular_data":
+        #     rules.append("TABLE_EXTRACTION")
 
         # Build prompt with rules
         user_prompt = generate_prompt(artifact_type=artifact_type, rules=rules)
@@ -105,11 +109,38 @@ class EntityExtractor:
 
                     try:
                         arguments = fn.get("arguments", "{}")
-                        if not is_valid_json(arguments):
-                            logger.error(f"Invalid JSON received: {arguments}")
+                        
+                        # Handle case where arguments might already be a dict (LangChain sometimes returns dict)
+                        if isinstance(arguments, dict):
+                            payload = arguments
+                        elif isinstance(arguments, str):
+                            # Check if JSON is valid
+                            if not is_valid_json(arguments):
+                                # Log more details about the invalid JSON for debugging
+                                arg_length = len(arguments)
+                                logger.error(
+                                    f"Invalid JSON received for {name} in chunk {idx+1}/{len(chunks)}. "
+                                    f"Length: {arg_length}, "
+                                    f"First 200 chars: {arguments[:200]}, "
+                                    f"Last 200 chars: {arguments[-200:] if arg_length > 200 else arguments}"
+                                )
+                                # Check if it looks truncated (ends abruptly without proper closing)
+                                if arg_length > 0:
+                                    trimmed = arguments.rstrip()
+                                    if not trimmed.endswith(('}', ']', '"')) and not trimmed.endswith('",'):
+                                        logger.warning(
+                                            f"JSON appears truncated - response may exceed max_tokens limit. "
+                                            f"Consider increasing max_tokens or splitting into smaller chunks."
+                                        )
+                                continue
+                            payload = json.loads(arguments)
+                        else:
+                            logger.error(
+                                f"Unexpected arguments type for {name} in chunk {idx+1}/{len(chunks)}: {type(arguments)}. "
+                                f"Value: {str(arguments)[:200]}"
+                            )
                             continue
 
-                        payload = json.loads(arguments)
                         payload = sanitize_for_json(payload)
 
                         if name == "extract_nodes":
@@ -130,10 +161,10 @@ class EntityExtractor:
                             pass
 
                     except json.JSONDecodeError as e:
-                        logger.error(f"Failed to parse LLM JSON: {e}")
+                        logger.error(f"Failed to parse LLM JSON for {name} in chunk {idx+1}/{len(chunks)}: {e}")
                         continue
                     except Exception as e:
-                        logger.error(f"Error processing tool call {name}: {e}")
+                        logger.error(f"Error processing tool call {name} in chunk {idx+1}/{len(chunks)}: {e}")
                         continue
 
             except Exception as e:
@@ -355,11 +386,38 @@ class EntityExtractor:
 
                     try:
                         arguments = fn.get("arguments", "{}")
-                        if not is_valid_json(arguments):
-                            logger.error(f"Invalid JSON received: {arguments}")
+                        
+                        # Handle case where arguments might already be a dict (LangChain sometimes returns dict)
+                        if isinstance(arguments, dict):
+                            payload = arguments
+                        elif isinstance(arguments, str):
+                            # Check if JSON is valid
+                            if not is_valid_json(arguments):
+                                # Log more details about the invalid JSON for debugging
+                                arg_length = len(arguments)
+                                logger.error(
+                                    f"Invalid JSON received for {name} in chunk {idx+1}/{len(chunks)} (targeted mode). "
+                                    f"Length: {arg_length}, "
+                                    f"First 200 chars: {arguments[:200]}, "
+                                    f"Last 200 chars: {arguments[-200:] if arg_length > 200 else arguments}"
+                                )
+                                # Check if it looks truncated (ends abruptly without proper closing)
+                                if arg_length > 0:
+                                    trimmed = arguments.rstrip()
+                                    if not trimmed.endswith(('}', ']', '"')) and not trimmed.endswith('",'):
+                                        logger.warning(
+                                            f"JSON appears truncated - response may exceed max_tokens limit. "
+                                            f"Consider increasing max_tokens or splitting into smaller chunks."
+                                        )
+                                continue
+                            payload = json.loads(arguments)
+                        else:
+                            logger.error(
+                                f"Unexpected arguments type for {name} in chunk {idx+1}/{len(chunks)} (targeted mode): {type(arguments)}. "
+                                f"Value: {str(arguments)[:200]}"
+                            )
                             continue
 
-                        payload = json.loads(arguments)
                         payload = sanitize_for_json(payload)
 
                         if name == "extract_nodes":
@@ -380,10 +438,10 @@ class EntityExtractor:
                                 all_summaries.append(summaries)
 
                     except json.JSONDecodeError as e:
-                        logger.error(f"Failed to parse LLM JSON: {e}")
+                        logger.error(f"Failed to parse LLM JSON for {name} in chunk {idx+1}/{len(chunks)} (targeted mode): {e}")
                         continue
                     except Exception as e:
-                        logger.error(f"Error processing tool call {name}: {e}")
+                        logger.error(f"Error processing tool call {name} in chunk {idx+1}/{len(chunks)} (targeted mode): {e}")
                         continue
 
             except Exception as e:

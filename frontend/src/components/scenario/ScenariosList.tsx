@@ -88,6 +88,28 @@ const ScenariosList: React.FC<ScenariosListProps> = ({
   const error = useSelector(selectScenariosError);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
+  // Calculate the next number for "New Scenario" name
+  const nextScenarioNumber = useMemo(() => {
+    const newScenarioPattern = /^New Scenario(?: \((\d+)\))?$/;
+    const matchingScenarios = scenarios.filter((scenario) =>
+      newScenarioPattern.test(scenario.name)
+    );
+    
+    if (matchingScenarios.length === 0) {
+      return 1;
+    }
+    
+    // Extract numbers from scenario names
+    // If a scenario is named "New Scenario" (without number), treat it as 1
+    const numbers = matchingScenarios.map((scenario) => {
+      const match = scenario.name.match(/^New Scenario(?: \((\d+)\))?$/);
+      return match && match[1] ? parseInt(match[1], 10) : 1;
+    });
+    
+    // Return max + 1
+    return Math.max(...numbers) + 1;
+  }, [scenarios]);
+
   // Use refs for text inputs to prevent re-renders on every keystroke
   const nameInputRef = useRef<HTMLInputElement>(null);
   const descriptionInputRef = useRef<HTMLTextAreaElement>(null);
@@ -599,7 +621,7 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
               label="Scenario Name"
               required
               fullWidth
-              defaultValue="New Scenario"
+              defaultValue={`New Scenario (${nextScenarioNumber})`}
               inputProps={{ maxLength: 200 }}
             />
             {/* Scenario Description */}

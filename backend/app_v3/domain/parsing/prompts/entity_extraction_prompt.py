@@ -189,7 +189,7 @@ global_objectives_block = """
 # Units normalization block
 units_normalization_block = """
   --------------------------------------------------------------------------------
-  = = = UNITS NORMALIZATION & DEDUPLICATION POLICY = = =
+  UNITS NORMALIZATION BLOCK
   --------------------------------------------------------------------------------
   Purpose
   * When extracting attributes with units (e.g., "flow_rate:500 gals/hr"):
@@ -253,12 +253,34 @@ units_normalization_block = """
   1,000 (4×),	Dual-drum continuous,	$25,000,	+15%,	$28,750
   2,500 (10×),	Industrial flume / continuous,	$45,000,	+15%,	$51,750
 
+  * Parsing
+  ** Deconstruct numbers and units into separate properties
+  E.g., "100 kg" -> "value": 100, "unit": "kg"
+  ** Handle ranges by splitting into min and max values
+  E.g., "10-20 kg" -> "value_min": 10, "value_max": 20, "unit": "kg"
+  E.g., "$160-$200" -> "value_min": 160, "value_max": 200, "unit": "$"
+  ** Interpret currency values appropriately
+  E.g., "$230k" -> "value": 230000, "unit": "$"
+  E.g., "£120k" -> "value": 120000, "unit": "£"
+  E.g., "€120k" -> "value": 120000, "unit": "€"
+  E.g., "¥120k" -> "value": 120000, "unit": "¥"
+  E.g., "₹120k" -> "value": 120000, "unit": "₹"
+  ** Interpret currency amounts appropriately
+  E.g., "$100k" -> "value": 100000, "unit": "$"
+  E.g., "$2.1M" -> "value": 2100000, "unit": "$"
+  ** Handle compound values by splitting into value and condition
+  E.g., "100 kg @ 80%" -> "value": 100, "unit": "kg", "condition": "80%"
+  E.g., "100 kg @ 80% - $100k" -> "value": 100, "unit": "kg", "condition": "80%", "cost": 100000, "unit": "$"
+  ** Handle percentage values appropriately
+  E.g., "80%" -> "value": 80, "unit": "%"
+  E.g., "80% - $100k" -> "value": 80, "unit": "%", "cost": 100000, "unit": "$"
+
   """
 
 # Table extraction block
 table_extraction_block = """
   --------------------------------------------------------------------------------
-  = = = TABLE EXTRACTION = = =
+  TABLE EXTRACTION BLOCK
   --------------------------------------------------------------------------------
   When encountering tabular data in any format, apply these principles:
 
@@ -366,7 +388,7 @@ table_extraction_block = """
 # Deduplication block
 entity_deduplication_block = """
     --------------------------------------------------------------------------------
-    = = = ENTITY DEDUPLICATION AND MERGING POLICY = = =
+    ENTITY DEDUPLICATION AND MERGING BLOCK
     --------------------------------------------------------------------------------
     PURPOSE:
     Prevent duplicate nodes by merging entities that represent the same physical/logical
@@ -963,33 +985,44 @@ cost_extraction_block = """
   COST EXTRACTION
   --------------------------------------------------------------------------------
   
-  Extract cost information from the base case text when available. If not available, 
+  Extract cost information from the base case text when available and store it in properties.cost object. If not available, 
   still create the entity but keep cost properties as null.
-
-  STORAGE LOCATION:
-  Cost information MUST be stored in properties.cost_information object (NOT in attributes array).
 
   COST PROPERTIES:
   - cost_value (number): Numeric cost value
   - cost_currency (string): Currency code in ISO format (e.g., 'USD', 'EUR')
-  - cost_basis_year (number): Basis year (e.g., 2020, 2024)
-  - cost_type (string): 'CAPEX', 'OPEX', 'Total', or 'Other'
-  - annual_op_cost (number): Annual operating cost if applicable
-  - reclamation_cost (number): Reclamation cost if applicable
+  - cost_min (number): Minimum cost value
+  - cost_max (number): Maximum cost value
+  - cost_unit (string): Unit of the cost value
+  - cost_basis (string): Basis of the cost value (e.g., “installed”, “silt fence”)
+  - cost_alternates (array of additional ranges when text contains “or / OR”)
+  
+  COST RANGE EXTRACTION RULES:
+  When parsing cost information, if cost value is a range (e.g., "$12 – $25 / yd3") then extract the cost range and units.
+  - For cost range, always extract:
+    - cost_min
+    - cost_max
+    - cost_unit
+    - cost_basis (optional descriptor, e.g., “installed”, “silt fence”)
+    - cost_alternates (array of additional ranges when text contains “or / OR”)
 
+  • If a cost string contains multiple ranges (e.g., “$5 – $25 / SY or $1,000 – $8,000 LS”), parse the FIRST as the primary range and each additional range as a separate `alternate` entry.
+
+  • Examples of cost range formats:
+    - "$1200" -> cost_value: 1200, cost_currency: "USD", cost_min: null, cost_max: null
+    - "$12 – $25 / yd3" -> cost_min: 12, cost_max: 25, cost_unit: "yd3"
+    - "$3 – $8 / LF (silt fence)" -> cost_min: 3, cost_max: 8, cost_unit: "LF", cost_basis: "silt fence"
+    - "$800 – $3,000 / inlet" -> cost_min: 800, cost_max: 3000, cost_unit: "inlet"
+    - "$5 – $25 / SY or $1,000 – $8,000 LS" -> cost_min: 5, cost_max: 25, cost_unit: "SY", cost_alternates: [{"cost_min": 1000, "cost_max": 8000, "cost_unit": "LS"}]
+    - "$80 – $250 / ft3 (liner & basin) OR $8,000 – $25,000 / EA" -> cost_min: 80, cost_max: 250, cost_unit: "ft3", cost_basis: "liner & basin", cost_alternates: [{"cost_min": 8000, "cost_max": 25000, "cost_unit": "EA"}]
+  • If the column is blank, return cost_value: null, cost_currency: null, cost_basis_year: null, cost_type: null, annual_op_cost: null, reclamation_cost: null
+  
   TOTAL COST EXTRACTION:
   When Total Installed Cost (TIC), Total Capital Cost (TCC), or similar totals are mentioned:
   - Extract as separate CostItem entities with type='CostItem'
   - Include total_cost_value and total_cost_currency as direct properties
   - Create HAS_COST or AFFECTS_COST relationships linking entities to total cost
-  - This enables validation by comparing extracted vs calculated totals
-
-  NORMALIZATION:
-  - Extract numeric value and currency as separate properties
-  - Use ISO currency codes when available
-  - Set cost_currency to null if currency not mentioned
-  - Set cost_basis_year to null if basis year not mentioned
-  
+  - This enables validation by comparing extracted vs calculated totals  
 """
 
 PROMPT_DISCIPLINE_STRUCTURED_SUMMARY = """
@@ -1436,7 +1469,7 @@ objective_driven_extraction_additions = """
        - Recommendations should be embedded within relevant entity nodes
 
     3. **Enhanced Cost Information:**
-       - Extract cost data when available (store in properties.cost_information)
+       - Extract cost data when available (store in properties.cost)
        - Include cost impact direction and magnitude for recommendations
 
     4. **All other extraction rules from the base extraction prompt apply:**
@@ -1451,267 +1484,27 @@ objective_driven_extraction_additions = """
     --------------------------------------------------------------------------------
     ✓ Every node has recommendations array (can be empty)
     ✓ NO nodes with type='Recommendation' (recommendations only in properties.recommendations)
-    ✓ Cost information stored in properties.cost_information (not in attributes)
+    ✓ Cost information stored in properties.cost (not in attributes)
     ✓ All entities are relevant to achieving the stated objective
 """
 
-# def get_entity_extraction_prompt(rules: Optional[List[str]] = None) -> str:
-#     """Builds a prompt for base-case extraction with a simple ontology mapper."""
-
-#     prompt = f"""\
-#       --------------------------------------------------------------------------------
-#       BASE-CASE EXTRACTION
-#       --------------------------------------------------------------------------------
-
-#       ROLE
-#       Produce a clean, deduplicated entities and relationships for mining/process-engineering content aligned to the configured Mining System Integration Ontology (MSIO/msio). You read a base-case report (text/tables) and extract entities that match the MSIO hierarchy (Discipline → Category → Subcategory → Entity). If an entity cannot be matched to MSIO ontology, create a new node with the entity name and the MSIO hierarchy that is closest to the entity name (e.g., "Concrete Spread Footings" -> "Concrete" -> "Foundations" -> "Footings" -> "Spread footings") and set the attribute "outside_msio" to true. You then emit a single JSON object with nodes and edges, plus evidence and confidence.
-
-#       --------------------------------------------------------------------------------
-#       INPUTS AND OUTPUTS
-#       --------------------------------------------------------------------------------
-#       # NODES & RELATIONS EXTRACTION RULES
-#       {nodes_and_relations_extraction_block}
-
-#       # ONTOLOGY MAPPING
-#       {msio_classification_workflow}
-
-
-#       # ENTITY DEDUPLICATION (MANDATORY - MERGE DUPLICATE NODES)
-#       {entity_deduplication_block}
-      
-#       # PROVENANCE & CONFIDENCE
-#       {prov_conf_block if "PROVENANCE_AND_CONFIDENCE" in (rules or []) else ""}
-    
-#       # UNIT NORMALIZATION & DEDUPLICATION
-#       {units_normalization_block if "UNITS_NORMALIZATION" in (rules or []) else ""}
-#       --------------------------------------------------------------------------------
-
-#       Optional:
-#       --------------------------------------------------------------------------------
-#       # TABLE EXTRACTION RULES
-#       {table_extraction_block if "TABLE_EXTRACTION" in (rules or []) else ""}
-
-#       # SCENARIO EXTRACTION RULES
-#       {scenario_extraction_block if "SCENARIO_EXTRACTION" in (rules or []) else ""}
-
-#       # GLOBAL OBJECTIVES
-#       {global_objectives_block if "GLOBAL_OBJECTIVES" in (rules or []) else ""}
-#       --------------------------------------------------------------------------------
-      
-#       # SUMMARY EXTRACTION
-#       {PROMPT_DISCIPLINE_STRUCTURED_SUMMARY if "STRUCTURED_REPORT" in (rules or []) else ""}
-      
-#       --------------------------------------------------------------------------------
-#       DO / DO NOT
-#       --------------------------------------------------------------------------------
-#       ✓ Do: map each mention to the most specific ontology Entity available.
-#       ✓ Do: in the MSIO hierarchy,split only the Entity/Element field on “/” when classifying ontology rows.
-#       ✓ Do: extract attributes near the mention; split number/unit when clear.
-
-      
-#       ✗ Don’t: invent elements or attributes not evidenced in the text/table.
-#       ✗ Don’t: split on “/” in other MSIO hierarchy fields (Subcategory, Category, Discipline).
-
-
-#       --------------------------------------------------------------------------------
-#       FINAL VALIDATION REMINDER
-#       --------------------------------------------------------------------------------
-#       Before calling extract_nodes(), verify:
-#       1. Every possible entities are found
-#       2. Map entities to MSIO Ontology: discipline/category/subcategory/entity values exist, else set to "Miscellaneous"
-#       3. Confidence scores reflect MSIO matching quality (exact match = 0.9-1.0, partial = 0.7-0.8, inferred = <0.7)
-
-
-#       --------------------------------------------------------------------------------
-#       FINAL DELIVERABLE
-#       --------------------------------------------------------------------------------
-#       Return nodes with extract_nodes(nodes=[...]), edges with extract_edges(edges=[...]), 
-#       scenarios with extract_scenarios(scenarios=[...]), recommendations with extract_recommendations(recommendations=[...]), and extract structured report with extract_structured_report(base_case_report={{...}}) as per the output contract.
-#       """
-
-#     return prompt
-
-# def get_recommendation_based_entity_extraction_prompt(
-#     objective_type: str = "increase production",
-#     objective_target: str = "10%",
-#     objective_unit: str = "%",
-# ) -> str:
-#     """
-#     Build a prompt for recommendation-based entity extraction.
-
-#     The prompt directs the LLM to:
-#     1. Exhaustively find all possible ways to achieve the global objective (goal type and target magnitude)
-#     2. Generate comprehensive recommendations (primary, secondary, other)
-#     3. Extract entities relevant to each recommendation
-#     4. Embed recommendations within entity properties (not as separate nodes)
-#     5. Return structured nodes and edges following the output contract
-#     """
-
-#     base_prompt = f"""
-#       --------------------------------------------------------------------------------
-#       RECOMMENDATION-BASED ENTITY EXTRACTION
-#       --------------------------------------------------------------------------------
-
-#       CONTEXT
-#       Engineers in the [mining] industry use system design reports (here referred to as base case documents) to design and optimize systems to plan capital-intensive installations and operations. The reports consist of details on technical requirements, equipment and material, process, operations, capital (CAPEX) and operating (OPEX) costs, constraints, assumptions, exclusions, and policy information on project requirements. Our system (Alpha-Val) is designed to read the reports and extract all the relevant information and factors (hereon referred to as extracted entities), which is then used for cost estimation and analysis. Entities are structured data about factors such as equipment, material, process, constraints, cost items, and other relevant factors. Our system employs an ontology to map the extracted entities to a standard classification system (hereon referred to as MSIO ontology) and to extract the relevant information and factors.
-      
-#       ROLE
-#       You are an expert process engineer and cost estimator. Analyze the base case document thoroughly and exhaustively 
-#       to identify all possible factors to achieve the global objective ({objective_type} by {objective_target} {objective_unit}).
-
-#       OBJECTIVE
-#       Extract entities and recommendations that support achieving the global objective:
-#       Step 1. Identify the goal type and target magnitude of the global objective
-#       Step 2. Identify comprehensive recommendations (primary, secondary, other) (aim for 15-30+) across all system aspects
-#       Step 3. Extract all entities relevant to each recommendation
-#       Step 4. Embed recommendations within entity properties (never as separate nodes)
-#       Step 5. Return clean, deduplicated entities following MSIO ontology
-
-#       --------------------------------------------------------------------------------
-#       RECOMMENDATIONS
-#       --------------------------------------------------------------------------------
-
-#       Generate recommendations across these categories:
-#       - Equipment: Upgrades, replacements, additions, technology improvements
-#       - Process: Flow improvements, efficiency gains, throughput enhancements
-#       - Operations: Shift patterns, staffing, procedures, scheduling
-#       - Infrastructure: Utilities, buildings, site work, foundations, structures
-#       - Materials: Raw materials, consumables, feedstocks, product specifications
-#       - Controls: Automation, instrumentation, SCADA, control logic
-#       - Energy: Power consumption, heat recovery, waste minimization
-#       - Maintenance: Reliability improvements, preventive maintenance, spare parts
-#       - Safety: Safety systems, procedures, equipment, training
-#       - Environmental: Emissions reduction, waste treatment, compliance
-#       - All other categories as applicable
-
-#       Categorize each recommendation as:
-#       - PRIMARY (5-10): High-impact, direct solutions addressing the objective
-#       - SECONDARY (5-10): Supporting changes that enhance primary recommendations
-#       - OTHER (5-10): Alternative approaches, lower-priority options, innovative solutions
-
-#       For each recommendation, include:
-#       - id, type, name, rationale, relevance (primary/secondary/other)
-#       - change_direction, change_magnitude, evidence_text, confidence
-#       - Cost information (when available): cost_value, cost_currency, cost_basis_year, 
-#         cost_type, annual_op_cost, reclamation_cost, cost_impact_direction, cost_impact_magnitude
-#       - Do a post-analysis: Ensure that the recommendation matches the entity and its attribute
-
-#       CRITICAL: Embed recommendations in entity.properties.recommendations arrays. 
-#       NEVER create separate nodes with type='Recommendation' or type='Recommendations'.
-
-#       --------------------------------------------------------------------------------
-#       ENTITY EXTRACTION
-#       --------------------------------------------------------------------------------
-
-#       Extract all entities (Equipment, Process, Material, Control, Infrastructure, etc.) 
-#       relevant to achieving the global objective. For each entity:
-
-#       1. MSIO Classification (MANDATORY):
-#         - Map to MSIO hierarchy: Discipline → Category → Subcategory → Entity
-#         - Use exact matches from MSIO ontology when possible
-#         - If no match, use closest hierarchy match and set "outside_msio": true
-
-#       2. Attributes (MANDATORY):
-#         - Extract all technical/operational attributes (flow_rate, efficiency, power, 
-#           capacity, head, pressure, temperature, dimensions, etc.)
-#         - Store in properties.attributes array with: name, value, unit, evidence_text, confidence
-#         - Include all attributes even if some values are null
-
-#       3. Cost Information:
-#         - Extract cost data from text when available
-#         - Store in properties.cost_information object (NOT in attributes array):
-#           * cost_value, cost_currency, cost_basis_year, cost_type
-#           * annual_op_cost, reclamation_cost (if applicable)
-#         - For Total Installed Cost (TIC) or Total Capital Cost (TCC), create separate 
-#           CostItem entities with total_cost_value and total_cost_currency
-
-#       4. Recommendations:
-#         - Embed relevant recommendations in properties.recommendations array
-#         - Array can be empty if no recommendations found for that entity
-
-#       5. Relationships:
-#         - Create edges connecting entities using EDGE_TYPES from ontology
-#         - Include evidence_text and confidence for all edges
-
-#       --------------------------------------------------------------------------------
-#       EXTRACTION RULES
-#       --------------------------------------------------------------------------------
-#       Follow all extraction rules from the base extraction prompt. Additionally:
-#       - Focus on entities relevant to achieving the objective
-#       - Embed recommendations within entity properties
-#       - Extract cost information when available
-#       - Use UUID format for all node and edge IDs (as specified in base prompt)
-
-#     Example edge:
-#     {{
-#       "source": "550e8400-e29b-41d4-a716-446655440000",  // MUST be a valid UUID
-#       "target": "550e8400-e29b-41d4-a716-446655440001",  // MUST be a valid UUID
-#       "type": "AFFECTS_COST",
-#       "properties": {{"evidence_text": "CAPEX per pump ≈ $200,000 (2024 USD)", "confidence": 0.95}}
-#     }}
-
-#     --------------------------------------------------------------------------------
-#     BEGIN EXTRACTION NOW
-#     --------------------------------------------------------------------------------
-#     """
-
-#     return base_prompt
-
-
-# def generate_prompt(
-#     artifact_type: str = "base_case",
-#     objective_type: Optional[str] = None,
-#     objective_target: Optional[str] = None,
-#     objective_unit: Optional[str] = None,
-#     rules: Optional[List[str]] = None,
-# ) -> str:
-#     """
-#     Generate a unified prompt that merges base entity extraction with recommendation-based extraction.
-    
-#     This function combines the capabilities of `get_entity_extraction_prompt` and 
-#     `get_recommendation_based_entity_extraction_prompt`. When artifact_type is "base_case",
-#     it includes recommendation-based extraction capabilities.
-    
-#     The function is modular and avoids redundancy by:
-#     - Using the base extraction prompt which already includes ontology and output contract
-#     - Only adding objective-driven specific requirements (recommendations, objective focus)
-#     - Avoiding duplication of ontology references, node/edge types, and output contracts
-    
-#     Args:
-#         artifact_type: Type of artifact being processed (e.g., "base_case")
-#         objective_type: Objective type/goal (e.g., "increase production", "reduce capex")
-#         objective_target: Objective target value (e.g., "10%", "5%")
-#         objective_unit: Objective unit (e.g., "%", "USD")
-#         rules: Optional list of extraction rules to enable
+"""
+        - Process: Flow improvements, efficiency gains, throughput enhancements
+        - Operations: Shift patterns, staffing, procedures, scheduling
+        - Infrastructure: Utilities, buildings, site work, foundations, structures
+        - Controls: Automation, instrumentation, SCADA, control logic
+        - Energy: Power consumption, heat recovery, waste minimization
+        - Maintenance: Reliability improvements, preventive maintenance, spare parts
+        - Safety: Safety systems, procedures, equipment, training
+        - Environmental: Emissions reduction, waste treatment, compliance
         
-#     Returns:
-#         Combined prompt string for entity extraction with optional recommendation support
-#     """
-#     # Get the base entity extraction prompt (includes ontology, output contract, examples)
-#     base_prompt = get_entity_extraction_prompt(rules=rules)
-    
-#     # If artifact_type is "base_case", add objective-driven and recommendation-specific content
-#     if artifact_type == "base_case":
-#         # Get recommendation-based extraction prompt (focuses on recommendations, not ontology)
-#         recommendation_prompt = get_recommendation_based_entity_extraction_prompt(
-#             objective_type=objective_type or "increase production",
-#             objective_target=objective_target or "10%",
-#             objective_unit=objective_unit or "%",
-#         )
+        Categorize as:
+        - PRIMARY (5-10): High-impact, direct solutions
+        - SECONDARY (5-10): Supporting changes
+        - OTHER (5-10): Alternative approaches
         
-#         # Merge the prompts: base extraction + objective-driven additions + recommendations
-#         # Note: We don't repeat ontology/contract info as it's already in base_prompt
-#         merged_prompt = f"""\
-# {base_prompt}
+"""
 
-# {objective_driven_extraction_additions}
-
-# {recommendation_prompt}
-# """
-#         return merged_prompt
-    
-#     # For non-base_case artifact types, return just the base prompt
-#     return base_prompt
 
 def generate_prompt(
     artifact_type: str = "base_case",
@@ -1720,15 +1513,19 @@ def generate_prompt(
     objective_unit: Optional[str] = None,
     objective_description: Optional[str] = None,
     add_edges: bool = False,
-    rules: Optional[List[str]] = ["NODES_AND_RELATIONS", "PROVENANCE_AND_CONFIDENCE", "UNITS_NORMALIZATION"],
+    rules: Optional[List[str]] = [
+        "NODES_AND_RELATIONS",
+        "PROVENANCE_AND_CONFIDENCE",
+        "UNITS_NORMALIZATION",
+    ],
 ) -> str:
     """
     Generate a single, compact, aggregated prompt for entity extraction.
-    
+
     This is a unified prompt that combines all extraction capabilities into one text,
     with conditional sections for recommendations (if artifact_type is base_case).
     Recommendations section comes before entity extraction.
-    
+
     Args:
         artifact_type: Type of artifact being processed (e.g., "base_case")
         objective_type: Objective type/goal (e.g., "increase production", "reduce capex")
@@ -1736,11 +1533,11 @@ def generate_prompt(
         objective_unit: Objective unit (e.g., "%", "USD")
         add_edges: Whether to extract edges/relationships (default: False)
         rules: Optional list of extraction rules to enable
-        
+
     Returns:
         Single aggregated prompt string
     """
-    
+
     # Build conditional recommendation section
     recommendation_section = ""
     if artifact_type == "base_case" and objective_type:
@@ -1755,35 +1552,29 @@ def generate_prompt(
 
         Before extracting entities, identify comprehensive recommendations to achieve this objective.
 
-        Generate 15-30+ recommendations across:
+        Generate 3-5 most relevant recommendations across:
         - Equipment: Upgrades, replacements, additions, technology improvements
-        - Process: Flow improvements, efficiency gains, throughput enhancements
-        - Operations: Shift patterns, staffing, procedures, scheduling
-        - Infrastructure: Utilities, buildings, site work, foundations, structures
-        - Materials: Raw materials, consumables, feedstocks, product specifications
-        - Controls: Automation, instrumentation, SCADA, control logic
-        - Energy: Power consumption, heat recovery, waste minimization
-        - Maintenance: Reliability improvements, preventive maintenance, spare parts
-        - Safety: Safety systems, procedures, equipment, training
-        - Environmental: Emissions reduction, waste treatment, compliance
-
-        Categorize as:
-        - PRIMARY (5-10): High-impact, direct solutions
-        - SECONDARY (5-10): Supporting changes
-        - OTHER (5-10): Alternative approaches
-
-        For each recommendation: id, type, name, rationale, relevance, change_direction, 
-        change_magnitude, evidence_text, confidence, cost information (if available).
-
-        CRITICAL: Recommendations will be embedded in entity.properties.recommendations arrays.
-        NEVER create separate nodes with type='Recommendation'.
-
+        - Materials: Raw materials, consumables, feedstocks, product specifications (e.g., concrete, metals, chemicals, liquids, gases, etc.)
+        
+        Recommendations must
+        - Directly relate to the {objective_type} {objective_target} {objective_unit or "%"} {objective_description or ""}
+        - Be relevant to the system and the objective
+        - Be specific and detailed in the rationale field
+        - Aim for 3-5 recommendations
+        - Be categorized as PRIMARY or SECONDARY
+          - PRIMARY: High-impact, direct solutions
+          - SECONDARY: Supporting changes
+        - Have the following fields: id, type, name, rationale, relevance, change_direction, change_magnitude, evidence_text, confidence, cost information (if available).
+        - Be embedded in entity.properties.recommendations arrays.
+        - NEVER create separate nodes with type='Recommendation'.
         """
-    
+
     # Build edges section conditionally
     edges_section = ""
     if add_edges:
-        edge_types_str = json.dumps(ontology_nodes_and_relations.get("EDGE_TYPES", []), indent=1)
+        edge_types_str = json.dumps(
+            ontology_nodes_and_relations.get("EDGE_TYPES", []), indent=1
+        )
         edges_section = f"""
           -------------------------------------------------------------------------------
           EDGES/RELATIONSHIPS EXTRACTION
@@ -1798,7 +1589,7 @@ def generate_prompt(
           - "properties": object with evidence_text, confidence, and domain attributes
 
           """
-    
+
     # Build rules sections conditionally
     rules_sections = ""
     if rules:
@@ -1810,6 +1601,9 @@ def generate_prompt(
             rules_sections += f"{global_objectives_block}\n\n"
         if "PROVENANCE_AND_CONFIDENCE" in rules:
             rules_sections += f"{prov_conf_block}\n\n"
+    
+    # Always include cost extraction block
+    rules_sections += f"{cost_extraction_block}\n\n"
     
     # Main prompt
     prompt = f"""\
@@ -1847,7 +1641,7 @@ def generate_prompt(
       - If no match, set to "Miscellaneous" at that level
       - Extract all attributes from text (flow_rate, efficiency, power, capacity, head, pressure, etc.)
       - Store attributes in properties.attributes array: name, value, unit, evidence_text, confidence
-      - Cost information stored in properties.cost_information (NOT in attributes): cost_value, 
+      - Cost information stored in properties.cost (NOT in attributes): cost_value, 
         cost_currency, cost_basis_year, cost_type, annual_op_cost, reclamation_cost
       - Normalize units per units normalization rules
       - Deduplicate entities: merge duplicates with same MSIO classification and similar names
@@ -1869,7 +1663,7 @@ def generate_prompt(
             "evidence_text": string|null,
             "confidence": 0.0-1.0
           }}
-        • "cost_information": {{cost_value, cost_currency, cost_basis_year, cost_type, ...}} (if available)
+        • "cost": {{cost_value, cost_currency, cost_basis_year, cost_type, ...}} (if available)
         • "recommendations": array (if artifact_type is base_case, can be empty)
         • "outside_msio": boolean (true if no MSIO match)
         • evidence_text, confidence (MANDATORY)
@@ -1888,7 +1682,7 @@ def generate_prompt(
       STEP 6: Extract attributes from NODE_PROPERTIES and MSIO ontology
         - Create attribute objects: name, value, unit, evidence_text, confidence
         - If attribute not present, set value and unit to null
-        - Store cost info in properties.cost_information (not attributes array)
+        - Store cost info in properties.cost (not attributes array)
 
       Examples:
       - "Two centrifugal pumps 500 gpm at 120 ft head"
@@ -1904,12 +1698,14 @@ def generate_prompt(
       -------------------------------------------------------------------------------
       ✓ Every node has: unique UUID id, valid type, properties object with name, MSIO classification, attributes array
       ✓ All MSIO fields match ontology or set to "Miscellaneous"
+      ✓ Extract only equipment and material entities
       ✓ Attributes array contains all relevant attributes (null values allowed)
-      ✓ Cost information in properties.cost_information (not attributes)
+      ✓ Cost information in properties.cost (not attributes)
       ✓ Evidence and confidence for all nodes
       ✓ No hallucinated entities or properties
       {"✓ Recommendations array in properties (can be empty)" if artifact_type == "base_case" else ""}
       {"✓ Edges extracted with valid UUIDs and types" if add_edges else ""}
+      - REJECT any nodes with empty recommendations array (properties.recommendations.length = 0) if artifact_type is base_case
 
       -------------------------------------------------------------------------------
       OUTPUT
@@ -1929,11 +1725,11 @@ def generate_prompt(
           "attributes": [
             {{"name": "Design flowrate", "value": 500, "unit": "gpm", "evidence_text": "500 gpm", "confidence": 0.95}}
           ],
-          "cost_information": {{"cost_value": 400000, "cost_currency": "USD", "cost_basis_year": 2024, "cost_type": "CAPEX"}},{f'\n    "recommendations": [],' if artifact_type == "base_case" else ""}
+          "cost": {{"cost_value": 400000, "cost_min":40000, "cost_max": 80000, "cost_unit": "USD", "cost_basis": "installed", "cost_alternates": []}},{f'\n    "recommendations": [],' if artifact_type == "base_case" else ""}
           "evidence_text": "...",
           "confidence": 0.92
         }}
       }}
       """
-    
+
     return prompt

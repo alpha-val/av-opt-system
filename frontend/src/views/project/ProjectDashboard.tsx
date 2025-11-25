@@ -644,7 +644,10 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                           color: "primary.main",
                         }}
                       />
-                      <Typography variant="h6" sx={{ fontWeight: 600, flex: 1 }}>
+                      <Typography
+                        variant="h6"
+                        sx={{ fontWeight: 600, flex: 1 }}
+                      >
                         {project.name}
                       </Typography>
                       <Tooltip title="Edit Project">
@@ -894,6 +897,37 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                     </Card>
                   </Grid>
                 </Grid>
+
+                {/* Clear All Project Data Button */}
+                {(projectFiles?.base_case_files.length > 0 ||
+                  projectFiles?.tabular_data_files.length > 0 ||
+                  scenarios.length > 0) && (
+                  <Box
+                    sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: "divider" }}
+                  >
+                    <Alert severity="warning" sx={{ mb: 2 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: 600, mb: 1 }}
+                      >
+                        Danger Zone
+                      </Typography>
+                      <Typography variant="body2">
+                        Clearing all project data will permanently delete all
+                        scenarios, files, and extracted data. This action cannot
+                        be undone.
+                      </Typography>
+                    </Alert>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={handleClearProjectData}
+                      disabled={uploadingFiles}
+                    >
+                      Clear All Project Data
+                    </Button>
+                  </Box>
+                )}
               </Box>
             </TabPanel>
 
@@ -1013,37 +1047,6 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                     />
                   )}
                 </Box>
-
-                {/* Clear All Project Data Button */}
-                {(projectFiles?.base_case_files.length > 0 ||
-                  projectFiles?.tabular_data_files.length > 0 ||
-                  scenarios.length > 0) && (
-                  <Box
-                    sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: "divider" }}
-                  >
-                    <Alert severity="warning" sx={{ mb: 2 }}>
-                      <Typography
-                        variant="body2"
-                        sx={{ fontWeight: 600, mb: 1 }}
-                      >
-                        Danger Zone
-                      </Typography>
-                      <Typography variant="body2">
-                        Clearing all project data will permanently delete all
-                        scenarios, files, and extracted data. This action cannot
-                        be undone.
-                      </Typography>
-                    </Alert>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      onClick={handleClearProjectData}
-                      disabled={uploadingFiles}
-                    >
-                      Clear All Project Data
-                    </Button>
-                  </Box>
-                )}
               </Box>
             </TabPanel>
 

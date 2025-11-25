@@ -347,9 +347,11 @@ class DocumentProcessingService:
                 chunk["properties"].update(chunk_metadata)
 
             logger.info(f"Created {len(table_chunks)} table chunks")
+            
+            rules = ["UNITS_NORMALIZATION", "TABLE_EXTRACTION", "PROVENANCE_AND_CONFIDENCE"]
 
             # Stage 4: Entity extraction from tables
-            extraction_result = self.entity_extractor.extract(artifact_type="tabular_data", chunks=table_chunks)
+            extraction_result = self.entity_extractor.extract(artifact_type="tabular_data", chunks=table_chunks, rules=rules)
             nodes = extraction_result.get("nodes", [])
             edges = extraction_result.get("edges", [])
 

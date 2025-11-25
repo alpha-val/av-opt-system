@@ -597,11 +597,11 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
     description?: string;
     topK: number;
   }) => {
-    console.log("[CalculateCost] Starting cost calculation:", {
-      data,
-      scenarioId,
-      projectId,
-    });
+    // console.log("[CalculateCost] Starting cost calculation:", {
+    //   data,
+    //   scenarioId,
+    //   projectId,
+    // });
 
     // Clear any previous errors
     setCostCalculationError(null);
@@ -610,7 +610,7 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
     if (!data || !data.name) {
       const errorMsg =
         "Invalid input data. Please ensure all required fields are filled.";
-      console.error("[CalculateCost] Invalid data parameter:", data);
+      // console.error("[CalculateCost] Invalid data parameter:", data);
       setCostCalculationError(errorMsg);
       return;
     }
@@ -619,11 +619,11 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
     if (!scenario || !projectId || !scenarioId) {
       const errorMsg =
         "Missing required data. Please ensure scenario and project are loaded.";
-      console.error("[CalculateCost] Validation failed:", {
-        scenario: !!scenario,
-        projectId,
-        scenarioId,
-      });
+      // console.error("[CalculateCost] Validation failed:", {
+      //   scenario: !!scenario,
+      //   projectId,
+      //   scenarioId,
+      // });
       setCostCalculationError(errorMsg);
       return;
     }
@@ -633,11 +633,11 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
       (id) => entitySelections[id] !== false
     );
 
-    console.log("[CalculateCost] Entity selections:", {
-      entitySelections,
-      selectedEntities,
-      count: selectedEntities.length,
-    });
+    // console.log("[CalculateCost] Entity selections:", {
+    //  entitySelections,
+    //   selectedEntities,
+    //   count: selectedEntities.length,
+    // });
 
     // Get the revised values for attributes of selected entities
     // Fetch entities and create objects with attribute names and revised values
@@ -649,22 +649,26 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
             scenarioId,
             "base_case"
           );
-          const entity = entitiesData.entities.find((e: any) => e.id === entityId);
-          
+          const entity = entitiesData.entities.find(
+            (e: any) => e.id === entityId
+          );
+
           if (!entity) {
             return { entity_id: entityId, attributes: [] };
           }
 
           // Get attributes from entity
           const attributes = entity.properties?.attributes || [];
-          
+          // console.log("Entity:", entity);
+          // console.log("[CalculateCost] Attributes:", attributes);
+
           // Calculate revised values based on global objective
           const globalObjectiveTarget = scenario?.global_objective_target
             ? parseFloat(scenario.global_objective_target)
             : null;
           const globalObjectiveUnit = scenario?.global_objective_unit || "%";
           const globalObjectiveType = scenario?.global_objective_type || "";
-          
+
           // Determine if it's an increase based on objective type
           const isIncrease = globalObjectiveType
             ? globalObjectiveType.toLowerCase().includes("increase") ||
@@ -676,10 +680,10 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
           const attributeArray = attributes.map((attr: any) => {
             const attrName = attr.name || "";
             const baseValue = attr.value;
-            
+
             // Calculate revised value for numeric attributes
             let revisedValue: number | string | null = baseValue;
-            
+
             if (
               typeof baseValue === "number" &&
               !isNaN(baseValue) &&
@@ -696,13 +700,15 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                 revisedValue = Math.round(revisedValue * 100) / 100;
               } else {
                 // Absolute change: add/subtract target value
-                const change = isIncrease ? globalObjectiveTarget : -globalObjectiveTarget;
+                const change = isIncrease
+                  ? globalObjectiveTarget
+                  : -globalObjectiveTarget;
                 revisedValue = baseValue + change;
                 // Round to 2 decimal places
                 revisedValue = Math.round(revisedValue * 100) / 100;
               }
             }
-            
+
             return {
               attr_name: attrName,
               revised_val: revisedValue,
@@ -715,17 +721,20 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
             attributes: attributeArray,
           };
         } catch (error) {
-          console.error(`[CalculateCost] Error fetching entity ${entityId}:`, error);
+          console.error(
+            `[CalculateCost] Error fetching entity ${entityId}:`,
+            error
+          );
           return { entity_id: entityId, attributes: [] };
         }
       })
     );
 
-    console.log("[CalculateCost] Revised values:", revisedValues);
-
+    // console.log("[CalculateCost] Revised values:", revisedValues);
+    // return;
     if (selectedEntities.length === 0) {
       const errorMsg = "Please select at least one entity to calculate costs.";
-      console.warn("[CalculateCost] No entities selected");
+      // console.warn("[CalculateCost] No entities selected");
       setCostCalculationError(errorMsg);
       return;
     }
@@ -733,13 +742,13 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
     // All validations passed, now set loading state and proceed
     setCalculating(true);
     try {
-      console.log("[CalculateCost] Creating cost estimate with calculation:", {
-        name: data.name,
-        description: data.description,
-        scenario_id: scenarioId,
-        selected_entities_count: selectedEntities.length,
-        top_k: data.topK,
-      });
+      // console.log("[CalculateCost] Creating cost estimate with calculation:", {
+      //   name: data.name,
+      //   description: data.description,
+      //   scenario_id: scenarioId,
+      //   selected_entities_count: selectedEntities.length,
+      //   top_k: data.topK,
+      // });
 
       // Create cost estimate with calculation parameters
       // The backend will automatically trigger cost calculation if selected_entities is provided
@@ -755,24 +764,24 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
         revised_values: revisedValues,
       };
 
-      console.log(
-        "[CalculateCost] Calling API to create cost estimate with calculation"
-      );
+      // console.log(
+      //   "[CalculateCost] Calling API to create cost estimate with calculation"
+      // );
       const result = await costEstimateApi.create(costEstimateData);
 
-      console.log(
-        "[CalculateCost] Cost estimate created with calculation result:",
-        result
-      );
+      // console.log(
+      //   "[CalculateCost] Cost estimate created with calculation result:",
+      //   result
+      // );
 
       // Refresh cost estimates list
-      console.log("[CalculateCost] Refreshing cost estimates list");
+      // console.log("[CalculateCost] Refreshing cost estimates list");
       await dispatch(fetchCostEstimates(scenarioId) as any);
 
       // Close dialog and switch to Cost Estimates tab
       setCalculateCostDialogOpen(false);
       setActiveTab(2);
-      console.log("[CalculateCost] Cost calculation completed successfully");
+      // console.log("[CalculateCost] Cost calculation completed successfully");
     } catch (error) {
       const errorMessage =
         error instanceof Error
@@ -1003,14 +1012,23 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                   {scenario.name}
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
-                  {scenario.description || "No description available"}
+                  {scenario.description || ""}
                 </Typography>
+                <Chip
+                  label={`Objective: ${scenarioObjectiveType} ${scenarioObjectiveTarget}${
+                    scenario?.global_objective_unit || ""
+                  }`}
+                  size="normal"
+                  color="primary"
+                  variant="filled"
+                />  
               </Box>
             )}{" "}
             {scenario && (
               <Chip
                 label={scenario.status}
                 size="small"
+                variant="outlined"
                 color={getStatusColor(scenario.status)}
               />
             )}
@@ -1115,21 +1133,12 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                 <Tab label="Objectives" id="scenario-tab-0" />
                 <Tab label="System Design" id="scenario-tab-1" />
                 <Tab label="Cost Estimates" id="scenario-tab-2" />
-                <Tab label="Report" id="scenario-tab-3" />
+                {/* <Tab label="Report" id="scenario-tab-3" /> */}
               </Tabs>
             </Box>
 
             {/* Right Side: Tab Content */}
             <Box sx={{ flex: 1, overflow: "auto", ml: 2 }}>
-              <Box sx={{ p: 2, pb: 0, pt: 0, mb: 2 }}>
-                <Typography variant="h6">Scenario Details</Typography>
-                <Typography variant="body1" color="text.secondary">
-                  {scenario.global_objective_type} by{" "}
-                  {scenario.global_objective_target}
-                  {scenario.global_objective_unit}
-                </Typography>
-              </Box>
-              <Divider />
               {/* Tab 0: Objectives */}
               <TabPanel value={activeTab} index={0}>
                 <Box sx={{ p: 3 }}>
@@ -1262,18 +1271,30 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                     <Typography variant="h6" gutterBottom>
                       Base Case Entities with Recommendations
                     </Typography>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      startIcon={<CalculateIcon />}
-                      onClick={() => {
-                        setCostCalculationError(null);
-                        setCalculateCostDialogOpen(true);
-                      }}
-                      disabled={Object.keys(entitySelections).length === 0}
+                    <Tooltip
+                      title={
+                        !Object.values(entitySelections).includes(true)
+                          ? "Please select at least one entity to calculate cost"
+                          : ""
+                      }
                     >
-                      Calculate Cost
-                    </Button>
+                      <span>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          startIcon={<CalculateIcon />}
+                          onClick={() => {
+                            setCostCalculationError(null);
+                            setCalculateCostDialogOpen(true);
+                          }}
+                          disabled={
+                            !Object.values(entitySelections).includes(true)
+                          }
+                        >
+                          Calculate Cost
+                        </Button>
+                      </span>
+                    </Tooltip>
                   </Box>
                   {costCalculationError && (
                     <Alert
@@ -1316,7 +1337,7 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
               </TabPanel>
 
               {/* Tab 3: Report */}
-              <TabPanel value={activeTab} index={2}>
+              {/* <TabPanel value={activeTab} index={2}>
                 <Box sx={{ p: 3 }}>
                   <Typography variant="h6" gutterBottom>
                     Scenario Report
@@ -1329,7 +1350,7 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                     </Typography>
                   </Alert>
                 </Box>
-              </TabPanel>
+              </TabPanel> */}
             </Box>
           </Paper>
 
@@ -1340,7 +1361,9 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
             onCalculate={handleCalculateCost}
             calculating={calculating}
             defaultName={
-              scenario?.name ? `${scenario.name} - Cost Estimate` : ""
+              scenario?.name
+                ? `Cost Estimate v${costEstimates.length + 1}`
+                : ""
             }
           />
         </Box>

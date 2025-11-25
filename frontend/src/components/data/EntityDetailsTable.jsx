@@ -184,13 +184,24 @@ const EntityDetailsTable = ({ entities = [], title = "Entities" }) => {
                 <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>
                   Type
                 </TableCell>
-                <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>
+                <TableCell sx={{ fontWeight: "bold", minWidth: 150 }}>
                   Cost
                 </TableCell>
                 <TableCell
-                  sx={{ fontWeight: "bold", minWidth: 300, maxWidth: 300 }}
+                  sx={{ fontWeight: "bold", minWidth: 250, maxWidth: 300 }}
                 >
-                  Properties
+                  Attributes
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: "bold", minWidth: 250, maxWidth: 300 }}
+                >
+                  Other Properties
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: "bold", minWidth: 50 }}
+                  align="center"
+                >
+                  Evidence
                 </TableCell>
                 {/* <TableCell sx={{ fontWeight: "bold", minWidth: 180 }}>
                   Sources

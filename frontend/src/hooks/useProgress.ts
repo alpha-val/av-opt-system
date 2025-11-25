@@ -76,7 +76,7 @@ export function useProgress(jobId: string | null): UseProgressReturn {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
       }
-      console.log("! ! ! ! ! \n\n Connecting WebSocket for job:", jobId);
+      // console.log("! ! ! ! ! \n\n Connecting WebSocket for job:", jobId);
       try {
         const wsUrl = getWebSocketUrl(jobId);
         // console.log(`Connecting WebSocket for job ${jobId} at ${new Date().toISOString()}:`, wsUrl);
@@ -184,7 +184,7 @@ export function useProgress(jobId: string | null): UseProgressReturn {
         // console.log(`[useEffect] Connecting to job ${jobId}`);
         connect(jobId);
       } else {
-        console.log(`[useEffect] Disconnecting (no jobId)`);
+        // console.log(`[useEffect] Disconnecting (no jobId)`);
         disconnect();
         setProgress(0);
         setStage("");

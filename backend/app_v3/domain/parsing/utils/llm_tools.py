@@ -74,7 +74,7 @@ TOOLS = [
                                             p: {"type": "string"}
                                             for p in _ont["NODE_PROPERTIES"]
                                         },
-                                        "cost_information": {
+                                        "cost": {
                                             "type": "object",
                                             "description": "Cost information for the entity. Include when cost information is available.",
                                             "properties": {
@@ -128,9 +128,11 @@ TOOLS = [
                                             },
                                             "required": [
                                                 "cost_value",
-                                                "cost_currency",
-                                                "cost_basis_year",
-                                                "cost_type",
+                                                "cost_min",
+                                                "cost_max",
+                                                "cost_unit",
+                                                "cost_basis",
+                                                "cost_alternates",
                                             ],
                                         },
                                         # Explicitly add attributes array for objective-driven extraction (MANDATORY)
@@ -175,7 +177,7 @@ TOOLS = [
                                     "required": [
                                         "name",
                                         "attributes",
-                                        "cost_information",
+                                        "cost",
                                         "discipline",
                                         "category",
                                         "subcategory",
@@ -614,7 +616,7 @@ TOOLS_OBJECTIVE_DRIVEN = [
         "type": "function",
         "function": {
             "name": "extract_nodes",
-            "description": "Extract nodes (entities) from the text according to ontology. IMPORTANT: Recommendations must be embedded within entity properties.recommendations array, NOT created as separate nodes with type='Recommendation'. Only extract entity nodes (Equipment, Process, Material, etc.) and embed recommendations within their properties.",
+            "description": "Extract nodes (entities) from the text according to ontology. IMPORTANT: Recommendations must be embedded within entity properties.recommendations array, NOT created as separate nodes with type='Recommendation'. Only extract entity nodes (Equipment and Material) and embed recommendations within their properties.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -668,7 +670,7 @@ TOOLS_OBJECTIVE_DRIVEN = [
                                                             "secondary",
                                                             "other",
                                                         ],
-                                                        "description": "Relevance level: primary (direct high-impact), secondary (supporting/enabling), or other (alternative/innovative)",
+                                                        "description": "Relevance level: primary (direct high-impact) and secondary (supporting/enabling)",
                                                     },
                                                     "change_direction": {
                                                         "type": "string",
@@ -726,7 +728,7 @@ TOOLS_OBJECTIVE_DRIVEN = [
                                                 ],
                                             },
                                         },
-                                        "cost_information": {
+                                        "cost": {
                                             "type": "object",
                                             "description": "Cost information for the entity. Include when cost information is available.",
                                             "properties": {
@@ -824,7 +826,7 @@ TOOLS_OBJECTIVE_DRIVEN = [
                                         },
                                     },
                                     "additionalProperties": False,
-                                    "required": ["name", "attributes", "cost_information", "recommendations", "discipline", "category", "subcategory", "entity", "outside_msio"],
+                                    "required": ["name", "attributes", "cost", "recommendations", "discipline", "category", "subcategory", "entity", "outside_msio"],
                                 },
                             },
                             "required": ["id", "type", "properties"],

@@ -223,7 +223,7 @@ const CostEstimateDetails: React.FC<CostEstimateDetailsProps> = ({
 
   return (
     <Box
-      sx={{ display: "flex", flexDirection: "column", height: "100%", p: 2 }}
+      sx={{ display: "flex", flexDirection: "column", height: "100%", p: 0 }}
     >
       {/* Header with Back Button */}
       <Box
@@ -240,19 +240,20 @@ const CostEstimateDetails: React.FC<CostEstimateDetailsProps> = ({
             onClick={onBack}
             variant="outlined"
             size="small"
+            sx={{ textTransform: "none" }}
           >
-            Back
+            All Cost Estimates
           </Button>
         )}
-        <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }}>
-          {costEstimate.name}
-        </Typography>
       </Box>
+      <Typography variant="h5" component="h1" sx={{ fontWeight: 600, mb: 2 }}>
+        {costEstimate.name}
+      </Typography>
 
       {/* Basic Information Card */}
-      <Card sx={{ mb: 3 }}>
+      <Card sx={{ mb: 2 }}>
         <CardContent>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+          {/* <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
             <DescriptionIcon
               sx={{
                 mr: 1.5,
@@ -263,7 +264,7 @@ const CostEstimateDetails: React.FC<CostEstimateDetailsProps> = ({
             <Typography variant="h6" sx={{ fontWeight: 600, flex: 1 }}>
               Cost Estimate Information
             </Typography>
-          </Box>
+          </Box> */}
 
           {costEstimate.description && (
             <Typography variant="body1" sx={{ mb: 3 }}>
@@ -271,8 +272,56 @@ const CostEstimateDetails: React.FC<CostEstimateDetailsProps> = ({
             </Typography>
           )}
 
-          <Divider sx={{ my: 2 }} />
+          {/* Cost Summary */}
+          {costComparisonReport.length > 0 && (
+            <>
+              {/* <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <MoneyIcon
+                  sx={{
+                    mr: 1.5,
+                    fontSize: 24,
+                    color: "success.main",
+                  }}
+                />
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Cost Summary
+                </Typography>
+              </Box> */}
 
+              <Grid container spacing={1}>
+                <Grid item xs={12} md={4}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Entities Analyzed
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    {costComparisonReport.length}
+                  </Typography>
+                </Grid>
+
+                {costDetails.base_entities && (
+                  <Grid item xs={12} md={4}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Base Case Entities
+                    </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                      {costDetails.base_entities.length || 0}
+                    </Typography>
+                  </Grid>
+                )}
+                {costDetails.tabular_entities && (
+                  <Grid item xs={12} md={4}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Tabular Entities
+                    </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                      {costDetails.tabular_entities.length || 0}
+                    </Typography>
+                  </Grid>
+                )}
+              </Grid>
+            </>
+          )}
+          <Divider sx={{ my: 2 }} />
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
@@ -317,55 +366,6 @@ const CostEstimateDetails: React.FC<CostEstimateDetailsProps> = ({
               </Typography>
             </Grid>
           </Grid>
-
-          {/* Cost Summary */}
-          {costComparisonReport.length > 0 && (
-            <>
-              <Divider sx={{ my: 3 }} />
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <MoneyIcon
-                  sx={{
-                    mr: 1.5,
-                    fontSize: 24,
-                    color: "success.main",
-                  }}
-                />
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Cost Summary
-                </Typography>
-              </Box>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={4}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Entities Analyzed
-                  </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                    {costComparisonReport.length}
-                  </Typography>
-                </Grid>
-                {costDetails.base_entities && (
-                  <Grid item xs={12} md={4}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Base Case Entities
-                    </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                      {costDetails.base_entities.length || 0}
-                    </Typography>
-                  </Grid>
-                )}
-                {costDetails.tabular_entities && (
-                  <Grid item xs={12} md={4}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Tabular Entities
-                    </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                      {costDetails.tabular_entities.length || 0}
-                    </Typography>
-                  </Grid>
-                )}
-              </Grid>
-            </>
-          )}
         </CardContent>
       </Card>
 

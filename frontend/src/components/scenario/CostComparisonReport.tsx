@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
   Box,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -155,7 +156,7 @@ const CostComparisonRowComponent: React.FC<{ row: CostComparisonRow }> = ({
           <Typography variant="body2">
             {row.tabular_matches.length > 0
               ? `${row.tabular_matches.length} match${row.tabular_matches.length > 1 ? "es" : ""}`
-              : "No matches"}
+              : <Chip label="No matches" size="small" color="error" />}
           </Typography>
         </TableCell>
         <TableCell align="right">{renderDifferenceIndicator()}</TableCell>

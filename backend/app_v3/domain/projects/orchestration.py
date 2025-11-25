@@ -3143,7 +3143,7 @@ class ProjectOrchestrationService:
             CHUNK_NAMESPACE = uuid.UUID("11111111-2222-3333-4444-555555555555")
 
             # Chunk the text
-            char_limit = 5000
+            char_limit = 8000
             overlap = 1000
 
             # Create chunks with overlap manually
@@ -3312,6 +3312,14 @@ class ProjectOrchestrationService:
                                 nodes = payload.get("nodes", [])
                                 # Deduplicate nodes by ID
                                 for node in nodes:
+                                    # Reject nodes with empty recommendations list
+                                    properties = node.get("properties", {})
+                                    recommendations = properties.get("recommendations", [])
+                                    if not recommendations or len(recommendations) == 0:
+                                        logger.warning(
+                                            f"Skipping node with empty recommendations list in chunk {chunk_seq}"
+                                        )
+                                        continue
                                     # Generate ID
                                     node["id"] = str(uuid.uuid4())
                                     all_nodes.append(node)

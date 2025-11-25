@@ -225,16 +225,15 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
           </TableRow>
         )}
         <TableRow
-          sx={{
-            backgroundColor: !isEntityIncluded ? "rgba(0, 0, 0, 0.04)" : "inherit",
-            opacity: !isEntityIncluded ? 0.6 : 1,
-          }}
+          sx={
+            {
+              // backgroundColor: !isEntityIncluded ? "rgba(0, 0, 0, 0.04)" : "inherit",
+              // opacity: !isEntityIncluded ? 0.6 : 1,
+            }
+          }
         >
           {showIncludeCheckbox ? (
-            <TableCell
-              rowSpan={rowSpan}
-              sx={{ px: 1, verticalAlign: "top" }}
-            >
+            <TableCell rowSpan={rowSpan} sx={{ px: 1, verticalAlign: "top" }}>
               <Checkbox
                 checked={isEntityIncluded}
                 onChange={() => onEntityInclusionToggle(row.entityId)}
@@ -255,7 +254,7 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
               rowSpan={rowSpan}
               sx={{ py: 0.5, px: 1, verticalAlign: "top" }}
             >
-              <Chip label={row.entityType} size="small" disabled={!isEntityIncluded} />
+              <Chip label={row.entityType} size="small" />
             </TableCell>
           ) : null}
           {showCost ? (
@@ -294,7 +293,6 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
                   onTypeChange(rowKey, e.target.value as "Fixed" | "Floating")
                 }
                 displayEmpty
-                disabled={!isEntityIncluded}
               >
                 <MenuItem value="Fixed">Fixed</MenuItem>
                 <MenuItem value="Floating">Floating</MenuItem>
@@ -308,7 +306,8 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
                 type="number"
                 size="small"
                 value={
-                  currentBaseValue !== null && typeof currentBaseValue === "number"
+                  currentBaseValue !== null &&
+                  typeof currentBaseValue === "number"
                     ? parseFloat(currentBaseValue.toFixed(2))
                     : currentBaseValue ?? ""
                 }
@@ -327,7 +326,7 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
                   step: 0.01,
                 }}
                 sx={{ width: 120 }}
-                disabled={!isEntityIncluded || currentType === "Fixed"}
+                disabled={currentType === "Fixed"}
               />
             ) : !isValueNA ? (
               <TextField
@@ -338,7 +337,7 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
                   onBaseValueChange(rowKey, e.target.value || null);
                 }}
                 sx={{ width: 120 }}
-                disabled={!isEntityIncluded || currentType === "Fixed"}
+                disabled={currentType === "Fixed"}
               />
             ) : (
               <Typography variant="body2" color="text.secondary">
@@ -379,7 +378,7 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
                 }
                 arrow
               >
-                <IconButton size="small" sx={{ p: 0.5 }} disabled={!isEntityIncluded}>
+                <IconButton size="small" sx={{ p: 0.5 }}>
                   <InfoIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
@@ -395,7 +394,8 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
                 type="number"
                 size="small"
                 value={
-                  currentUpdatedValue !== null && typeof currentUpdatedValue === "number"
+                  currentUpdatedValue !== null &&
+                  typeof currentUpdatedValue === "number"
                     ? parseFloat(currentUpdatedValue.toFixed(2))
                     : currentUpdatedValue ?? ""
                 }
@@ -414,7 +414,7 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
                   step: 0.01,
                 }}
                 sx={{ width: 120 }}
-                disabled={!isEntityIncluded || currentType === "Fixed"}
+                disabled={currentType === "Fixed"}
                 error={
                   currentUpdatedValue !== null &&
                   typeof currentUpdatedValue === "number" &&
@@ -430,9 +430,9 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
                   typeof row.attributeValue === "number" &&
                   (currentUpdatedValue < row.attributeValue * -10 ||
                     currentUpdatedValue > row.attributeValue * 10)
-                    ? `Must be between ${(row.attributeValue * -10).toFixed(2)} and ${
-                        (row.attributeValue * 10).toFixed(2)
-                      }`
+                    ? `Must be between ${(row.attributeValue * -10).toFixed(
+                        2
+                      )} and ${(row.attributeValue * 10).toFixed(2)}`
                     : ""
                 }
               />
@@ -445,11 +445,11 @@ const AttributeRowComponent = memo<AttributeRowComponentProps>(
                   onUpdatedValueChange(rowKey, e.target.value || null);
                 }}
                 sx={{ width: 120 }}
-                disabled={!isEntityIncluded || currentType === "Fixed"}
+                disabled={currentType === "Fixed"}
               />
             ) : (
               <Typography variant="body2" color="text.secondary">
-                N/A ! ! !
+                N/A
               </Typography>
             )}
           </TableCell>
@@ -492,12 +492,12 @@ AttributeRowComponent.displayName = "AttributeRowComponent";
  */
 const EntityAttributesWithRecommendations: React.FC<
   EntityAttributesWithRecommendationsProps
-> = ({ 
-  scenarioId, 
-  globalObjectiveType, 
-  globalObjectiveTarget, 
+> = ({
+  scenarioId,
+  globalObjectiveType,
+  globalObjectiveTarget,
   globalObjectiveUnit,
-  onEntitySelectionChange 
+  onEntitySelectionChange,
 }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -575,7 +575,7 @@ const EntityAttributesWithRecommendations: React.FC<
 
       const targetValue = parseFloat(globalObjectiveTarget);
       const targetUnit = globalObjectiveUnit || "%";
-      
+
       if (isNaN(targetValue)) {
         return baseValue;
       }
@@ -622,13 +622,13 @@ const EntityAttributesWithRecommendations: React.FC<
       if (recommendations.length === 0) {
         return "none";
       }
-      
+
       // Check for primary first
-      if (recommendations.some(rec => rec.relevance === "primary")) {
+      if (recommendations.some((rec) => rec.relevance === "primary")) {
         return "primary";
       }
       // Check for secondary
-      if (recommendations.some(rec => rec.relevance === "secondary")) {
+      if (recommendations.some((rec) => rec.relevance === "secondary")) {
         return "secondary";
       }
       // Otherwise it's "other"
@@ -639,7 +639,7 @@ const EntityAttributesWithRecommendations: React.FC<
     const sortedEntities = [...entities].sort((a, b) => {
       const priorityA = getHighestRecommendationPriority(a);
       const priorityB = getHighestRecommendationPriority(b);
-      
+
       // Priority order: primary > secondary > other > none
       const priorityOrder: Record<string, number> = {
         primary: 0,
@@ -647,12 +647,12 @@ const EntityAttributesWithRecommendations: React.FC<
         other: 2,
         none: 3,
       };
-      
+
       const priorityDiff = priorityOrder[priorityA] - priorityOrder[priorityB];
       if (priorityDiff !== 0) {
         return priorityDiff;
       }
-      
+
       // If same priority, sort by entity name
       const nameA = (a.properties?.name || "Unknown Entity").toLowerCase();
       const nameB = (b.properties?.name || "Unknown Entity").toLowerCase();
@@ -676,11 +676,16 @@ const EntityAttributesWithRecommendations: React.FC<
       const costInformation = entity.properties?.cost_information;
       if (costInformation) {
         // Extract cost_value
-        if (costInformation.cost_value !== null && costInformation.cost_value !== undefined) {
+        if (
+          costInformation.cost_value !== null &&
+          costInformation.cost_value !== undefined
+        ) {
           if (typeof costInformation.cost_value === "number") {
             costValue = costInformation.cost_value;
           } else if (typeof costInformation.cost_value === "string") {
-            const parsed = parseFloat(costInformation.cost_value.replace(/[,$]/g, ""));
+            const parsed = parseFloat(
+              costInformation.cost_value.replace(/[,$]/g, "")
+            );
             if (!isNaN(parsed)) {
               costValue = parsed;
             }
@@ -688,7 +693,10 @@ const EntityAttributesWithRecommendations: React.FC<
         }
 
         // Extract cost_currency
-        if (costInformation.cost_currency !== null && costInformation.cost_currency !== undefined) {
+        if (
+          costInformation.cost_currency !== null &&
+          costInformation.cost_currency !== undefined
+        ) {
           costCurrency = String(costInformation.cost_currency);
         }
       }
@@ -805,8 +813,10 @@ const EntityAttributesWithRecommendations: React.FC<
       // Initialize included entities - all unchecked by default
       setIncludedEntities((prev) => {
         const initialIncluded: Record<string, boolean> = {};
-        const uniqueEntityIds = new Set(attributeRows.map((row) => row.entityId));
-        
+        const uniqueEntityIds = new Set(
+          attributeRows.map((row) => row.entityId)
+        );
+
         uniqueEntityIds.forEach((entityId) => {
           if (prev[entityId] === undefined) {
             // All entities are unchecked by default
@@ -954,7 +964,13 @@ const EntityAttributesWithRecommendations: React.FC<
           <TableHead>
             <TableRow>
               <TableCell
-                sx={{ fontWeight: 600, py: 1, px: 1, verticalAlign: "top", width: "50px" }}
+                sx={{
+                  fontWeight: 600,
+                  py: 1,
+                  px: 1,
+                  verticalAlign: "top",
+                  width: "50px",
+                }}
               >
                 Include
               </TableCell>
@@ -1012,7 +1028,9 @@ const EntityAttributesWithRecommendations: React.FC<
                 <Box>Revised Values</Box>
                 <Box>
                   <Chip
-                    label={`Based on: ${globalObjectiveType} ${globalObjectiveTarget}${globalObjectiveUnit || ""}`}
+                    label={`Objective: ${globalObjectiveType} ${globalObjectiveTarget}${
+                      globalObjectiveUnit || ""
+                    }`}
                     size="small"
                     color="primary"
                     variant="outlined"
@@ -1043,7 +1061,8 @@ const EntityAttributesWithRecommendations: React.FC<
                           ? updatedValues[rowKey]
                           : row.updatedValue;
                       // Check if entity is included (defaults to false if not explicitly set)
-                      const isEntityIncluded = includedEntities[row.entityId] === true;
+                      const isEntityIncluded =
+                        includedEntities[row.entityId] === true;
 
                       return (
                         <AttributeRowComponent

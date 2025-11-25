@@ -2,58 +2,57 @@ import { createTheme, responsiveFontSizes } from "@mui/material/styles";
 
 // Function to create theme based on mode
 const createAppTheme = (mode = "light") => {
+  const isLight = mode === "light";
+
   let theme = createTheme({
     palette: {
       mode,
       primary: {
-        // main: "#DEB841", // vibrant blue (blue-600)
-        // light: "#fbd064ff", // tint for hover or outlines (blue-400)
-        // dark: "#d69316ff", // pressed/active (blue-800)
-        // Alternative blue shades:
-        main: "#587fd1ff", // vibrant blue (blue-600)
-        light: "#60a5fa", // tint for hover or outlines (blue-400)
-        dark: "#1e40af", // pressed/active (blue-800)
-        veryLight: mode === "light" ? "#E8F1FD" : "#1a2332", // subtle background blue
-        contrastText: "#ffffff",
+        // LIGHT: your existing blue brand
+        // DARK: Material-style purple
+        main: isLight ? "#587fd1ff" : "#bb86fc",
+        light: isLight ? "#60a5fa" : "#cf9bff",
+        dark: isLight ? "#1e40af" : "#3700b3",
+        veryLight: isLight ? "#E8F1FD" : "#1a1724",
+        contrastText: isLight ? "#ffffff" : "#000000",
       },
       secondary: {
-        // rich mid–dark green (≈ PANTONE 7736 C)
-        main: "#2E7D32",
-        // one tint lighter for subtle hovers / outlines
-        light: "#5DA65F",
-        veryLight: mode === "light" ? "#E5F3E7" : "#1a2e1c", // soft pastel green, very subtle
-        // one shade deeper for active / pressed states
-        dark: "#1B5220",
-        // readable on the darker greens
-        contrastText: "#FFFFFF",
+        // LIGHT: your green
+        // DARK: Material secondary teal
+        main: isLight ? "#2E7D32" : "#03dac6",
+        light: isLight ? "#5DA65F" : "#66fff9",
+        veryLight: isLight ? "#E5F3E7" : "#00332e",
+        dark: isLight ? "#1B5220" : "#00a896",
+        contrastText: isLight ? "#FFFFFF" : "#000000",
       },
       tertiary: {
-        main: "#f97316", // vibrant orange
-        light: "#fba94d", // hover/outline
-        dark: "#c0560c", // pressed/active
-        veryLight: mode === "light" ? "#FFF3E5" : "#2e1f0c", // soft background
+        // keep your orange accent in both modes
+        main: "#f97316",
+        light: "#fba94d",
+        dark: "#c0560c",
+        veryLight: isLight ? "#FFF3E5" : "#2e1f0c",
         contrastText: "#FFFFFF",
       },
       error: {
-        main: "#ee3333",
-        light: "#ff6666",
-        lighter: "#ff9999",
-        veryLight: mode === "light" ? "#ffe5e5" : "#3a1a1a",
-        dark: "#cc0000",
-        contrastText: "#ffffff",
+        main: isLight ? "#ee3333" : "#cf6679",
+        light: isLight ? "#ff6666" : "#ff99a4",
+        lighter: isLight ? "#ff9999" : "#ffb3c0",
+        veryLight: isLight ? "#ffe5e5" : "#3a1a1a",
+        dark: isLight ? "#cc0000" : "#b0003a",
+        contrastText: isLight ? "#ffffff" : "#000000",
       },
       background: {
-        default: mode === "light" ? "#f6fafd" : "#121212",
-        paper: mode === "light" ? "#fff" : "#1e1e1e",
+        default: isLight ? "#f6fafd" : "#121212",
+        paper: isLight ? "#ffffff" : "#1e1e1e",
       },
       info: {
         main: "#f59e42", // orange accent
       },
       text: {
-        primary: mode === "light" ? "#1a2a3a" : "#ffffff",
-        secondary: mode === "light" ? "#6b7a90" : "#b0b0b0",
+        primary: isLight ? "#1a2a3a" : "#ffffff",
+        secondary: isLight ? "#6b7a90" : "#b0b0b0",
       },
-      divider: mode === "light" ? "#e6eaf0" : "#2e2e2e",
+      divider: isLight ? "#e6eaf0" : "#383838",
     },
     typography: {
       fontFamily: [
@@ -96,10 +95,11 @@ const createAppTheme = (mode = "light") => {
         fontSize: "0.75rem",
         "@media (max-width:600px)": { fontSize: "0.775rem" },
       },
+      // not native MUI variant, but fine if you're using it in sx
       body3: {
         fontSize: "0.6rem",
         lineHeight: 1,
-        color: mode === "light" ? "#3a3a3a" : "#c0c0c0",
+        color: isLight ? "#3a3a3a" : "#c0c0c0",
         "@media (max-width:600px)": { fontSize: "0.6rem" },
       },
     },
@@ -160,10 +160,9 @@ const createAppTheme = (mode = "light") => {
       MuiCssBaseline: {
         styleOverrides: {
           body: {
-            background:
-              mode === "light"
-                ? "linear-gradient(135deg, #f8f8f8ff 0%, #f8f8f8ff 50%, #f8f8f8ff 100%)"
-                : "linear-gradient(135deg, #292929ff 0%, #292929ff 50%, #292929ff 100%)",
+            background: isLight
+              ? "linear-gradient(135deg, #f8f8f8ff 0%, #f8f8f8ff 50%, #f8f8f8ff 100%)"
+              : "linear-gradient(135deg, #121212 0%, #1e1e1e 50%, #121212 100%)",
             minHeight: "100vh",
           },
         },

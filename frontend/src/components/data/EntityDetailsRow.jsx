@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { TableRow, TableCell, Typography, Chip, Box } from "@mui/material";
+import { TableRow, TableCell, Typography, Chip, Box, Tooltip, IconButton } from "@mui/material";
 import {
   Info as InfoIcon,
   Description as DocumentIcon,
@@ -37,35 +37,9 @@ const EntityDetailsRow = ({ entity, index }) => {
     (doc) => doc.doc_id === entity.properties.doc_id
   );
 
-  // Extract cost-related properties
-  const extractCostData = useMemo(() => {
-    const allProperties = { ...entity.properties, ...entity };
-    const costKeywords = [
-      "cost",
-      "price",
-      "capex",
-      "opex",
-      "expense",
-      "budget",
-      "investment",
-      "expenditure",
-      "dollar",
-      "usd",
-      "$",
-    ];
-
-    const costs = Object.entries(allProperties)
-      .filter(([key, value]) => {
-        const keyLower = key.toLowerCase();
-        return (
-          costKeywords.some((keyword) => keyLower.includes(keyword)) &&
-          value != null &&
-          value !== "" &&
-          typeof value !== "object"
-        );
-      })
-      .map(([key, value]) => ({ key, value: String(value) }));
-    return costs.length > 0 ? costs[0] : null;
+  // Extract cost information from properties.cost (new format) or properties.cost_information (legacy)
+  const costInformation = useMemo(() => {
+    return entity.properties?.cost || entity.properties?.cost_information || null;
   }, [entity]);
 
   // Extract attributes from properties.attributes
@@ -73,7 +47,7 @@ const EntityDetailsRow = ({ entity, index }) => {
     return entity.properties?.attributes || [];
   }, [entity]);
 
-  // Extract other relevant properties (excluding cost, amount, and metadata)
+  // Extract other relevant properties (excluding attributes, cost_information, and metadata)
   const extractOtherProperties = useMemo(() => {
     const excludeFields = new Set([
       "name",
@@ -93,10 +67,11 @@ const EntityDetailsRow = ({ entity, index }) => {
       "entity_id",
       "sources",
       "attributes",
+      "cost",
+      "cost_information",
+      "evidence_text",
     ]);
 
-    // Also exclude cost field we already extracted
-    if (extractCostData) excludeFields.add(extractCostData.key);
     const allProperties = { ...entity.properties, ...entity };
     const otherProps = Object.entries(allProperties)
       .filter(
@@ -110,7 +85,7 @@ const EntityDetailsRow = ({ entity, index }) => {
       .sort((a, b) => a.key.localeCompare(b.key));
 
     return otherProps;
-  }, [entity, extractCostData]);
+  }, [entity]);
 
   // Format property names for display
   const formatPropertyName = (key) => {
@@ -129,7 +104,6 @@ const EntityDetailsRow = ({ entity, index }) => {
       `Document ${doc.doc_id.substring(0, 8)}...`
     );
   };
-
   return (
     <TableRow
       hover
@@ -172,15 +146,122 @@ const EntityDetailsRow = ({ entity, index }) => {
       </TableCell>
 
       {/* Cost Column */}
-      <TableCell sx={{ minWidth: 120 }}>
-        {extractCostData ? (
+      <TableCell sx={{ minWidth: 150 }}>
+        {costInformation ? (
           <Box>
-            <Typography variant="body2" fontWeight="medium">
-              {extractCostData.value}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {formatPropertyName(extractCostData.key)}
-            </Typography>
+            {costInformation.cost_value != null ? (
+              <Typography variant="body2" fontWeight="medium">
+                {costInformation.cost_currency || "USD"} {costInformation.cost_value.toLocaleString()}
+                {costInformation.cost_unit && ` / ${costInformation.cost_unit}`}
+              </Typography>
+            ) : costInformation.cost_min != null || costInformation.cost_max != null ? (
+              <Typography variant="body2" fontWeight="medium">
+                {costInformation.cost_currency || "USD"}{" "}
+                {costInformation.cost_min != null && costInformation.cost_max != null
+                  ? `${costInformation.cost_min.toLocaleString()} - ${costInformation.cost_max.toLocaleString()}`
+                  : costInformation.cost_min != null
+                  ? `≥ ${costInformation.cost_min.toLocaleString()}`
+                  : `≤ ${costInformation.cost_max.toLocaleString()}`}
+                {costInformation.cost_unit && ` / ${costInformation.cost_unit}`}
+              </Typography>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                -
+              </Typography>
+            )}
+            {costInformation.cost_type && (
+              <Typography variant="caption" color="text.secondary" display="block">
+                {costInformation.cost_type}
+              </Typography>
+            )}
+            {costInformation.cost_basis_year && (
+              <Typography variant="caption" color="text.secondary" display="block">
+                Year: {costInformation.cost_basis_year}
+              </Typography>
+            )}
+            {costInformation.annual_op_cost != null && (
+              <Typography variant="caption" color="text.secondary" display="block">
+                Annual OPEX: {costInformation.cost_currency || "USD"} {costInformation.annual_op_cost.toLocaleString()}
+              </Typography>
+            )}
+            {costInformation.reclamation_cost != null && (
+              <Typography variant="caption" color="text.secondary" display="block">
+                Reclamation: {costInformation.cost_currency || "USD"} {costInformation.reclamation_cost.toLocaleString()}
+              </Typography>
+            )}
+          </Box>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            -
+          </Typography>
+        )}
+      </TableCell>
+
+      {/* Attributes Column */}
+      <TableCell sx={{ minWidth: 250, maxWidth: 300 }}>
+        {attributes.length > 0 ? (
+          <Box>
+            {attributes.map((attr, attrIndex) => (
+              <Box
+                key={attrIndex}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexDirection: "row",
+                  justifyContent: "flex-start",
+                  gap: 0.5,
+                  mb: attrIndex < attributes.length - 1 ? 0.75 : 0,
+                  pb: attrIndex < attributes.length - 1 ? 0.75 : 0,
+                  borderBottom:
+                    attrIndex < attributes.length - 1 ? "1px solid" : "none",
+                  borderColor: "divider",
+                }}
+              >
+                <Typography
+                  component="span"
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontWeight: 600, display: "block", mb: 0.25, flex: 1 }}
+                >
+                  {attr.name}:
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                    display: "block",
+                    flex: 1,
+                  }}
+                >
+                  {attr.value != null && attr.value !== "" ? (
+                    <>
+                      {attr.value}
+                      {attr.unit && ` ${attr.unit}`}
+                    </>
+                  ) : (
+                    <Typography
+                      component="span"
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ fontStyle: "italic" }}
+                    >
+                      No value
+                    </Typography>
+                  )}
+                </Typography>
+                {/* {attr.confidence && (
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ fontSize: "0.7rem", display: "block", mt: 0.25 }}
+                  >
+                    Confidence:{" "}
+                    {Math.round(parseFloat(attr.confidence) * 100)}%
+                  </Typography>
+                )} */}
+              </Box>
+            ))}
           </Box>
         ) : (
           <Typography variant="body2" color="text.secondary">
@@ -190,115 +271,57 @@ const EntityDetailsRow = ({ entity, index }) => {
       </TableCell>
 
       {/* Other Properties Column */}
-      <TableCell sx={{ minWidth: 300, maxWidth: 350 }}>
-        <Box>
-          {/* Display Attributes */}
-          {attributes.length > 0 && (
-            <Box sx={{ mb: extractOtherProperties.length > 0 ? 1 : 0 }}>
-              {attributes.map((attr, attrIndex) => (
-                <Box
-                  key={attrIndex}
-                  sx={{
-                    mb:
-                      attrIndex < attributes.length - 1 ||
-                      extractOtherProperties.length > 0
-                        ? 0.75
-                        : 0,
-                    pb:
-                      attrIndex < attributes.length - 1 ||
-                      extractOtherProperties.length > 0
-                        ? 0.75
-                        : 0,
-                    borderBottom:
-                      attrIndex < attributes.length - 1 ||
-                      (attrIndex === attributes.length - 1 &&
-                        extractOtherProperties.length > 0)
-                        ? "1px solid"
-                        : "none",
-                    borderColor: "divider",
-                  }}
-                >
-                  <Typography
-                    component="span"
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ fontWeight: 600, display: "block", mb: 0.25 }}
-                  >
-                    {attr.name}:
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontSize: "0.875rem",
-                      fontWeight: 500,
-                      display: "block",
-                    }}
-                  >
-                    {attr.value != null && attr.value !== "" ? (
-                      <>
-                        {attr.value}
-                        {attr.unit && ` ${attr.unit}`}
-                      </>
-                    ) : (
-                      <Typography
-                        component="span"
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ fontStyle: "italic" }}
-                      >
-                        No value
-                      </Typography>
-                    )}
-                  </Typography>
-                  {attr.confidence && (
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ fontSize: "0.7rem", display: "block", mt: 0.25 }}
-                    >
-                      Confidence:{" "}
-                      {Math.round(parseFloat(attr.confidence) * 100)}%
-                    </Typography>
-                  )}
-                </Box>
-              ))}
-            </Box>
-          )}
-
-          {/* Display Other Properties */}
-          {extractOtherProperties.length > 0 ? (
-            <Box>
-              {extractOtherProperties.map(({ key, value }, propIndex) => (
+      <TableCell sx={{ minWidth: 250, maxWidth: 300 }}>
+        {extractOtherProperties.length > 0 ? (
+          <Box>
+            {extractOtherProperties.map(({ key, value }, propIndex) => (
+              <Typography
+                key={key}
+                variant="body2"
+                sx={{
+                  fontSize: "0.875rem",
+                  mb: propIndex < extractOtherProperties.length - 1 ? 0.25 : 0,
+                  display: "block",
+                }}
+              >
                 <Typography
-                  key={key}
-                  variant="body2"
-                  sx={{
-                    fontSize: "0.875rem",
-                    mb:
-                      propIndex < extractOtherProperties.length - 1 ? 0.25 : 0,
-                    display: "block",
-                  }}
+                  component="span"
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontWeight: 500 }}
                 >
-                  <Typography
-                    component="span"
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ fontWeight: 500 }}
-                  >
-                    {formatPropertyName(key)}:
-                  </Typography>{" "}
-                  <Typography component="span" variant="body2">
-                    {value.length > 25 ? `${value.substring(0, 25)}...` : value}
-                  </Typography>
+                  {formatPropertyName(key)}:
+                </Typography>{" "}
+                <Typography component="span" variant="body2">
+                  {value.length > 25 ? `${value.substring(0, 25)}...` : value}
                 </Typography>
-              ))}
-            </Box>
-          ) : attributes.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              -
-            </Typography>
-          ) : null}
-        </Box>
+              </Typography>
+            ))}
+          </Box>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            -
+          </Typography>
+        )}
+      </TableCell>
+
+      {/* Evidence Text Column */}
+      <TableCell sx={{ minWidth: 50 }} align="center">
+        {entity.properties?.evidence_text ? (
+          <Tooltip
+            title={entity.properties.evidence_text}
+            arrow
+            placement="left"
+          >
+            <IconButton size="small" sx={{ color: "primary.main" }}>
+              <InfoIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            -
+          </Typography>
+        )}
       </TableCell>
 
       {/* Sources Column */}
