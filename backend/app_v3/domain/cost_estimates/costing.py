@@ -116,7 +116,7 @@ def extract_cost_info(entity: Dict[str, Any]) -> Dict[str, Any]:
     """
     Extract cost information from entity properties.
 
-    Handles both old format (cost_information object) and new format (direct properties).
+    Handles both old format (cost object) and new format (direct properties).
 
     Args:
         entity: Entity dictionary
@@ -139,9 +139,9 @@ def extract_cost_info(entity: Dict[str, Any]) -> Dict[str, Any]:
     cost_type = props.get("cost_type")
     cost_basis = props.get("cost_basis") or props.get("cost_basis_year")
 
-    # If not found, try old format (cost_information object)
+    # If not found, try old format (cost object)
     if cost_value is None:
-        cost_info = props.get("cost_information", {}) or {}
+        cost_info = props.get("cost", {}) or {}
         cost_value = cost_info.get("cost_value")
         cost_currency = cost_info.get("cost_currency", "USD")
         cost_type = cost_info.get("cost_type")
@@ -179,7 +179,7 @@ def _extract_cost_value(entity: Dict[str, Any]) -> Optional[float]:
     """
     Extract cost value directly from entity properties.
 
-    Handles both old format (cost_information object) and new format (direct properties).
+    Handles both old format (cost object) and new format (direct properties).
 
     Args:
         entity: Entity dictionary
@@ -192,9 +192,9 @@ def _extract_cost_value(entity: Dict[str, Any]) -> Optional[float]:
     # Try new format first (direct properties)
     cost_value = props.get("cost_value")
 
-    # If not found, try old format (cost_information object)
+    # If not found, try old format (cost object)
     if cost_value is None:
-        cost_info = props.get("cost_information", {}) or {}
+        cost_info = props.get("cost", {}) or {}
         cost_value = cost_info.get("cost_value")
 
     # Handle cost_value if it's a string (convert to float)
@@ -230,11 +230,11 @@ def build_cost_comparison_report(
         List of cost comparison report entries, each containing:
         {
             "bc": Dict,  # Full base_entity object
-            "base_cost": float | None,  # Direct cost value from properties.cost_information.cost_value or properties.cost_value
+            "base_cost": float | None,  # Direct cost value from properties.cost.cost_value or properties.cost_value
             "tabular_cost": List[Dict],  # Each with:
                 {
                     "td": Dict,  # Full tabular_entity object
-                    "cost": float | None,  # Direct cost value from properties.cost_information.cost_value or properties.cost_value
+                    "cost": float | None,  # Direct cost value from properties.cost.cost_value or properties.cost_value
                 }
         }
     """

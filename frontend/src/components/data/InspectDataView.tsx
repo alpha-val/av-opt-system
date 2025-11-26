@@ -77,7 +77,7 @@ const InspectDataView: React.FC<InspectDataViewProps> = ({
     : artifactType === "tabular_data"
     ? "Tabular Data Entities"
     : "Project Entities";
-
+  // console.log("[InspectDataView] Entities:", entities);
   return (
     <Box>
       <EntityDetailsTable entities={entities} title={title} />

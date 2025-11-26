@@ -12,7 +12,8 @@ import json
 import uuid
 import logging
 from ..prompts.entity_extraction_prompt import (
-    generate_prompt,
+    generate_prompt_v1,
+    generate_prompt
 )
 from ..utils.llm_tools import (
     TOOLS,
@@ -83,7 +84,7 @@ class EntityExtractor:
         #     rules.append("TABLE_EXTRACTION")
 
         # Build prompt with rules
-        user_prompt = generate_prompt(artifact_type=artifact_type, rules=rules)
+        user_prompt = generate_prompt_v1(artifact_type=artifact_type, rules=rules)
         system_prompt = SystemMessage(content=user_prompt)
 
         # Collect all extracted data

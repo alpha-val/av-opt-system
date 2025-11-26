@@ -300,13 +300,13 @@ class EntityVectorStore(VectorStore):
         if attr_texts:
             parts.append(f"attributes: {', '.join(attr_texts)}")
 
-        if "cost_information" in props and isinstance(props["cost_information"], dict):
+        if "cost" in props and isinstance(props["cost"], dict):
             cost_information_texts = []
-            for key, value in props["cost_information"].items():
+            for key, value in props["cost"].items():
                 if value is not None:
                     cost_information_text = f"{key}: {value}"
                     cost_information_texts.append(cost_information_text)
-            parts.append(f"cost_information: {', '.join(cost_information_texts)}")
+            parts.append(f"cost: {', '.join(cost_information_texts)}")
 
         # Flatten all properties dynamically (exclude IDs, confidence, status, and already-added MSIO fields)
         # for key, value in props.items():

@@ -103,9 +103,9 @@ const CostEstimateDetails: React.FC<CostEstimateDetailsProps> = ({
       const entityName = baseEntity.properties?.name || "Unknown Entity";
       const entityType = baseEntity.type || "Unknown";
 
-      // Get currency from base entity cost_information, default to USD
+      // Get currency from base entity cost, default to USD
       const baseCostCurrency =
-        baseEntity.properties?.cost_information?.cost_currency ||
+        baseEntity.properties?.cost?.cost_currency ||
         baseEntity.properties?.cost_currency ||
         "USD";
 
@@ -115,7 +115,7 @@ const CostEstimateDetails: React.FC<CostEstimateDetailsProps> = ({
         currency: baseCostCurrency,
         unit: null,
         basis:
-          baseEntity.properties?.cost_information?.cost_basis_year ||
+          baseEntity.properties?.cost?.cost_basis_year ||
           baseEntity.properties?.cost_basis_year ||
           null,
       };
@@ -129,9 +129,9 @@ const CostEstimateDetails: React.FC<CostEstimateDetailsProps> = ({
         const tabularType = tabularEntity.type || "Unknown";
         const relevanceScore = tabularEntity.relevance_score || 0;
 
-        // Get currency from tabular entity cost_information, default to USD
+        // Get currency from tabular entity cost, default to USD
         const tabularCostCurrency =
-          tabularEntity.properties?.cost_information?.cost_currency ||
+          tabularEntity.properties?.cost?.cost_currency ||
           tabularEntity.properties?.cost_currency ||
           "USD";
 
@@ -140,7 +140,7 @@ const CostEstimateDetails: React.FC<CostEstimateDetailsProps> = ({
           currency: tabularCostCurrency,
           unit: null,
           basis:
-            tabularEntity.properties?.cost_information?.cost_basis_year ||
+            tabularEntity.properties?.cost?.cost_basis_year ||
             tabularEntity.properties?.cost_basis_year ||
             null,
         };

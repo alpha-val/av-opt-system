@@ -985,36 +985,27 @@ cost_extraction_block = """
   COST EXTRACTION
   --------------------------------------------------------------------------------
   
-  Extract cost information from the base case text when available and store it in properties.cost object. If not available, 
+  Extract cost information from the text when available and store it in properties.cost object. If not available, 
   still create the entity but keep cost properties as null.
 
   COST PROPERTIES:
   - cost_value (number): Numeric cost value
   - cost_currency (string): Currency code in ISO format (e.g., 'USD', 'EUR')
-  - cost_min (number): Minimum cost value
+  - cost_min (number): Minimum cost value, default to cost_value if not present
   - cost_max (number): Maximum cost value
   - cost_unit (string): Unit of the cost value
   - cost_basis (string): Basis of the cost value (e.g., “installed”, “silt fence”)
   - cost_alternates (array of additional ranges when text contains “or / OR”)
   
-  COST RANGE EXTRACTION RULES:
-  When parsing cost information, if cost value is a range (e.g., "$12 – $25 / yd3") then extract the cost range and units.
-  - For cost range, always extract:
-    - cost_min
-    - cost_max
-    - cost_unit
-    - cost_basis (optional descriptor, e.g., “installed”, “silt fence”)
-    - cost_alternates (array of additional ranges when text contains “or / OR”)
-
-  • If a cost string contains multiple ranges (e.g., “$5 – $25 / SY or $1,000 – $8,000 LS”), parse the FIRST as the primary range and each additional range as a separate `alternate` entry.
+  • If a cost string contains multiple ranges (e.g., “$5 - $25 / SY or $1,000 - $8,000 LS”), parse the FIRST as the primary range and each additional range as a separate `alternate` entry.
 
   • Examples of cost range formats:
     - "$1200" -> cost_value: 1200, cost_currency: "USD", cost_min: null, cost_max: null
-    - "$12 – $25 / yd3" -> cost_min: 12, cost_max: 25, cost_unit: "yd3"
-    - "$3 – $8 / LF (silt fence)" -> cost_min: 3, cost_max: 8, cost_unit: "LF", cost_basis: "silt fence"
-    - "$800 – $3,000 / inlet" -> cost_min: 800, cost_max: 3000, cost_unit: "inlet"
-    - "$5 – $25 / SY or $1,000 – $8,000 LS" -> cost_min: 5, cost_max: 25, cost_unit: "SY", cost_alternates: [{"cost_min": 1000, "cost_max": 8000, "cost_unit": "LS"}]
-    - "$80 – $250 / ft3 (liner & basin) OR $8,000 – $25,000 / EA" -> cost_min: 80, cost_max: 250, cost_unit: "ft3", cost_basis: "liner & basin", cost_alternates: [{"cost_min": 8000, "cost_max": 25000, "cost_unit": "EA"}]
+    - "$12 - $25 / yd3" -> cost_min: 12, cost_max: 25, cost_unit: "yd3"
+    - "$3 - $8 / LF (silt fence)" -> cost_min: 3, cost_max: 8, cost_unit: "LF", cost_basis: "silt fence"
+    - "$800 - $3,000 / inlet" -> cost_min: 800, cost_max: 3000, cost_unit: "inlet"
+    - "$5 - $25 / SY or $1,000 - $8,000 LS" -> cost_min: 5, cost_max: 25, cost_unit: "SY", cost_alternates: [{"cost_min": 1000, "cost_max": 8000, "cost_unit": "LS"}]
+    - "$80 - $250 / ft3 (liner & basin) OR $8,000 - $25,000 / EA" -> cost_min: 80, cost_max: 250, cost_unit: "ft3", cost_basis: "liner & basin", cost_alternates: [{"cost_min": 8000, "cost_max": 25000, "cost_unit": "EA"}]
   • If the column is blank, return cost_value: null, cost_currency: null, cost_basis_year: null, cost_type: null, annual_op_cost: null, reclamation_cost: null
   
   TOTAL COST EXTRACTION:
@@ -1488,25 +1479,25 @@ objective_driven_extraction_additions = """
     ✓ All entities are relevant to achieving the stated objective
 """
 
+# Comments
 """
-        - Process: Flow improvements, efficiency gains, throughput enhancements
-        - Operations: Shift patterns, staffing, procedures, scheduling
-        - Infrastructure: Utilities, buildings, site work, foundations, structures
-        - Controls: Automation, instrumentation, SCADA, control logic
-        - Energy: Power consumption, heat recovery, waste minimization
-        - Maintenance: Reliability improvements, preventive maintenance, spare parts
-        - Safety: Safety systems, procedures, equipment, training
-        - Environmental: Emissions reduction, waste treatment, compliance
-        
-        Categorize as:
-        - PRIMARY (5-10): High-impact, direct solutions
-        - SECONDARY (5-10): Supporting changes
-        - OTHER (5-10): Alternative approaches
-        
+  - Process: Flow improvements, efficiency gains, throughput enhancements
+  - Operations: Shift patterns, staffing, procedures, scheduling
+  - Infrastructure: Utilities, buildings, site work, foundations, structures
+  - Controls: Automation, instrumentation, SCADA, control logic
+  - Energy: Power consumption, heat recovery, waste minimization
+  - Maintenance: Reliability improvements, preventive maintenance, spare parts
+  - Safety: Safety systems, procedures, equipment, training
+  - Environmental: Emissions reduction, waste treatment, compliance
+  
+  Categorize as:
+  - PRIMARY (5-10): High-impact, direct solutions
+  - SECONDARY (5-10): Supporting changes
+  - OTHER (5-10): Alternative approaches
 """
 
 
-def generate_prompt(
+def generate_prompt_v1(
     artifact_type: str = "base_case",
     objective_type: Optional[str] = None,
     objective_target: Optional[str] = None,
@@ -1601,10 +1592,10 @@ def generate_prompt(
             rules_sections += f"{global_objectives_block}\n\n"
         if "PROVENANCE_AND_CONFIDENCE" in rules:
             rules_sections += f"{prov_conf_block}\n\n"
-    
+
     # Always include cost extraction block
     rules_sections += f"{cost_extraction_block}\n\n"
-    
+
     # Main prompt
     prompt = f"""\
       -------------------------------------------------------------------------------
@@ -1698,7 +1689,7 @@ def generate_prompt(
       -------------------------------------------------------------------------------
       ✓ Every node has: unique UUID id, valid type, properties object with name, MSIO classification, attributes array
       ✓ All MSIO fields match ontology or set to "Miscellaneous"
-      ✓ Extract only equipment and material entities
+      ✓ Extract only equipment, material, process, and product entities
       ✓ Attributes array contains all relevant attributes (null values allowed)
       ✓ Cost information in properties.cost (not attributes)
       ✓ Evidence and confidence for all nodes
@@ -1733,3 +1724,151 @@ def generate_prompt(
       """
 
     return prompt
+
+
+def generate_prompt(
+    artifact_type: str,
+    rules: List[str],
+    add_edges: bool = False,
+    objective_type: Optional[str] = None,
+    objective_target: Optional[str] = None,
+    objective_unit: Optional[str] = None,
+    objective_description: Optional[str] = None,
+) -> str:
+
+    recommendation_section = f"""
+
+    RECOMMENDATION-BASED ENTITY EXTRACTION: 
+
+    Before extracting entities, identify comprehensive recommendations to achieve the objective: {objective_type} {objective_target} {objective_unit or "%"} {objective_description or ""}.
+
+    Generate relevant recommendations for the objective across:
+    - Equipment: Upgrades, replacements, additions, technology improvements
+    - Materials: Raw materials, consumables, feedstocks, product specifications (e.g., concrete, metals, chemicals, liquids, gases, etc.)
+    
+    **THE RECOMMENDATIONS MUST:**
+    - Directly relate to the objective
+    - Be specific and detailed in the rationale field
+    - Be categorized as PRIMARY or SECONDARY
+      - PRIMARY: High-impact, direct solutions
+      - SECONDARY: Supporting changes
+    - Have the following fields: id, type, name, rationale, relevance, change_direction, change_magnitude, evidence_text, confidence, cost information (if available).
+    - Be embedded in entity.properties.recommendations arrays.
+    """
+
+    msio_ontology_section = f"""
+    MANDATORY MSIO CLASSIFICATION WORKFLOW:
+    
+    Map entities to the below Mining System Integration Ontology (MSIO).
+    {MSIO_ONTOLOGY_TEXT}
+    
+    Classification workflow;
+    STEP 1: Identify entity name/description from text
+    STEP 2: Match to Discipline (case-insensitive, fallback to "Miscellaneous")
+    STEP 3: Match to Category within Discipline (fallback to "Miscellaneous")
+    STEP 4: Match to Subcategory within Category (fallback to "Miscellaneous")
+    STEP 5: Match to Entity within Subcategory (fallback to "Miscellaneous")
+    STEP 6: Extract attributes from NODE_PROPERTIES and MSIO ontology
+      - Create attribute objects: name, value, unit, evidence_text, confidence
+      - If attribute not present, set value and unit to null
+      - Store cost info in properties.cost (not attributes array)
+
+    Examples:
+      - "Two centrifugal pumps 500 gpm at 120 ft head" → Discipline: "Mechanical Equipment", Category: "Pumps", Subcategory: "Centrifugal", Entity: "Base pump unit", Attributes: Design flowrate (500 gpm), Head (120 ft)
+
+      - "Storage tank with fixed roof" → Discipline: "Mechanical Equipment", Category: "Tanks", Subcategory: "Storage Tank", Entity: "Fixed Roof"
+    """
+    nodes_section = f"""
+    - MANDATORY NODE OBJECT:
+      - Generate all types of nodes: Equipment, Material, Process, Product, and others (if applicable)
+      - Match each node to the text
+      - If an entity cannot be matched to MSIO ontology, create a new node with the closest MSIO hierarchy match and set "outside_msio": true attribute
+      - If Total Installed Cost (TIC) or Total Capital Cost (TCC) are mentioned, extract the cost value and currency as separate properties
+      - Use the MSIO matching workflow above for every entity extraction
+      - DEDUPLICATE entities following the Entity Deduplication and Merging Policy (see above)
+    - NODE OBJECT: Node object (each item in extract_nodes.nodes) MUST have:
+      - "id": MUST be a valid UUID (RFC 4122 format, e.g., "550e8400-e29b-41d4-a716-446655440000")
+      - "type": one of NODE_TYPES; a Node object must have a type
+      - "properties": object/dict containing:
+        • MANDATORY MSIO fields (all must be present and match ontology):
+          - "discipline": string (MUST match an MSIO Discipline name exactly)
+          - "category": string (MUST match an MSIO Category name within that Discipline)
+          - "subcategory": string (MUST match an MSIO Subcategory name within that Category)
+          - "entity": string (MUST match an MSIO Entity name within that Subcategory, or closest match)
+        • MANDATORY Attributes:
+          - "attributes": array of attribute objects 
+            - "name": string (attribute name, e.g., Design flowrate, Head, NPSH, Spec, Reagent, Attributes, etc.)
+            - "value": number|null (attribute value)
+            - "unit": string|null (attribute unit)
+            - "evidence_text": string|null (text snippet used to extract attribute)
+            - "confidence": 0.0-1.0 (confidence score for this attribute)
+
+    """
+
+    edges_section = f"""
+    Edge object (each item in extract_edges.edges) MUST have:
+    - "source": node id
+    - "target": node id
+    - "type": one of EDGE_TYPES
+    - "properties": object/dict containing ONLY:
+      • the allowed meta-keys from EDGE_PROPERTIES for evidence/confidence, and
+      • any domain attributes the ontology expects for that edge (if any)
+    """
+    output_section = f"""
+      OUTPUT: Return nodes with extract_nodes(nodes=[...]){" and edges with extract_edges(edges=[...])" if add_edges else ""}.
+
+      Each node example:
+      {{
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "type": "Equipment",
+        "properties": {{
+          "name": "Centrifugal Pump 500 gpm",
+          "discipline": "Mechanical Equipment",
+          "category": "Pumps",
+          "subcategory": "Centrifugal",
+          "entity": "Base pump unit",
+          "attributes": [
+            {{"name": "Design flowrate", "value": 500, "unit": "gpm", "evidence_text": "500 gpm", "confidence": 0.95}}
+          ],
+          "cost": {{"cost_value": 400000, "cost_min":40000, "cost_max": 80000, "cost_unit": "USD", "cost_basis": "installed", "cost_alternates": []}},
+          {f'\n    "recommendations": [],' if artifact_type == "base_case" else ""}
+          "evidence_text": "...",
+          "confidence": 0.92
+        }}
+      }}
+    """
+
+    # Build rules sections conditionally
+    rules_sections = ""
+    if rules:
+        if "UNITS_NORMALIZATION" in rules:
+            rules_sections += f"{units_normalization_block}\n\n"
+        if "TABLE_EXTRACTION" in rules:
+            rules_sections += f"{table_extraction_block}\n\n"
+        if "GLOBAL_OBJECTIVES" in rules:
+            rules_sections += f"{global_objectives_block}\n\n"
+        if "PROVENANCE_AND_CONFIDENCE" in rules:
+            rules_sections += f"{prov_conf_block}\n\n"
+
+    # Always include cost extraction block
+    rules_sections += f"{cost_extraction_block}\n\n"
+
+    base_prompt = f"""
+      -------------------------------------------------------------------------------
+      CONTEXT: Engineers and Cost Estimators use system design reports (referred to as base case documents) to design and optimize systems to plan capital-intensive installations and operations. The reports consist of details on technical requirements, equipment and material, process, operations, capital expenditure(CAPEX) and operating expenditure(OPEX) costs, constraints, assumptions, exclusions, and policy information on project requirements. Our system ingests the reports and extracts all the relevant information and factors (referred to as extracted entities), which is then used for cost estimation and analysis. Entities are structured data about factors such as equipment, material, process, constraints, cost items, and so on. Our system employs an ontology to map the extracted entities to a standard classification system (referred to as Mining System Integration Ontology (MSIO)).
+
+      ROLE: Extract clean, deduplicated entities from mining/process-engineering content aligned to the provided Mining System Integration Ontology (MSIO). Map entities to MSIO hierarchy (Discipline → Category → Subcategory → Entity).
+
+      {recommendation_section if artifact_type == "base_case" else ""}
+
+      {msio_ontology_section}
+
+      {nodes_section}
+
+      {edges_section if add_edges else ""}
+
+      {rules_sections}
+
+      {output_section}
+      """
+    return base_prompt

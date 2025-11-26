@@ -76,7 +76,7 @@ TOOLS = [
                                         },
                                         "cost": {
                                             "type": "object",
-                                            "description": "Cost information for the entity. Include when cost information is available.",
+                                            "description": "Cost information for the entity. Include when cost information is available. If not available, still create the entity but keep cost properties as null.",
                                             "properties": {
                                                 "cost_value": {
                                                     "type": ["number", "null"],
@@ -85,6 +85,22 @@ TOOLS = [
                                                 "cost_currency": {
                                                     "type": ["string", "null"],
                                                     "description": "Currency code for the cost (e.g., 'USD', 'EUR'). Use ISO currency codes. Include when cost information is available.",
+                                                },
+                                                "cost_min": {
+                                                    "type": ["number", "null"],
+                                                    "description": "Minimum cost value. Use for cost ranges (e.g., '$12 - $25'). Default to cost_value if not present.",
+                                                },
+                                                "cost_max": {
+                                                    "type": ["number", "null"],
+                                                    "description": "Maximum cost value. Use for cost ranges (e.g., '$12 - $25').",
+                                                },
+                                                "cost_unit": {
+                                                    "type": ["string", "null"],
+                                                    "description": "Unit of the cost value (e.g., 'yd³', 'LF', 'SY', 'EA', 'LS'). Include when mentioned in the text.",
+                                                },
+                                                "cost_basis": {
+                                                    "type": ["string", "null"],
+                                                    "description": "Basis of the cost value (e.g., 'installed', 'silt fence', 'liner & basin'). Include when mentioned in the text.",
                                                 },
                                                 "cost_basis_year": {
                                                     "type": ["number", "null"],
@@ -109,31 +125,33 @@ TOOLS = [
                                                     "type": ["number", "null"],
                                                     "description": "Reclamation cost if applicable. Include when mentioned in the text.",
                                                 },
-                                                "annual_op_cost": {
-                                                    "type": ["number", "null"],
-                                                    "description": "Annual operating cost if applicable. Include when mentioned in the text.",
-                                                },
-                                                "reclamation_cost": {
-                                                    "type": ["number", "null"],
-                                                    "description": "Reclamation cost if applicable. Include when mentioned in the text.",
-                                                },
-                                                "cost_impact_direction": {
-                                                    "type": ["string", "null"],
-                                                    "description": "Direction of the cost impact: increase, decrease, or no change.",
-                                                },
-                                                "cost_impact_magnitude": {
-                                                    "type": ["number", "null"],
-                                                    "description": "Magnitude of the cost impact (numeric value as string). Include when cost information is available.",
+                                                "cost_alternates": {
+                                                    "type": ["array", "null"],
+                                                    "description": "Array of additional cost ranges when text contains 'or / OR'. Each entry should have cost_min, cost_max, and cost_unit. Example: [{\"cost_min\": 1000, \"cost_max\": 8000, \"cost_unit\": \"LS\"}]",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "cost_min": {
+                                                                "type": ["number", "null"],
+                                                                "description": "Minimum cost value for this alternate range.",
+                                                            },
+                                                            "cost_max": {
+                                                                "type": ["number", "null"],
+                                                                "description": "Maximum cost value for this alternate range.",
+                                                            },
+                                                            "cost_unit": {
+                                                                "type": ["string", "null"],
+                                                                "description": "Unit for this alternate range.",
+                                                            },
+                                                            "cost_basis": {
+                                                                "type": ["string", "null"],
+                                                                "description": "Basis for this alternate range if mentioned.",
+                                                            },
+                                                        },
+                                                    },
                                                 },
                                             },
-                                            "required": [
-                                                "cost_value",
-                                                "cost_min",
-                                                "cost_max",
-                                                "cost_unit",
-                                                "cost_basis",
-                                                "cost_alternates",
-                                            ],
+                                            "required": [],
                                         },
                                         # Explicitly add attributes array for objective-driven extraction (MANDATORY)
                                         "attributes": {
@@ -155,8 +173,8 @@ TOOLS = [
                                                         "description": "Attribute value (numeric or string)",
                                                     },
                                                     "unit": {
-                                                        "type": ["string", "null"],
-                                                        "description": "Unit of measurement for the attribute (if applicable)",
+                                                        "type": ["string"],
+                                                        "description": "Unit of measurement, specification, or requirement",
                                                     },
                                                     "evidence_text": {
                                                         "type": ["string", "null"],

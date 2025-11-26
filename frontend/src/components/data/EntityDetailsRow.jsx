@@ -37,9 +37,9 @@ const EntityDetailsRow = ({ entity, index }) => {
     (doc) => doc.doc_id === entity.properties.doc_id
   );
 
-  // Extract cost information from properties.cost (new format) or properties.cost_information (legacy)
+  // Extract cost information from properties.cost (new format) or properties.cost (legacy)
   const costInformation = useMemo(() => {
-    return entity.properties?.cost || entity.properties?.cost_information || null;
+    return entity.properties?.cost || entity.properties?.cost || null;
   }, [entity]);
 
   // Extract attributes from properties.attributes
@@ -47,7 +47,7 @@ const EntityDetailsRow = ({ entity, index }) => {
     return entity.properties?.attributes || [];
   }, [entity]);
 
-  // Extract other relevant properties (excluding attributes, cost_information, and metadata)
+  // Extract other relevant properties (excluding attributes, cost, and metadata)
   const extractOtherProperties = useMemo(() => {
     const excludeFields = new Set([
       "name",
@@ -68,7 +68,6 @@ const EntityDetailsRow = ({ entity, index }) => {
       "sources",
       "attributes",
       "cost",
-      "cost_information",
       "evidence_text",
     ]);
 

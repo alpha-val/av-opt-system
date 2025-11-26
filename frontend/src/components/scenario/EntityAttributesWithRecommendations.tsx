@@ -669,11 +669,11 @@ const EntityAttributesWithRecommendations: React.FC<
       // Get attributes from properties.attributes array
       const attributes = entity.properties?.attributes || [];
 
-      // Extract cost information from properties.cost_information object
+      // Extract cost information from properties.cost object
       let costValue: number | null = null;
       let costCurrency: string | null = null;
 
-      const costInformation = entity.properties?.cost_information;
+      const costInformation = entity.properties?.cost;
       if (costInformation) {
         // Extract cost_value
         if (
