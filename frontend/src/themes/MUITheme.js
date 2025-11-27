@@ -64,36 +64,36 @@ const createAppTheme = (mode = "light") => {
         "sans-serif",
       ].join(","),
       h1: {
-        fontSize: "2.25rem",
+        fontSize: "2.1rem",
         "@media (max-width:600px)": { fontSize: "2.5rem" },
       },
       h2: {
-        fontSize: "1.7rem",
+        fontSize: "1.5rem",
         "@media (max-width:600px)": { fontSize: "1.2rem" },
       },
       h3: {
-        fontSize: "1.3rem",
+        fontSize: "1.2rem",
         "@media (max-width:600px)": { fontSize: "1.05rem" },
       },
       h4: {
-        fontSize: "1.1rem",
+        fontSize: "1.0rem",
         "@media (max-width:600px)": { fontSize: "0.98rem" },
       },
       h5: {
-        fontSize: "1rem",
+        fontSize: "0.9rem",
         "@media (max-width:600px)": { fontSize: "0.875rem" },
       },
       h6: {
-        fontSize: "0.95rem",
+        fontSize: "0.8rem",
         "@media (max-width:600px)": { fontSize: "0.9rem" },
       },
       body1: {
-        fontSize: "0.85rem",
+        fontSize: "0.75rem",
         "@media (max-width:600px)": { fontSize: "0.8rem" },
       },
       body2: {
-        fontSize: "0.75rem",
-        "@media (max-width:600px)": { fontSize: "0.775rem" },
+        fontSize: "0.7rem",
+        "@media (max-width:600px)": { fontSize: "0.7rem" },
       },
       // not native MUI variant, but fine if you're using it in sx
       body3: {
@@ -101,6 +101,18 @@ const createAppTheme = (mode = "light") => {
         lineHeight: 1,
         color: isLight ? "#3a3a3a" : "#c0c0c0",
         "@media (max-width:600px)": { fontSize: "0.6rem" },
+      },
+      subtitle1: {
+        fontSize: "0.8rem",
+        "@media (max-width:600px)": { fontSize: "0.7rem" },
+      },
+      subtitle2: {
+        fontSize: "0.7rem",
+        "@media (max-width:600px)": { fontSize: "0.6rem" },
+      },
+      caption: {
+        fontSize: "0.6rem",
+        "@media (max-width:600px)": { fontSize: "0.5rem" },
       },
     },
     spacing: 8,

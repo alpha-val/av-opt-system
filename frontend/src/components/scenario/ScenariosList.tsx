@@ -539,7 +539,7 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
                                 color="primary.main"
                                 sx={{ ml: 0.5, fontWeight: 600 }}
                               >
-                                {scenario.global_objective_target}
+                                {scenario.global_objective_target} {scenario.global_objective_unit}
                               </Typography>
                             )}
                           </Typography>

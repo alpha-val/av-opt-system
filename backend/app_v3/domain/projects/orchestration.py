@@ -14,6 +14,9 @@ import uuid
 import json
 import asyncio
 
+from ..progress.events import ProgressEvent, Stage, Status
+from ..progress.publisher import ProgressPublisher
+
 # Import LLM components
 from app_v2.adapters.config import SETTINGS
 from langchain_openai import ChatOpenAI
@@ -1199,6 +1202,8 @@ class ProjectOrchestrationService:
         project_id: str,
         user_id: str,
         store_in_pinecone: bool = False,
+        job_id: Optional[str] = None,
+        progress_publisher: Optional[ProgressPublisher] = None,
     ) -> Dict[str, Any]:
         """
         Process a tabular data file: extract tables, extract entities, and store in MongoDB.
@@ -1249,6 +1254,8 @@ class ProjectOrchestrationService:
                 project_id=project_id,
                 user_id=user_id,
                 store_in_pinecone=store_in_pinecone,
+                job_id=job_id,
+                progress_publisher=progress_publisher,
             )
 
             logger.info(

@@ -30,47 +30,60 @@ const ProgressWidget: React.FC<ProgressWidgetProps> = React.memo(({
   onDismiss,
   onComplete,
 }) => {
-  // console.log("ProgressWidget rendered with jobId:", jobId, "title:", title);
   const { connected, progress, stage, status, error, meta, reconnectAttempts } =
     useProgress(jobId);
-  const [autoHideTimer, setAutoHideTimer] = useState<NodeJS.Timeout | null>(null);
   const [isVisible, setIsVisible] = useState(true);
-  
-  // console.log("ProgressWidget state:", { connected, progress, stage, status, isVisible, jobId });
+  const autoHideTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasCompletedRef = useRef(false);
 
+  // Handle completion - only call onComplete once per job
   useEffect(() => {
     if (status === "completed" && progress === 100 && stage === "complete") {
-      if (onComplete) {
-        onComplete();
+      // Only call onComplete once
+      if (!hasCompletedRef.current) {
+        hasCompletedRef.current = true;
+        if (onComplete) {
+          onComplete();
+        }
       }
       
-      const timer = setTimeout(() => {
-        // console.log("Auto-hiding progress widget");
-        setIsVisible(false);
-        if (onDismiss) {
-          onDismiss();
-        }
-      }, 3000);
-      setAutoHideTimer(timer);
-      return () => {
-        if (timer) clearTimeout(timer);
-      };
-    } else {
-      if (autoHideTimer) {
-        clearTimeout(autoHideTimer);
-        setAutoHideTimer(null);
+      // Set auto-hide timer (only if not already set)
+      if (!autoHideTimerRef.current) {
+        autoHideTimerRef.current = setTimeout(() => {
+          setIsVisible(false);
+          if (onDismiss) {
+            onDismiss();
+          }
+        }, 3000);
       }
+    } else {
+      // Reset when not complete
+      if (autoHideTimerRef.current) {
+        clearTimeout(autoHideTimerRef.current);
+        autoHideTimerRef.current = null;
+      }
+      hasCompletedRef.current = false;
       setIsVisible(true);
     }
-  }, [status, progress, stage, onDismiss, onComplete, autoHideTimer]);
+  }, [status, progress, stage, onDismiss, onComplete]);
 
+  // Reset refs when jobId changes
+  useEffect(() => {
+    hasCompletedRef.current = false;
+    if (autoHideTimerRef.current) {
+      clearTimeout(autoHideTimerRef.current);
+      autoHideTimerRef.current = null;
+    }
+  }, [jobId]);
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (autoHideTimer) {
-        clearTimeout(autoHideTimer);
+      if (autoHideTimerRef.current) {
+        clearTimeout(autoHideTimerRef.current);
       }
     };
-  }, [autoHideTimer]);
+  }, []);
 
   if (!jobId || !isVisible) {
     return null;

@@ -22,6 +22,8 @@ from .validators.msio_validator import MSIOValidator
 from .normalizers.entity_normalizer import EntityNormalizer
 from .storage.vector_store import ChunkVectorStore, EntityVectorStore
 from .storage.document_store import DocumentStore
+from ..progress.publisher import ProgressPublisher
+from ..progress.events import ProgressEvent, Stage, Status
 
 logger = logging.getLogger(__name__)
 
@@ -266,6 +268,8 @@ class DocumentProcessingService:
         validate_msio: bool = True,
         strict_validation: bool = False,
         store_in_pinecone: bool = False,
+        job_id: Optional[str] = None,
+        progress_publisher: Optional[ProgressPublisher] = None,
     ) -> Dict[str, Any]:
         """
         Process a tabular data document through the complete pipeline.
@@ -308,6 +312,25 @@ class DocumentProcessingService:
             if doc_id:
                 doc_id_actual = doc_id
 
+            progress_publisher.publish(
+                job_id,
+                ProgressEvent(
+                    job_id=job_id,
+                    stage=(
+                        Stage.PROCESSING
+                    ),
+                    status=Status.IN_PROGRESS,
+                    progress=100,
+                    seq=3,
+                    meta={
+                        "project_id": project_id,
+                        "current_file": filename,
+                        "doc_id": doc_id_actual,
+                        "artifact_type": "tabular_data",
+                        "current_stage": f"Extracting tables from PDF: {filename}",
+                    },
+                ),
+            )
             # Stage 2: Table extraction
             tables = self.table_extractor.extract_tables(pdf_bytes, pages=pages)
 

@@ -197,14 +197,13 @@ export function useProgress(jobId: string | null): UseProgressReturn {
     }
 
     return () => {
-      console.log(`[useEffect cleanup] Cleanup for jobId=${jobId} (no-op during re-renders)`);
+      // Cleanup on re-renders (no-op, handled by disconnect below)
     };
   }, [jobId, connect, disconnect]);
 
   // Separate effect for final cleanup on component unmount
   useEffect(() => {
     return () => {
-      console.log('[Component unmount] Final cleanup - disconnecting WebSocket');
       disconnect();
       currentJobIdRef.current = null;
     };

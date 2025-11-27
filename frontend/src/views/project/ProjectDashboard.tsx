@@ -280,18 +280,13 @@ const ProjectDashboard: React.FC = () => {
 
       if (uploadProjectFiles.fulfilled.match(result)) {
         const response = result.payload;
-        // console.log("Upload response:", response);
 
         // job_id is nested in uploadData
         const jobId = response.uploadData?.job_id || response.job_id;
-        // console.log("job_id from response:", jobId);
 
         // If job_id is present, processing is happening in background
         if (jobId) {
-          // console.log("Setting uploadJobId to:", jobId);
           setUploadJobId(jobId);
-        } else {
-          // console.log("No job_id in response, immediate processing");
         }
 
         // Clear selected files
@@ -332,14 +327,15 @@ const ProjectDashboard: React.FC = () => {
   }, []);
 
   /**
-   * Handle progress complete
+   * Handle progress complete - only refresh data, don't clear uploadJobId
+   * The widget will auto-hide after 3 seconds and call onDismiss to clear uploadJobId
    */
   const handleProgressComplete = useCallback(() => {
     if (projectId) {
       dispatch(fetchProjectById(projectId) as any);
       dispatch(listProjectFiles(projectId) as any);
     }
-    setUploadJobId(null);
+    // Don't set uploadJobId to null here - let onDismiss handle it after auto-hide
   }, [projectId, dispatch]);
 
   /**

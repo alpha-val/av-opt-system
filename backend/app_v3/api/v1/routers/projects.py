@@ -22,6 +22,7 @@ from fastapi import (
     File,
     Form,
     Query,
+    BackgroundTasks,
 )
 from fastapi.responses import Response
 from bson.errors import InvalidId
@@ -523,6 +524,12 @@ async def _process_uploaded_files_background(
     logger.info(
         f"[Background Task] Starting processing for job {job_id} with {len(file_data)} files"
     )
+    
+    # Wait briefly to allow WebSocket connection to be established
+    # This ensures the frontend receives real-time progress updates
+    await asyncio.sleep(0.5)
+    logger.info(f"[Background Task] Delay complete, starting actual processing for job {job_id}")
+    
     try:
         publisher = get_progress_publisher()
         orchestration = _get_orchestration_service()
@@ -610,6 +617,8 @@ async def _process_uploaded_files_background(
                         project_id=project_id,
                         user_id=user_id,
                         store_in_pinecone=store_in_pinecone,
+                        job_id=job_id,
+                        progress_publisher=publisher,
                     )
                     logger.info(
                         f"[Background Task] Processing complete for {filename}: {result.get('status', 'unknown')}"
@@ -719,6 +728,7 @@ async def _process_uploaded_files_background(
     description="Upload base case documents and tabular data files for a project. Total file size limit is 25MB. Tabular data files will be automatically processed to extract tables and entities.",
 )
 async def upload_project_files(
+    background_tasks: BackgroundTasks,
     project_id: str = Path(..., description="Project ID (MongoDB ObjectId as string)"),
     base_case_files: Optional[List[UploadFile]] = File(
         None, description="Base case report documents (PDF)"
@@ -940,48 +950,21 @@ async def upload_project_files(
             )
             logger.info(f"Start event published for job {job_id}")
 
-            # Create background task for file processing
-            task = asyncio.create_task(
-                _process_uploaded_files_background(
-                    job_id=job_id,
-                    file_data=files_to_process,
-                    project_id=project_id,
-                    user_id=user_id,
-                    store_in_pinecone=store_in_pinecone,
-                )
+            # Schedule background task for file processing using FastAPI's BackgroundTasks
+            # This ensures the task runs AFTER the response is sent to the client
+            background_tasks.add_task(
+                _process_uploaded_files_background,
+                job_id=job_id,
+                file_data=files_to_process,
+                project_id=project_id,
+                user_id=user_id,
+                store_in_pinecone=store_in_pinecone,
             )
-            _upload_processing_tasks[job_id] = task
 
             logger.info(
-                f"Task created: {task}, done={task.done()}, cancelled={task.cancelled()}"
+                f"Background task scheduled for {len(files_to_process)} files (job_id: {job_id})"
             )
-            logger.info(
-                f"Started background processing for {len(files_to_process)} files (job_id: {job_id})"
-            )
-
-            # Yield control to event loop to ensure task starts
-            await asyncio.sleep(0)
-
-            logger.info(
-                f"After sleep(0): task done={task.done()}, cancelled={task.cancelled()}"
-            )
-
-            # Check if task failed immediately
-            if task.done():
-                try:
-                    task.result()  # This will raise if there was an exception
-                    logger.info(f"Task completed immediately (this is unusual)")
-                except Exception as e:
-                    logger.error(
-                        f"Task failed immediately with exception: {e}", exc_info=True
-                    )
-                    raise HTTPException(
-                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail=f"Background processing failed to start: {str(e)}",
-                    )
-
-            logger.info(f"Background task created and scheduled for job {job_id}")
-            logger.info(f"Active tasks in tracker: {len(_upload_processing_tasks)}")
+            logger.info(f"Background task will run after response is sent")
 
             # Return with job info
             return {
@@ -1650,8 +1633,8 @@ async def clear_pinecone_index(
         # Step 3: Optional verification
         verification_stats = None
         if verify:
-            logger.info("Verifying deletion (waiting 2 seconds for propagation)")
-            time.sleep(2)  # Allow propagation
+            logger.info("Verifying deletion (waiting 1 seconds for propagation)")
+            time.sleep(1)  # Allow propagation
             try:
                 stats_after = index.describe_index_stats()
                 verification_stats = {
