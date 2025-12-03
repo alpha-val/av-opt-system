@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Box, CircularProgress, Alert } from "@mui/material";
 import { projectApi } from "../../services/api";
 import EntityDetailsTable from "./EntityDetailsTable";
 
+const DEFAULT_ARTIFACT_TYPES = ["tabular_data", "base_case"];
+
 interface InspectDataViewProps {
   projectId: string;
-  artifactType?: string;
+  artifactType?: string | string[];
 }
 
 /**
@@ -16,7 +18,7 @@ interface InspectDataViewProps {
  */
 const InspectDataView: React.FC<InspectDataViewProps> = ({
   projectId,
-  artifactType = "tabular_data",
+  artifactType,
 }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +30,21 @@ const InspectDataView: React.FC<InspectDataViewProps> = ({
       [key: string]: any;
     };
   }>>([]);
+
+  const artifactFilterKey = useMemo(() => {
+    if (!artifactType || (Array.isArray(artifactType) && artifactType.length === 0)) {
+      return DEFAULT_ARTIFACT_TYPES.join(",");
+    }
+
+    return Array.isArray(artifactType)
+      ? artifactType.join(",")
+      : artifactType;
+  }, [artifactType]);
+
+  const resolvedArtifactTypes = useMemo(
+    () => artifactFilterKey.split(",").filter(Boolean),
+    [artifactFilterKey]
+  );
 
   useEffect(() => {
     const fetchEntities = async () => {
@@ -41,8 +58,13 @@ const InspectDataView: React.FC<InspectDataViewProps> = ({
         setLoading(true);
         setError(null);
 
-        const data = await projectApi.getEntities(projectId, artifactType);
-        setEntities(data.entities || []);
+        // Get all entities for the project
+        const data = await projectApi.getEntities(projectId);
+        // Filter data based on the artifactType array
+        const filteredData = data.entities.filter((entity: any) =>
+          resolvedArtifactTypes.includes(entity.properties.artifact_type)
+        );
+        setEntities(filteredData || []);
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to fetch entities";
@@ -54,7 +76,7 @@ const InspectDataView: React.FC<InspectDataViewProps> = ({
     };
 
     fetchEntities();
-  }, [projectId, artifactType]);
+  }, [projectId, artifactFilterKey, resolvedArtifactTypes]);
 
   if (loading) {
     return (
@@ -72,11 +94,14 @@ const InspectDataView: React.FC<InspectDataViewProps> = ({
     );
   }
 
-  const title = artifactType === "base_case" 
-    ? "Base Case Entities" 
-    : artifactType === "tabular_data"
-    ? "Tabular Data Entities"
-    : "Project Entities";
+  const title =
+    resolvedArtifactTypes.length === 1
+      ? resolvedArtifactTypes[0] === "base_case"
+        ? "Base Case Entities"
+        : resolvedArtifactTypes[0] === "tabular_data"
+        ? "Tabular Data Entities"
+        : "Project Entities"
+      : "Project Entities";
   // console.log("[InspectDataView] Entities:", entities);
   return (
     <Box>

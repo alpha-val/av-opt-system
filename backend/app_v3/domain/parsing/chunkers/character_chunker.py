@@ -5,7 +5,7 @@ Chunks text content based on character limits with optional overlap.
 """
 
 from typing import List, Dict, Any, Optional
-from app_v2.domain.parsing.utils.text_utils import chunk_by_character_limit
+from app_v3.domain.parsing.utils.text_utils import chunk_by_character_limit
 from .base import BaseChunker
 import logging
 
@@ -19,7 +19,8 @@ class CharacterChunker(BaseChunker):
         self,
         doc_id: str,
         namespace,
-        char_limit: int = 5000
+        char_limit: int = 5000,
+        overlap: int = 1000
     ):
         """
         Initialize character chunker.
@@ -28,9 +29,11 @@ class CharacterChunker(BaseChunker):
             doc_id: Document identifier
             namespace: UUID namespace for chunk ID generation
             char_limit: Maximum characters per chunk (default: 5000)
+            overlap: Overlap between chunks (default: 1000)
         """
         super().__init__(doc_id, namespace)
         self.char_limit = char_limit
+        self.overlap = overlap
     
     def chunk(
         self,
@@ -55,7 +58,8 @@ class CharacterChunker(BaseChunker):
         chunks = chunk_by_character_limit(
             content,
             self.doc_id,
-            char_limit=self.char_limit
+            char_limit=self.char_limit,
+            overlap=self.overlap
         )
         
         # Add metadata to each chunk
@@ -64,7 +68,7 @@ class CharacterChunker(BaseChunker):
         
         logger.info(
             f"Chunked document {self.doc_id} into {len(chunks)} chunks "
-            f"(char_limit: {self.char_limit})"
+            f"(char_limit: {self.char_limit}, overlap: {self.overlap})"
         )
         
         return chunks

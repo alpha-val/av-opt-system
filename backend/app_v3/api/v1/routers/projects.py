@@ -959,6 +959,7 @@ async def upload_project_files(
                 project_id=project_id,
                 user_id=user_id,
                 store_in_pinecone=store_in_pinecone,
+                process_base_case=False,
             )
 
             logger.info(
@@ -1410,7 +1411,7 @@ async def list_project_files(
 )
 async def get_project_entities(
     project_id: str = Path(..., description="Project ID (MongoDB ObjectId as string)"),
-    artifact_type: str = Query("base_case", description="Artifact type filter (default: base_case)"),
+    artifact_types: List[str] = Query(["base_case", "tabular_data"], description="Artifact type filter (default: ['base_case', 'tabular_data'])"),
     current_user: dict = Depends(get_current_user),
 ):
     """
@@ -1448,11 +1449,11 @@ async def get_project_entities(
         entities_collection = db().entities
         query = {
             "properties.project_id": project_id,
-            "properties.artifact_type": artifact_type,
+            "properties.artifact_type": {"$in": artifact_types},
         }
         
         # For base_case entities, exclude entities with scenario_id to show only project-level entities
-        if artifact_type == "base_case":
+        if "base_case" in artifact_types:
             query["properties.scenario_id"] = {"$exists": False}
         
         entities = list(entities_collection.find(query, {"_id": 0}))
@@ -1467,12 +1468,12 @@ async def get_project_entities(
         
         logger.info(
             f"Retrieved {len(entities)} entities for project {project_id} "
-            f"with artifact_type {artifact_type}"
+            f"with artifact_types {artifact_types}"
         )
         
         return {
             "project_id": project_id,
-            "artifact_type": artifact_type,
+            "artifact_types": artifact_types,
             "entities": entities,
             "count": len(entities),
         }

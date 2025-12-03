@@ -109,7 +109,7 @@ def chunk_by_page(
 
 
 def chunk_by_character_limit(
-    full_document_text: str, doc_id: str, char_limit: int = 5000
+    full_document_text: str, doc_id: str, char_limit: int = 5000, overlap: int = 1000
 ) -> List[Dict[str, Any]]:
     """Chunk the full document text into smaller chunks based on character limit."""
     chunks: List[Dict[str, Any]] = []
@@ -127,7 +127,7 @@ def chunk_by_character_limit(
                 "text": chunk_text,
             }
         )
-        current_pos += char_limit
+        current_pos += char_limit - overlap
         seq += 1
 
     return chunks

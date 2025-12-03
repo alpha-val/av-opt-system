@@ -21,9 +21,24 @@ import {
 import { Search, FilterList } from "@mui/icons-material";
 import EntityDetailsRow from "./EntityDetailsRow";
 
+const normalizeAttributeType = (value) =>
+  (value || "unknown").toString().toLowerCase();
+
+const formatAttributeTypeLabel = (value) => {
+  if (!value || value === "unknown") {
+    return "Unknown";
+  }
+
+  return value
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+};
+
 const EntityDetailsTable = ({ entities = [], title = "Entities" }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEntityType, setSelectedEntityType] = useState("all");
+  const [selectedAttributeType, setSelectedAttributeType] = useState("all");
 
   // Get unique entity types
   const entityTypes = useMemo(() => {
@@ -31,6 +46,17 @@ const EntityDetailsTable = ({ entities = [], title = "Entities" }) => {
     entities.forEach((entity) => {
       const type = entity.type || entity.entity_type || "unknown";
       types[type] = (types[type] || 0) + 1;
+    });
+    return types;
+  }, [entities]);
+
+  const attributeTypes = useMemo(() => {
+    const types = {};
+    entities.forEach((entity) => {
+      const attributeTypeValue =
+        entity.properties?.artifact_type || entity.artifact_type || "unknown";
+      const normalizedValue = normalizeAttributeType(attributeTypeValue);
+      types[normalizedValue] = (types[normalizedValue] || 0) + 1;
     });
     return types;
   }, [entities]);
@@ -46,6 +72,17 @@ const EntityDetailsTable = ({ entities = [], title = "Entities" }) => {
           (entity.type || entity.entity_type || "unknown") ===
           selectedEntityType
       );
+    }
+
+    // Filter by attribute type
+    if (selectedAttributeType !== "all") {
+      filtered = filtered.filter((entity) => {
+        const attributeTypeValue =
+          entity.properties?.artifact_type || entity.artifact_type || "unknown";
+        return (
+          normalizeAttributeType(attributeTypeValue) === selectedAttributeType
+        );
+      });
     }
 
     // Filter by search term
@@ -77,7 +114,7 @@ const EntityDetailsTable = ({ entities = [], title = "Entities" }) => {
     }
 
     return filtered;
-  }, [entities, selectedEntityType, searchTerm]);
+  }, [entities, selectedEntityType, selectedAttributeType, searchTerm]);
 
   return (
     <Paper sx={{ p: 2 }}>
@@ -96,7 +133,7 @@ const EntityDetailsTable = ({ entities = [], title = "Entities" }) => {
       </Box>
 
       {/* Filters */}
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+      <Stack direction="row" spacing={2} sx={{ mb: 2, flexWrap: "wrap" }}>
         {/* Search */}
         <TextField
           size="small"
@@ -133,6 +170,30 @@ const EntityDetailsTable = ({ entities = [], title = "Entities" }) => {
               .map(([type, count]) => (
                 <MenuItem key={type} value={type}>
                   {type} ({count})
+                </MenuItem>
+              ))}
+          </Select>
+        </FormControl>
+
+        {/* Attribute Type Filter */}
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel id="attribute-type-filter-label">
+            Attribute Type
+          </InputLabel>
+          <Select
+            labelId="attribute-type-filter-label"
+            value={selectedAttributeType}
+            onChange={(e) => setSelectedAttributeType(e.target.value)}
+            label="Attribute Type"
+          >
+            <MenuItem value="all">
+              All Attribute Types ({entities.length})
+            </MenuItem>
+            {Object.entries(attributeTypes)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([type, count]) => (
+                <MenuItem key={type} value={type}>
+                  {formatAttributeTypeLabel(type)} ({count})
                 </MenuItem>
               ))}
           </Select>
@@ -184,6 +245,9 @@ const EntityDetailsTable = ({ entities = [], title = "Entities" }) => {
                 <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>
                   Type
                 </TableCell>
+                <TableCell sx={{ fontWeight: "bold", minWidth: 160 }}>
+                  Attribute Type
+                </TableCell>
                 <TableCell sx={{ fontWeight: "bold", minWidth: 150 }}>
                   Cost
                 </TableCell>
@@ -228,7 +292,9 @@ const EntityDetailsTable = ({ entities = [], title = "Entities" }) => {
       ) : (
         <Box sx={{ textAlign: "center", py: 4 }}>
           <Typography variant="body2" color="text.secondary">
-            {searchTerm || selectedEntityType !== "all"
+            {searchTerm ||
+            selectedEntityType !== "all" ||
+            selectedAttributeType !== "all"
               ? "No entities match your filters"
               : "No entities found"}
           </Typography>

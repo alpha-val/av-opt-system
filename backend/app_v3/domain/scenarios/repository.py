@@ -4,7 +4,7 @@ Scenario repository for MongoDB operations.
 This module provides database operations for scenarios stored in the "scenarios" collection.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -223,6 +223,7 @@ async def clear_scenario_data(scenario_id: str) -> dict:
     - Relations with properties.scenario_id matching scenario_id
     - Base case recommendations with scenario_id matching scenario_id
     - Cost estimates with scenario_id matching scenario_id
+    - Scenario analysis results with scenario_id matching scenario_id
     - Pinecone vectors with scenario_id filter
     
     The scenario document itself is not deleted.
@@ -258,6 +259,7 @@ async def clear_scenario_data(scenario_id: str) -> dict:
             "relations": 0,
             "base_case_recommendations": 0,
             "cost_estimates": 0,
+            "scenario_analysis_results": 0,
             "vectors": 0,
         }
         
@@ -297,6 +299,15 @@ async def clear_scenario_data(scenario_id: str) -> dict:
         if cost_estimates_deleted > 0:
             logger.info(f"Deleted {cost_estimates_deleted} cost estimates for scenario: {scenario_id}")
         
+        # Delete scenario analysis results with scenario_id matching scenario_id
+        scenario_analysis_results_collection = db().scenario_analysis_results
+        analysis_results_deleted = scenario_analysis_results_collection.delete_many(
+            {"scenario_id": scenario_id}
+        ).deleted_count
+        deleted_counts["scenario_analysis_results"] = analysis_results_deleted
+        if analysis_results_deleted > 0:
+            logger.info(f"Deleted {analysis_results_deleted} scenario analysis results for scenario: {scenario_id}")
+        
         # Delete vectors from Pinecone with scenario_id filter
         if project_id:
             try:
@@ -326,6 +337,7 @@ async def clear_scenario_data(scenario_id: str) -> dict:
             f"Cleared data for scenario {scenario_id}: "
             f"{entities_deleted} entities, {relations_deleted} relations, "
             f"{recommendations_deleted} recommendations, {cost_estimates_deleted} cost estimates, "
+            f"{analysis_results_deleted} scenario analysis results, "
             f"{deleted_counts.get('vectors', 0)} vectors"
         )
         
@@ -341,9 +353,107 @@ async def clear_scenario_data(scenario_id: str) -> dict:
         raise
 
 
+async def upsert_scenario_analysis_result(
+    scenario_id: str,
+    project_id: str,
+    workflow: str,
+    job_id: str,
+    result: Dict[str, Any],
+    context: Dict[str, Any],
+) -> bool:
+    """
+    Store or update the latest scenario analysis result for a workflow version.
+    """
+    try:
+        if not ObjectId.is_valid(scenario_id):
+            raise ValueError(f"Invalid scenario_id format: {scenario_id}")
+
+        collection = db().scenario_analysis_results
+        now = _now()
+
+        update_doc = {
+            "scenario_id": scenario_id,
+            "project_id": project_id,
+            "workflow": workflow,
+            "job_id": job_id,
+            "result": result,
+            "context": context,
+            "updated_at": now,
+        }
+
+        collection.update_one(
+            {"scenario_id": scenario_id, "workflow": workflow},
+            {"$set": update_doc, "$setOnInsert": {"created_at": now}},
+            upsert=True,
+        )
+
+        logger.info(
+            f"Stored scenario analysis result for scenario {scenario_id} (workflow={workflow})"
+        )
+        return True
+    except ValueError:
+        raise
+    except Exception as e:
+        logger.error(
+            f"Error storing scenario analysis result for scenario {scenario_id}: {e}",
+            exc_info=True,
+        )
+        raise
+
+
+async def get_latest_scenario_analysis_result(
+    scenario_id: str, workflow: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
+    """
+    Fetch the latest stored scenario analysis result.
+    """
+    try:
+        if not ObjectId.is_valid(scenario_id):
+            raise ValueError(f"Invalid scenario_id format: {scenario_id}")
+
+        collection = db().scenario_analysis_results
+        query: Dict[str, Any] = {"scenario_id": scenario_id}
+        if workflow:
+            query["workflow"] = workflow
+
+        # Try sorting by updated_at first, fall back to created_at if updated_at doesn't exist
+        # Use a compound sort that handles missing fields gracefully
+        document = collection.find_one(
+            query,
+            sort=[
+                ("updated_at", -1),
+                ("created_at", -1),
+            ],
+        )
+        
+        # If no document found with updated_at, try with created_at only
+        if not document:
+            document = collection.find_one(
+                query,
+                sort=[("created_at", -1)],
+            )
+        
+        if not document:
+            logger.debug(
+                f"No scenario analysis result found for scenario_id={scenario_id}, workflow={workflow}"
+            )
+            return None
+
+        document["_id"] = str(document["_id"])
+        return document
+    except ValueError:
+        raise
+    except Exception as e:
+        logger.error(
+            f"Error fetching scenario analysis result for scenario {scenario_id}: {e}",
+            exc_info=True,
+        )
+        raise
+
+
 async def delete_scenario(scenario_id: str) -> bool:
     """
-    Delete a scenario and cascade delete associated cost estimates and Pinecone vectors.
+    Delete a scenario and cascade delete associated cost estimates, scenario analysis results, and Pinecone vectors.
     """
     try:
         if not ObjectId.is_valid(scenario_id):
@@ -366,6 +476,14 @@ async def delete_scenario(scenario_id: str) -> bool:
         ).deleted_count
         if cost_estimates_deleted > 0:
             logger.info(f"Deleted {cost_estimates_deleted} cost estimates for scenario: {scenario_id}")
+
+        # Delete scenario analysis results
+        scenario_analysis_results_collection = db().scenario_analysis_results
+        analysis_results_deleted = scenario_analysis_results_collection.delete_many(
+            {"scenario_id": scenario_id}
+        ).deleted_count
+        if analysis_results_deleted > 0:
+            logger.info(f"Deleted {analysis_results_deleted} scenario analysis results for scenario: {scenario_id}")
 
         # Delete vectors from Pinecone with scenario_id filter
         if project_id:

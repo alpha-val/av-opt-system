@@ -164,6 +164,32 @@ export interface ScenarioOut extends ScenarioBase {
 }
 
 /**
+ * Scenario analysis context block
+ */
+export interface ScenarioAnalysisContext {
+  scenario_request_block?: string;
+  base_case_block?: string;
+  tabular_data_block?: string;
+  [key: string]: any;
+}
+
+/**
+ * Scenario analysis result document
+ */
+export interface ScenarioAnalysisResult {
+  id?: string;
+  _id?: string;
+  scenario_id: string;
+  project_id?: string;
+  workflow?: string;
+  job_id?: string;
+  result: Record<string, any>;
+  context?: ScenarioAnalysisContext;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
  * Recommendation item interface
  */
 export interface Recommendation {

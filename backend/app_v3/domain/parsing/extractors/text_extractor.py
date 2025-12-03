@@ -56,7 +56,9 @@ class TextExtractor:
     
     def extract_full_text(
         self,
-        pages_clean: List[Tuple[int, str]]
+        pages_clean: List[Tuple[int, str]],
+        char_limit: int = 8000,
+        overlap: int = 1000,
     ) -> str:
         """
         Extract full text from cleaned pages.

@@ -6,7 +6,7 @@ discipline → category → subcategory → entity
 """
 
 from typing import Dict, Any, List, Tuple, Optional
-from app_v2.domain.ontology import (
+from app_v3.domain.ontology import (
     get_ontology,
     get_entities_for_subcategory,
     validate_node_type,

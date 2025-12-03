@@ -59,6 +59,7 @@ class DocumentProcessingService:
         user_id: str,
         chunking_strategy: str = "character",
         char_limit: int = 5000,
+        overlap: int = 1000,
         pages: Optional[str] = None,
         validate_msio: bool = True,
         strict_validation: bool = False,
@@ -120,7 +121,7 @@ class DocumentProcessingService:
             if chunking_strategy == "character":
                 full_text = self.text_extractor.extract_full_text(pages_clean)
                 chunker = CharacterChunker(
-                    doc_id_actual, CHUNK_NAMESPACE, char_limit=char_limit
+                    doc_id_actual, CHUNK_NAMESPACE, char_limit=char_limit, overlap=overlap
                 )
                 chunks = chunker.chunk(full_text, chunk_metadata)
             elif chunking_strategy == "page":
@@ -129,7 +130,7 @@ class DocumentProcessingService:
             elif chunking_strategy == "byte":
                 full_text = self.text_extractor.extract_full_text(pages_clean)
                 chunker = ByteChunker(
-                    doc_id_actual, CHUNK_NAMESPACE, byte_limit=char_limit
+                    doc_id_actual, CHUNK_NAMESPACE, byte_limit=char_limit, overlap=overlap
                 )
                 chunks = chunker.chunk(full_text.encode("utf-8"), chunk_metadata)
             else:

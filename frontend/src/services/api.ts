@@ -17,6 +17,7 @@ import {
   ScenarioCreate,
   ScenarioUpdate,
   ScenarioOut,
+  ScenarioAnalysisResult,
   RecommendationsResponse,
   CostEstimateCreate,
   CostEstimateUpdate,
@@ -285,7 +286,7 @@ export const projectApi = {
    */
   getEntities: async (
     projectId: string,
-    artifactType: string = "base_case"
+    artifactType: string[] = ["base_case", "tabular_data"]
   ): Promise<{
     project_id: string;
     artifact_type: string;
@@ -305,6 +306,13 @@ export const projectApi = {
           evidence_text: string | null;
           confidence: number;
         }>;
+        artifact_type: string;
+        scenario_id?: string;
+        cost?: {
+          cost_value: number | null;
+          cost_currency: string | null;
+          cost_type: string | null;
+        };
         [key: string]: any;
       };
     }>;
@@ -329,6 +337,13 @@ export const projectApi = {
             evidence_text: string | null;
             confidence: number;
           }>;
+          artifact_type: string;
+          scenario_id?: string;
+          cost?: {
+            cost_value: number | null;
+            cost_currency: string | null;
+            cost_type: string | null;
+          };
           [key: string]: any;
         };
       }>;
@@ -498,6 +513,28 @@ export const scenarioApi = {
     return response.data;
   },
 
+    /**
+   * Run or re-run analysis for a scenario using V5 workflow
+   */
+    runAnalysisV5: async (
+      scenarioId: string
+    ): Promise<{
+      job_id: string;
+      scenario_id: string;
+      status: string;
+      websocket_url: string;
+      message: string;
+    }> => {
+      const response = await apiClient.post<{
+        job_id: string;
+        scenario_id: string;
+        status: string;
+        websocket_url: string;
+        message: string;
+      }>(`/api/v1/scenarios/${scenarioId}/run-analysis-v5`);
+      return response.data;
+    },
+
   /**
    * Run or re-run analysis for a scenario using V4 workflow
    */
@@ -547,6 +584,20 @@ export const scenarioApi = {
   getRecommendations: async (scenarioId: string): Promise<RecommendationsResponse> => {
     const response = await apiClient.get<RecommendationsResponse>(
       `/api/v1/scenarios/${scenarioId}/recommendations`
+    );
+    return response.data;
+  },
+
+  /**
+   * Get the latest scenario analysis result (defaults to latest workflow run)
+   */
+  getAnalysisResult: async (
+    scenarioId: string,
+    workflow?: string
+  ): Promise<ScenarioAnalysisResult> => {
+    const params = workflow ? `?workflow=${workflow}` : "";
+    const response = await apiClient.get<ScenarioAnalysisResult>(
+      `/api/v1/scenarios/${scenarioId}/analysis-results${params}`
     );
     return response.data;
   },

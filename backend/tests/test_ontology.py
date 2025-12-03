@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 from typing import Dict, Any, List
 
-from app_v2.domain.ontology import (
+from app_v3.domain.ontology import (
     # Schemas
     OntologySchema,
     EntityOntology,
@@ -33,7 +33,7 @@ from app_v2.domain.ontology import (
     validate_edge_type,
     validate_property,
 )
-from app_v2.domain.ontology.ontology import get_default_ontology, ENTITY_ONTOLOGY, AV_MSIO_ONTOLOGY
+from app_v3.domain.ontology.ontology import get_default_ontology, ENTITY_ONTOLOGY, AV_MSIO_ONTOLOGY
 
 
 class TestOntologySchemas:

@@ -47,6 +47,9 @@ class Settings:
     
     # Models
     llm_model_name: str = os.getenv("LLM_MODEL_NAME", "gpt-5.1")
+    scenario_analysis_max_tokens: int = int(
+        os.getenv("SCENARIO_ANALYSIS_MAX_TOKENS", "13000")
+    )
 
     max_chunk_text_preview: int = int(os.environ.get("MAX_CHUNK_TEXT_PREVIEW", "500"))
 

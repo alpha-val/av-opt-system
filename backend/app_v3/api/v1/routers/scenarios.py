@@ -10,7 +10,8 @@ This module provides FastAPI endpoints for scenario management:
 import logging
 import asyncio
 import uuid
-from typing import List, Optional, Dict
+from datetime import datetime
+from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, HTTPException, status, Path, Query, Depends
 from bson.errors import InvalidId
 
@@ -55,6 +56,8 @@ _file_storage_service: Optional[FileStorageService] = None
 _analysis_v3_tasks: Dict[str, asyncio.Task] = {}
 # Background task registry for V4 analysis
 _analysis_v4_tasks: Dict[str, asyncio.Task] = {}
+# Background task registry for V5 analysis
+_analysis_v5_tasks: Dict[str, asyncio.Task] = {}
 
 
 def set_orchestration_service(service: ProjectOrchestrationService) -> None:
@@ -1803,7 +1806,6 @@ async def _run_analysis_background_v4(
         if job_id in _analysis_v4_tasks:
             del _analysis_v4_tasks[job_id]
 
-
 @scenarios_router.post(
     "/{scenario_id}/cancel-analysis-v4",
     summary="Cancel running V4 analysis",
@@ -1911,3 +1913,349 @@ async def cancel_analysis_v4(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to cancel analysis: {str(e)}",
         )
+
+@scenarios_router.post(
+    "/{scenario_id}/run-analysis-v5",
+    summary="Run scenario analysis (V5 workflow)",
+    description="Trigger the scenario analysis pipeline using the V5 workflow (structured scenario prompt with ontology + MSIO). Requires objective details and at least one base case document.",
+)
+async def run_analysis_v5(
+    scenario_id: str = Path(
+        ..., description="Scenario ID (MongoDB ObjectId as string)"
+    ),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Run analysis for a scenario using the V5 workflow.
+    """
+    try:
+        user_id = str(current_user["_id"])
+
+        try:
+            from bson import ObjectId
+
+            ObjectId(scenario_id)
+        except Exception:
+            raise ValueError(f"Invalid scenario_id format: {scenario_id}")
+
+        scenario = await services.get(scenario_id)
+        if not scenario:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Scenario not found: {scenario_id}",
+            )
+
+        if not scenario.global_objective_type or not scenario.global_objective_target:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "Global objective details are required. "
+                    "Please set objective type and target first."
+                ),
+            )
+
+        project = await project_services.get(scenario.project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project not found: {scenario.project_id}",
+            )
+
+        if not project.base_case_documents:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "At least one base case document is required. "
+                    "Please upload documents in the project Sources tab first."
+                ),
+            )
+
+        await services.update(
+            scenario_id, ScenarioUpdate(status=ScenarioStatus.PROCESSING)
+        )
+
+        logger.info(
+            f"Clearing existing data for scenario {scenario_id} before running analysis (V5)"
+        )
+        await services.clear_data(scenario_id)
+
+        job_id = str(uuid.uuid4())
+        task = asyncio.create_task(
+            _run_analysis_background_v5(
+                job_id=job_id,
+                scenario_id=scenario_id,
+                scenario_name=scenario.name,
+                project_id=scenario.project_id,
+                project_name=project.name,
+                user_id=user_id,
+                global_objective_type=scenario.global_objective_type,
+                global_objective_target=scenario.global_objective_target,
+                global_objective_unit=scenario.global_objective_unit,
+                objective_description=scenario.objective_description,
+                scenario_configuration=scenario.configuration,
+                base_case_document_ids=project.base_case_documents,
+                tabular_data_document_ids=project.tabular_data_documents or [],
+            )
+        )
+
+        _analysis_v5_tasks[job_id] = task
+        await asyncio.sleep(0)
+
+        return {
+            "job_id": job_id,
+            "scenario_id": scenario_id,
+            "status": "queued",
+            "message": "Scenario analysis started. Connect to WebSocket endpoint for progress updates.",
+            "websocket_url": f"/api/v1/ws/progress/{job_id}",
+        }
+
+    except ValueError as e:
+        logger.warning(f"Invalid scenario_id format: {scenario_id}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except HTTPException:
+        raise
+    except RuntimeError as e:
+        logger.error(f"Service not initialized: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Service not available",
+        )
+    except Exception as e:
+        logger.error(
+            f"Error starting V5 analysis for scenario {scenario_id}: {e}", exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to start analysis: {str(e)}",
+        )
+
+
+async def _run_analysis_background_v5(
+    job_id: str,
+    scenario_id: str,
+    scenario_name: str,
+    project_id: str,
+    project_name: Optional[str],
+    user_id: str,
+    global_objective_type: str,
+    global_objective_target: str,
+    global_objective_unit: Optional[str],
+    objective_description: Optional[str],
+    scenario_configuration: Optional[Dict[str, Any]],
+    base_case_document_ids: List[str],
+    tabular_data_document_ids: List[str],
+):
+    """
+    Background async function for V5 scenario analysis.
+    """
+    logger.info(
+        f"[Background Task] Starting V5 analysis for job {job_id}, scenario {scenario_id}"
+    )
+
+    publisher = get_progress_publisher()
+    seq = 0
+    publisher.publish(
+        job_id,
+        ProgressEvent(
+            job_id=job_id,
+            stage=Stage.PROCESSING,
+            status=Status.STARTED,
+            progress=0,
+            seq=seq,
+            meta={
+                "scenario_id": scenario_id,
+                "project_id": project_id,
+                "message": "Initializing scenario analysis (V5)",
+            },
+        ),
+    )
+    seq += 1
+
+    try:
+        orchestration = _get_orchestration_service()
+
+        publisher.publish(
+            job_id,
+            ProgressEvent(
+                job_id=job_id,
+                stage=Stage.PROCESSING,
+                status=Status.IN_PROGRESS,
+                progress=15,
+                seq=seq,
+                meta={
+                    "scenario_id": scenario_id,
+                    "project_id": project_id,
+                    "message": "Preparing documents for scenario analysis",
+                },
+            ),
+        )
+        seq += 1
+
+        analysis_output = await orchestration.run_scenario_analysis_v5(
+            project_id=project_id,
+            project_name=project_name,
+            scenario_id=scenario_id,
+            scenario_name=scenario_name,
+            user_id=user_id,
+            global_objective_type=global_objective_type,
+            global_objective_target=global_objective_target,
+            global_objective_unit=global_objective_unit,
+            objective_description=objective_description,
+            scenario_configuration=scenario_configuration,
+            base_case_document_ids=base_case_document_ids,
+            tabular_data_document_ids=tabular_data_document_ids,
+        )
+
+        publisher.publish(
+            job_id,
+            ProgressEvent(
+                job_id=job_id,
+                stage=Stage.PROCESSING,
+                status=Status.IN_PROGRESS,
+                progress=85,
+                seq=seq,
+                meta={
+                    "scenario_id": scenario_id,
+                    "project_id": project_id,
+                    "message": "Scenario analysis generated, storing results",
+                },
+            ),
+        )
+        seq += 1
+
+        await services.save_analysis_result(
+            scenario_id=scenario_id,
+            project_id=project_id,
+            workflow="v5",
+            job_id=job_id,
+            result=analysis_output.get("analysis", {}),
+            context={
+                "scenario_request_block": analysis_output.get(
+                    "scenario_request_block", ""
+                ),
+                "base_case_block": analysis_output.get("base_case_block", ""),
+                "tabular_data_block": analysis_output.get("tabular_data_block", ""),
+            },
+        )
+
+        await services.update(
+            scenario_id, ScenarioUpdate(status=ScenarioStatus.COMPLETED)
+        )
+
+        publisher.publish(
+            job_id,
+            ProgressEvent(
+                job_id=job_id,
+                stage=Stage.COMPLETE,
+                status=Status.COMPLETED,
+                progress=100,
+                seq=seq,
+                meta={
+                    "scenario_id": scenario_id,
+                    "project_id": project_id,
+                    "message": "Scenario analysis completed",
+                },
+            ),
+        )
+
+        logger.info(
+            f"[Background Task] V5 analysis completed for job {job_id}, scenario {scenario_id}"
+        )
+
+    except Exception as e:
+        logger.error(
+            f"[Background Task] Error in V5 analysis for job {job_id}, scenario {scenario_id}: {e}",
+            exc_info=True,
+        )
+
+        publisher.publish(
+            job_id,
+            ProgressEvent(
+                job_id=job_id,
+                stage=Stage.ERROR,
+                status=Status.FAILED,
+                progress=0,
+                seq=seq,
+                meta={
+                    "scenario_id": scenario_id,
+                    "project_id": project_id,
+                    "error": str(e),
+                    "message": "Scenario analysis failed",
+                },
+            ),
+        )
+
+        try:
+            await services.update(
+                scenario_id, ScenarioUpdate(status=ScenarioStatus.FAILED)
+            )
+        except Exception as update_error:
+            logger.error(
+                f"Failed to update scenario status after V5 failure: {update_error}"
+            )
+    finally:
+        if job_id in _analysis_v5_tasks:
+            del _analysis_v5_tasks[job_id]
+
+
+@scenarios_router.get(
+    "/{scenario_id}/analysis-results",
+    summary="Get latest scenario analysis result",
+    description="Retrieve the most recent stored scenario analysis result for the given scenario. Optionally filter by workflow version.",
+    response_model=Dict[str, Any],
+    status_code=status.HTTP_200_OK,
+)
+async def get_scenario_analysis_result(
+    scenario_id: str = Path(
+        ..., description="Scenario ID (MongoDB ObjectId as string)"
+    ),
+    workflow: Optional[str] = Query(
+        None, description="Workflow identifier to filter results (e.g., 'v5')"
+    ),
+    current_user: dict = Depends(get_current_user),
+):
+    """Return the most recent scenario analysis result."""
+    try:
+        scenario = await services.get(scenario_id)
+        if not scenario:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Scenario not found: {scenario_id}",
+            )
+
+        analysis_result = await services.get_analysis_result(
+            scenario_id=scenario_id, workflow=workflow
+        )
+        if not analysis_result:
+            workflow_msg = f" for workflow '{workflow}'" if workflow else ""
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No scenario analysis result found{workflow_msg}. Run the V5 analysis first to generate results.",
+            )
+
+        response_payload = dict(analysis_result)
+        for field in ("created_at", "updated_at"):
+            value = response_payload.get(field)
+            if isinstance(value, datetime):
+                response_payload[field] = value.isoformat()
+
+        return response_payload
+    except HTTPException:
+        raise
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:
+        logger.error(
+            f"Error retrieving scenario analysis result for {scenario_id}: {exc}",
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch scenario analysis result.",
+        ) from exc

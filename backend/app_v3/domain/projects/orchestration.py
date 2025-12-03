@@ -8,6 +8,7 @@ the scenario-first project workflow.
 """
 
 from typing import Dict, Any, List, Optional
+import math
 import logging
 from datetime import datetime, timezone
 import uuid
@@ -18,7 +19,7 @@ from ..progress.events import ProgressEvent, Stage, Status
 from ..progress.publisher import ProgressPublisher
 
 # Import LLM components
-from app_v2.adapters.config import SETTINGS
+from app_v3.adapters.config import SETTINGS
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 
@@ -30,6 +31,7 @@ from ..parsing.utils.llm_tools import (
     TOOLS,
     TOOLS_RECOMMENDATIONS,
     TOOLS_OBJECTIVE_DRIVEN,
+    TOOLS_SCENARIO_ANALYSIS,
     is_valid_json,
     sanitize_for_json,
 )
@@ -37,6 +39,7 @@ from ..parsing.prompts.entity_extraction_prompt import (
     PROMPT_DISCIPLINE_STRUCTURED_SUMMARY,
     generate_prompt,
 )
+from ..parsing.prompts.scenario_analysis_prompt import get_scenario_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +109,20 @@ class ProjectOrchestrationService:
             max_tokens=4096,
             model_kwargs={
                 "tools": TOOLS_RECOMMENDATIONS,
+                "tool_choice": "auto",
+            },
+        )
+
+        # Initialize LLM for scenario analysis (V5 workflow)
+        self._llm_scenario_analysis = ChatOpenAI(
+            model=SETTINGS.llm_model_name or "gpt-5-mini",
+            api_key=SETTINGS.openai_api_key,
+            timeout=600,
+            max_retries=3,
+            temperature=0,
+            max_tokens=SETTINGS.scenario_analysis_max_tokens,
+            model_kwargs={
+                "tools": TOOLS_SCENARIO_ANALYSIS,
                 "tool_choice": "auto",
             },
         )
@@ -285,7 +302,8 @@ class ProjectOrchestrationService:
                     project_id=project_id,
                     user_id=user_id,
                     chunking_strategy="character",
-                    char_limit=5000,
+                    char_limit=8000,
+                    overlap=1000,
                 )
             )
 
@@ -1351,7 +1369,8 @@ class ProjectOrchestrationService:
                 user_id=user_id,
                 store_in_pinecone=store_in_pinecone,
                 chunking_strategy="character",
-                char_limit=15000,
+                char_limit=8000,
+                overlap=1000,
             )
 
             logger.info(
@@ -2071,6 +2090,471 @@ class ProjectOrchestrationService:
                     exc_info=True,
                 )
         return documents
+
+    def _chunk_text(self, text: str, chunk_size: int = 8000) -> List[str]:
+        """
+        Chunk text into smaller pieces based on character limit.
+        
+        Args:
+            text: Text to chunk
+            chunk_size: Maximum characters per chunk (default: 8000)
+            
+        Returns:
+            List of text chunks
+        """
+        if not text or len(text) <= chunk_size:
+            return [text]
+        
+        chunks = []
+        current_pos = 0
+        
+        while current_pos < len(text):
+            chunk_end = current_pos + chunk_size
+            chunk = text[current_pos:chunk_end]
+            chunks.append(chunk)
+            current_pos = chunk_end
+        
+        return chunks
+
+    def _merge_scenario_analysis_results(
+        self, chunk_results: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """
+        Merge scenario analysis results from multiple chunks.
+        
+        Args:
+            chunk_results: List of analysis results from each chunk
+            
+        Returns:
+            Merged analysis result
+        """
+        if not chunk_results:
+            raise ValueError("No chunk results to merge")
+        
+        if len(chunk_results) == 1:
+            return chunk_results[0]
+        
+        # Start with the first chunk as the base
+        merged = json.loads(json.dumps(chunk_results[0]))  # Deep copy
+        
+        # Merge baseline sections
+        baseline = merged.get("baseline", {})
+        for chunk_result in chunk_results[1:]:
+            chunk_baseline = chunk_result.get("baseline", {})
+            
+            # Merge arrays (e.g., operating_conditions, open_items)
+            for key in ["operating_conditions", "open_items"]:
+                if key in chunk_baseline and isinstance(chunk_baseline[key], list):
+                    existing = baseline.get(key, [])
+                    if not isinstance(existing, list):
+                        existing = []
+                    # Deduplicate by converting to string and back
+                    existing_items = {json.dumps(item, sort_keys=True) for item in existing}
+                    for item in chunk_baseline[key]:
+                        item_str = json.dumps(item, sort_keys=True)
+                        if item_str not in existing_items:
+                            existing.append(item)
+                            existing_items.add(item_str)
+                    baseline[key] = existing
+            
+            # Merge objects (e.g., project, system_overview, performance_metrics)
+            for key in ["project", "system_overview", "performance_metrics", 
+                       "physical_configuration", "structural_and_foundation",
+                       "controls_and_automation", "power_and_utilities",
+                       "safety_access_and_maintenance", "compliance_and_regulatory",
+                       "schedule_and_execution"]:
+                if key in chunk_baseline:
+                    if key not in baseline:
+                        baseline[key] = chunk_baseline[key]
+                    elif isinstance(baseline[key], dict) and isinstance(chunk_baseline[key], dict):
+                        # Merge dictionaries, preferring non-null values
+                        for sub_key, sub_value in chunk_baseline[key].items():
+                            if sub_key not in baseline[key] or baseline[key][sub_key] is None:
+                                baseline[key][sub_key] = sub_value
+                            elif isinstance(sub_value, list) and isinstance(baseline[key][sub_key], list):
+                                # Merge arrays within dict
+                                existing = baseline[key][sub_key]
+                                existing_items = {json.dumps(item, sort_keys=True) for item in existing}
+                                for item in sub_value:
+                                    item_str = json.dumps(item, sort_keys=True)
+                                    if item_str not in existing_items:
+                                        existing.append(item)
+                                        existing_items.add(item_str)
+                                baseline[key][sub_key] = existing
+            
+            # Merge materials_and_construction array
+            if "materials_and_construction" in chunk_baseline:
+                existing = baseline.get("materials_and_construction", [])
+                if not isinstance(existing, list):
+                    existing = []
+                existing_items = {json.dumps(item, sort_keys=True) for item in existing}
+                for item in chunk_baseline["materials_and_construction"]:
+                    item_str = json.dumps(item, sort_keys=True)
+                    if item_str not in existing_items:
+                        existing.append(item)
+                        existing_items.add(item_str)
+                baseline["materials_and_construction"] = existing
+        
+        merged["baseline"] = baseline
+        
+        # Objective should be the same across chunks, keep first one
+        # (already set from first chunk)
+        
+        # Merge decision_levers (deduplicate by name)
+        decision_levers = merged.get("decision_levers", [])
+        lever_names = {lev.get("name") for lev in decision_levers if lev.get("name")}
+        for chunk_result in chunk_results[1:]:
+            for lever in chunk_result.get("decision_levers", []):
+                lever_name = lever.get("name")
+                if lever_name and lever_name not in lever_names:
+                    decision_levers.append(lever)
+                    lever_names.add(lever_name)
+        merged["decision_levers"] = decision_levers
+        
+        # Merge constraints_and_rules (deduplicate by name)
+        constraints = merged.get("constraints_and_rules", [])
+        constraint_names = {c.get("name") for c in constraints if c.get("name")}
+        for chunk_result in chunk_results[1:]:
+            for constraint in chunk_result.get("constraints_and_rules", []):
+                constraint_name = constraint.get("name")
+                if constraint_name and constraint_name not in constraint_names:
+                    constraints.append(constraint)
+                    constraint_names.add(constraint_name)
+        merged["constraints_and_rules"] = constraints
+        
+        # Merge components_for_tabular_lookup (deduplicate by role + key attributes)
+        components = merged.get("components_for_tabular_lookup", [])
+        component_keys = {
+            (comp.get("role"), json.dumps(comp.get("key_attributes", []), sort_keys=True))
+            for comp in components
+        }
+        for chunk_result in chunk_results[1:]:
+            for component in chunk_result.get("components_for_tabular_lookup", []):
+                comp_key = (
+                    component.get("role"),
+                    json.dumps(component.get("key_attributes", []), sort_keys=True)
+                )
+                if comp_key not in component_keys:
+                    components.append(component)
+                    component_keys.add(comp_key)
+        merged["components_for_tabular_lookup"] = components
+        
+        # Merge costs (combine items, merge settings)
+        costs = merged.get("costs", {})
+        for chunk_result in chunk_results[1:]:
+            chunk_costs = chunk_result.get("costs", {})
+            
+            # Merge cost_model_settings (prefer non-null values from later chunks)
+            if "cost_model_settings" in chunk_costs:
+                if "cost_model_settings" not in costs:
+                    costs["cost_model_settings"] = chunk_costs["cost_model_settings"]
+                else:
+                    for key, value in chunk_costs["cost_model_settings"].items():
+                        if key not in costs["cost_model_settings"] or costs["cost_model_settings"][key] is None:
+                            costs["cost_model_settings"][key] = value
+            
+            # Merge baseline items
+            if "baseline" in chunk_costs and "items" in chunk_costs["baseline"]:
+                if "baseline" not in costs:
+                    costs["baseline"] = {}
+                if "items" not in costs["baseline"]:
+                    costs["baseline"]["items"] = []
+                # Deduplicate items by role + description
+                existing_items = costs["baseline"]["items"]
+                existing_keys = {
+                    (item.get("role"), item.get("description"))
+                    for item in existing_items
+                }
+                for item in chunk_costs["baseline"]["items"]:
+                    item_key = (item.get("role"), item.get("description"))
+                    if item_key not in existing_keys:
+                        existing_items.append(item)
+                        existing_keys.add(item_key)
+                costs["baseline"]["items"] = existing_items
+            
+            # Merge alternative_cost_models
+            if "alternative_cost_models" in chunk_costs:
+                if "alternative_cost_models" not in costs:
+                    costs["alternative_cost_models"] = []
+                # Deduplicate by name
+                existing_names = {m.get("name") for m in costs["alternative_cost_models"]}
+                for model in chunk_costs["alternative_cost_models"]:
+                    if model.get("name") not in existing_names:
+                        costs["alternative_cost_models"].append(model)
+                        existing_names.add(model.get("name"))
+            
+            # Merge cost_reduction_scenarios
+            if "cost_reduction_scenarios" in chunk_costs:
+                if "cost_reduction_scenarios" not in costs:
+                    costs["cost_reduction_scenarios"] = []
+                # Deduplicate by name
+                existing_names = {s.get("name") for s in costs["cost_reduction_scenarios"]}
+                for scenario in chunk_costs["cost_reduction_scenarios"]:
+                    if scenario.get("name") not in existing_names:
+                        costs["cost_reduction_scenarios"].append(scenario)
+                        existing_names.add(scenario.get("name"))
+        
+        merged["costs"] = costs
+        
+        # Merge meta notes
+        meta = merged.get("meta", {})
+        notes_parts = [meta.get("notes")] if meta.get("notes") else []
+        for chunk_result in chunk_results[1:]:
+            chunk_meta = chunk_result.get("meta", {})
+            if chunk_meta.get("notes"):
+                notes_parts.append(chunk_meta["notes"])
+        if notes_parts:
+            meta["notes"] = " | ".join(filter(None, notes_parts))
+        merged["meta"] = meta
+        
+        return merged
+
+    async def run_scenario_analysis_v5(
+        self,
+        *,
+        project_id: str,
+        project_name: Optional[str],
+        scenario_id: str,
+        scenario_name: str,
+        user_id: str,
+        global_objective_type: str,
+        global_objective_target: str,
+        global_objective_unit: Optional[str],
+        objective_description: Optional[str],
+        scenario_configuration: Optional[Dict[str, Any]],
+        base_case_document_ids: List[str],
+        tabular_data_document_ids: List[str],
+    ) -> Dict[str, Any]:
+        """
+        Execute the scenario analysis (V5) workflow using the structured prompt + tool calling.
+        """
+        if not self._file_storage_service:
+            raise RuntimeError("File storage service is not initialized")
+
+        from ..parsing.utils.text_utils import extract_and_clean, extract_fulltext
+
+        MAX_SECTION_CHARS = 15000
+        MAX_CONFIG_CHARS = 4000
+
+        def _truncate(text: str, limit: int) -> str:
+            if not text:
+                return ""
+            return text if len(text) <= limit else text[:limit] + "\n... [truncated]"
+
+        documents = await self._read_base_case_documents_v3(
+            base_case_document_ids, self._file_storage_service
+        )
+        if not documents:
+            raise ValueError("No base case documents available for scenario analysis")
+
+        base_case_sections: List[str] = []
+        for doc in documents:
+            filename = doc.get("filename", "unknown.pdf")
+            document_id = doc.get("document_id", "unknown")
+            try:
+                _, _, _, pages_clean = extract_and_clean(doc["file_bytes"], filename)
+                doc_text = extract_fulltext(pages_clean)
+                base_case_sections.append(
+                    f"[DOCUMENT: {filename} | ID: {document_id}]\n{_truncate(doc_text, MAX_SECTION_CHARS)}"
+                )
+            except Exception as exc:
+                logger.warning(
+                    f"Failed to extract text for base case document {document_id}: {exc}"
+                )
+                base_case_sections.append(
+                    f"[DOCUMENT: {filename} | ID: {document_id}]\n<Error extracting text: {exc}>"
+                )
+        base_case_block = (
+            "\n\n".join(base_case_sections)
+            if base_case_sections
+            else "Base case documents unavailable."
+        )
+
+        process_tabular_data = False
+        tabular_block = "No tabular data provided."
+        if tabular_data_document_ids and process_tabular_data: 
+            tabular_docs = await self._read_base_case_documents_v3(
+                tabular_data_document_ids, self._file_storage_service
+            )
+            tabular_sections: List[str] = []
+            for doc in tabular_docs:
+                filename = doc.get("filename", "unknown")
+                document_id = doc.get("document_id", "unknown")
+                content_preview = ""
+                try:
+                    if filename.lower().endswith(".pdf"):
+                        _, _, _, pages_clean = extract_and_clean(
+                            doc["file_bytes"], filename
+                        )
+                        doc_text = extract_fulltext(pages_clean)
+                        content_preview = _truncate(doc_text, 5000)
+                    else:
+                        # Non-PDF tabular (e.g., XLSX/CSV). Provide metadata only.
+                        content_preview = (
+                            "Binary/structured tabular data provided (content not converted to text)."
+                        )
+                except Exception as exc:
+                    logger.warning(
+                        f"Failed to read tabular data document {document_id}: {exc}"
+                    )
+                    content_preview = f"<Error reading tabular document: {exc}>"
+                tabular_sections.append(
+                    f"[TABULAR DOCUMENT: {filename} | ID: {document_id}]\n{content_preview}"
+                )
+            if tabular_sections and process_tabular_data:
+                tabular_block = "\n\n".join(tabular_sections)
+
+        scenario_request_lines = [
+            f"Scenario ID: {scenario_id}",
+            f"Scenario Name: {scenario_name}",
+            f"Project ID: {project_id}",
+        ]
+        if project_name:
+            scenario_request_lines.append(f"Project Name: {project_name}")
+        scenario_request_lines.append(f"Objective Type: {global_objective_type}")
+        if global_objective_target:
+            target_line = f"Objective Target: {global_objective_target}"
+            if global_objective_unit:
+                target_line += f" {global_objective_unit}"
+            scenario_request_lines.append(target_line)
+        if objective_description:
+            scenario_request_lines.append(f"Objective Description: {objective_description}")
+
+        if scenario_configuration:
+            try:
+                config_text = json.dumps(scenario_configuration, indent=2)
+            except Exception:
+                config_text = str(scenario_configuration)
+            scenario_request_lines.append(
+                "Scenario Configuration (JSON):\n"
+                + _truncate(config_text, MAX_CONFIG_CHARS)
+            )
+
+        scenario_request_block = "\n".join(scenario_request_lines)
+
+        objective_context = {
+            "objective_text": objective_description,
+            "objective_type": global_objective_type,
+            "target_metric_name": scenario_configuration.get("target_metric_name")
+            if isinstance(scenario_configuration, dict)
+            else None,
+            "target_direction": scenario_configuration.get("target_direction")
+            if isinstance(scenario_configuration, dict)
+            else None,
+            "target_delta_value": global_objective_target,
+            "target_unit": global_objective_unit,
+            "change_direction": scenario_configuration.get("change_direction")
+            if isinstance(scenario_configuration, dict)
+            else None,
+            "change_magnitude": scenario_configuration.get("change_magnitude")
+            if isinstance(scenario_configuration, dict)
+            else None,
+            "change_unit": scenario_configuration.get("change_unit")
+            if isinstance(scenario_configuration, dict)
+            else None,
+            "description": objective_description,
+        }
+
+        prompt = get_scenario_prompt(objective_context, process_tabular_data)
+        system_prompt = SystemMessage(content=prompt)
+
+        # Chunk the base case text
+        BASE_CASE_CHUNK_SIZE = 5000  # Default character limit per chunk
+        base_case_chunks = self._chunk_text(base_case_block, BASE_CASE_CHUNK_SIZE)
+        
+        logger.info(
+            f"Chunked base case into {len(base_case_chunks)} chunks "
+            f"(chunk_size: {BASE_CASE_CHUNK_SIZE} chars)"
+        )
+
+        # Process each chunk separately
+        chunk_results: List[Dict[str, Any]] = []
+        for chunk_idx, base_case_chunk in enumerate(base_case_chunks, 1):
+            logger.info(
+                f"Processing base case chunk {chunk_idx}/{len(base_case_chunks)} "
+                f"({len(base_case_chunk)} chars)"
+            )
+            
+            scenario_input = f"""[SCENARIO_REQUEST]
+            {scenario_request_block}
+
+            [BASE_CASE]
+            {base_case_chunk}
+
+            [TABULAR_DATA]
+            {tabular_block if process_tabular_data else "No tabular data provided."}
+        """
+
+            human_message = HumanMessage(content=scenario_input)
+            try:
+                system_chars = len(system_prompt.content or "")
+                human_chars = len(human_message.content or "")
+                total_chars = system_chars + human_chars
+                approx_tokens = math.ceil(total_chars / 4)  # rough heuristic
+                logger.info(
+                    f"Chunk {chunk_idx} prompt sizes — system: {system_chars} chars, "
+                    f"human: {human_chars} chars, approx tokens: {approx_tokens}"
+                )
+            except Exception as exc:
+                logger.warning(f"Failed to log prompt sizes for chunk {chunk_idx}: {exc}")
+                approx_tokens = None
+
+            if (
+                approx_tokens is not None
+                and approx_tokens > SETTINGS.scenario_analysis_max_tokens
+            ):
+                msg = (
+                    f"Chunk {chunk_idx} prompt estimate "
+                    f"({approx_tokens} tokens) exceeds configured max "
+                    f"{SETTINGS.scenario_analysis_max_tokens}. "
+                    "Reduce input size or increase SCENARIO_ANALYSIS_MAX_TOKENS."
+                )
+                logger.error(msg)
+                raise ValueError(msg)
+
+            resp = None
+            chunk_payload: Optional[Dict[str, Any]] = None
+            try:
+                resp = await self._llm_scenario_analysis.ainvoke([system_prompt, human_message])
+            except Exception as e:
+                logger.error(f"Error invoking scenario analysis LLM for chunk {chunk_idx}: {e}")
+                raise e
+
+            for call in resp.additional_kwargs.get("tool_calls", []):
+                fn = call.get("function", {})
+                name = fn.get("name")
+                if name != "submit_scenario_analysis":
+                    continue
+                arguments = fn.get("arguments", "{}")
+                if not is_valid_json(arguments):
+                    logger.error(f"Invalid JSON received for {name} in chunk {chunk_idx}: {arguments}")
+                    continue
+                payload = json.loads(arguments)
+                chunk_payload = sanitize_for_json(payload)
+                break
+
+            if chunk_payload is None:
+                logger.warning(
+                    f"Chunk {chunk_idx} did not return scenario analysis via submit_scenario_analysis tool"
+                )
+                continue
+
+            chunk_results.append(chunk_payload)
+
+        if not chunk_results:
+            raise ValueError(
+                "No valid scenario analysis results returned from any chunk"
+            )
+
+        # Merge results from all chunks
+        analysis_payload = self._merge_scenario_analysis_results(chunk_results)
+
+        return {
+            "analysis": analysis_payload,
+            "scenario_request_block": scenario_request_block,
+            # "base_case_block": base_case_block,
+            # "tabular_data_block": tabular_block if process_tabular_data else "No tabular data provided.",
+        }
 
     async def _extract_recommendations_v3(
         self,
@@ -3321,7 +3805,9 @@ class ProjectOrchestrationService:
                                 for node in nodes:
                                     # Reject nodes with empty recommendations list
                                     properties = node.get("properties", {})
-                                    recommendations = properties.get("recommendations", [])
+                                    recommendations = properties.get(
+                                        "recommendations", []
+                                    )
                                     if not recommendations or len(recommendations) == 0:
                                         logger.warning(
                                             f"Skipping node with empty recommendations list in chunk {chunk_seq}"

@@ -1,7 +1,7 @@
 from typing import Dict, Any, List, Optional
 import json
 
-# Import from app_v2 ontology
+# Import from app_v3 ontology
 from ...ontology.ontology import AV_MSIO_ONTOLOGY, ENTITY_ONTOLOGY, get_default_ontology
 from ...ontology.loader import get_ontology as get_ontology_instance
 
@@ -589,13 +589,17 @@ entity_deduplication_block = """
 """
 
 # Nodes and relations extraction block
-nodes_and_relations_extraction_directives = """
+nodes_and_relations_extraction_directives_v0 = """
     --------------------------------------------------------------------------------
     = = = NODES AND RELATIONS EXTRACTION = = =
     --------------------------------------------------------------------------------
     NODES AND RELATIONS EXTRACTION:
     Using ontology.NODE_TYPES and ontology.EDGE_TYPES, extract all nodes and their relationships
     from the document. Include all relevant metadata and provenance information.
+
+    --------------------------------------------------------------------------------
+    Extract What's Specified in the Ontology Contract
+    --------------------------------------------------------------------------------
 
     You MUST:
     - Extract only what is explicitly or strongly implied by the input text.
@@ -620,6 +624,163 @@ nodes_and_relations_extraction_directives = """
     Allowed node types (ontology.NODE_TYPES): See ontology contract for details.
 
     Allowed edge types (ontology.EDGE_TYPES): See ontology contract for details.
+
+    --------------------------------------------------------------------------------
+    Additional Specifications for Entity Extraction
+    --------------------------------------------------------------------------------
+
+    Extract the following decision-related entities as nodes in addition to
+    physical assets, materials, and costs. These define the "global objective" layer
+    used for optimization and optionality.
+
+  1. **KPIs (Key Performance Indicators)**  
+    - Examples: throughput (t/h), recovery (%), availability (%), OPEX/t, power efficiency.  
+    - Extract name, formula, unit, direction (“maximize” / “minimize”), target value(s).
+    - Signals: “target”, “KPI”, “goal”, “objective”, “performance indicator”, “design basis”.  
+
+  2. **Production & Operating Specifications**  
+    - Technical baseline targets: ore grade, product purity, tonnage, throughput, utilization.
+    - Signals: “production rate”, “feed grade”, “product quality”, “target output”, “operating hours”.
+
+  3. **Materials, Reagents, Fuels, and Streams**  
+    - Any named physical substance or flow referenced with quantities, composition, or cost:
+      ore types, concentrates, tailings, reagents, acids/bases, solvents, fuels (diesel, gas),
+      process water, slurry or gas streams.
+    - For each distinct substance, create a `Material` node:
+      - Set properties.name to the domain term (e.g., “sodium cyanide”, “high-grade ore”).
+      - In `properties.attributes`, capture:
+        • "material_class": one of ["ore","concentrate","tailings","process_reagent",
+          "bulk_chemical","solvent","gas","fuel","water","structural_material","consumable",
+          "grinding_media","liner","explosive","product","waste","other"].
+        • "phase": "solid" | "liquid" | "gas" | "slurry" | "solution".
+        • Any composition (grade, species, purity), density, viscosity, heating_value,
+          carbon_intensity, and unit_cost (value + unit) where present in the text.
+    - For each flow with a quantity over time or per-tonne basis, create a `Stream` node:
+      - In `properties.attributes`, capture:
+        • "stream_type": "material" or "energy".
+        • "basis": e.g. "per_hour", "per_day", "per_year", "per_tonne_ore".
+        • "flow_rate" and "flow_unit" (e.g., 500 and "t/h"; 20 and "Nm3/h"; 15 and "kWh/t").
+        • optional solids_fraction, temperature, pressure if stated.
+      - If supported by EDGE_TYPES, link streams to substances using a :USES_MATERIAL edge
+        (Stream → Material); otherwise embed the material reference in attributes.
+
+    4. Constraints  (node type: "Constraint")
+      - Definition: Bounds or requirement expressions (technical, economic,
+        regulatory, environmental).
+      - When to create:
+        • Text specifies hard limits or mandatory requirements.
+        • Phrases like "must not exceed", "at least", "no more than", "cannot be
+          less than", "limited to".
+      - Capture:
+        • quantity_name (e.g., "power demand", "tailings capacity").
+        • operator: "<=", ">=", "=".
+        • value and unit (e.g., 30 MW, 92 % availability).
+        • scope/condition (e.g., "during Phase 1", "for 20-year horizon").
+
+    5. KPIs  (node type: "KPI")
+      - Definition: Key performance indicators with formulas or definitions.
+      - When to create:
+        • Text defines a metric used to measure success or performance.
+        • Phrases like "KPI", "key metric", "indicator", or explicit definitions of
+          metrics such as "cash cost per tonne", "recovery", "availability".
+      - Capture:
+        • name and unit.
+        • formula/definition if provided.
+        • direction: "higher is better" / "lower is better" if implied.
+        • link later to Objectives via satisfaction or contribution (SATISFIES).
+
+    6. Scenarios  (node type: "Scenario")
+      - Definition: What-if overlays referencing a baseline configuration.
+      - When to create:
+        • Text describes specific cases like "Base Case", "High power price
+          scenario", "25% throughput increase case".
+        • Mentions of sensitivities or discrete cases ("low / medium / high").
+      - Capture:
+        • name (scenario label).
+        • description: what changes relative to the baseline.
+        • any key parameters changed if explicitly stated.
+
+    7. Options and Alternatives  (node types: "Option", "Alternative")
+      - Option:
+        • Definition: Change proposal applied over a Baseline.
+        • When to create:
+          – Text proposes a design or operating change: new equipment, flowsheet
+            variant, different energy source, etc.
+        • Capture:
+          – name (e.g., "Add secondary crusher", "Switch to HPGR").
+          – description and rationale if provided.
+      - Alternative:
+        • Definition: Concrete alternative within an Option (e.g., specific vendor
+          or configuration choices).
+        • When to create:
+          – Text lists multiple concrete choices under the same conceptual option,
+            like "Crusher A vs Crusher B", "Reagent package X vs Y".
+        • Capture:
+          – name and description for each alternative.
+
+    8. Decision Variables  (node type: "DecisionVariable")
+      - Definition: Variables that can vary across scenarios or optimization
+        runs (tunable levers).
+      - When to create:
+        • Text identifies adjustable parameters: grind size, reagent dosage,
+          operating hours, number of lines, cut-off grade, etc.
+        • Often specified with ranges ("between", "from X to Y") or as things that
+          "can be adjusted", "tuned", or "optimized".
+      - Capture:
+        • name and unit.
+        • default_value if stated.
+        • lower_bound and upper_bound when a range is given.
+        • description of its role (e.g., "controls throughput", "affects recovery").
+
+    9. Cost Rules and Cost Drivers  (node types: "CostRule", "CostDriver")
+      - CostRule:
+        • Definition: Reusable estimation methods, parametric formulas, or rules
+          that map drivers to costs.
+        • When to create:
+          – Text specifies cost relationships such as "maintenance cost is 3% of
+            installed cost per year" or "cost scales with capacity^0.6".
+        • Capture:
+          – description and formula (as text or pseudo-math).
+          – applicable scope (equipment type, capacity range, region).
+      - CostDriver:
+        • Definition: Drivers of cost (throughput, power, distance, hardness, etc.).
+        • When to create:
+          – Text identifies variables that influence cost levels, even if the
+            exact formula is not given.
+        • Capture:
+          – name of the driver.
+          – description of how it affects cost when stated.
+
+    10. Risks and Assumptions  (node types: "Risk", "Assumption")
+      - Risk:
+        • Definition: Potential adverse events or uncertainties that may affect
+          objectives, costs, or schedule.
+        • When to create:
+          – Text describes risks such as power price volatility, supply chain
+            issues, geotechnical failures, regulatory delays.
+        • Capture:
+          – description.
+          – likelihood and impact if quantified (or qualitative high/medium/low).
+      - Assumption:
+        • Definition: Explicit assumptions supporting decisions or scenarios.
+        • When to create:
+          – Text uses "assumes", "assuming", "on the basis that", or otherwise
+            clearly marks underlying assumptions.
+        • Capture:
+          – assumption text.
+          – any numeric values embedded in the assumption (prices, rates, etc.).
+
+    11. Project  (node type: "Project")
+      - Definition: Coherent endeavor with scope and timeline (overall mining or
+        processing project, phase, or study).
+      - When to create:
+        • Text names the project, phase, or study ("XYZ Copper Project", "Phase 1
+          Expansion", "Feasibility Study 2025").
+      - Capture:
+        • name.
+        • phase/stage if given (concept, PFS, FS, etc.).
+        • any dates or time horizons mentioned.
+
 
     OUTPUT CONTRACT (strict):
     Node object (each item in extract_nodes.nodes) MUST have:
@@ -836,6 +997,238 @@ nodes_and_relations_extraction_directives = """
     ]
 """
 
+nodes_and_relations_extraction_directives = """
+  --------------------------------------------------------------------------------
+  = = = NODES AND RELATIONS EXTRACTION = = =
+  --------------------------------------------------------------------------------
+  Using ontology.NODE_TYPES and ontology.EDGE_TYPES, extract all nodes and edges
+  from the document, with full MSIO classification, metadata, and provenance.
+
+  --------------------------------------------------------------------------------
+  Ontology Contract (Hard Constraints)
+  --------------------------------------------------------------------------------
+  You MUST:
+  - Extract only what is explicitly or strongly implied by the text.
+  - Do NOT invent entities, properties, or relations.
+  - Emit only node/edge types in NODE_TYPES / EDGE_TYPES.
+  - Each node MUST have:
+    • "id": valid RFC 4122 UUID (e.g., "550e8400-e29b-41d4-a716-446655440000").
+    • "type": one of NODE_TYPES.
+    • "properties": dict with only keys from NODE_PROPERTIES.
+    • "name": human-readable label.
+  - Each edge MUST have:
+    • "id": valid RFC 4122 UUID.
+    • "source": UUID of existing node.
+    • "target": UUID of existing node.
+    • "type": one of EDGE_TYPES.
+    • "properties": dict with only keys from EDGE_PROPERTIES.
+  - Attach evidence_text and confidence to every node and edge (from allowed meta keys).
+  - Normalize entity names; deduplicate variants (per Entity Deduplication policy).
+  - Every node MUST have MSIO classification:
+    • discipline, category, subcategory, entity
+    • Each MUST match the MSIO ontology (closest valid match).
+  - If no exact MSIO match:
+    • choose the closest hierarchy,
+    • set properties["outside_msio"] = true.
+  - Use ONLY Discipline/Category/Subcategory/Entity names from AV_MSIO_ONTOLOGY.
+  - For every entity with a total cost (e.g., TIC, TCC, installed cost, opex):
+    • extract cost_value (numeric), currency (string), and basis_year (if present),
+    • NEVER store combined "USD 5M" strings as a single field.
+  - Apply the MSIO matching workflow and dedup policy to every entity.
+
+  ONTOLOGY (from config.py):
+  - Allowed node types: ontology.NODE_TYPES
+  - Allowed edge types: ontology.EDGE_TYPES
+
+  --------------------------------------------------------------------------------
+  Additional Specifications for Entity Extraction
+  --------------------------------------------------------------------------------
+  Extract the following decision-related entities as nodes in addition to physical
+  assets, materials, and costs. These define the global objective / optimization layer.
+
+  1. KPIs (node type: "KPI")
+    - Any named metric used to track performance or success: throughput, recovery,
+      availability, opex/t, power efficiency, etc.
+    - Signals: "KPI", "indicator", "metric", "target", "goal", "design basis".
+    - Capture: name, unit, formula/definition if given, direction ("maximize" /
+      "minimize" / "higher is better" / "lower is better"), target values if stated.
+
+  2. Production & Operating Specifications
+    - Baseline technical targets: ore grade, product purity, tonnage, throughput,
+      utilization, operating hours.
+    - Capture as attributes on relevant nodes (Equipment, Process, Project, Scenario)
+      using NODE_PROPERTIES; do NOT create custom ad-hoc node types.
+
+  3. Materials, Reagents, Fuels, and Streams
+    - Any physical substance or flow with quantity, composition, or cost:
+      ore types, concentrates, tailings, reagents, acids/bases, solvents, fuels,
+      process water, slurry streams, gas streams.
+    - For each distinct substance, create a Material node:
+      • properties["name"]: domain term (e.g., "sodium cyanide", "high-grade ore").
+      • attributes:
+        - "material_class": one of [
+          "ore","concentrate","tailings","process_reagent","bulk_chemical","solvent",
+          "gas","fuel","water","structural_material","consumable","grinding_media",
+          "liner","explosive","product","waste","other"
+        ]
+        - "phase": "solid" | "liquid" | "gas" | "slurry" | "solution"
+        - composition/grade/purity, density, viscosity, heating_value,
+          carbon_intensity, unit_cost and unit_cost_basis when present.
+    - For each flow with a rate over time or per-tonne basis, create a Stream node:
+      • attributes:
+        - "stream_type": "material" or "energy"
+        - "basis": e.g., "per_hour", "per_day", "per_year", "per_tonne_ore"
+        - "flow_rate" (numeric) and "flow_unit" ("t/h", "Nm3/h", "kWh/t", etc.)
+        - solids_fraction, temperature, pressure when present.
+      • If EDGE_TYPES contains USES_MATERIAL:
+        - create Stream —USES_MATERIAL→ Material edges.
+
+  4. Constraints (node type: "Constraint")
+    - Bounds or requirements (technical, economic, regulatory, environmental).
+    - Signals: "must not exceed", "at least", "not less than", "no more than",
+      "limited to".
+    - Capture: quantity_name, operator ("<=", ">=", "="), value, unit, and any
+      scope/condition ("Phase 1", "20-year life").
+
+  5. Scenarios (node type: "Scenario")
+    - What-if overlays relative to a baseline: "Base Case", "High power price
+      scenario", "25% throughput increase case", "low/medium/high cases".
+    - Capture: name, description (how it differs from baseline), and explicit
+      parameter changes if stated.
+
+  6. Options and Alternatives (node types: "Option", "Alternative")
+    - Option:
+      • Change proposal applied over a baseline:
+        new equipment, flowsheet variant, different energy source, reagent system.
+      • Capture: name (e.g., "Add secondary crusher"), description, rationale.
+    - Alternative:
+      • Concrete choice inside an Option: "Crusher A vs Crusher B", "Reagent X vs Y".
+      • Capture: name, description.
+    - Structure: multiple Alternatives may exist under one Option; later edges
+      (e.g., ALTERNATIVE_TO, MODIFIES) are allowed only if in EDGE_TYPES.
+
+  7. Decision Variables (node type: "DecisionVariable")
+    - Variables that can vary across scenarios or optimization runs:
+      grind size, reagent dosage, operating hours, number of lines, cut-off grade.
+    - Signals: "can be adjusted", "tuned", "optimized", ranges ("from X to Y",
+      "between X and Y").
+    - Capture: name, unit, default_value (if given), lower_bound, upper_bound,
+      and a short description of its role.
+
+  8. Cost Rules and Cost Drivers (node types: "CostRule", "CostDriver")
+    - CostRule:
+      • Parametric cost formulas or rules:
+        "maintenance cost is 3% of installed cost per year",
+        "cost scales with capacity^0.6".
+      • Capture: description, formula (text/pseudo-math), applicable scope
+        (equipment type, capacity range, region).
+    - CostDriver:
+      • Variables that drive cost: throughput, installed power, distance to port,
+        ore hardness, reagent dosage.
+      • Capture: name, qualitative/quantitative description of impact on cost.
+
+  9. Risks and Assumptions (node types: "Risk", "Assumption")
+    - Risk:
+      • Adverse events or uncertainties impacting objectives, cost, or schedule:
+        power price volatility, geotechnical failure, supply disruption,
+        permitting delays.
+      • Capture: description, likelihood and impact if given (or qualitative
+        high/medium/low).
+    - Assumption:
+      • Explicit assumptions underpinning analysis:
+        "assumes constant power price", "assumes 93% recovery", "assumes no
+        significant permitting delay".
+      • Capture: assumption text, any numeric values (prices, rates, recoveries).
+
+  10. Project (node type: "Project")
+      - Overall project or study: "XYZ Copper Project", "Phase 1 Expansion",
+        "Feasibility Study 2025".
+      - Capture: name, phase/stage (concept, PFS, FS, etc.) if given, and
+        key dates or horizons.
+
+  --------------------------------------------------------------------------------
+  OUTPUT CONTRACT (STRICT)
+  --------------------------------------------------------------------------------
+  Top-level JSON keys ONLY: "nodes", "edges", "meta".
+
+  nodes: array of node objects. Each node:
+  {
+    "id": "<RFC-4122-UUID>",             // REQUIRED
+    "type": "<NodeTypeFromNODE_TYPES>",  // REQUIRED
+    "properties": {
+      "name": "string",                  // REQUIRED
+      "discipline": "string",            // REQUIRED MSIO discipline
+      "category": "string",              // REQUIRED MSIO category
+      "subcategory": "string",           // REQUIRED MSIO subcategory
+      "entity": "string",                // REQUIRED MSIO entity (or closest match)
+      "attributes": [                    // attribute objects
+        {
+          "name": "string",
+          "value": number|null,
+          "unit": "string|null",
+          "evidence_text": "string|null",
+          "confidence": 0.0-1.0
+        }
+      ],
+      "cost_value": number|null,         // if any cost present
+      "currency": "string|null",         // e.g., "USD"; null if not present
+      "basis_year": number|null,         // omit if not present
+      "outside_msio": true|false,        // include only when outside MSIO
+      "evidence_text": "string|null",
+      "confidence": 0.0-1.0,
+      ...                                // any other fields from NODE_PROPERTIES only
+    }
+  }
+
+  edges: array of edge objects. Each edge:
+  {
+    "id": "<RFC-4122-UUID>",             // REQUIRED
+    "source": "<RFC-4122-UUID>",         // REQUIRED, must reference a node.id
+    "target": "<RFC-4122-UUID>",         // REQUIRED, must reference a node.id
+    "type": "<EdgeTypeFromEDGE_TYPES>",  // REQUIRED
+    "properties": {
+      "evidence_text": "string|null",
+      "confidence": 0.0-1.0,
+      ...                                // only keys from EDGE_PROPERTIES
+    }
+  }
+
+  meta:
+  {
+    "ontology_version": "simple-json-v1",
+    "policy": {
+      "element_split_on_slash": true
+    },
+    "extraction_date": "YYYY-MM-DD"
+  }
+
+  --------------------------------------------------------------------------------
+  QUALITY GATE (MANDATORY BEFORE RETURN)
+  --------------------------------------------------------------------------------
+  - Every node:
+    • id is a valid UUID, unique.
+    • type in NODE_TYPES.
+    • properties is non-empty dict.
+    • has name, discipline, category, subcategory, entity.
+    • MSIO fields exist in AV_MSIO_ONTOLOGY hierarchy; otherwise outside_msio=true.
+    • attributes is an array; all attribute objects follow the contract.
+    • cost_value and currency split if cost present.
+  - Every edge:
+    • id, source, target are valid UUIDs.
+    • type in EDGE_TYPES.
+    • properties contains evidence_text and confidence.
+  - MSIO validation:
+    ✓ discipline/category/subcategory/entity all non-empty and valid.
+    ✓ no invalid MSIO labels.
+    ✓ partial/inferred MSIO match ⇒ confidence < 0.7 and rationale in evidence_text.
+  - No property keys outside NODE_PROPERTIES / EDGE_PROPERTIES.
+  - No hallucinated entities, relations, or values.
+
+  Return a single JSON object:
+  { "nodes": [...], "edges": [...], "meta": {...} }
+"""
+
+
 # Scenario extraction
 scenario_extraction_block = """
   --------------------------------------------------------------------------------
@@ -996,7 +1389,10 @@ cost_extraction_block = """
   - cost_unit (string): Unit of the cost value
   - cost_basis (string): Basis of the cost value (e.g., “installed”, “silt fence”)
   - cost_alternates (array of additional ranges when text contains “or / OR”)
-  
+  - Attach cost objects to `CostItem` nodes and, when appropriate, to `Material` or `Stream`
+    nodes (e.g., reagent price per tonne, fuel price per MWh, water price per m3), using the
+    standard cost_value, cost_currency, cost_basis, cost_min, cost_max, cost_unit, cost_alternates properties.
+
   • If a cost string contains multiple ranges (e.g., “$5 - $25 / SY or $1,000 - $8,000 LS”), parse the FIRST as the primary range and each additional range as a separate `alternate` entry.
 
   • Examples of cost range formats:
@@ -1802,6 +2198,11 @@ def generate_prompt(
             - "unit": string|null (attribute unit)
             - "evidence_text": string|null (text snippet used to extract attribute)
             - "confidence": 0.0-1.0 (confidence score for this attribute)
+        • For `Material` nodes, use attributes with names such as "material_class", "phase",
+          "composition", "density", "heating_value", "unit_cost", "unit_cost_basis",
+          "carbon_intensity", whenever the text provides them.
+        • For `Stream` and `WasteStream` nodes, use attributes with names such as "stream_type",
+          "basis", "flow_rate", "flow_unit", "solids_fraction", "temperature", "pressure".
 
     """
 

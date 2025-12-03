@@ -6,41 +6,43 @@ from typing import Dict, Any
 ENTITY_ONTOLOGY: Dict[str, Any] = {
     "schema_version": "0.1.0",
     "node_types": [
-        # "Alternative",
-        # "Assumption",
-        # "Baseline",
-        # "Chunk",
-        # "Constraint",
-        # "Consumable",
-        # "CostItem",
-        # "CostRule",
-        # "DecisionVariable",
-        # "Document",
+        # Physical substances and flows
+        "Material",  # ore, reagents, bulk chemicals, fuels, water, consumables
+        "Stream",  # material or energy flow with quantity over time or per tonne
+        "WasteStream",  # streams that leave the system as waste or tailings
+        # Energy
         "Energy",
+        # Assets and infrastructure
         "Equipment",
         "Facility",
-        # "KPI",
         "Location",
-        "Material-Physical",
-        "Material-Chemical",
-        "Material-Consumable",
-        "Material-Reagent",
-        "Material-Waste",
-        "Material-Product",
-        "Material-Unknown",
-        # "Objective",
-        # "Option",
-        "Organization",
-        # "Person",
-        "Process",
-        # "ProcessStep",
-        "Product",
-        "Project",
-        # "Reagent",
-        # "Risk",
+        # Processes
+        "Process",  # flow sheet level / process definition
+        "ProcessStep",  # single unit operation or step
+        # Economic / decision layer
+        "CostItem",
+        "CostRule",
         "Scenario",
-        # "Table",
-        # "WasteStream",
+        "DecisionVariable",
+        "Option",
+        "Objective",
+        "Constraint",
+        "KPI",
+        # Actors / context
+        "Project",
+        "Organization",
+        "Labor",
+        # Products and wastes
+        "Product",
+        "Waste",
+        "Risk",
+        # Governance / docs
+        "Policy",
+        "Assumption",
+        "Limitation",
+        "Document",
+        "Chunk",
+        "Table",
     ],
     "edge_types": [
         "CONSUMES_MATERIAL",
@@ -60,44 +62,47 @@ ENTITY_ONTOLOGY: Dict[str, Any] = {
         "REQUIRES",
         "USES_EQUIPMENT",
         # Additional edge types
-        "HAS_PART",
-        "OPERATED_BY",
-        "OWNED_BY",
-        "CONTEMPORANEOUS_WITH",
-        "FOLLOWS",
-        "HAS_STEP",
+        "AFFECTS_COST",
         "AGGREGATES",
+        "ALTERNATIVE_TO",
+        "BASELINES",
         "BREAKS_DOWN_TO",
+        "CONSTRAINS",
+        "CONSUMES_STREAM",
+        "CONTEMPORANEOUS_WITH",
         "CONTRACTED_TO",
+        "DERIVED_FROM",
+        "DRIVES",
+        "ENABLES",
+        "EXTRACTED_FROM",
+        "FOLLOWS",
         "GOVERNED_BY",
         "HAS_COST",
+        "HAS_FAILURE_MODE",
+        "HAS_PART",
+        "HAS_RISK",
+        "HAS_STEP",
+        "IMPACTS_KPI",
+        "INCREASES_RISK",
         "INDEXED_BY",
-        "QUOTED_IN",
-        "SUPPLIED_BY",
-        "DERIVED_FROM",
-        "EXTRACTED_FROM",
+        "MEASURED_BY",
         "MENTIONS",
-        "REFERENCES",
-        "REVISES",
-        "VALIDATED_BY",
-        "VERSION_OF",
-        "BASELINES",
-        "CONSTRAINS",
         "MODIFIES",
+        "OPERATED_BY",
         "OPTIMIZES_FOR",
         "OVERRIDES",
-        "SATISFIES",
-        "HAS_FAILURE_MODE",
-        "HAS_RISK",
-        "MEASURED_BY",
-        "TRIGGERS",
-        "AFFECTS_COST",
-        "IMPACTS_KPI",
-        "ALTERNATIVE_TO",
-        "ENABLES",
-        "DRIVES",
+        "OWNED_BY",
+        "PRODUCES_STREAM",
+        "QUOTED_IN",
         "REDUCES_RISK",
-        "INCREASES_RISK",
+        "REFERENCES",
+        "REVISES",
+        "SATISFIES",
+        "SUPPLIED_BY",
+        "TRIGGERS",
+        "USES_MATERIAL",
+        "VALIDATED_BY",
+        "VERSION_OF",
     ],
     "node_properties": [
         # Identity
@@ -158,6 +163,25 @@ ENTITY_ONTOLOGY: Dict[str, Any] = {
         "source",
         "transportation_mode",
         "unit",
+        # Material / Stream
+        "material_class",  # ore, process_reagent, bulk_chemical, fuel, water, etc.
+        "phase",  # solid, liquid, gas, slurry, solution
+        "composition",  # serialized composition/grade/purity (json string or dict)
+        "density",
+        "viscosity",
+        "heating_value",  # for fuels
+        "carbon_intensity",  # tCO2e per unit
+        "unit_cost",
+        "unit_cost_currency",
+        "unit_cost_basis",  # per_tonne, per_m3, per_Nm3, per_kg, per_L, per_MWh
+        "supplier_region",
+        "stream_type",  # material or energy
+        "basis",  # per_hour, per_day, per_year, per_tonne_ore, etc.
+        "flow_rate",
+        "flow_unit",  # "t/h", "Nm3/h", "kWh/t", etc.
+        "solids_fraction",
+        "temperature",
+        "pressure",
         # Logistics
         "transport_distance_km",
         "transport_mode",
@@ -209,36 +233,37 @@ ENTITY_ONTOLOGY: Dict[str, Any] = {
         "extraction_method",
     ],
     "node_descriptions": {
-        "Equipment": "Physical asset or equipment instance",
-        "Material": "Physical substance or material",
-        "Process": "Process definition or flowsheet",
-        "Scenario": "What-if overlay referencing a Baseline",
-        "Project": "Coherent endeavor with scope and timeline",
-        "Document": "Source document (report, manual, spec)",
+        "Alternative": "Concrete alternative within an Option",
+        "Assumption": "Explicit assumption supporting decisions",
+        "Baseline": "Base configuration or assumptions",
         "Chunk": "Contiguous text span within a Document",
-        "CostItem": "Observed or quoted cost",
+        "Constraint": "Technical, economic, or regulatory limit on variables, streams, or performance",
+        "Consumable": "Consumable material",
+        "CostDriver": "Driver of cost",
+        "CostItem": "Atomic cost element (capex, opex, maintenance, etc.)",
+        "CostRule": "Parametric relationship mapping drivers (capacity, throughput, material usage) to CostItem values",
+        "DecisionVariable": "Formal variable that can be tuned in optimization or scenario analysis",
+        "DecisionVariable": "Variable that can vary across scenarios",
+        "Document": "Source document (report, manual, spec)",
+        "EnergySource": "Source of energy",
+        "Equipment": "Physical asset or equipment instance",
+        "Facility": "Specific facility or plant location",
+        "KPI": "Key performance indicator with formula",
         "Location": "Geospatial locality",
+        "Material": "Physical substance or material",
+        "Objective": "Quantitative objective (e.g., minimize cost, maximize NPV)",
+        "Option": "Discrete design or operating choice that activates a configuration or rule set",
         "Organization": "Company, agency, or group",
         "Person": "Individual actor",
-        "Baseline": "Base configuration or assumptions",
-        "Option": "Change proposal applied over a Baseline",
-        "Alternative": "Concrete alternative within an Option",
-        "Objective": "Optimization goal",
-        "Constraint": "Bound or requirement expression",
-        "KPI": "Key performance indicator with formula",
-        "CostRule": "Reusable estimation method",
-        "CostDriver": "Driver of cost",
-        "Risk": "Potential adverse event",
-        "Assumption": "Explicit assumption supporting decisions",
-        "DecisionVariable": "Variable that can vary across scenarios",
-        "Facility": "Specific facility or plant location",
+        "Process": "Process definition or flowsheet",
         "ProcessStep": "Atomic step of a Process",
         "Product": "Output product from a process",
-        "WasteStream": "Waste or byproduct stream",
+        "Project": "Coherent endeavor with scope and timeline",
         "Reagent": "Chemical reagent used in process",
-        "Consumable": "Consumable material",
-        "EnergySource": "Source of energy",
+        "Risk": "Potential adverse event",
+        "Scenario": "What-if overlay referencing a Baseline",
         "Table": "Structured table extracted from a Document",
+        "WasteStream": "Waste or byproduct stream",
     },
     "edge_descriptions": {
         "CONSUMES_MATERIAL": "Process/equipment consumes a material",
@@ -595,6 +620,106 @@ AV_MSIO_ONTOLOGY: Dict[str, Any] = {
                                 "Grinding media",
                             ],
                         },
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Materials & Consumables",
+            "categories": [
+                {
+                    "name": "Reagents",
+                    "subcategories": [
+                        {
+                            "name": "Collectors",
+                            "entity": "Reagent",
+                            "attributes": [
+                                "Dosage",
+                                "Unit",
+                                "pH window",
+                                "Selectivity notes",
+                            ],
+                        },
+                        {
+                            "name": "Frothers",
+                            "entity": "Reagent",
+                            "attributes": [
+                                "Dosage",
+                                "Unit",
+                                "pH window",
+                                "Selectivity notes",
+                            ],
+                        },
+                        {
+                            "name": "Depressants",
+                            "entity": "Reagent",
+                            "attributes": [
+                                "Dosage",
+                                "Unit",
+                                "pH window",
+                                "Selectivity notes",
+                            ],
+                        },
+                    ],
+                },
+                {
+                    "name": "Bulk Chemicals",
+                    "subcategories": [
+                        {
+                            "name": "Acids",
+                            "entity": "Chemical",
+                            "attributes": [
+                                "Concentration",
+                                "Material_class",
+                                "Unit_cost",
+                            ],
+                        },
+                        {
+                            "name": "Bases",
+                            "entity": "Chemical",
+                            "attributes": [
+                                "Concentration",
+                                "Material_class",
+                                "Unit_cost",
+                            ],
+                        },
+                    ],
+                },
+                {
+                    "name": "Fuels",
+                    "subcategories": [
+                        {
+                            "name": "Diesel",
+                            "entity": "Fuel",
+                            "attributes": [
+                                "Heating_value",
+                                "Unit_cost",
+                                "Carbon_intensity",
+                            ],
+                        },
+                        {
+                            "name": "Natural Gas",
+                            "entity": "Fuel",
+                            "attributes": [
+                                "Heating_value",
+                                "Unit_cost",
+                                "Carbon_intensity",
+                            ],
+                        },
+                    ],
+                },
+                {
+                    "name": "Grinding Media",
+                    "subcategories": [
+                        {
+                            "name": "Steel Balls",
+                            "entity": "Media",
+                            "attributes": [
+                                "Size",
+                                "Consumption_rate",
+                                "Unit_cost",
+                            ],
+                        }
                     ],
                 },
             ],
@@ -1252,10 +1377,12 @@ AV_MSIO_ONTOLOGY: Dict[str, Any] = {
             "categories": [
                 {
                     "name": "Outside MSIO",
-                    "subcategories": [{"name": "Outside MSIO", "entity": "Outside MSIO"}],
+                    "subcategories": [
+                        {"name": "Outside MSIO", "entity": "Outside MSIO"}
+                    ],
                 }
             ],
-        }
+        },
     ],
 }
 

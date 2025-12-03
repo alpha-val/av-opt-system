@@ -3,7 +3,7 @@ Scenario service layer.
 
 This module provides high-level service functions for scenario operations.
 """
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from .schemas import ScenarioCreate, ScenarioUpdate, ScenarioOut
 from . import repository as repo
 
@@ -36,4 +36,33 @@ async def delete(scenario_id: str) -> bool:
 async def clear_data(scenario_id: str) -> dict:
     """Clear all data associated with a scenario, but keep the scenario itself."""
     return await repo.clear_scenario_data(scenario_id)
+
+
+async def save_analysis_result(
+    scenario_id: str,
+    project_id: str,
+    workflow: str,
+    job_id: str,
+    result: Dict[str, Any],
+    context: Dict[str, Any],
+) -> bool:
+    """Persist the latest scenario analysis result."""
+    return await repo.upsert_scenario_analysis_result(
+        scenario_id=scenario_id,
+        project_id=project_id,
+        workflow=workflow,
+        job_id=job_id,
+        result=result,
+        context=context,
+    )
+
+
+async def get_analysis_result(
+    scenario_id: str, workflow: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
+    """Retrieve the latest scenario analysis result (optionally by workflow)."""
+    return await repo.get_latest_scenario_analysis_result(
+        scenario_id=scenario_id,
+        workflow=workflow,
+    )
 

@@ -13,7 +13,7 @@ def test_say_hello():
     assert result == "Greeted pytest"
 
 # Test mongo connection
-from app_v2.adapters.mongo.client import db
+from app_v3.adapters.mongo.client import db
 
 def test_mongo_connection():
     """Verify we can obtain the database object from the mongo client.
@@ -30,7 +30,7 @@ def test_mongo_connection():
         pytest.fail(f"MongoDB connection failed: {e}")
         
 # Test user login
-from app_v2.api.v1.routers.auth import auth_router
+from app_v3.api.v1.routers.auth import auth_router
 from fastapi.testclient import TestClient
 
 client = TestClient(auth_router)

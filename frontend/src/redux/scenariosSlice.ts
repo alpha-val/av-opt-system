@@ -131,7 +131,7 @@ export const runAnalysisV4 = createAsyncThunk(
   async (scenarioId: string, { rejectWithValue }) => {
     try {
       console.log('[Redux Thunk] runAnalysisV4 - Calling API for scenarioId:', scenarioId);
-      const data = await scenarioApi.runAnalysisV4(scenarioId);
+      const data = await scenarioApi.runAnalysisV5(scenarioId);
       console.log('[Redux Thunk] runAnalysisV4 - API response data:', data);
       console.log('[Redux Thunk] runAnalysisV4 - data.job_id:', data?.job_id);
       // Fetch updated scenario to get new status
@@ -141,7 +141,7 @@ export const runAnalysisV4 = createAsyncThunk(
     } catch (error) {
       console.error('[Redux Thunk] runAnalysisV4 - Error:', error);
       return rejectWithValue(
-        error instanceof Error ? error.message : 'Failed to run analysis (V3)'
+        error instanceof Error ? error.message : 'Failed to run analysis (v4)'
       );
     }
   }
@@ -162,6 +162,28 @@ export const cancelAnalysisV4 = createAsyncThunk(
     }
   }
 );
+
+export const runAnalysisV5 = createAsyncThunk(
+  'scenarios/runAnalysisV5',
+  async (scenarioId: string, { rejectWithValue }) => {
+    try {
+      console.log('[Redux Thunk] runAnalysisV5 - Calling API for scenarioId:', scenarioId);
+      const data = await scenarioApi.runAnalysisV5(scenarioId);
+      console.log('[Redux Thunk] runAnalysisV5 - API response data:', data);
+      console.log('[Redux Thunk] runAnalysisV5 - data.job_id:', data?.job_id);
+      // Fetch updated scenario to get new status
+      const updatedScenario = await scenarioApi.getById(scenarioId);
+      console.log('[Redux Thunk] runAnalysisV5 - Returning payload with analysisResult:', data);
+      return { scenarioId, analysisResult: data, scenario: updatedScenario };
+    } catch (error) {
+      console.error('[Redux Thunk] runAnalysisV5 - Error:', error);
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Failed to run analysis (v5)'
+      );
+    }
+  }
+);
+
 
 // Initial state
 interface ScenariosState {

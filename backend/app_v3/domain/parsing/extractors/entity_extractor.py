@@ -5,7 +5,7 @@ Uses OpenAI via LangChain to extract entities and edges that map to MSIO ontolog
 """
 
 from typing import List, Dict, Any, Optional
-from app_v2.adapters.config import SETTINGS
+from app_v3.adapters.config import SETTINGS
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 import json

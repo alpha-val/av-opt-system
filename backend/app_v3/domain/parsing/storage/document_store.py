@@ -8,7 +8,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
 from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
-from app.bronze_store import db
+from app_v3.adapters.mongo.client import db
 import uuid
 import logging
 

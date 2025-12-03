@@ -333,6 +333,7 @@ async def clear_project_data(project_id: str) -> Dict[str, Any]:
 
     This deletes all related data including:
     - Scenarios and their cost estimates
+    - Scenario analysis results
     - Documents, chunks, tables
     - Entities and relations
     - Base case summaries and recommendations
@@ -368,6 +369,7 @@ async def clear_project_data(project_id: str) -> Dict[str, Any]:
         deleted_counts = {
             "scenarios": 0,
             "cost_estimates": 0,
+            "scenario_analysis_results": 0,
             "files": 0,
             "documents": 0,
             "chunks": 0,
@@ -391,12 +393,18 @@ async def clear_project_data(project_id: str) -> Dict[str, Any]:
         ).deleted_count
         deleted_counts["scenarios"] = scenarios_deleted
 
-        # Delete cost estimates by scenario_id
+        # Delete cost estimates and scenario analysis results by scenario_id
+        scenario_analysis_results_collection = db().scenario_analysis_results
         for scenario_id in scenario_ids:
             cost_estimates_deleted = _cost_estimates_collection.delete_many(
                 {"scenario_id": scenario_id}
             ).deleted_count
             deleted_counts["cost_estimates"] += cost_estimates_deleted
+            
+            analysis_results_deleted = scenario_analysis_results_collection.delete_many(
+                {"scenario_id": scenario_id}
+            ).deleted_count
+            deleted_counts["scenario_analysis_results"] += analysis_results_deleted
 
         # Get all document IDs for this project BEFORE deleting documents
         # (needed for deleting related chunks and tables)
@@ -497,6 +505,7 @@ async def clear_project_data(project_id: str) -> Dict[str, Any]:
         logger.info(
             f"Cleared project data for {project_id}: "
             f"{scenarios_deleted} scenarios, {deleted_counts['cost_estimates']} cost estimates, "
+            f"{deleted_counts['scenario_analysis_results']} scenario analysis results, "
             f"{files_deleted} files, {documents_deleted} documents, "
             f"{chunks_deleted} chunks, {tables_deleted} tables, "
             f"{entities_deleted} entities, {relations_deleted} relations, "
@@ -545,6 +554,7 @@ async def delete_all_user_data(user_id: str) -> Dict[str, Any]:
             "chunks": 0,
             "tables": 0,
             "cost_estimates": 0,
+            "scenario_analysis_results": 0,
             "entities": 0,
             "relations": 0,
             "base_case_summaries": 0,
@@ -572,12 +582,18 @@ async def delete_all_user_data(user_id: str) -> Dict[str, Any]:
             ).deleted_count
             deleted_counts["scenarios"] += scenarios_deleted
 
-            # Delete cost estimates by scenario_id (not project_id)
+            # Delete cost estimates and scenario analysis results by scenario_id (not project_id)
+            scenario_analysis_results_collection = db().scenario_analysis_results
             for scenario_id in scenario_ids:
                 cost_estimates_deleted = _cost_estimates_collection.delete_many(
                     {"scenario_id": scenario_id}
                 ).deleted_count
                 deleted_counts["cost_estimates"] += cost_estimates_deleted
+                
+                analysis_results_deleted = scenario_analysis_results_collection.delete_many(
+                    {"scenario_id": scenario_id}
+                ).deleted_count
+                deleted_counts["scenario_analysis_results"] += analysis_results_deleted
 
             # Get all document IDs for this project BEFORE deleting documents
             # (needed for deleting related chunks and tables)

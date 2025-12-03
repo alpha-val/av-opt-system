@@ -59,6 +59,7 @@ import CostComparisonReport from "../../components/scenario/CostComparisonReport
 import ProgressWidget from "../../components/common/ProgressWidget";
 import CostEstimatesList from "../../components/scenario/CostEstimatesList";
 import CostEstimateDetails from "../../components/scenario/CostEstimateDetails";
+import ScenarioAnalysisData from "../../components/scenario/ScenarioAnalysisData";
 import { useDialogs } from "../../hooks/useDialogs";
 import { useProgress } from "../../hooks/useProgress";
 import {
@@ -1133,6 +1134,7 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                 <Tab label="Objectives" id="scenario-tab-0" />
                 <Tab label="System Design" id="scenario-tab-1" />
                 <Tab label="Cost Estimates" id="scenario-tab-2" />
+                <Tab label="Data" id="scenario-tab-3" />
                 {/* <Tab label="Report" id="scenario-tab-3" /> */}
               </Tabs>
             </Box>
@@ -1351,6 +1353,13 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                   </Alert>
                 </Box>
               </TabPanel> */}
+
+              {/* Tab 3: Data */}
+              <TabPanel value={activeTab} index={3}>
+                <Box sx={{ p: 3 }}>
+                  <ScenarioAnalysisData scenarioId={scenario.id} />
+                </Box>
+              </TabPanel>
             </Box>
           </Paper>
 

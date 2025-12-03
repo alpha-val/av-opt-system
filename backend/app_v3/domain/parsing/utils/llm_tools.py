@@ -1241,6 +1241,465 @@ TOOLS_RECOMMENDATIONS = [
     },  # -------------------------------------------------------------------------
 ]
 
+_nullable_string = {"type": ["string", "null"]}
+_nullable_number = {"type": ["number", "null"]}
+_nullable_bool = {"type": ["boolean", "null"]}
+
+_capacity_metric_schema = {
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "value": _nullable_number,
+        "unit": _nullable_string,
+        "basis": _nullable_string,
+    },
+    "required": ["name"],
+    "additionalProperties": False,
+}
+
+_operating_condition_schema = {
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "value": _nullable_number,
+        "unit": _nullable_string,
+        "description": _nullable_string,
+    },
+    "required": ["name"],
+    "additionalProperties": False,
+}
+
+_decision_lever_schema = {
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "category": {"type": "string"},
+        "description": _nullable_string,
+        "baseline_value": {"type": ["number", "string", "null"]},
+        "baseline_unit": _nullable_string,
+        "baseline_text": _nullable_string,
+        "change_relevance_to_objective": _nullable_string,
+        "is_discrete": {"type": ["boolean", "null"]},
+        "options": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "label": {"type": "string"},
+                    "description": _nullable_string,
+                },
+                "required": ["label"],
+                "additionalProperties": False,
+            },
+        },
+        "plausible_range": {
+            "type": ["object", "null"],
+            "properties": {
+                "min": _nullable_number,
+                "max": _nullable_number,
+                "unit": _nullable_string,
+                "source_text": _nullable_string,
+            },
+            "additionalProperties": False,
+        },
+        "dependencies": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "type": _nullable_string,
+                    "description": _nullable_string,
+                },
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["name", "category"],
+    "additionalProperties": False,
+}
+
+_constraint_schema = {
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "type": _nullable_string,
+        "expression": _nullable_string,
+        "operator": _nullable_string,
+        "lhs_quantity": _nullable_string,
+        "rhs_quantity_or_value": _nullable_string,
+        "unit": _nullable_string,
+        "source_text": _nullable_string,
+    },
+    "required": ["name"],
+    "additionalProperties": False,
+}
+
+_component_lookup_schema = {
+    "type": "object",
+    "properties": {
+        "role": {"type": "string"},
+        # "msio_discipline": {"type": "string"},
+        # "msio_category": _nullable_string,
+        # "msio_subcategory": _nullable_string,
+        # "msio_entity": _nullable_string,
+        "key_attributes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "value": _nullable_string,
+                    "unit": _nullable_string,
+                },
+                "required": ["name"],
+                "additionalProperties": False,
+            },
+        },
+        "quantity": _nullable_number,
+    },
+    "required": ["role", "msio_discipline"],
+    "additionalProperties": False,
+}
+
+_cost_item_schema = {
+    "type": "object",
+    "properties": {
+        "role": _nullable_string,
+        "description": _nullable_string,
+        "cost_method": {
+            "type": "string",
+            "enum": [
+                "vendor_table",
+                "capacity_scaled",
+                "weight_scaled",
+                "fixed",
+                "unit_cost_times_quantity",
+                "other",
+            ],
+        },
+        "scaling_basis": _nullable_string,
+        "quantity": {"type": ["number", "null"]},
+        "quantity_unit": _nullable_string,
+        "quantity_source": _nullable_string,
+        "unit_cost_reference": {
+            "type": ["object", "null"],
+            "properties": {
+                "source_type": _nullable_string,
+                "discipline_sheet": _nullable_string,
+                "unit_cost_unit": _nullable_string,
+                "range_position": _nullable_string,
+            },
+            "additionalProperties": False,
+        },
+        "pre_contingency_cost": _nullable_number,
+        "notes": _nullable_string,
+    },
+    "required": ["cost_method"],
+    "additionalProperties": False,
+}
+
+_cost_model_settings_schema = {
+    "type": "object",
+    "properties": {
+        "primary_method": {
+            "type": ["string", "null"],
+            "enum": [
+                "factored_top_down",
+                "bottom_up_unit_cost",
+                "hybrid",
+                None,
+            ],
+        },
+        "unit_cost_source_file": _nullable_string,
+        "tank_cost_source_file": _nullable_string,
+        "uses_standard_sizes": _nullable_bool,
+        "standard_size_selection_rule": _nullable_string,
+        "contingency_policy": {
+            "type": ["object", "null"],
+            "properties": {
+                "percent": _nullable_number,
+                "applies_to": _nullable_string,
+                "source_text": _nullable_string,
+            },
+            "additionalProperties": False,
+        },
+        "scaling_factors": {
+            "type": ["object", "null"],
+            "properties": {
+                "capacity_ratio": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "enabled": _nullable_bool,
+                        "base_capacity_value": _nullable_number,
+                        "base_capacity_unit": _nullable_string,
+                        "resized_capacity_value": _nullable_number,
+                        "resized_capacity_unit": _nullable_string,
+                        "ratio_value": _nullable_number,
+                        "source_text": _nullable_string,
+                    },
+                    "additionalProperties": False,
+                },
+                "weight_ratio": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "enabled": _nullable_bool,
+                        "base_weight_value": _nullable_number,
+                        "base_weight_unit": _nullable_string,
+                        "resized_weight_value": _nullable_number,
+                        "resized_weight_unit": _nullable_string,
+                        "ratio_value": _nullable_number,
+                        "source_text": _nullable_string,
+                    },
+                    "additionalProperties": False,
+                },
+            },
+            "additionalProperties": False,
+        },
+    },
+    "additionalProperties": False,
+}
+
+_cost_breakdown_schema = {
+    "type": "object",
+    "properties": {
+        "currency": _nullable_string,
+        "basis_year": {"type": ["integer", "null"]},
+        "items": {
+            "type": "array",
+            "items": _cost_item_schema,
+        },
+        "subtotal_pre_contingency": _nullable_number,
+        "total_with_contingency": _nullable_number,
+    },
+    "additionalProperties": False,
+}
+
+_cost_reduction_schema = {
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "description": _nullable_string,
+        "changed_levers": {
+            "type": "array",
+            "items": {"type": "string"},
+        },
+        "cost_model_reference": _nullable_string,
+        "estimated_pre_contingency_cost": _nullable_number,
+        "estimated_total_cost": _nullable_number,
+        "currency": _nullable_string,
+        "basis_year": {"type": ["integer", "null"]},
+    },
+    "required": ["name"],
+    "additionalProperties": False,
+}
+
+_scenario_output_schema = {
+    "type": "object",
+    "properties": {
+        "baseline": {
+            "type": "object",
+            "properties": {
+                "project": {
+                    "type": "object",
+                    "properties": {
+                        "name": _nullable_string,
+                        "location": _nullable_string,
+                        "design_status": _nullable_string,
+                        "service_description": _nullable_string,
+                    },
+                    "additionalProperties": False,
+                },
+                "system_overview": {
+                    "type": "object",
+                    "properties": {
+                        "primary_function": _nullable_string,
+                        "primary_units_or_trains": _nullable_string,
+                        "main_inputs_or_outputs": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                        },
+                        "operating_mode": _nullable_string,
+                        "interfaces_or_dependencies": _nullable_string,
+                    },
+                    "additionalProperties": True,
+                },
+                "performance_metrics": {
+                    "type": "object",
+                    "properties": {
+                        "primary_metrics": {
+                            "type": "array",
+                            "items": _capacity_metric_schema,
+                        },
+                        "secondary_metrics": {
+                            "type": "array",
+                            "items": _capacity_metric_schema,
+                        },
+                    },
+                    "additionalProperties": False,
+                },
+                "operating_conditions": {
+                    "type": "array",
+                    "items": _operating_condition_schema,
+                },
+                "physical_configuration": {
+                    "type": "object",
+                    "additionalProperties": True,
+                },
+                "materials_and_construction": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "component": _nullable_string,
+                            "material": _nullable_string,
+                            "notes": _nullable_string,
+                        },
+                        "additionalProperties": False,
+                    },
+                },
+                "structural_and_foundation": {
+                    "type": "object",
+                    "additionalProperties": True,
+                },
+                "controls_and_automation": {
+                    "type": "object",
+                    "additionalProperties": True,
+                },
+                "power_and_utilities": {
+                    "type": "object",
+                    "additionalProperties": True,
+                },
+                "safety_access_and_maintenance": {
+                    "type": "object",
+                    "additionalProperties": True,
+                },
+                "compliance_and_regulatory": {
+                    "type": "object",
+                    "properties": {
+                        "codes_and_standards": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                        },
+                        "regulatory_requirements": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                        },
+                        "environmental_or_policy_limits": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                        },
+                        "notes": _nullable_string,
+                    },
+                    "additionalProperties": True,
+                },
+                "schedule_and_execution": {
+                    "type": "object",
+                    "additionalProperties": True,
+                },
+                "open_items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "description": _nullable_string,
+                            "impacted_area": _nullable_string,
+                        },
+                        "additionalProperties": False,
+                    },
+                },
+            },
+            "additionalProperties": True,
+        },
+        "objective": {
+            "type": "object",
+            "properties": {
+                "objective_text": {"type": "string"},
+                "objective_type": {"type": "string"},
+                "target_metric_name": _nullable_string,
+                "target_direction": _nullable_string,
+                "target_delta_type": _nullable_string,
+                "target_delta_value": {"type": ["number", "null"]},
+                "target_unit": _nullable_string,
+                "time_basis_or_scope": _nullable_string,
+                "secondary_objectives": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
+            },
+            "required": ["objective_text", "objective_type"],
+            "additionalProperties": False,
+        },
+        "decision_levers": {
+            "type": "array",
+            "items": _decision_lever_schema,
+        },
+        # "constraints_and_rules": {
+        #     "type": "array",
+        #     "items": _constraint_schema,
+        # },
+        "components_for_tabular_lookup": {
+            "type": "array",
+            "items": _component_lookup_schema,
+        },
+        # "costs": {
+        #     "type": "object",
+        #     "properties": {
+        #         "cost_model_settings": _cost_model_settings_schema,
+        #         "baseline": _cost_breakdown_schema,
+        #         "alternative_cost_models": {
+        #             "type": "array",
+        #             "items": {
+        #                 "type": "object",
+        #                 "properties": {
+        #                     "name": {"type": "string"},
+        #                     "cost_model_settings": _cost_model_settings_schema,
+        #                     "items": {
+        #                         "type": "array",
+        #                         "items": _cost_item_schema,
+        #                     },
+        #                     "subtotal_pre_contingency": _nullable_number,
+        #                     "total_with_contingency": _nullable_number,
+        #                 },
+        #                 "required": ["name"],
+        #                 "additionalProperties": False,
+        #             },
+        #         },
+        #         "cost_reduction_scenarios": {
+        #             "type": "array",
+        #             "items": _cost_reduction_schema,
+        #         },
+        #     },
+        #     "additionalProperties": False,
+        # },
+        "meta": {
+            "type": "object",
+            "properties": {
+                "notes": _nullable_string,
+            },
+            "additionalProperties": True,
+        },
+    },
+    "required": [
+        "baseline",
+        "objective",
+        "decision_levers",
+        "constraints_and_rules",
+        "components_for_tabular_lookup",
+        "costs",
+        "meta",
+    ],
+}
+
+TOOLS_SCENARIO_ANALYSIS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "submit_scenario_analysis",
+            "description": "Submit the structured scenario analysis JSON that matches the SCENARIO_PROMPT contract (baseline reconstruction, objectives, decision levers, constraints, component lookup keys, and cost structures).",
+            "parameters": _scenario_output_schema,
+        },
+    },
+]
 
 def sanitize_for_json(data):
     """Recursively convert sets to lists for JSON serialization."""

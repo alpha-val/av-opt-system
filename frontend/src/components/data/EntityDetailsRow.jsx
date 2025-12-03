@@ -1,9 +1,41 @@
 import React, { useMemo } from "react";
-import { TableRow, TableCell, Typography, Chip, Box, Tooltip, IconButton } from "@mui/material";
 import {
-  Info as InfoIcon,
-  Description as DocumentIcon,
-} from "@mui/icons-material";
+  TableRow,
+  TableCell,
+  Typography,
+  Chip,
+  Box,
+  Tooltip,
+  IconButton,
+} from "@mui/material";
+import { Info as InfoIcon } from "@mui/icons-material";
+
+const ATTRIBUTE_TYPE_STYLES = {
+  base_case: {
+    color: "#1b5e20",
+    background: "#1b5e2015",
+    border: "#1b5e2040",
+  },
+  tabular_data: {
+    color: "#01579b",
+    background: "#01579b15",
+    border: "#01579b40",
+  },
+};
+
+const normalizeAttributeType = (value) =>
+  (value || "unknown").toString().toLowerCase();
+
+const formatAttributeTypeLabel = (value) => {
+  if (!value || value === "unknown") {
+    return "Unknown";
+  }
+
+  return value
+    .split("_")
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(" ");
+};
 
 const EntityDetailsRow = ({ entity, index }) => {
   // Note: baseCaseDocuments was removed as documentsSlice doesn't exist
@@ -31,6 +63,18 @@ const EntityDetailsRow = ({ entity, index }) => {
   const entityDescription = entity.properties?.short_description || "-";
   const entityType = entity.type || "Unknown";
   const confidence = entity.properties?.confidence || entity.confidence;
+  const rawAttributeType =
+    entity.properties?.attribute_type || entity.attribute_type || "";
+  const normalizedAttributeType = normalizeAttributeType(rawAttributeType);
+  const attributeTypeLabel = formatAttributeTypeLabel(
+    normalizedAttributeType
+  );
+  const attributeTypeStyles =
+    ATTRIBUTE_TYPE_STYLES[normalizedAttributeType] || {
+      color: "#424242",
+      background: "#eeeeee",
+      border: "#bdbdbd",
+    };
 
   // Find the document that this entity belongs to
   const entityDocument = baseCaseDocuments.find(
@@ -60,6 +104,7 @@ const EntityDetailsRow = ({ entity, index }) => {
       "doc_id",
       "canonical_key",
       "artifact_type",
+      "attribute_type",
       "original_id",
       "id",
       "_id",
@@ -142,6 +187,26 @@ const EntityDetailsRow = ({ entity, index }) => {
             fontWeight: "medium",
           }}
         />
+      </TableCell>
+
+      {/* Attribute Type Column */}
+      <TableCell sx={{ minWidth: 160 }}>
+        {rawAttributeType ? (
+          <Chip
+            label={attributeTypeLabel}
+            size="small"
+            sx={{
+              backgroundColor: attributeTypeStyles.background,
+              color: attributeTypeStyles.color,
+              border: `1px solid ${attributeTypeStyles.border}`,
+              fontWeight: "medium",
+            }}
+          />
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            -
+          </Typography>
+        )}
       </TableCell>
 
       {/* Cost Column */}

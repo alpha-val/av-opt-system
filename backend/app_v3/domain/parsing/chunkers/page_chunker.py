@@ -5,7 +5,7 @@ Chunks content by page - one chunk per page.
 """
 
 from typing import List, Dict, Any, Optional, Tuple
-from app_v2.domain.parsing.utils.text_utils import chunk_by_page
+from app_v3.domain.parsing.utils.text_utils import chunk_by_page
 from .base import BaseChunker
 import logging
 
