@@ -81,7 +81,50 @@ Cost model levers:
 - Top-down: capacity_ratio, weight_ratio, standard_size_rule, contingency_percent, per_item_scaling_behavior (for items scaled by capacity/weight or fixed)
 - Bottom-up: unit_cost_range_selection (min/midpoint/max), quantity_assumption_levers (deck_area, steel_tonnage, concrete_volume, excavation_volume, piping_length, instrument_counts, transformer_size, etc.)
 
+4) COMPONENT IDENTIFICATION FOR TABULAR LOOKUP
+CRITICAL: Extract ALL major physical components and cost-carrying elements mentioned in the baseline. This is essential for accurate cost estimation.
+
 components_for_tabular_lookup[]: {role, key_attributes[]: {name, value, unit}, quantity}
+
+COMPONENT EXTRACTION RULES:
+1. INCLUDE ALL COST-CARRYING COMPONENTS: Extract every piece of equipment, structure, system, or material that has a cost impact, including:
+   - Equipment: tanks, pumps, heat exchangers, vessels, compressors, filters, separators, clarifiers, chillers, heaters, blowers, fans
+   - Structures: foundations, platforms, buildings, containment systems, berms, liners
+   - Piping and instrumentation: major pipe runs, valves, instruments, control panels, PLC systems
+   - Electrical: transformers, switchgear, motor control centers, motors, distribution systems
+   - Civil: excavation, grading, roads, utilities, site preparation
+   - Materials: bulk materials with significant cost (concrete, steel, liners, coatings)
+
+2. BE COMPREHENSIVE: When in doubt, include the component. It's better to extract too many than too few. Every component mentioned in the baseline that could affect cost should be included.
+
+3. MINIMUM ATTRIBUTES: Each component must have at least 2-3 key_attributes (preferably 4-6):
+   - Primary sizing: capacity, volume, throughput, power, duty, diameter, height, length, area
+   - Material: material_of_construction, finish_or_grade
+   - Service: service, fluid, application, pressure_rating, temperature_rating
+   - Configuration: orientation, type, style, mounting
+   - Electrical: voltage, phase, frequency (if applicable)
+
+4. QUANTITY: Always include quantity (default: 1 if not specified)
+
+5. ROLE NAMING: Use descriptive, industry-standard names:
+   - Good: "Water storage tank", "Centrifugal pump", "Heat exchanger", "Control panel"
+   - Bad: "Tank 1", "Pump", "Equipment", "Item"
+
+6. NO DUPLICATES: Each unique component (role + key_attributes combination) appears only once.
+
+EXAMPLES OF COMPONENTS TO EXTRACT:
+- Storage tanks, vessels, silos, bins
+- Pumps, compressors, blowers, fans
+- Heat exchangers, chillers, heaters, boilers
+- Filters, separators, clarifiers, scrubbers
+- Control panels, PLC systems, instrumentation, transmitters
+- Transformers, switchgear, motor control centers, distribution panels
+- Foundations, platforms, structural steel, supports
+- Piping systems, valves, fittings, flanges
+- Containment systems, liners, berms, dikes
+- Buildings, shelters, enclosures, buildings
+- Roads, grading, excavation, site preparation
+- Any equipment or system with measurable cost impact
 
 OUTPUT: {baseline, objective, decision_levers[], components_for_tabular_lookup[], meta: {notes}}
 

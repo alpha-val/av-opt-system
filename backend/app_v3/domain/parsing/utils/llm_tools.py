@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 import json
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List, Union
 
+from openai import OpenAI
+
+from app_v3.adapters.config import SETTINGS
 from ...ontology.loader import get_ontology
 
 
@@ -1334,30 +1337,117 @@ _constraint_schema = {
     "additionalProperties": False,
 }
 
-_component_lookup_schema = {
+_editable_attribute_metadata_schema = {
     "type": "object",
     "properties": {
-        "role": {"type": "string"},
-        # "msio_discipline": {"type": "string"},
-        # "msio_category": _nullable_string,
-        # "msio_subcategory": _nullable_string,
-        # "msio_entity": _nullable_string,
-        "key_attributes": {
+        "baseline_value": {
+            "type": ["string", "number", "null"],
+            "description": "Current baseline value for this attribute",
+        },
+        "baseline_unit": _nullable_string,
+        "baseline_text": _nullable_string,
+        "category": {
+            "type": "string",
+            "enum": ["capacity", "geometry", "material", "instrumentation", "electrical", "containment", "stormwater", "civil", "schedule", "cost_model"],
+            "description": "Parameter category",
+        },
+        "description": _nullable_string,
+        "change_relevance_to_objective": _nullable_string,
+        "is_discrete": _nullable_bool,
+        "options": {
             "type": "array",
             "items": {
                 "type": "object",
                 "properties": {
-                    "name": {"type": "string"},
-                    "value": _nullable_string,
-                    "unit": _nullable_string,
+                    "label": {"type": "string"},
+                    "description": _nullable_string,
+                },
+                "required": ["label"],
+                "additionalProperties": False,
+            },
+        },
+        "plausible_range": {
+            "type": ["object", "null"],
+            "properties": {
+                "min": _nullable_number,
+                "max": _nullable_number,
+                "unit": _nullable_string,
+                "source_text": _nullable_string,
+            },
+            "additionalProperties": False,
+        },
+        "dependencies": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "type": _nullable_string,
+                    "description": _nullable_string,
+                },
+                "additionalProperties": False,
+            },
+        },
+    },
+    "additionalProperties": False,
+}
+
+_component_lookup_schema = {
+    "type": "object",
+    "properties": {
+        "role": {
+            "type": "string",
+            "description": "Component type/role using standard industry terminology (e.g., 'Water storage tank', 'Heat exchanger', 'Control panel', 'Process', 'Material', 'Control', 'Civil', 'Electrical', 'Other')",
+        },
+        "key_attributes": {
+            "type": "array",
+            "description": "Array of key attributes for vector search matching. Include 2-5 most relevant attributes prioritizing: capacity/sizing, material, service, configuration, electrical specs. IMPORTANT: Break down geometry into separate attributes (e.g., 'diameter', 'height', 'width', 'length', 'thickness') rather than combined 'geometry' strings. For cylindrical tanks, use 'diameter' and 'height' as separate attributes.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Attribute name (e.g., 'capacity', 'material_of_construction', 'service', 'orientation', 'diameter', 'height', 'width', 'length', 'voltage', 'type'). Use separate attributes for geometry dimensions, not combined strings.",
+                    },
+                    "value": {
+                        "type": ["string", "number", "null"],
+                        "description": "Attribute value (numeric or string). Include context for better vector matching.",
+                    },
+                    "unit": {
+                        "type": ["string", "null"],
+                        "description": "Unit of measure (e.g., 'US-gal', 'ft', 'psig', 'VAC', 'BTU/hr'). Use null for dimensionless attributes.",
+                    },
                 },
                 "required": ["name"],
                 "additionalProperties": False,
             },
+            "minItems": 2,
         },
-        "quantity": _nullable_number,
+        "quantity": {
+            "type": ["number", "null"],
+            "description": "Count of identical units. Use actual numeric count (not 'multiple' or 'several'). Default to 1 if not specified.",
+        },
+        "relevance_to_objective": {
+            "type": "string",
+            "description": "How this component relates to achieving the objective (e.g., 'Primary lever to increase effective production/output by increasing stored volume')",
+        },
+        "relevance_score": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "description": "Relevance score 0.0-1.0 (1.0 = critical, 0.5 = moderate, 0.0 = minimal)",
+        },
+        "editable_attributes": {
+            "type": "array",
+            "description": "List of attribute names that users can modify (e.g., ['capacity', 'material_of_construction']). Can be empty if no attributes are editable.",
+            "items": {"type": "string"},
+        },
+        "editable_metadata": {
+            "type": "object",
+            "description": "REQUIRED: Metadata for each editable attribute. Key: attribute name (must match entries in editable_attributes array), Value: metadata object with baseline values, ranges, dependencies, etc. MUST contain an entry for EVERY attribute listed in editable_attributes. Each entry must include at minimum: baseline_value, baseline_unit, category, description.",
+            "additionalProperties": _editable_attribute_metadata_schema,
+        },
     },
-    "required": ["role", "msio_discipline"],
+    "required": ["role", "key_attributes", "relevance_to_objective", "relevance_score", "editable_attributes", "editable_metadata"],
     "additionalProperties": False,
 }
 
@@ -1633,11 +1723,11 @@ _scenario_output_schema = {
             "type": "array",
             "items": _decision_lever_schema,
         },
-        # "constraints_and_rules": {
-        #     "type": "array",
-        #     "items": _constraint_schema,
-        # },
-        "components_for_tabular_lookup": {
+        "constraints_and_rules": {
+            "type": "array",
+            "items": _constraint_schema,
+        },
+        "components": {
             "type": "array",
             "items": _component_lookup_schema,
         },
@@ -1674,7 +1764,10 @@ _scenario_output_schema = {
         "meta": {
             "type": "object",
             "properties": {
-                "notes": _nullable_string,
+                "notes": {
+                    "type": ["string", "null"],
+                    "description": "Optional notes on assumptions, data gaps, or important context from the analysis",
+                },
             },
             "additionalProperties": True,
         },
@@ -1682,10 +1775,7 @@ _scenario_output_schema = {
     "required": [
         "baseline",
         "objective",
-        "decision_levers",
-        "constraints_and_rules",
         "components_for_tabular_lookup",
-        "costs",
         "meta",
     ],
 }
@@ -1695,8 +1785,225 @@ TOOLS_SCENARIO_ANALYSIS = [
         "type": "function",
         "function": {
             "name": "submit_scenario_analysis",
-            "description": "Submit the structured scenario analysis JSON that matches the SCENARIO_PROMPT contract (baseline reconstruction, objectives, decision levers, constraints, component lookup keys, and cost structures).",
+            "description": "Submit the structured scenario analysis JSON that matches the SCENARIO_PROMPT contract (baseline reconstruction, objectives, components with editable metadata for cost estimation).",
             "parameters": _scenario_output_schema,
+        },
+    },
+]
+
+# V3 Decision lever schema (embedded in components)
+_decision_lever_v3_schema = {
+    "type": "object",
+    "properties": {
+        "lever_id": {
+            "type": "string",
+            "description": "Unique identifier for the decision lever (e.g., 'tank_001_capacity', 'tank_001_diameter')",
+        },
+        "attribute_name": {
+            "type": "string",
+            "description": "Attribute name (e.g., 'capacity', 'diameter', 'height', 'material_of_construction')",
+        },
+        "baseline_value": {
+            "type": ["string", "number", "null"],
+            "description": "Current baseline value for this attribute",
+        },
+        "baseline_unit": _nullable_string,
+        "baseline_text": _nullable_string,
+        "category": {
+            "type": "string",
+            "enum": ["capacity", "geometry", "material", "instrumentation", "electrical", "containment", "stormwater", "civil", "schedule", "cost_model"],
+            "description": "Parameter category",
+        },
+        "description": _nullable_string,
+        "change_relevance_to_objective": _nullable_string,
+        "is_discrete": _nullable_bool,
+        "options": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "label": {"type": "string"},
+                    "description": _nullable_string,
+                },
+                "required": ["label"],
+                "additionalProperties": False,
+            },
+        },
+        "plausible_range": {
+            "type": ["object", "null"],
+            "properties": {
+                "min": _nullable_number,
+                "max": _nullable_number,
+                "unit": _nullable_string,
+                "source_text": _nullable_string,
+            },
+            "additionalProperties": False,
+        },
+        "dependencies": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "type": _nullable_string,
+                    "description": _nullable_string,
+                },
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["lever_id", "attribute_name", "category"],
+    "additionalProperties": False,
+}
+
+# V3 Component schema (with embedded decision_levers)
+_component_v3_schema = {
+    "type": "object",
+    "properties": {
+        "component_id": {
+            "type": "string",
+            "description": "Unique identifier for the component (e.g., 'tank_001', 'foundation_001')",
+        },
+        "role": {
+            "type": "string",
+            "description": "Component type/role using standard industry terminology",
+        },
+        "key_attributes": {
+            "type": "array",
+            "description": "Array of key attributes for vector search matching. Include 2-5 most relevant attributes.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "value": {"type": ["string", "number", "null"]},
+                    "unit": _nullable_string,
+                },
+                "required": ["name"],
+                "additionalProperties": False,
+            },
+            "minItems": 2,
+        },
+        "quantity": _nullable_number,
+        "relevance_to_objective": {
+            "type": "string",
+            "description": "How this component relates to achieving the objective",
+        },
+        "relevance_score": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "description": "Relevance score 0.0-1.0 (1.0 = critical, 0.5 = moderate, 0.0 = minimal). REQUIRED for ranking.",
+        },
+        "decision_levers": {
+            "type": "array",
+            "description": "REQUIRED: All editable attributes as separate decision levers. Each attribute must be a separate lever.",
+            "items": _decision_lever_v3_schema,
+            "minItems": 1,
+        },
+    },
+    "required": ["component_id", "role", "key_attributes", "relevance_to_objective", "relevance_score", "decision_levers"],
+    "additionalProperties": False,
+}
+
+# V3 Minimal baseline schema
+_minimal_baseline_v3_schema = {
+    "type": "object",
+    "properties": {
+        "project": {
+            "type": "object",
+            "properties": {
+                "name": _nullable_string,
+                "location": _nullable_string,
+                "design_status": _nullable_string,
+                "service_description": _nullable_string,
+            },
+            "additionalProperties": False,
+        },
+        "system_overview": {
+            "type": "object",
+            "properties": {
+                "primary_function": _nullable_string,
+                "primary_units_or_trains": _nullable_string,
+                "main_inputs_or_outputs": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
+                "operating_mode": _nullable_string,
+            },
+            "additionalProperties": True,
+        },
+        "performance_metrics": {
+            "type": "object",
+            "properties": {
+                "primary_metrics": {
+                    "type": "array",
+                    "items": _capacity_metric_schema,
+                },
+                "secondary_metrics": {
+                    "type": "array",
+                    "items": _capacity_metric_schema,
+                },
+            },
+            "additionalProperties": False,
+        },
+    },
+    "additionalProperties": False,
+}
+
+# V3 Scenario output schema
+_scenario_output_schema_v3 = {
+    "type": "object",
+    "properties": {
+        "baseline": _minimal_baseline_v3_schema,
+        "objective": {
+            "type": "object",
+            "properties": {
+                "objective_text": {"type": "string"},
+                "objective_type": {"type": "string"},
+                "target_metric_name": _nullable_string,
+                "target_direction": _nullable_string,
+                "target_delta_type": _nullable_string,
+                "target_delta_value": {"type": ["number", "null"]},
+                "target_unit": _nullable_string,
+                "time_basis_or_scope": _nullable_string,
+                "secondary_objectives": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
+            },
+            "required": ["objective_text", "objective_type"],
+            "additionalProperties": False,
+        },
+        "components": {
+            "type": "array",
+            "description": "All components ranked by relevance_score (descending: highest first). Each component contains decision_levers array.",
+            "items": _component_v3_schema,
+        },
+        "constraints_and_rules": {
+            "type": "array",
+            "items": _constraint_schema,
+        },
+        "meta": {
+            "type": "object",
+            "properties": {
+                "notes": {
+                    "type": ["string", "null"],
+                    "description": "Optional notes on assumptions, data gaps, or important context from the analysis",
+                },
+            },
+            "additionalProperties": True,
+        },
+    },
+    "required": ["baseline", "objective", "components", "meta"],
+    "additionalProperties": False,
+}
+
+TOOLS_SCENARIO_ANALYSIS_V3 = [
+    {
+        "type": "function",
+        "function": {
+            "name": "submit_scenario_analysis_v3",
+            "description": "Submit the V3 structured scenario analysis JSON focused on components and decision levers. Components are ranked by relevance_score, and all attributes are extracted as separate decision levers.",
+            "parameters": _scenario_output_schema_v3,
         },
     },
 ]
@@ -1719,3 +2026,221 @@ def is_valid_json(json_string: str) -> bool:
         return True
     except (ValueError, TypeError):
         return False
+
+
+def extract_responses_api_data(response: Any) -> Dict[str, Any]:
+    """
+    Extract data from OpenAI Responses API response object.
+    
+    Handles both tool_call and output_text content types.
+    For output_text, extracts JSON from markdown code blocks if present.
+    
+    Args:
+        response: OpenAI Responses API response object
+    
+    Returns:
+        Dict with:
+            - tool_calls: List of tool call objects (if any)
+            - output_text: Extracted text/JSON from output_text blocks (if any)
+            - parsed_json: Parsed JSON from output_text if it contains valid JSON (if any)
+    """
+    result = {
+        "tool_calls": [],
+        "output_text": None,
+        "parsed_json": None,
+    }
+    
+    # Check if this is a responses API response
+    if not hasattr(response, "output"):
+        # Fallback: might be chat.completions format
+        if hasattr(response, "choices") and len(response.choices) > 0:
+            message = response.choices[0].message
+            if hasattr(message, "tool_calls") and message.tool_calls:
+                result["tool_calls"] = [
+                    {
+                        "id": tc.id,
+                        "type": tc.type,
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments,
+                        }
+                    }
+                    for tc in message.tool_calls
+                ]
+        return result
+    
+    # Process responses API format
+    for item in response.output:
+        if not hasattr(item, "content"):
+            continue
+            
+        for content_block in item.content:
+            if content_block.type == "output_text":
+                # Extract text value
+                text_value = content_block.text.value if hasattr(content_block.text, "value") else str(content_block.text)
+                result["output_text"] = text_value
+                
+                # Try to extract JSON from markdown code blocks
+                json_text = text_value
+                # Remove markdown code block markers if present
+                if "```json" in json_text:
+                    # Extract content between ```json and ```
+                    start_idx = json_text.find("```json") + 7
+                    end_idx = json_text.find("```", start_idx)
+                    if end_idx != -1:
+                        json_text = json_text[start_idx:end_idx].strip()
+                elif "```" in json_text:
+                    # Generic code block
+                    start_idx = json_text.find("```") + 3
+                    end_idx = json_text.find("```", start_idx)
+                    if end_idx != -1:
+                        json_text = json_text[start_idx:end_idx].strip()
+                
+                # Try to parse as JSON
+                try:
+                    result["parsed_json"] = json.loads(json_text)
+                except (json.JSONDecodeError, ValueError):
+                    # Not valid JSON, keep as text
+                    pass
+                    
+            elif content_block.type == "tool_call":
+                # Extract tool call information
+                tool_call_data = {
+                    "id": getattr(content_block, "id", None),
+                    "type": getattr(content_block, "type", "function"),
+                }
+                
+                # Extract function name and arguments if available
+                if hasattr(content_block, "function"):
+                    func = content_block.function
+                    tool_call_data["function"] = {
+                        "name": getattr(func, "name", None),
+                        "arguments": getattr(func, "arguments", "{}"),
+                    }
+                elif hasattr(content_block, "name"):
+                    tool_call_data["function"] = {
+                        "name": getattr(content_block, "name", None),
+                        "arguments": getattr(content_block, "arguments", "{}"),
+                    }
+                
+                result["tool_calls"].append(tool_call_data)
+    
+    return result
+
+
+def call_with_tools(
+    report_text: str,
+    system_prompt: Optional[str] = None,
+    user_prompt: Optional[str] = None,
+    tools: Optional[List[Dict[str, Any]]] = None,
+    model: Optional[str] = None,
+    tool_choice: str = "auto",
+) -> Any:
+    """
+    Call OpenAI's responses API with custom prompt and tools.
+    
+    Args:
+        report_text: The text content to analyze
+        system_prompt: Custom system prompt (default: extraction engine prompt)
+        user_prompt: Custom user prompt template (default: includes report_text)
+        tools: List of tool definitions to use (default: TOOLS)
+        model: Model name to use (default: from SETTINGS)
+        tool_choice: Tool choice strategy - "auto", "required", or "none" (default: "auto")
+    
+    Returns:
+        OpenAI response object
+    
+    Example:
+        response = call_with_tools(
+            report_text="Tank capacity: 10,000 US-gal, diameter: 9.48 ft",
+            system_prompt="You are a geometry extraction expert.",
+            user_prompt="Extract tank geometry from: {report_text}"
+        )
+    """
+    client = OpenAI(api_key=SETTINGS.openai_api_key)
+    
+    # Default system prompt
+    if system_prompt is None:
+        system_prompt = "You are an extraction engine for industrial design reports."
+    
+    # Default user prompt
+    if user_prompt is None:
+        user_prompt = (
+            "Read the following design criteria report and, "
+            "if appropriate, call the available extraction tools.\n\n"
+            f"{report_text}"
+        )
+    else:
+        # If user_prompt is provided, use it as-is (it's already complete)
+        # Only perform substitution if {report_text} placeholder is explicitly present
+        # Use string replacement instead of format() to avoid conflicts with JSON braces in prompts
+        if "{report_text}" in user_prompt:
+            user_prompt = user_prompt.replace("{report_text}", report_text)
+        # Otherwise, user_prompt is already complete and contains the report_text
+    
+    # Default tools
+    if tools is None:
+        tools = TOOLS
+    
+    # Default model
+    if model is None:
+        model = SETTINGS.llm_model_name or "gpt-5.1-mini"
+    
+    # Transform tools format for responses API (expects flattened structure)
+    # The responses API expects: { "type": "function", "name": "...", "description": "...", "parameters": {...} }
+    # But our tools use: { "type": "function", "function": { "name": "...", "description": "...", "parameters": {...} } }
+    transformed_tools = []
+    for tool in tools:
+        if "function" in tool:
+            # Flatten the nested structure for responses API
+            transformed_tool = {
+                "type": tool.get("type", "function"),
+                "name": tool["function"].get("name"),
+                "description": tool["function"].get("description", ""),
+                "parameters": tool["function"].get("parameters", {}),
+            }
+            transformed_tools.append(transformed_tool)
+        else:
+            # Already in flattened format
+            transformed_tools.append(tool)
+    
+    # Use responses API (if available) or fallback to chat.completions
+    try:
+        # Try responses API first
+        if hasattr(client, "responses"):
+            response = client.responses.create(
+                model=model,
+                input=[
+                    {
+                        "role": "system",
+                        "content": system_prompt
+                    },
+                    {
+                        "role": "user",
+                        "content": user_prompt
+                    },
+                ],
+                tools=transformed_tools,
+                tool_choice=tool_choice,
+            )
+        else:
+            raise AttributeError("responses API not available")
+    except (AttributeError, Exception):
+        # Fallback to standard chat.completions API (uses nested format)
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": user_prompt
+                },
+            ],
+            tools=tools,  # Use original nested format for chat.completions
+            tool_choice=tool_choice,
+        )
+    
+    return response

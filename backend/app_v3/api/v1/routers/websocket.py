@@ -126,10 +126,10 @@ def _create_progress_callback(job_id: str, websocket: WebSocket):
             # Send over WebSocket
             await websocket.send_text(message)
             
-            logger.info(
-                f"Sent progress event to WebSocket: job_id={job_id}, "
-                f"stage={event.stage.value}, status={event.status.value}, progress={event.progress}%"
-            )
+            # logger.info(
+            #     f"Sent progress event to WebSocket: job_id={job_id}, "
+            #     f"stage={event.stage.value}, status={event.status.value}, progress={event.progress}%"
+            # )
         except Exception as e:
             logger.error(
                 f"Error sending progress event to WebSocket for job_id {job_id}: {e}",

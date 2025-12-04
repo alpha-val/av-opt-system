@@ -46,7 +46,7 @@ class Settings:
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     
     # Models
-    llm_model_name: str = os.getenv("LLM_MODEL_NAME", "gpt-5.1")
+    llm_model_name: str = os.getenv("LLM_MODEL_NAME", "gpt-4o")
     scenario_analysis_max_tokens: int = int(
         os.getenv("SCENARIO_ANALYSIS_MAX_TOKENS", "13000")
     )

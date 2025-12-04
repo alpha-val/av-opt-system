@@ -32,6 +32,7 @@ from ..parsing.utils.llm_tools import (
     TOOLS_RECOMMENDATIONS,
     TOOLS_OBJECTIVE_DRIVEN,
     TOOLS_SCENARIO_ANALYSIS,
+    TOOLS_SCENARIO_ANALYSIS_V3,
     is_valid_json,
     sanitize_for_json,
 )
@@ -40,7 +41,9 @@ from ..parsing.prompts.entity_extraction_prompt import (
     generate_prompt,
 )
 from ..parsing.prompts.scenario_analysis_prompt import get_scenario_prompt
-
+from ..parsing.prompts.scenario_analysis_prompt_v2 import get_scenario_prompt_v2
+from ..parsing.prompts.scenario_analysis_prompt_v3 import get_scenario_prompt_v3
+from ..parsing.utils.llm_tools import call_with_tools
 logger = logging.getLogger(__name__)
 
 
@@ -127,6 +130,20 @@ class ProjectOrchestrationService:
             },
         )
 
+        # Initialize LLM for scenario analysis (V5 workflow)
+        self._llm_scenario_analysis_v3 = ChatOpenAI(
+            model=SETTINGS.llm_model_name or "gpt-4o",
+            api_key=SETTINGS.openai_api_key,
+            timeout=600,
+            max_retries=3,
+            temperature=0,
+            max_tokens=SETTINGS.scenario_analysis_max_tokens,
+            model_kwargs={
+                "tools": TOOLS_SCENARIO_ANALYSIS_V3,
+                "tool_choice": "auto",
+            },
+        )
+        
         logger.info("Initialized ProjectOrchestrationService")
 
     async def process_project_documents(
@@ -2200,18 +2217,9 @@ class ProjectOrchestrationService:
         # Objective should be the same across chunks, keep first one
         # (already set from first chunk)
         
-        # Merge decision_levers (deduplicate by name)
-        decision_levers = merged.get("decision_levers", [])
-        lever_names = {lev.get("name") for lev in decision_levers if lev.get("name")}
-        for chunk_result in chunk_results[1:]:
-            for lever in chunk_result.get("decision_levers", []):
-                lever_name = lever.get("name")
-                if lever_name and lever_name not in lever_names:
-                    decision_levers.append(lever)
-                    lever_names.add(lever_name)
-        merged["decision_levers"] = decision_levers
+        # Note: decision_levers removed from output - metadata now embedded in components.editable_metadata
         
-        # Merge constraints_and_rules (deduplicate by name)
+        # Merge constraints_and_rules (deduplicate by name) - optional field
         constraints = merged.get("constraints_and_rules", [])
         constraint_names = {c.get("name") for c in constraints if c.get("name")}
         for chunk_result in chunk_results[1:]:
@@ -2223,21 +2231,34 @@ class ProjectOrchestrationService:
         merged["constraints_and_rules"] = constraints
         
         # Merge components_for_tabular_lookup (deduplicate by role + key attributes)
-        components = merged.get("components_for_tabular_lookup", [])
-        component_keys = {
-            (comp.get("role"), json.dumps(comp.get("key_attributes", []), sort_keys=True))
-            for comp in components
-        }
-        for chunk_result in chunk_results[1:]:
-            for component in chunk_result.get("components_for_tabular_lookup", []):
-                comp_key = (
-                    component.get("role"),
-                    json.dumps(component.get("key_attributes", []), sort_keys=True)
-                )
-                if comp_key not in component_keys:
-                    components.append(component)
-                    component_keys.add(comp_key)
-        merged["components_for_tabular_lookup"] = components
+        # Collect all components from all chunks, then deduplicate
+        all_components = []
+        for chunk_result in chunk_results:
+            chunk_components = chunk_result.get("components_for_tabular_lookup", [])
+            all_components.extend(chunk_components)
+        
+        # Deduplicate: keep only one instance per unique (role, key_attributes) combination
+        # If duplicates exist, prefer the one with more complete metadata
+        component_map = {}  # key -> component
+        for component in all_components:
+            comp_key = (
+                component.get("role"),
+                json.dumps(component.get("key_attributes", []), sort_keys=True)
+            )
+            if comp_key not in component_map:
+                component_map[comp_key] = component
+            else:
+                # If duplicate found, keep the one with more complete metadata
+                existing = component_map[comp_key]
+                existing_attrs = len(existing.get("editable_attributes", []))
+                new_attrs = len(component.get("editable_attributes", []))
+                existing_key_attrs = len(existing.get("key_attributes", []))
+                new_key_attrs = len(component.get("key_attributes", []))
+                # Prefer component with more editable attributes or more key attributes
+                if new_attrs > existing_attrs or (new_attrs == existing_attrs and new_key_attrs > existing_key_attrs):
+                    component_map[comp_key] = component
+        
+        merged["components_for_tabular_lookup"] = list(component_map.values())
         
         # Merge costs (combine items, merge settings)
         costs = merged.get("costs", {})
@@ -2324,6 +2345,9 @@ class ProjectOrchestrationService:
         scenario_configuration: Optional[Dict[str, Any]],
         base_case_document_ids: List[str],
         tabular_data_document_ids: List[str],
+        job_id: str,
+        publisher: ProgressPublisher,
+        seq: int,
     ) -> Dict[str, Any]:
         """
         Execute the scenario analysis (V5) workflow using the structured prompt + tool calling.
@@ -2347,6 +2371,23 @@ class ProjectOrchestrationService:
         if not documents:
             raise ValueError("No base case documents available for scenario analysis")
 
+        publisher.publish(
+            job_id,
+            ProgressEvent(
+                job_id=job_id,
+                stage=Stage.PROCESSING,
+                status=Status.IN_PROGRESS,
+                progress=15,
+                seq=seq,
+                meta={
+                    "scenario_id": scenario_id,
+                    "project_id": project_id,
+                    "message": "Preparing documents for scenario analysis",
+                },
+            ),
+        )
+        seq += 1
+
         base_case_sections: List[str] = []
         for doc in documents:
             filename = doc.get("filename", "unknown.pdf")
@@ -2369,6 +2410,22 @@ class ProjectOrchestrationService:
             if base_case_sections
             else "Base case documents unavailable."
         )
+        publisher.publish(
+            job_id,
+            ProgressEvent(
+                job_id=job_id,
+                stage=Stage.PROCESSING,
+                status=Status.IN_PROGRESS,
+                progress=20,
+                seq=seq,
+                meta={
+                    "scenario_id": scenario_id,
+                    "project_id": project_id,
+                    "message": "Extracting text from base case documents",
+                },
+            ),
+        )
+        seq += 1
 
         process_tabular_data = False
         tabular_block = "No tabular data provided."
@@ -2403,7 +2460,22 @@ class ProjectOrchestrationService:
                 )
             if tabular_sections and process_tabular_data:
                 tabular_block = "\n\n".join(tabular_sections)
-
+        publisher.publish(
+            job_id,
+            ProgressEvent(
+                job_id=job_id,
+                stage=Stage.PROCESSING,
+                status=Status.IN_PROGRESS,
+                progress=25,
+                seq=seq,
+                meta={
+                    "scenario_id": scenario_id,
+                    "project_id": project_id,
+                    "message": "Extracting text from tabular data documents",
+                },
+            ),
+        )
+        seq += 1
         scenario_request_lines = [
             f"Scenario ID: {scenario_id}",
             f"Scenario Name: {scenario_name}",
@@ -2429,9 +2501,39 @@ class ProjectOrchestrationService:
                 "Scenario Configuration (JSON):\n"
                 + _truncate(config_text, MAX_CONFIG_CHARS)
             )
-
+        publisher.publish(
+            job_id,
+            ProgressEvent(
+                job_id=job_id,
+                stage=Stage.PROCESSING,
+                status=Status.IN_PROGRESS,
+                progress=30,
+                seq=seq,
+                meta={
+                    "scenario_id": scenario_id,
+                    "project_id": project_id,
+                    "message": "Generating scenario request block",
+                },
+            ),
+        )
+        seq += 1
         scenario_request_block = "\n".join(scenario_request_lines)
-
+        publisher.publish(
+            job_id,
+            ProgressEvent(
+                job_id=job_id,
+                stage=Stage.PROCESSING,
+                status=Status.IN_PROGRESS,
+                progress=35,
+                seq=seq,
+                meta={
+                    "scenario_id": scenario_id,
+                    "project_id": project_id,
+                    "message": "Generating objective context",
+                },
+            ),
+        )
+        seq += 1
         objective_context = {
             "objective_text": objective_description,
             "objective_type": global_objective_type,
@@ -2454,12 +2556,28 @@ class ProjectOrchestrationService:
             else None,
             "description": objective_description,
         }
-
-        prompt = get_scenario_prompt(objective_context, process_tabular_data)
+        publisher.publish(
+            job_id,
+            ProgressEvent(
+                job_id=job_id,
+                stage=Stage.PROCESSING,
+                status=Status.IN_PROGRESS,
+                progress=40,
+                seq=seq,
+                meta={
+                    "scenario_id": scenario_id,
+                    "project_id": project_id,
+                    "message": "Generating prompt",
+                },
+            ),
+        )
+        seq += 1
+        prompt = get_scenario_prompt_v3(objective_context)
         system_prompt = SystemMessage(content=prompt)
 
         # Chunk the base case text
-        BASE_CASE_CHUNK_SIZE = 5000  # Default character limit per chunk
+        # Increased chunk size to reduce number of LLM calls (trade-off: larger prompts but fewer calls)
+        BASE_CASE_CHUNK_SIZE = 8000
         base_case_chunks = self._chunk_text(base_case_block, BASE_CASE_CHUNK_SIZE)
         
         logger.info(
@@ -2470,6 +2588,22 @@ class ProjectOrchestrationService:
         # Process each chunk separately
         chunk_results: List[Dict[str, Any]] = []
         for chunk_idx, base_case_chunk in enumerate(base_case_chunks, 1):
+            publisher.publish(
+                job_id,
+                ProgressEvent(
+                    job_id=job_id,
+                    stage=Stage.PROCESSING,
+                    status=Status.IN_PROGRESS,
+                    progress=45 + int(chunk_idx * 40 / len(base_case_chunks)),
+                    seq=seq,
+                    meta={
+                        "scenario_id": scenario_id,
+                        "project_id": project_id,
+                        "message": f"Processing base case chunk {chunk_idx}/{len(base_case_chunks)}",
+                    },
+                ),
+            )
+            seq += 1
             logger.info(
                 f"Processing base case chunk {chunk_idx}/{len(base_case_chunks)} "
                 f"({len(base_case_chunk)} chars)"
@@ -2515,7 +2649,15 @@ class ProjectOrchestrationService:
             resp = None
             chunk_payload: Optional[Dict[str, Any]] = None
             try:
-                resp = await self._llm_scenario_analysis.ainvoke([system_prompt, human_message])
+                # print the model being used
+                resp = await self._llm_scenario_analysis_v3.ainvoke([system_prompt, human_message])
+                # resp = call_with_tools(
+                #     report_text=scenario_input,
+                #     system_prompt=system_prompt.content,
+                #     user_prompt=human_message.content,
+                #     tools=TOOLS_SCENARIO_ANALYSIS,
+                #     model=SETTINGS.llm_model_name,
+                # )
             except Exception as e:
                 logger.error(f"Error invoking scenario analysis LLM for chunk {chunk_idx}: {e}")
                 raise e
@@ -2523,7 +2665,7 @@ class ProjectOrchestrationService:
             for call in resp.additional_kwargs.get("tool_calls", []):
                 fn = call.get("function", {})
                 name = fn.get("name")
-                if name != "submit_scenario_analysis":
+                if name != "submit_scenario_analysis_v3":
                     continue
                 arguments = fn.get("arguments", "{}")
                 if not is_valid_json(arguments):
@@ -2548,10 +2690,26 @@ class ProjectOrchestrationService:
 
         # Merge results from all chunks
         analysis_payload = self._merge_scenario_analysis_results(chunk_results)
-
+        publisher.publish(
+            job_id,
+            ProgressEvent(
+                job_id=job_id,
+                stage=Stage.PROCESSING,
+                status=Status.IN_PROGRESS,
+                progress=100,
+                seq=seq,
+                meta={
+                    "scenario_id": scenario_id,
+                    "project_id": project_id,
+                    "message": "Scenario analysis completed",
+                },
+            ),
+        )
+        seq += 1
         return {
             "analysis": analysis_payload,
             "scenario_request_block": scenario_request_block,
+            "seq_end": seq,
             # "base_case_block": base_case_block,
             # "tabular_data_block": tabular_block if process_tabular_data else "No tabular data provided.",
         }

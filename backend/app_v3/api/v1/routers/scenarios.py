@@ -42,6 +42,13 @@ from .websocket import get_progress_publisher
 # Import file storage
 from ....domain.projects.file_storage import FileStorageService
 
+# Import costing services
+from ....domain.costing import (
+    extract_editable_parameters,
+    group_parameters_by_category,
+    get_parameter_summary,
+)
+
 logger = logging.getLogger(__name__)
 
 # Create router with prefix and tags
@@ -2107,8 +2114,11 @@ async def _run_analysis_background_v5(
             scenario_configuration=scenario_configuration,
             base_case_document_ids=base_case_document_ids,
             tabular_data_document_ids=tabular_data_document_ids,
+            job_id=job_id,
+            publisher=publisher,
+            seq=seq,
         )
-
+        seq = analysis_output.get("seq_end", seq)
         publisher.publish(
             job_id,
             ProgressEvent(
@@ -2258,4 +2268,100 @@ async def get_scenario_analysis_result(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch scenario analysis result.",
+        ) from exc
+
+
+@scenarios_router.get(
+    "/{scenario_id}/resizing-parameters",
+    summary="Get editable parameters for scenario resizing",
+    description="Extract user-editable parameters from decision levers and map them to affected components. Returns parameters organized by category for form rendering.",
+    response_model=Dict[str, Any],
+    status_code=status.HTTP_200_OK,
+)
+async def get_resizing_parameters(
+    scenario_id: str = Path(
+        ..., description="Scenario ID (MongoDB ObjectId as string)"
+    ),
+    workflow: Optional[str] = Query(
+        "v5", description="Workflow identifier (default: 'v5')"
+    ),
+    grouped: bool = Query(
+        False, description="If true, return parameters grouped by category"
+    ),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Extract editable parameters from scenario analysis decision levers.
+    
+    Returns parameters that can be adjusted by users to resize the system,
+    along with metadata about which components they affect.
+    """
+    try:
+        # Get scenario analysis result
+        analysis_result = await services.get_analysis_result(
+            scenario_id=scenario_id, workflow=workflow
+        )
+        if not analysis_result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No scenario analysis result found for workflow '{workflow}'. Run the V5 analysis first.",
+            )
+        
+        result_data = analysis_result.get("result", {})
+        decision_levers = result_data.get("decision_levers", [])
+        components = result_data.get("components_for_tabular_lookup", [])
+        
+        if not decision_levers:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No decision levers found in analysis result.",
+            )
+        
+        # Extract editable parameters
+        parameters = extract_editable_parameters(decision_levers, components)
+        
+        if not parameters:
+            logger.warning(
+                f"No editable parameters extracted for scenario {scenario_id}"
+            )
+            return {
+                "scenario_id": scenario_id,
+                "workflow": workflow,
+                "parameters": [],
+                "summary": {"total_parameters": 0},
+                "grouped": {},
+            }
+        
+        # Get summary
+        summary = get_parameter_summary(parameters)
+        
+        # Build response
+        response = {
+            "scenario_id": scenario_id,
+            "workflow": workflow,
+            "parameters": parameters,
+            "summary": summary,
+        }
+        
+        # Add grouped view if requested
+        if grouped:
+            response["grouped"] = group_parameters_by_category(parameters)
+        
+        return response
+        
+    except HTTPException:
+        raise
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:
+        logger.error(
+            f"Error extracting resizing parameters for scenario {scenario_id}: {exc}",
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to extract resizing parameters.",
         ) from exc
