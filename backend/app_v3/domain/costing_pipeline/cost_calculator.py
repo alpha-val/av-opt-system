@@ -26,7 +26,8 @@ def extract_component_costs(
         {
             "component_id": str,
             "component_role": str,
-            "baseline_cost": float | None,  # Cost from baseline component (if available)
+            "baseline_cost": float | None,  # Cost value from baseline component (if available)
+            "baseline_cost_info": Dict | None,  # Full cost object with currency, basis_year, etc.
             "matched_costs": List[Dict],  # Each with:
                 {
                     "tabular_entity": Dict,  # Full tabular entity
@@ -39,8 +40,9 @@ def extract_component_costs(
         component_id = component.get("component_id", "")
         component_role = component.get("role", "Unknown")
         
-        # Extract baseline cost (if component has cost info)
+        # Extract baseline cost value and full cost info (if component has cost info)
         baseline_cost = _extract_cost_value(component)
+        baseline_cost_info = _extract_full_cost_info(component)
         
         # Extract costs from matched tabular entities
         matched_costs = []
@@ -58,6 +60,7 @@ def extract_component_costs(
             "component_id": component_id,
             "component_role": component_role,
             "baseline_cost": baseline_cost,
+            "baseline_cost_info": baseline_cost_info,
             "matched_costs": matched_costs,
         }
         
@@ -70,6 +73,7 @@ def extract_component_costs(
             "component_id": component.get("component_id", ""),
             "component_role": component.get("role", "Unknown"),
             "baseline_cost": None,
+            "baseline_cost_info": None,
             "matched_costs": [],
         }
 
@@ -102,6 +106,7 @@ def calculate_baseline_vs_redesigned(
             component_id = comp_cost.get("component_id", "")
             component_role = comp_cost.get("component_role", "Unknown")
             baseline_cost = comp_cost.get("baseline_cost")
+            baseline_cost_info = comp_cost.get("baseline_cost_info")
             
             # Get best match cost (highest relevance score)
             matched_costs = comp_cost.get("matched_costs", [])
@@ -128,14 +133,20 @@ def calculate_baseline_vs_redesigned(
             if isinstance(redesigned_cost, (int, float)) and redesigned_cost is not None:
                 redesigned_total += redesigned_cost
             
-            # Component breakdown
-            components_breakdown.append({
+            # Component breakdown (include baseline_cost_info for full cost metadata)
+            component_breakdown = {
                 "component_id": component_id,
                 "component_role": component_role,
                 "baseline_cost": baseline_cost,
                 "redesigned_cost": redesigned_cost,
                 "best_match": best_match,
-            })
+            }
+            
+            # Include baseline_cost_info if available (for currency, basis_year, etc.)
+            if baseline_cost_info is not None:
+                component_breakdown["baseline_cost_info"] = baseline_cost_info
+            
+            components_breakdown.append(component_breakdown)
         
         # Calculate difference and percentage change
         cost_difference = None
@@ -168,8 +179,10 @@ def _extract_cost_value(entity_or_component: Dict[str, Any]) -> Optional[float]:
     """
     Extract cost value from entity or component properties.
     
-    Handles both old format (cost object) and new format (direct properties).
-    Also handles components which may have cost in different structure.
+    Handles multiple formats:
+    1. Component-level cost: component.cost.cost_value (NEW)
+    2. Entity properties direct: properties.cost_value
+    3. Entity properties nested: properties.cost.cost_value
     
     Args:
         entity_or_component: Entity or component dictionary
@@ -178,6 +191,16 @@ def _extract_cost_value(entity_or_component: Dict[str, Any]) -> Optional[float]:
         Cost value as float, or None if not found
     """
     try:
+        # Priority 1: Check for component-level cost structure (NEW)
+        # This is for components that have cost information directly at component level
+        component_cost = entity_or_component.get("cost")
+        if component_cost is not None and isinstance(component_cost, dict):
+            cost_value = component_cost.get("cost_value")
+            if cost_value is not None:
+                # Convert to float if needed
+                return _normalize_cost_value(cost_value)
+        
+        # Priority 2 & 3: Check entity properties formats (existing)
         props = entity_or_component.get("properties", {}) or {}
         
         # Try new format first (direct properties)
@@ -188,24 +211,100 @@ def _extract_cost_value(entity_or_component: Dict[str, Any]) -> Optional[float]:
             cost_info = props.get("cost", {}) or {}
             cost_value = cost_info.get("cost_value")
         
-        # Handle cost_value if it's a string (convert to float)
-        if isinstance(cost_value, str):
-            try:
-                # Remove currency symbols and commas
-                cost_value = float(
-                    cost_value.replace(",", "").replace("$", "").replace("USD", "").strip()
-                )
-            except (ValueError, AttributeError):
-                return None
-        elif cost_value is not None:
-            try:
-                cost_value = float(cost_value)
-            except (ValueError, TypeError):
-                return None
+        # Normalize and return
+        if cost_value is not None:
+            return _normalize_cost_value(cost_value)
         
-        return cost_value
+        return None
         
     except Exception as e:
         logger.debug(f"Error extracting cost value: {e}")
+        return None
+
+
+def _extract_full_cost_info(entity_or_component: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    Extract full cost information object from entity or component.
+    
+    Returns the complete cost object with all fields (currency, basis_year, cost_type, etc.)
+    when available. This is useful for preserving cost metadata for reporting.
+    
+    Args:
+        entity_or_component: Entity or component dictionary
+        
+    Returns:
+        Full cost info dictionary, or None if not found
+    """
+    try:
+        # Priority 1: Check for component-level cost structure (NEW)
+        component_cost = entity_or_component.get("cost")
+        if component_cost is not None and isinstance(component_cost, dict):
+            # Return a copy to avoid mutating the original
+            return component_cost.copy()
+        
+        # Priority 2 & 3: Check entity properties formats (existing)
+        props = entity_or_component.get("properties", {}) or {}
+        
+        # Try direct cost object first
+        cost_info = props.get("cost")
+        if cost_info is not None and isinstance(cost_info, dict):
+            return cost_info.copy()
+        
+        # Try building from direct properties
+        cost_value = props.get("cost_value")
+        if cost_value is not None:
+            # Build cost info from available properties
+            cost_info = {
+                "cost_value": cost_value,
+                "cost_currency": props.get("cost_currency"),
+                "cost_min": props.get("cost_min"),
+                "cost_max": props.get("cost_max"),
+                "cost_unit": props.get("cost_unit"),
+                "cost_basis": props.get("cost_basis"),
+                "cost_basis_year": props.get("cost_basis_year"),
+                "cost_type": props.get("cost_type"),
+                "annual_op_cost": props.get("annual_op_cost"),
+                "reclamation_cost": props.get("reclamation_cost"),
+                "cost_text": props.get("cost_text"),
+                "cost_alternates": props.get("cost_alternates"),
+            }
+            # Remove None values to keep it clean
+            return {k: v for k, v in cost_info.items() if v is not None}
+        
+        return None
+        
+    except Exception as e:
+        logger.debug(f"Error extracting full cost info: {e}")
+        return None
+
+
+def _normalize_cost_value(cost_value: Any) -> Optional[float]:
+    """
+    Normalize cost value to float.
+    
+    Handles string values with currency symbols and commas.
+    
+    Args:
+        cost_value: Cost value (string, number, or None)
+        
+    Returns:
+        Cost value as float, or None if conversion fails
+    """
+    if cost_value is None:
+        return None
+    
+    # Handle string values
+    if isinstance(cost_value, str):
+        try:
+            # Remove currency symbols and commas
+            cleaned = cost_value.replace(",", "").replace("$", "").replace("USD", "").strip()
+            return float(cleaned)
+        except (ValueError, AttributeError):
+            return None
+    
+    # Handle numeric values
+    try:
+        return float(cost_value)
+    except (ValueError, TypeError):
         return None
 
