@@ -47,7 +47,7 @@ const createAppTheme = (mode = "light") => {
         // Additional consistent background shades for dark mode
         ...(isLight
           ? {}
-            : {
+          : {
               elevated: "#252526", // Sidebar, navigation
               surface: "#2d2d30", // Main content area
               card: "#252526", // Card backgrounds (darker than surface)
@@ -76,55 +76,54 @@ const createAppTheme = (mode = "light") => {
         "sans-serif",
       ].join(","),
       h1: {
-        fontSize: "2.25rem", // ~36px
-        "@media (max-width:600px)": { fontSize: "1.875rem" },
+        fontSize: "2rem", // 32px
+        "@media (max-width:600px)": { fontSize: "1.75rem" }, // 28px
       },
       h2: {
-        fontSize: "1.875rem", // ~30px
-        "@media (max-width:600px)": { fontSize: "1.5rem" },
+        fontSize: "1.75rem", // 28px
+        "@media (max-width:600px)": { fontSize: "1.5rem" }, // 24px
       },
       h3: {
-        fontSize: "1.5rem", // ~24px
-        "@media (max-width:600px)": { fontSize: "1.25rem" },
+        fontSize: "1.5rem", // 24px
+        "@media (max-width:600px)": { fontSize: "1.25rem" }, // 20px
       },
       h4: {
-        fontSize: "1.25rem", // ~20px
-        "@media (max-width:600px)": { fontSize: "1.125rem" },
+        fontSize: "1.25rem", // 20px
+        "@media (max-width:600px)": { fontSize: "1.125rem" }, // 18px
       },
       h5: {
-        fontSize: "1.125rem", // ~18px
-        "@media (max-width:600px)": { fontSize: "1rem" },
+        fontSize: "1.125rem", // 18px
+        "@media (max-width:600px)": { fontSize: "1rem" }, // 16px
       },
       h6: {
-        fontSize: "1rem", // ~16px
-        "@media (max-width:600px)": { fontSize: "0.9375rem" },
+        fontSize: "1rem", // 16px
+        "@media (max-width:600px)": { fontSize: "0.875rem" }, // 14px
       },
       body1: {
-        fontSize: "1rem", // ~16px - increased from 0.75rem
-        "@media (max-width:600px)": { fontSize: "0.875rem" },
+        fontSize: "0.875rem", // 14px
+        "@media (max-width:600px)": { fontSize: "0.75rem" }, // 12px
       },
       body2: {
-        fontSize: "0.875rem", // ~14px - increased from 0.7rem
-        "@media (max-width:600px)": { fontSize: "0.8125rem" },
+        fontSize: "0.75rem", // 12px
+        "@media (max-width:600px)": { fontSize: "0.6875rem" }, // 11px
       },
-      // not native MUI variant, but fine if you're using it in sx
       body3: {
-        fontSize: "0.75rem", // ~12px - increased from 0.6rem
+        fontSize: "0.625rem", // 10px
         lineHeight: 1,
         color: isLight ? "#3a3a3a" : "#c0c0c0",
-        "@media (max-width:600px)": { fontSize: "0.6875rem" },
+        "@media (max-width:600px)": { fontSize: "0.5625rem" }, // 9px
       },
       subtitle1: {
-        fontSize: "1rem", // ~16px - increased from 0.8rem
-        "@media (max-width:600px)": { fontSize: "0.875rem" },
+        fontSize: "0.875rem", // 14px
+        "@media (max-width:600px)": { fontSize: "0.75rem" }, // 12px
       },
       subtitle2: {
-        fontSize: "0.875rem", // ~14px - increased from 0.7rem
-        "@media (max-width:600px)": { fontSize: "0.75rem" },
+        fontSize: "0.75rem", // 12px
+        "@media (max-width:600px)": { fontSize: "0.625rem" }, // 10px
       },
       caption: {
-        fontSize: "0.75rem", // ~12px - increased from 0.6rem
-        "@media (max-width:600px)": { fontSize: "0.6875rem" },
+        fontSize: "0.625rem", // 10px
+        "@media (max-width:600px)": { fontSize: "0.5625rem" }, // 9px
       },
     },
     spacing: 8,
@@ -186,7 +185,11 @@ const createAppTheme = (mode = "light") => {
           body: {
             background: isLight
               ? "linear-gradient(135deg, #f8f8f8ff 0%, #f8f8f8ff 50%, #f8f8f8ff 100%)"
-              : "linear-gradient(135deg, #121212 0%, #1e1e1e 50%, #121212 100%)",
+              : "linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url(/media/backgrounds/photo-1529753253655-470be9a42781.avif)",
+            backgroundSize: isLight ? "auto" : "cover",
+            backgroundPosition: isLight ? "auto" : "center",
+            backgroundRepeat: isLight ? "repeat" : "no-repeat",
+            backgroundAttachment: isLight ? "scroll" : "fixed",
             minHeight: "100vh",
           },
         },
@@ -242,27 +245,29 @@ const createAppTheme = (mode = "light") => {
               ? {}
               : {
                   backgroundColor: "#1e1e1e",
+                  // Override MUI's default Paper overlay gradient
+                  "--Paper-overlay": "none",
                 }),
           },
           elevation1: {
             ...(isLight
               ? {}
               : {
-                  backgroundColor: "#2d2d30",
+                  backgroundColor: "#101010",
                 }),
           },
           elevation2: {
             ...(isLight
               ? {}
               : {
-                  backgroundColor: "#2d2d30",
+                  backgroundColor: "#493919",
                 }),
           },
           elevation3: {
             ...(isLight
               ? {}
               : {
-                  backgroundColor: "#3c3c3c",
+                  backgroundColor: "#1f491f",
                 }),
           },
         },

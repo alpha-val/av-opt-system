@@ -26,13 +26,18 @@ import { CostComparisonRow, CostInfo } from "../../types/api";
 
 interface CostComparisonReportProps {
   reportData: CostComparisonRow[];
+  getLeverInfo?: (componentId: string) => { lever_values: Record<string, any>, lever_types: Record<string, string> } | null;
 }
 
 /**
  * Component to display a single row of the cost comparison report
  */
-const CostComparisonRowComponent: React.FC<{ row: CostComparisonRow }> = ({
+const CostComparisonRowComponent: React.FC<{ 
+  row: CostComparisonRow;
+  getLeverInfo?: (componentId: string) => { lever_values: Record<string, any>, lever_types: Record<string, string> } | null;
+}> = ({
   row,
+  getLeverInfo,
 }) => {
   const [open, setOpen] = useState(false);
 
@@ -79,11 +84,26 @@ const CostComparisonRowComponent: React.FC<{ row: CostComparisonRow }> = ({
 
   const { difference, percentage } = getCostDifference();
 
+  // Determine border color based on cost difference (reversed logic)
+  const getBorderColor = (): string | null => {
+    if (difference === null || difference === undefined) {
+      return null;
+    }
+    if (difference > 0) {
+      return "#f97316"; // Orange for positive (cost increase)
+    } else if (difference < 0) {
+      return "#2E7D32"; // Green for negative (cost decrease)
+    }
+    return null;
+  };
+
+  const borderColor = getBorderColor();
+
   // Render difference indicator
   const renderDifferenceIndicator = () => {
     if (difference === null || percentage === null) {
       return (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 1 }}>
           <RemoveIcon fontSize="small" color="disabled" />
           <Typography variant="body2" color="text.secondary">
             N/A
@@ -96,13 +116,13 @@ const CostComparisonRowComponent: React.FC<{ row: CostComparisonRow }> = ({
     const isDecrease = difference < 0;
 
     return (
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 1 }}>
         {isIncrease && <TrendingUpIcon fontSize="small" color="error" />}
         {isDecrease && <TrendingDownIcon fontSize="small" color="success" />}
         {!isIncrease && !isDecrease && (
           <RemoveIcon fontSize="small" color="disabled" />
         )}
-        <Box>
+        <Box sx={{ textAlign: "right" }}>
           <Typography
             variant="body2"
             color={isIncrease ? "error.main" : isDecrease ? "success.main" : "text.secondary"}
@@ -126,9 +146,45 @@ const CostComparisonRowComponent: React.FC<{ row: CostComparisonRow }> = ({
     );
   };
 
+  // Get best match info for summary
+  const bestMatch = row.tabular_matches.length > 0 ? row.tabular_matches[0] : null;
+  const bestMatchScore = bestMatch ? (bestMatch.score * 100).toFixed(1) : null;
+  const bestMatchCost = bestMatch ? formatCost(bestMatch.cost_info) : null;
+
+  // Get lever information for this component
+  const leverInfo = getLeverInfo ? getLeverInfo(row.entity_id) : null;
+  const leverValues = leverInfo?.lever_values || {};
+  const leverTypes = leverInfo?.lever_types || {};
+  
+  // Format levers for display
+  const formatLevers = (): string => {
+    if (!leverInfo || Object.keys(leverValues).length === 0) {
+      return "No levers used";
+    }
+    
+    const leverEntries = Object.entries(leverValues)
+      .map(([leverId, value]) => {
+        const leverType = leverTypes[leverId] || "Floating";
+        const displayValue = typeof value === "number" 
+          ? value.toLocaleString(undefined, { maximumFractionDigits: 2 })
+          : String(value);
+        return `${leverId}: ${displayValue} (${leverType})`;
+      });
+    
+    return leverEntries.join("; ");
+  };
+
   return (
     <>
-      <TableRow sx={{ "& > *": { borderBottom: "unset" }, backgroundColor: open ? "secondary.veryLight" : "transparent" }}>
+      <TableRow 
+        sx={{ 
+          "& > *": { borderBottom: "unset" }, 
+          backgroundColor: open ? "secondary.veryLight" : "transparent",
+          ...(borderColor && {
+            borderLeft: `4px solid ${borderColor}`,
+          }),
+        }}
+      >
         <TableCell>
           <IconButton
             aria-label="expand row"
@@ -140,12 +196,23 @@ const CostComparisonRowComponent: React.FC<{ row: CostComparisonRow }> = ({
           </IconButton>
         </TableCell>
         <TableCell component="th" scope="row">
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            {row.entity_name}
-          </Typography>
-        </TableCell>
-        <TableCell>
-          <Chip label={row.entity_type} size="small" />
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+              {row.entity_name}
+            </Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: 0.5 }}>
+              {bestMatch && (
+                <Typography variant="caption" color="text.secondary">
+                  Best Match: {bestMatchCost} ({bestMatchScore}%)
+                </Typography>
+              )}
+              {leverInfo && Object.keys(leverValues).length > 0 && (
+                <Typography variant="caption" color="text.secondary">
+                  Levers: {formatLevers()}
+                </Typography>
+              )}
+            </Box>
+          </Box>
         </TableCell>
         <TableCell align="right">
           <Typography variant="body2">
@@ -162,16 +229,16 @@ const CostComparisonRowComponent: React.FC<{ row: CostComparisonRow }> = ({
         <TableCell align="right">{renderDifferenceIndicator()}</TableCell>
       </TableRow>
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ margin: 2 }}>
               <Typography variant="h6" gutterBottom component="div">
-                Matching Tabular Entities
+                Matching Tabular Components
               </Typography>
               <Table size="small" aria-label="tabular matches">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Entity Name</TableCell>
+                    <TableCell>Component Name</TableCell>
                     <TableCell>Type</TableCell>
                     <TableCell align="right">Cost</TableCell>
                     <TableCell align="right">Match Score</TableCell>
@@ -214,10 +281,11 @@ const CostComparisonRowComponent: React.FC<{ row: CostComparisonRow }> = ({
 
 /**
  * Cost Comparison Report Component
- * Displays a table comparing base case costs with matching tabular entity costs
+ * Displays a table comparing base case costs with matching tabular component costs
  */
 const CostComparisonReport: React.FC<CostComparisonReportProps> = ({
   reportData,
+  getLeverInfo,
 }) => {
   if (!reportData || reportData.length === 0) {
     return (
@@ -236,16 +304,19 @@ const CostComparisonReport: React.FC<CostComparisonReportProps> = ({
         <TableHead>
           <TableRow>
             <TableCell sx={{ width: 50 }} />
-            <TableCell>Entity Name</TableCell>
-            <TableCell>Entity Type</TableCell>
+            <TableCell>Component Name</TableCell>
             <TableCell align="right">Base Case Cost</TableCell>
-            <TableCell align="center">Matching Entities</TableCell>
+            <TableCell align="center">Matching Components</TableCell>
             <TableCell align="right">Cost Difference</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {reportData.map((row) => (
-            <CostComparisonRowComponent key={row.entity_id} row={row} />
+            <CostComparisonRowComponent 
+              key={row.entity_id} 
+              row={row} 
+              getLeverInfo={getLeverInfo}
+            />
           ))}
         </TableBody>
       </Table>

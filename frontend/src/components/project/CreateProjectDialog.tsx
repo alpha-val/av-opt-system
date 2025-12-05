@@ -235,8 +235,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
           {!isEditMode && (
             <Alert severity="info" sx={{ mt: 1 }}>
               <Typography variant="body2">
-                You can add objective details and upload documents in Project >
-                Scenario Details view after creating the project.
+                You can add objective details and upload documents after creating the project.
               </Typography>
             </Alert>
           )}

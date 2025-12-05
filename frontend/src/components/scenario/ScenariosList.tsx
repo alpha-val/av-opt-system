@@ -453,6 +453,7 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
                         <Chip
                           label={scenario.status}
                           size="small"
+                          variant="outlined"
                           color={getStatusColor(scenario.status)}
                           onClick={(e) => e.stopPropagation()}
                           sx={{
@@ -513,10 +514,10 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
                               : "rgba(25, 118, 210, 0.04)",
                         }}
                       >
-                        <ObjectiveIcon
+                        {/* <ObjectiveIcon
                           fontSize="small"
                           sx={{ color: "primary.main", flexShrink: 0 }}
-                        />
+                        /> */}
                         <Box sx={{ flex: 1, minWidth: 0 }}>
                           <Typography
                             variant="caption"

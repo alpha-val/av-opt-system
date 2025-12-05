@@ -7,6 +7,7 @@ import {
   Box,
   Tooltip,
   IconButton,
+  useTheme,
 } from "@mui/material";
 import { Info as InfoIcon } from "@mui/icons-material";
 
@@ -38,23 +39,40 @@ const formatAttributeTypeLabel = (value) => {
 };
 
 const EntityDetailsRow = ({ entity, index }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+  
   // Note: baseCaseDocuments was removed as documentsSlice doesn't exist
   // The Sources column is commented out, so this is not needed
   const baseCaseDocuments = [];
 
-  // Get entity type color for left border
+  // Get entity type color for left border - theme-aware colors
   const getTypeColor = (type) => {
-    const colors = {
-      Material: "#1976d2", // Blue
-      Equipment: "#9c27b0", // Purple
-      Location: "#2e7d32", // Green
-      Process: "#ed6c02", // Orange
-      Chemical: "#0288d1", // Light Blue
-      Commodity: "#d32f2f", // Red
-      Project: "#795548", // Brown
-      Scenario: "#607d8b", // Blue Grey
-      Other: "#757575", // Default grey
-    };
+    const colors = isDark
+      ? {
+          // Dark mode - lighter, more vibrant colors for better visibility
+          Material: "#64b5f6", // Light Blue
+          Equipment: "#ba68c8", // Light Purple
+          Location: "#81c784", // Light Green
+          Process: "#ffb74d", // Light Orange
+          Chemical: "#4fc3f7", // Bright Light Blue
+          Commodity: "#e57373", // Light Red
+          Project: "#a1887f", // Light Brown
+          Scenario: "#90a4ae", // Light Blue Grey
+          Other: "#b0b0b0", // Light Grey
+        }
+      : {
+          // Light mode - original colors
+          Material: "#1976d2", // Blue
+          Equipment: "#9c27b0", // Purple
+          Location: "#2e7d32", // Green
+          Process: "#ed6c02", // Orange
+          Chemical: "#0288d1", // Light Blue
+          Commodity: "#d32f2f", // Red
+          Project: "#795548", // Brown
+          Scenario: "#607d8b", // Blue Grey
+          Other: "#757575", // Default grey
+        };
     return colors[type] || colors["Other"]; // Default grey
   };
 

@@ -60,7 +60,7 @@ export const fetchCostEstimateById = createAsyncThunk(
         // If not found, try component cost estimate
         try {
           const componentData = await componentCostEstimateApi.getById(costEstimateId);
-          // Convert to CostEstimateOut format
+          // Convert to CostEstimateOut format, preserving components_config at top level
           return {
             id: componentData.id,
             name: componentData.name,
@@ -68,10 +68,10 @@ export const fetchCostEstimateById = createAsyncThunk(
             scenario_id: componentData.scenario_id,
             created_at: componentData.created_at,
             updated_at: componentData.updated_at,
+            components_config: componentData.components_config, // Preserve at top level
             metadata: {
               ...componentData.metadata,
               cost_report: componentData.cost_report,
-              components_config: componentData.components_config,
               _isComponentBased: true,
             },
           } as CostEstimateOut;

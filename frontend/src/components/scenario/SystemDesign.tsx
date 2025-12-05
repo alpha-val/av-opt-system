@@ -200,7 +200,7 @@ const SystemDesign: React.FC<SystemDesignProps> = ({
           mb: 3,
         }}
       >
-        <Typography variant="h5">Size/Re-size System Design</Typography>
+        <Typography variant="h5">Resize the System Design</Typography>
         <Tooltip
           title={
             !hasSelectedComponents

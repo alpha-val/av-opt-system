@@ -1171,10 +1171,10 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                   },
                 }}
               >
-                <Tab label="Objectives" id="scenario-tab-0" />
-                <Tab label="Data" id="scenario-tab-1" />
-                <Tab label="System Design" id="scenario-tab-2" />
-                <Tab label="Cost Estimates" id="scenario-tab-3" />
+                <Tab label="1 Objectives" id="scenario-tab-0" />
+                <Tab label="2 Raw Data" id="scenario-tab-1" />
+                <Tab label="3 System Design" id="scenario-tab-2" />
+                <Tab label="4 Cost Estimates" id="scenario-tab-3" />
                 {/* <Tab label="Report" id="scenario-tab-3" /> */}
               </Tabs>
             </Box>

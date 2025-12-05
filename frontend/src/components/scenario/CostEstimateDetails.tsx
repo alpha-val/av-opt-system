@@ -65,6 +65,65 @@ const CostEstimateDetails: React.FC<CostEstimateDetailsProps> = ({
   }, [costEstimateId, dispatch]);
 
   /**
+   * Extract lever information from components_config
+   * Falls back to checking the raw cost estimate object if not found in expected locations
+   */
+  const getLeverInfoForComponent = (componentId: string): { lever_values: Record<string, any>, lever_types: Record<string, string> } | null => {
+    // Check multiple possible locations for components_config
+    const componentsConfig = 
+      costEstimate?.components_config || 
+      costEstimate?.metadata?.components_config ||
+      (costEstimate as any)?.['components_config']; // Check raw object
+    
+    if (!componentsConfig) {
+      // Log for debugging but don't spam console
+      if (process.env.NODE_ENV === 'development') {
+        console.log("No components_config found. Cost estimate keys:", costEstimate ? Object.keys(costEstimate) : []);
+      }
+      return null;
+    }
+    
+    // Handle both possible structures: components_config.components (dict) or components_config.components (array)
+    let components = null;
+    if (componentsConfig.components) {
+      if (Array.isArray(componentsConfig.components)) {
+        // If it's an array, convert to dict
+        components = {};
+        componentsConfig.components.forEach((comp: any) => {
+          if (comp.component_id) {
+            components[comp.component_id] = comp;
+          }
+        });
+      } else {
+        // If it's already a dict
+        components = componentsConfig.components;
+      }
+    }
+    
+    if (!components) {
+      return null;
+    }
+    
+    const componentConfig = components[componentId];
+    if (!componentConfig) {
+      return null;
+    }
+    
+    const leverValues = componentConfig.lever_values || {};
+    const leverTypes = componentConfig.lever_types || {};
+    
+    // Only return if we actually have lever data
+    if (Object.keys(leverValues).length === 0) {
+      return null;
+    }
+    
+    return {
+      lever_values: leverValues,
+      lever_types: leverTypes,
+    };
+  };
+
+  /**
    * Format date for display
    */
   const formatDate = (dateString: string): string => {
@@ -464,7 +523,10 @@ const CostEstimateDetails: React.FC<CostEstimateDetailsProps> = ({
           <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
             Cost Comparison Report
           </Typography>
-          <CostComparisonReport reportData={costComparisonReport} />
+          <CostComparisonReport 
+            reportData={costComparisonReport} 
+            getLeverInfo={getLeverInfoForComponent}
+          />
         </Paper>
       ) : (
         <Alert severity="info">

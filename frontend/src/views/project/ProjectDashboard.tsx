@@ -511,52 +511,6 @@ This action cannot be undone. Are you sure you want to delete this file?`,
         )} */}
       </Box>
 
-      {/* Top Panel - Project Information */}
-      {/* <Paper elevation={0} sx={{ p: 1.5, mb: 2 }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            mb: 1,
-          }}
-        >
-          <Box sx={{ flex: 1 }}>
-            {project ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "row",
-                  gap: 2,
-                  alignItems: "top",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  <Typography variant="h4" component="h1" gutterBottom>
-                    {project.name}
-                  </Typography>
-                  {project.description && (
-                    <Typography
-                      variant="body1"
-                      color="text.secondary"
-                      gutterBottom
-                    >
-                      {project.description}
-                    </Typography>
-                  )}
-                </Box>
-                <Typography variant="body2" color="text.secondary">
-                  Last updated: {formatDate(project.updated_at)}
-                </Typography>
-              </Box>
-            ) : (
-              <Typography variant="h4">Loading project...</Typography>
-            )}
-          </Box>
-        </Box>
-      </Paper> */}
-
       {/* Error Alert */}
       {(error || analysisError) && (
         <Alert
@@ -790,7 +744,7 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                           <CircularProgress size={24} />
                         ) : (
                           <Typography
-                            variant="h3"
+                            variant="h4"
                             sx={{ fontWeight: 700, mb: 1, textAlign: "center" }}
                           >
                             {getDocumentCount()}
@@ -891,7 +845,7 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                           <CircularProgress size={24} />
                         ) : (
                           <Typography
-                            variant="h3"
+                            variant="h4"
                             sx={{ fontWeight: 700, mb: 1, textAlign: "center" }}
                           >
                             {scenarios.length}
@@ -958,7 +912,7 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                           <CircularProgress size={24} />
                         ) : (
                           <Typography
-                            variant="h3"
+                            variant="h4"
                             sx={{ fontWeight: 700, mb: 1, textAlign: "center" }}
                           >
                             {formatFileSize(calculateTotalDocumentSize())}
