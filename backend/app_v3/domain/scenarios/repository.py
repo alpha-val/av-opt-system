@@ -259,6 +259,7 @@ async def clear_scenario_data(scenario_id: str) -> dict:
             "relations": 0,
             "base_case_recommendations": 0,
             "cost_estimates": 0,
+            "scenario_cost_estimates": 0,
             "scenario_analysis_results": 0,
             "vectors": 0,
         }
@@ -299,6 +300,15 @@ async def clear_scenario_data(scenario_id: str) -> dict:
         if cost_estimates_deleted > 0:
             logger.info(f"Deleted {cost_estimates_deleted} cost estimates for scenario: {scenario_id}")
         
+        # Delete scenario cost estimates with scenario_id matching scenario_id
+        scenario_cost_estimates_collection = db().scenario_cost_estimates
+        scenario_cost_estimates_deleted = scenario_cost_estimates_collection.delete_many(
+            {"scenario_id": scenario_id}
+        ).deleted_count
+        deleted_counts["scenario_cost_estimates"] = scenario_cost_estimates_deleted
+        if scenario_cost_estimates_deleted > 0:
+            logger.info(f"Deleted {scenario_cost_estimates_deleted} scenario cost estimates for scenario: {scenario_id}")
+        
         # Delete scenario analysis results with scenario_id matching scenario_id
         scenario_analysis_results_collection = db().scenario_analysis_results
         analysis_results_deleted = scenario_analysis_results_collection.delete_many(
@@ -337,6 +347,7 @@ async def clear_scenario_data(scenario_id: str) -> dict:
             f"Cleared data for scenario {scenario_id}: "
             f"{entities_deleted} entities, {relations_deleted} relations, "
             f"{recommendations_deleted} recommendations, {cost_estimates_deleted} cost estimates, "
+            f"{scenario_cost_estimates_deleted} scenario cost estimates, "
             f"{analysis_results_deleted} scenario analysis results, "
             f"{deleted_counts.get('vectors', 0)} vectors"
         )
@@ -476,6 +487,14 @@ async def delete_scenario(scenario_id: str) -> bool:
         ).deleted_count
         if cost_estimates_deleted > 0:
             logger.info(f"Deleted {cost_estimates_deleted} cost estimates for scenario: {scenario_id}")
+
+        # Delete scenario cost estimates
+        scenario_cost_estimates_collection = db().scenario_cost_estimates
+        scenario_cost_estimates_deleted = scenario_cost_estimates_collection.delete_many(
+            {"scenario_id": scenario_id}
+        ).deleted_count
+        if scenario_cost_estimates_deleted > 0:
+            logger.info(f"Deleted {scenario_cost_estimates_deleted} scenario cost estimates for scenario: {scenario_id}")
 
         # Delete scenario analysis results
         scenario_analysis_results_collection = db().scenario_analysis_results

@@ -60,6 +60,7 @@ import ProgressWidget from "../../components/common/ProgressWidget";
 import CostEstimatesList from "../../components/scenario/CostEstimatesList";
 import CostEstimateDetails from "../../components/scenario/CostEstimateDetails";
 import ScenarioAnalysisData from "../../components/scenario/ScenarioAnalysisData";
+import SystemDesign from "../../components/scenario/SystemDesign";
 import { useDialogs } from "../../hooks/useDialogs";
 import { useProgress } from "../../hooks/useProgress";
 import {
@@ -100,7 +101,7 @@ import {
   ScenarioUpdate,
   CostEstimateCreate,
 } from "../../types/api";
-import { costEstimateApi, scenarioApi } from "../../services/api";
+import { costEstimateApi, scenarioApi, componentCostEstimateApi } from "../../services/api";
 
 interface ScenarioDetailsProps {
   scenarioId?: string;
@@ -282,8 +283,47 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
     "exact" | "with_relationships" | "with_context"
   >("exact");
 
+  // System Design state - analysis result and components
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [analysisResultLoading, setAnalysisResultLoading] = useState<boolean>(false);
+  const [analysisResultError, setAnalysisResultError] = useState<string | null>(null);
+  
+  // System Design cost estimate dialog state
+  const [systemDesignCostEstimateDialogOpen, setSystemDesignCostEstimateDialogOpen] = useState(false);
+  const [systemDesignConfig, setSystemDesignConfig] = useState<any>(null);
+  const [creatingComponentCostEstimate, setCreatingComponentCostEstimate] = useState(false);
+
   // Track if we've initialized the form to prevent re-initialization
   const formInitializedRef = useRef<string | null>(null);
+
+  /**
+   * Fetch scenario analysis result for System Design tab
+   */
+  useEffect(() => {
+    const fetchAnalysisResult = async () => {
+      if (!scenarioId) return;
+
+      try {
+        setAnalysisResultLoading(true);
+        setAnalysisResultError(null);
+        const result = await scenarioApi.getAnalysisResult(scenarioId, "v5");
+        setAnalysisResult(result);
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to fetch analysis result";
+        setAnalysisResultError(errorMessage);
+        setAnalysisResult(null);
+      } finally {
+        setAnalysisResultLoading(false);
+      }
+    };
+
+    // Fetch when scenarioId changes or when tab 2 becomes active
+    if (scenarioId && (activeTab === 2 || !analysisResult)) {
+      fetchAnalysisResult();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scenarioId, activeTab]);
 
   /**
    * Fetch scenario and project data
@@ -1022,7 +1062,7 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                   size="normal"
                   color="primary"
                   variant="filled"
-                />  
+                />
               </Box>
             )}{" "}
             {scenario && (
@@ -1132,9 +1172,9 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                 }}
               >
                 <Tab label="Objectives" id="scenario-tab-0" />
-                <Tab label="System Design" id="scenario-tab-1" />
-                <Tab label="Cost Estimates" id="scenario-tab-2" />
-                <Tab label="Data" id="scenario-tab-3" />
+                <Tab label="Data" id="scenario-tab-1" />
+                <Tab label="System Design" id="scenario-tab-2" />
+                <Tab label="Cost Estimates" id="scenario-tab-3" />
                 {/* <Tab label="Report" id="scenario-tab-3" /> */}
               </Tabs>
             </Box>
@@ -1259,8 +1299,65 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                 </Box>
               </TabPanel>
 
-              {/* Tab 1: System Design */}
+              {/* Tab 3: Data */}
               <TabPanel value={activeTab} index={1}>
+                <Box sx={{ p: 3 }}>
+                  <ScenarioAnalysisData scenarioId={scenario.id} />
+                </Box>
+              </TabPanel>
+
+              {/* Tab 2: System Design */}
+              <TabPanel value={activeTab} index={2}>
+                <Box sx={{ p: 3 }}>
+                  {analysisResultLoading ? (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        minHeight: "400px",
+                      }}
+                    >
+                      <CircularProgress />
+                    </Box>
+                  ) : analysisResultError ? (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                      {analysisResultError}
+                    </Alert>
+                  ) : analysisResult?.result?.components ? (
+                    <SystemDesign
+                      components={analysisResult.result.components}
+                      onComponentSelectionChange={(selections) => {
+                        // Handle component selection changes if needed
+                        console.log("Component selections:", selections);
+                      }}
+                      onLeverValueChange={(componentId, leverId, value, type) => {
+                        // Handle lever value changes if needed
+                        console.log("Lever change:", {
+                          componentId,
+                          leverId,
+                          value,
+                          type,
+                        });
+                      }}
+                      onEstimateCost={(config) => {
+                        // Handle estimate cost button click - open dialog
+                        setSystemDesignConfig(config);
+                        setSystemDesignCostEstimateDialogOpen(true);
+                      }}
+                    />
+                  ) : (
+                    <Alert severity="info">
+                      <Typography variant="body1">
+                        No analysis results available. Please run scenario analysis
+                        first.
+                      </Typography>
+                    </Alert>
+                  )}
+                </Box>
+              </TabPanel>
+
+              {/* <TabPanel value={activeTab} index={2}>
                 <Box sx={{ p: 3 }}>
                   <Box
                     sx={{
@@ -1315,10 +1412,10 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                     onEntitySelectionChange={handleEntitySelectionChange}
                   />
                 </Box>
-              </TabPanel>
+              </TabPanel> */}
 
-              {/* Tab 2: Cost Estimates */}
-              <TabPanel value={activeTab} index={2}>
+              {/* Tab 3: Cost Estimates */}
+              <TabPanel value={activeTab} index={3}>
                 <Box sx={{ p: 3 }}>
                   {selectedCostEstimateId ? (
                     <CostEstimateDetails
@@ -1338,7 +1435,7 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                 </Box>
               </TabPanel>
 
-              {/* Tab 3: Report */}
+              {/* Tab 4: Report */}
               {/* <TabPanel value={activeTab} index={2}>
                 <Box sx={{ p: 3 }}>
                   <Typography variant="h6" gutterBottom>
@@ -1353,13 +1450,6 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
                   </Alert>
                 </Box>
               </TabPanel> */}
-
-              {/* Tab 3: Data */}
-              <TabPanel value={activeTab} index={3}>
-                <Box sx={{ p: 3 }}>
-                  <ScenarioAnalysisData scenarioId={scenario.id} />
-                </Box>
-              </TabPanel>
             </Box>
           </Paper>
 
@@ -1370,10 +1460,93 @@ const ScenarioDetails: React.FC<ScenarioDetailsProps> = ({
             onCalculate={handleCalculateCost}
             calculating={calculating}
             defaultName={
-              scenario?.name
-                ? `Cost Estimate v${costEstimates.length + 1}`
-                : ""
+              scenario?.name ? `Cost Estimate v${costEstimates.length + 1}` : ""
             }
+          />
+          
+          {/* System Design Cost Estimate Dialog */}
+          <CreateCostEstimateDialog
+            open={systemDesignCostEstimateDialogOpen}
+            onClose={() => {
+              setSystemDesignCostEstimateDialogOpen(false);
+              setSystemDesignConfig(null);
+            }}
+            onCreate={async (data) => {
+              if (!scenarioId || !systemDesignConfig) return;
+              
+              try {
+                setCreatingComponentCostEstimate(true);
+                
+                // Organize levers by component
+                // Filter to only selected components and organize their levers
+                const components: Array<{
+                  component_id: string;
+                  lever_values: Record<string, any>;
+                  lever_types: Record<string, string>;
+                }> = [];
+                
+                // Get all components from analysis result to find their lever IDs
+                const allComponents = analysisResult?.result?.components || [];
+                
+                for (const component of allComponents) {
+                  const componentId = component.component_id;
+                  if (systemDesignConfig.selectedComponents[componentId]) {
+                    // Extract levers for this component (lever IDs start with component_id)
+                    const componentLeverValues: Record<string, any> = {};
+                    const componentLeverTypes: Record<string, string> = {};
+                    
+                    for (const lever of component.decision_levers || []) {
+                      const leverId = lever.lever_id;
+                      if (systemDesignConfig.leverValues.hasOwnProperty(leverId)) {
+                        componentLeverValues[leverId] = systemDesignConfig.leverValues[leverId];
+                        componentLeverTypes[leverId] = systemDesignConfig.leverTypes[leverId] || "Floating";
+                      }
+                    }
+                    
+                    components.push({
+                      component_id: componentId,
+                      lever_values: componentLeverValues,
+                      lever_types: componentLeverTypes,
+                    });
+                  }
+                }
+                
+                // Create component cost estimate with SystemDesign config
+                const costEstimateData = {
+                  name: data.name,
+                  description: data.description,
+                  scenario_id: scenarioId,
+                  components: components,
+                  top_k: 3,
+                  cutoff: 0.5,
+                };
+                
+                const createdEstimate = await componentCostEstimateApi.create(costEstimateData);
+                
+                // Close dialog
+                setSystemDesignCostEstimateDialogOpen(false);
+                setSystemDesignConfig(null);
+                
+                // Navigate to Cost Estimates tab and open the created estimate
+                setActiveTab(3);
+                setSelectedCostEstimateId(createdEstimate.id);
+                
+                // Note: Component cost estimates are stored in scenario_cost_estimates collection
+                // and should be fetched via componentCostEstimateApi.getById, not fetchCostEstimateById
+                // For now, we'll just set the ID and let the CostEstimateDetails component handle it
+                // TODO: Update CostEstimateDetails to support component cost estimates or create a separate component
+                
+                // Refresh cost estimates list
+                await dispatch(fetchCostEstimates(scenarioId) as any);
+              } catch (error) {
+                console.error("Error creating component cost estimate:", error);
+                // Error will be shown via the dialog's error handling
+              } finally {
+                setCreatingComponentCostEstimate(false);
+              }
+            }}
+            creating={creatingComponentCostEstimate}
+            scenarioId={scenarioId || ""}
           />
         </Box>
       ) : (

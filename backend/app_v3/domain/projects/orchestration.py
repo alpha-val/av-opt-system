@@ -44,6 +44,7 @@ from ..parsing.prompts.scenario_analysis_prompt import get_scenario_prompt
 from ..parsing.prompts.scenario_analysis_prompt_v2 import get_scenario_prompt_v2
 from ..parsing.prompts.scenario_analysis_prompt_v3 import get_scenario_prompt_v3
 from ..parsing.utils.llm_tools import call_with_tools
+
 logger = logging.getLogger(__name__)
 
 
@@ -143,7 +144,7 @@ class ProjectOrchestrationService:
                 "tool_choice": "auto",
             },
         )
-        
+
         logger.info("Initialized ProjectOrchestrationService")
 
     async def process_project_documents(
@@ -2111,26 +2112,26 @@ class ProjectOrchestrationService:
     def _chunk_text(self, text: str, chunk_size: int = 8000) -> List[str]:
         """
         Chunk text into smaller pieces based on character limit.
-        
+
         Args:
             text: Text to chunk
             chunk_size: Maximum characters per chunk (default: 8000)
-            
+
         Returns:
             List of text chunks
         """
         if not text or len(text) <= chunk_size:
             return [text]
-        
+
         chunks = []
         current_pos = 0
-        
+
         while current_pos < len(text):
             chunk_end = current_pos + chunk_size
             chunk = text[current_pos:chunk_end]
             chunks.append(chunk)
             current_pos = chunk_end
-        
+
         return chunks
 
     def _merge_scenario_analysis_results(
@@ -2138,27 +2139,27 @@ class ProjectOrchestrationService:
     ) -> Dict[str, Any]:
         """
         Merge scenario analysis results from multiple chunks.
-        
+
         Args:
             chunk_results: List of analysis results from each chunk
-            
+
         Returns:
             Merged analysis result
         """
         if not chunk_results:
             raise ValueError("No chunk results to merge")
-        
+
         if len(chunk_results) == 1:
             return chunk_results[0]
-        
+
         # Start with the first chunk as the base
         merged = json.loads(json.dumps(chunk_results[0]))  # Deep copy
-        
+
         # Merge baseline sections
         baseline = merged.get("baseline", {})
         for chunk_result in chunk_results[1:]:
             chunk_baseline = chunk_result.get("baseline", {})
-            
+
             # Merge arrays (e.g., operating_conditions, open_items)
             for key in ["operating_conditions", "open_items"]:
                 if key in chunk_baseline and isinstance(chunk_baseline[key], list):
@@ -2166,39 +2167,58 @@ class ProjectOrchestrationService:
                     if not isinstance(existing, list):
                         existing = []
                     # Deduplicate by converting to string and back
-                    existing_items = {json.dumps(item, sort_keys=True) for item in existing}
+                    existing_items = {
+                        json.dumps(item, sort_keys=True) for item in existing
+                    }
                     for item in chunk_baseline[key]:
                         item_str = json.dumps(item, sort_keys=True)
                         if item_str not in existing_items:
                             existing.append(item)
                             existing_items.add(item_str)
                     baseline[key] = existing
-            
+
             # Merge objects (e.g., project, system_overview, performance_metrics)
-            for key in ["project", "system_overview", "performance_metrics", 
-                       "physical_configuration", "structural_and_foundation",
-                       "controls_and_automation", "power_and_utilities",
-                       "safety_access_and_maintenance", "compliance_and_regulatory",
-                       "schedule_and_execution"]:
+            for key in [
+                "project",
+                "system_overview",
+                "performance_metrics",
+                "physical_configuration",
+                "structural_and_foundation",
+                "controls_and_automation",
+                "power_and_utilities",
+                "safety_access_and_maintenance",
+                "compliance_and_regulatory",
+                "schedule_and_execution",
+            ]:
                 if key in chunk_baseline:
                     if key not in baseline:
                         baseline[key] = chunk_baseline[key]
-                    elif isinstance(baseline[key], dict) and isinstance(chunk_baseline[key], dict):
+                    elif isinstance(baseline[key], dict) and isinstance(
+                        chunk_baseline[key], dict
+                    ):
                         # Merge dictionaries, preferring non-null values
                         for sub_key, sub_value in chunk_baseline[key].items():
-                            if sub_key not in baseline[key] or baseline[key][sub_key] is None:
+                            if (
+                                sub_key not in baseline[key]
+                                or baseline[key][sub_key] is None
+                            ):
                                 baseline[key][sub_key] = sub_value
-                            elif isinstance(sub_value, list) and isinstance(baseline[key][sub_key], list):
+                            elif isinstance(sub_value, list) and isinstance(
+                                baseline[key][sub_key], list
+                            ):
                                 # Merge arrays within dict
                                 existing = baseline[key][sub_key]
-                                existing_items = {json.dumps(item, sort_keys=True) for item in existing}
+                                existing_items = {
+                                    json.dumps(item, sort_keys=True)
+                                    for item in existing
+                                }
                                 for item in sub_value:
                                     item_str = json.dumps(item, sort_keys=True)
                                     if item_str not in existing_items:
                                         existing.append(item)
                                         existing_items.add(item_str)
                                 baseline[key][sub_key] = existing
-            
+
             # Merge materials_and_construction array
             if "materials_and_construction" in chunk_baseline:
                 existing = baseline.get("materials_and_construction", [])
@@ -2211,14 +2231,14 @@ class ProjectOrchestrationService:
                         existing.append(item)
                         existing_items.add(item_str)
                 baseline["materials_and_construction"] = existing
-        
+
         merged["baseline"] = baseline
-        
+
         # Objective should be the same across chunks, keep first one
         # (already set from first chunk)
-        
+
         # Note: decision_levers removed from output - metadata now embedded in components.editable_metadata
-        
+
         # Merge constraints_and_rules (deduplicate by name) - optional field
         constraints = merged.get("constraints_and_rules", [])
         constraint_names = {c.get("name") for c in constraints if c.get("name")}
@@ -2229,21 +2249,21 @@ class ProjectOrchestrationService:
                     constraints.append(constraint)
                     constraint_names.add(constraint_name)
         merged["constraints_and_rules"] = constraints
-        
+
         # Merge components_for_tabular_lookup (deduplicate by role + key attributes)
         # Collect all components from all chunks, then deduplicate
         all_components = []
         for chunk_result in chunk_results:
             chunk_components = chunk_result.get("components_for_tabular_lookup", [])
             all_components.extend(chunk_components)
-        
+
         # Deduplicate: keep only one instance per unique (role, key_attributes) combination
         # If duplicates exist, prefer the one with more complete metadata
         component_map = {}  # key -> component
         for component in all_components:
             comp_key = (
                 component.get("role"),
-                json.dumps(component.get("key_attributes", []), sort_keys=True)
+                json.dumps(component.get("key_attributes", []), sort_keys=True),
             )
             if comp_key not in component_map:
                 component_map[comp_key] = component
@@ -2255,25 +2275,30 @@ class ProjectOrchestrationService:
                 existing_key_attrs = len(existing.get("key_attributes", []))
                 new_key_attrs = len(component.get("key_attributes", []))
                 # Prefer component with more editable attributes or more key attributes
-                if new_attrs > existing_attrs or (new_attrs == existing_attrs and new_key_attrs > existing_key_attrs):
+                if new_attrs > existing_attrs or (
+                    new_attrs == existing_attrs and new_key_attrs > existing_key_attrs
+                ):
                     component_map[comp_key] = component
-        
+
         merged["components_for_tabular_lookup"] = list(component_map.values())
-        
+
         # Merge costs (combine items, merge settings)
         costs = merged.get("costs", {})
         for chunk_result in chunk_results[1:]:
             chunk_costs = chunk_result.get("costs", {})
-            
+
             # Merge cost_model_settings (prefer non-null values from later chunks)
             if "cost_model_settings" in chunk_costs:
                 if "cost_model_settings" not in costs:
                     costs["cost_model_settings"] = chunk_costs["cost_model_settings"]
                 else:
                     for key, value in chunk_costs["cost_model_settings"].items():
-                        if key not in costs["cost_model_settings"] or costs["cost_model_settings"][key] is None:
+                        if (
+                            key not in costs["cost_model_settings"]
+                            or costs["cost_model_settings"][key] is None
+                        ):
                             costs["cost_model_settings"][key] = value
-            
+
             # Merge baseline items
             if "baseline" in chunk_costs and "items" in chunk_costs["baseline"]:
                 if "baseline" not in costs:
@@ -2292,31 +2317,35 @@ class ProjectOrchestrationService:
                         existing_items.append(item)
                         existing_keys.add(item_key)
                 costs["baseline"]["items"] = existing_items
-            
+
             # Merge alternative_cost_models
             if "alternative_cost_models" in chunk_costs:
                 if "alternative_cost_models" not in costs:
                     costs["alternative_cost_models"] = []
                 # Deduplicate by name
-                existing_names = {m.get("name") for m in costs["alternative_cost_models"]}
+                existing_names = {
+                    m.get("name") for m in costs["alternative_cost_models"]
+                }
                 for model in chunk_costs["alternative_cost_models"]:
                     if model.get("name") not in existing_names:
                         costs["alternative_cost_models"].append(model)
                         existing_names.add(model.get("name"))
-            
+
             # Merge cost_reduction_scenarios
             if "cost_reduction_scenarios" in chunk_costs:
                 if "cost_reduction_scenarios" not in costs:
                     costs["cost_reduction_scenarios"] = []
                 # Deduplicate by name
-                existing_names = {s.get("name") for s in costs["cost_reduction_scenarios"]}
+                existing_names = {
+                    s.get("name") for s in costs["cost_reduction_scenarios"]
+                }
                 for scenario in chunk_costs["cost_reduction_scenarios"]:
                     if scenario.get("name") not in existing_names:
                         costs["cost_reduction_scenarios"].append(scenario)
                         existing_names.add(scenario.get("name"))
-        
+
         merged["costs"] = costs
-        
+
         # Merge meta notes
         meta = merged.get("meta", {})
         notes_parts = [meta.get("notes")] if meta.get("notes") else []
@@ -2327,7 +2356,7 @@ class ProjectOrchestrationService:
         if notes_parts:
             meta["notes"] = " | ".join(filter(None, notes_parts))
         merged["meta"] = meta
-        
+
         return merged
 
     async def run_scenario_analysis_v5(
@@ -2389,7 +2418,24 @@ class ProjectOrchestrationService:
         seq += 1
 
         base_case_sections: List[str] = []
-        for doc in documents:
+        for idx, doc in enumerate(documents, 1):
+            # Send update event
+            publisher.publish(
+                job_id,
+                ProgressEvent(
+                    job_id=job_id,
+                    stage=Stage.PROCESSING,
+                    status=Status.IN_PROGRESS,
+                    progress=20 + int((idx - 1) * 60 / len(documents)),
+                    seq=seq,
+                    meta={
+                        "scenario_id": scenario_id,
+                        "project_id": project_id,
+                        "message": f"Extracting text from document {idx}/{len(documents)}",
+                    },
+                ),
+            )
+            seq += 1
             filename = doc.get("filename", "unknown.pdf")
             document_id = doc.get("document_id", "unknown")
             try:
@@ -2410,31 +2456,34 @@ class ProjectOrchestrationService:
             if base_case_sections
             else "Base case documents unavailable."
         )
-        publisher.publish(
-            job_id,
-            ProgressEvent(
-                job_id=job_id,
-                stage=Stage.PROCESSING,
-                status=Status.IN_PROGRESS,
-                progress=20,
-                seq=seq,
-                meta={
-                    "scenario_id": scenario_id,
-                    "project_id": project_id,
-                    "message": "Extracting text from base case documents",
-                },
-            ),
-        )
-        seq += 1
 
         process_tabular_data = False
         tabular_block = "No tabular data provided."
-        if tabular_data_document_ids and process_tabular_data: 
+        if tabular_data_document_ids and process_tabular_data:
+
             tabular_docs = await self._read_base_case_documents_v3(
                 tabular_data_document_ids, self._file_storage_service
             )
             tabular_sections: List[str] = []
-            for doc in tabular_docs:
+            for idx, doc in enumerate(tabular_docs, 1):
+                # Send update event
+                publisher.publish(
+                    job_id,
+                    ProgressEvent(
+                        job_id=job_id,
+                        stage=Stage.PROCESSING,
+                        status=Status.IN_PROGRESS,
+                        progress=25 + int((idx - 1) * 60 / len(tabular_docs)),
+                        seq=seq,
+                        meta={
+                            "scenario_id": scenario_id,
+                            "project_id": project_id,
+                            "message": f"Extracting text from tabular data document {idx}/{len(tabular_docs)}",
+                        },
+                    ),
+                )
+                seq += 1
+
                 filename = doc.get("filename", "unknown")
                 document_id = doc.get("document_id", "unknown")
                 content_preview = ""
@@ -2447,9 +2496,7 @@ class ProjectOrchestrationService:
                         content_preview = _truncate(doc_text, 5000)
                     else:
                         # Non-PDF tabular (e.g., XLSX/CSV). Provide metadata only.
-                        content_preview = (
-                            "Binary/structured tabular data provided (content not converted to text)."
-                        )
+                        content_preview = "Binary/structured tabular data provided (content not converted to text)."
                 except Exception as exc:
                     logger.warning(
                         f"Failed to read tabular data document {document_id}: {exc}"
@@ -2460,37 +2507,26 @@ class ProjectOrchestrationService:
                 )
             if tabular_sections and process_tabular_data:
                 tabular_block = "\n\n".join(tabular_sections)
-        publisher.publish(
-            job_id,
-            ProgressEvent(
-                job_id=job_id,
-                stage=Stage.PROCESSING,
-                status=Status.IN_PROGRESS,
-                progress=25,
-                seq=seq,
-                meta={
-                    "scenario_id": scenario_id,
-                    "project_id": project_id,
-                    "message": "Extracting text from tabular data documents",
-                },
-            ),
-        )
-        seq += 1
+
         scenario_request_lines = [
             f"Scenario ID: {scenario_id}",
             f"Scenario Name: {scenario_name}",
             f"Project ID: {project_id}",
         ]
+
         if project_name:
             scenario_request_lines.append(f"Project Name: {project_name}")
         scenario_request_lines.append(f"Objective Type: {global_objective_type}")
+
         if global_objective_target:
             target_line = f"Objective Target: {global_objective_target}"
             if global_objective_unit:
                 target_line += f" {global_objective_unit}"
             scenario_request_lines.append(target_line)
         if objective_description:
-            scenario_request_lines.append(f"Objective Description: {objective_description}")
+            scenario_request_lines.append(
+                f"Objective Description: {objective_description}"
+            )
 
         if scenario_configuration:
             try:
@@ -2501,61 +2537,44 @@ class ProjectOrchestrationService:
                 "Scenario Configuration (JSON):\n"
                 + _truncate(config_text, MAX_CONFIG_CHARS)
             )
-        publisher.publish(
-            job_id,
-            ProgressEvent(
-                job_id=job_id,
-                stage=Stage.PROCESSING,
-                status=Status.IN_PROGRESS,
-                progress=30,
-                seq=seq,
-                meta={
-                    "scenario_id": scenario_id,
-                    "project_id": project_id,
-                    "message": "Generating scenario request block",
-                },
-            ),
-        )
-        seq += 1
+
         scenario_request_block = "\n".join(scenario_request_lines)
-        publisher.publish(
-            job_id,
-            ProgressEvent(
-                job_id=job_id,
-                stage=Stage.PROCESSING,
-                status=Status.IN_PROGRESS,
-                progress=35,
-                seq=seq,
-                meta={
-                    "scenario_id": scenario_id,
-                    "project_id": project_id,
-                    "message": "Generating objective context",
-                },
-            ),
-        )
-        seq += 1
+
+        # Create objective context
         objective_context = {
             "objective_text": objective_description,
             "objective_type": global_objective_type,
-            "target_metric_name": scenario_configuration.get("target_metric_name")
-            if isinstance(scenario_configuration, dict)
-            else None,
-            "target_direction": scenario_configuration.get("target_direction")
-            if isinstance(scenario_configuration, dict)
-            else None,
+            "target_metric_name": (
+                scenario_configuration.get("target_metric_name")
+                if isinstance(scenario_configuration, dict)
+                else None
+            ),
+            "target_direction": (
+                scenario_configuration.get("target_direction")
+                if isinstance(scenario_configuration, dict)
+                else None
+            ),
             "target_delta_value": global_objective_target,
             "target_unit": global_objective_unit,
-            "change_direction": scenario_configuration.get("change_direction")
-            if isinstance(scenario_configuration, dict)
-            else None,
-            "change_magnitude": scenario_configuration.get("change_magnitude")
-            if isinstance(scenario_configuration, dict)
-            else None,
-            "change_unit": scenario_configuration.get("change_unit")
-            if isinstance(scenario_configuration, dict)
-            else None,
+            "change_direction": (
+                scenario_configuration.get("change_direction")
+                if isinstance(scenario_configuration, dict)
+                else None
+            ),
+            "change_magnitude": (
+                scenario_configuration.get("change_magnitude")
+                if isinstance(scenario_configuration, dict)
+                else None
+            ),
+            "change_unit": (
+                scenario_configuration.get("change_unit")
+                if isinstance(scenario_configuration, dict)
+                else None
+            ),
             "description": objective_description,
         }
+
+        # Send update event
         publisher.publish(
             job_id,
             ProgressEvent(
@@ -2572,14 +2591,26 @@ class ProjectOrchestrationService:
             ),
         )
         seq += 1
+
+        # Generate prompt
         prompt = get_scenario_prompt_v3(objective_context)
         system_prompt = SystemMessage(content=prompt)
 
-        # Chunk the base case text
-        # Increased chunk size to reduce number of LLM calls (trade-off: larger prompts but fewer calls)
+        # system_chars = len(system_prompt.content or "")
+        # approx_tokens = math.ceil(system_chars / 4)  # rough heuristic
+        # logger.info(
+        #     f"Scenario analysis prompt size: {system_chars} chars, approx tokens: {approx_tokens}"
+        # )
+        # return {
+        #     "analysis": {},
+        #     "scenario_request_block": scenario_request_block,
+        #     "seq_end": seq,
+        # }
+
+        # Chunk the base case text into smaller chunks
         BASE_CASE_CHUNK_SIZE = 8000
         base_case_chunks = self._chunk_text(base_case_block, BASE_CASE_CHUNK_SIZE)
-        
+
         logger.info(
             f"Chunked base case into {len(base_case_chunks)} chunks "
             f"(chunk_size: {BASE_CASE_CHUNK_SIZE} chars)"
@@ -2588,6 +2619,7 @@ class ProjectOrchestrationService:
         # Process each chunk separately
         chunk_results: List[Dict[str, Any]] = []
         for chunk_idx, base_case_chunk in enumerate(base_case_chunks, 1):
+            # Send update event
             publisher.publish(
                 job_id,
                 ProgressEvent(
@@ -2604,33 +2636,43 @@ class ProjectOrchestrationService:
                 ),
             )
             seq += 1
+
+            # Log chunk information
             logger.info(
                 f"Processing base case chunk {chunk_idx}/{len(base_case_chunks)} "
                 f"({len(base_case_chunk)} chars)"
             )
-            
+
+            # Create scenario input
             scenario_input = f"""[SCENARIO_REQUEST]
-            {scenario_request_block}
+                {scenario_request_block}
 
-            [BASE_CASE]
-            {base_case_chunk}
+                [BASE_CASE]
+                {base_case_chunk}
 
-            [TABULAR_DATA]
-            {tabular_block if process_tabular_data else "No tabular data provided."}
-        """
+                [TABULAR_DATA]
+                {tabular_block if process_tabular_data else "No tabular data provided."}
+                """
 
+            # Create human message
             human_message = HumanMessage(content=scenario_input)
+
+            # Log prompt sizes
             try:
                 system_chars = len(system_prompt.content or "")
                 human_chars = len(human_message.content or "")
                 total_chars = system_chars + human_chars
                 approx_tokens = math.ceil(total_chars / 4)  # rough heuristic
+                logger.info("= = = = = = = = = =")
                 logger.info(
                     f"Chunk {chunk_idx} prompt sizes — system: {system_chars} chars, "
                     f"human: {human_chars} chars, approx tokens: {approx_tokens}"
                 )
+                logger.info("= = = = = = = = = =")
             except Exception as exc:
-                logger.warning(f"Failed to log prompt sizes for chunk {chunk_idx}: {exc}")
+                logger.warning(
+                    f"Failed to log prompt sizes for chunk {chunk_idx}: {exc}"
+                )
                 approx_tokens = None
 
             if (
@@ -2649,17 +2691,13 @@ class ProjectOrchestrationService:
             resp = None
             chunk_payload: Optional[Dict[str, Any]] = None
             try:
-                # print the model being used
-                resp = await self._llm_scenario_analysis_v3.ainvoke([system_prompt, human_message])
-                # resp = call_with_tools(
-                #     report_text=scenario_input,
-                #     system_prompt=system_prompt.content,
-                #     user_prompt=human_message.content,
-                #     tools=TOOLS_SCENARIO_ANALYSIS,
-                #     model=SETTINGS.llm_model_name,
-                # )
+                resp = await self._llm_scenario_analysis_v3.ainvoke(
+                    [system_prompt, human_message]
+                )
             except Exception as e:
-                logger.error(f"Error invoking scenario analysis LLM for chunk {chunk_idx}: {e}")
+                logger.error(
+                    f"Error invoking scenario analysis LLM for chunk {chunk_idx}: {e}"
+                )
                 raise e
 
             for call in resp.additional_kwargs.get("tool_calls", []):
@@ -2669,7 +2707,9 @@ class ProjectOrchestrationService:
                     continue
                 arguments = fn.get("arguments", "{}")
                 if not is_valid_json(arguments):
-                    logger.error(f"Invalid JSON received for {name} in chunk {chunk_idx}: {arguments}")
+                    logger.error(
+                        f"Invalid JSON received for {name} in chunk {chunk_idx}: {arguments}"
+                    )
                     continue
                 payload = json.loads(arguments)
                 chunk_payload = sanitize_for_json(payload)
@@ -2710,8 +2750,6 @@ class ProjectOrchestrationService:
             "analysis": analysis_payload,
             "scenario_request_block": scenario_request_block,
             "seq_end": seq,
-            # "base_case_block": base_case_block,
-            # "tabular_data_block": tabular_block if process_tabular_data else "No tabular data provided.",
         }
 
     async def _extract_recommendations_v3(

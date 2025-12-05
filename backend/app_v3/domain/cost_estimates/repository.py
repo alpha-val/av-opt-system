@@ -114,7 +114,7 @@ async def get_cost_estimate(cost_estimate_id: str) -> Optional[CostEstimateOut]:
         except Exception:
             raise ValueError(f"Invalid cost_estimate_id format: {cost_estimate_id}")
 
-        collection = db().cost_estimates
+        collection = db().scenario_cost_estimates
         doc = collection.find_one({"_id": ObjectId(cost_estimate_id)})
 
         if not doc:

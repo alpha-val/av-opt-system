@@ -130,24 +130,36 @@ TOOLS = [
                                                 },
                                                 "cost_alternates": {
                                                     "type": ["array", "null"],
-                                                    "description": "Array of additional cost ranges when text contains 'or / OR'. Each entry should have cost_min, cost_max, and cost_unit. Example: [{\"cost_min\": 1000, \"cost_max\": 8000, \"cost_unit\": \"LS\"}]",
+                                                    "description": 'Array of additional cost ranges when text contains \'or / OR\'. Each entry should have cost_min, cost_max, and cost_unit. Example: [{"cost_min": 1000, "cost_max": 8000, "cost_unit": "LS"}]',
                                                     "items": {
                                                         "type": "object",
                                                         "properties": {
                                                             "cost_min": {
-                                                                "type": ["number", "null"],
+                                                                "type": [
+                                                                    "number",
+                                                                    "null",
+                                                                ],
                                                                 "description": "Minimum cost value for this alternate range.",
                                                             },
                                                             "cost_max": {
-                                                                "type": ["number", "null"],
+                                                                "type": [
+                                                                    "number",
+                                                                    "null",
+                                                                ],
                                                                 "description": "Maximum cost value for this alternate range.",
                                                             },
                                                             "cost_unit": {
-                                                                "type": ["string", "null"],
+                                                                "type": [
+                                                                    "string",
+                                                                    "null",
+                                                                ],
                                                                 "description": "Unit for this alternate range.",
                                                             },
                                                             "cost_basis": {
-                                                                "type": ["string", "null"],
+                                                                "type": [
+                                                                    "string",
+                                                                    "null",
+                                                                ],
                                                                 "description": "Basis for this alternate range if mentioned.",
                                                             },
                                                         },
@@ -842,12 +854,28 @@ TOOLS_OBJECTIVE_DRIVEN = [
                                                         "description": "Confidence score for this attribute (0.0 to 1.0)",
                                                     },
                                                 },
-                                                "required": ["name", "value", "unit", "evidence_text", "confidence"],
+                                                "required": [
+                                                    "name",
+                                                    "value",
+                                                    "unit",
+                                                    "evidence_text",
+                                                    "confidence",
+                                                ],
                                             },
                                         },
                                     },
                                     "additionalProperties": False,
-                                    "required": ["name", "attributes", "cost", "recommendations", "discipline", "category", "subcategory", "entity", "outside_msio"],
+                                    "required": [
+                                        "name",
+                                        "attributes",
+                                        "cost",
+                                        "recommendations",
+                                        "discipline",
+                                        "category",
+                                        "subcategory",
+                                        "entity",
+                                        "outside_msio",
+                                    ],
                                 },
                             },
                             "required": ["id", "type", "properties"],
@@ -1348,7 +1376,18 @@ _editable_attribute_metadata_schema = {
         "baseline_text": _nullable_string,
         "category": {
             "type": "string",
-            "enum": ["capacity", "geometry", "material", "instrumentation", "electrical", "containment", "stormwater", "civil", "schedule", "cost_model"],
+            "enum": [
+                "capacity",
+                "geometry",
+                "material",
+                "instrumentation",
+                "electrical",
+                "containment",
+                "stormwater",
+                "civil",
+                "schedule",
+                "cost_model",
+            ],
             "description": "Parameter category",
         },
         "description": _nullable_string,
@@ -1447,7 +1486,14 @@ _component_lookup_schema = {
             "additionalProperties": _editable_attribute_metadata_schema,
         },
     },
-    "required": ["role", "key_attributes", "relevance_to_objective", "relevance_score", "editable_attributes", "editable_metadata"],
+    "required": [
+        "role",
+        "key_attributes",
+        "relevance_to_objective",
+        "relevance_score",
+        "editable_attributes",
+        "editable_metadata",
+    ],
     "additionalProperties": False,
 }
 
@@ -1811,7 +1857,18 @@ _decision_lever_v3_schema = {
         "baseline_text": _nullable_string,
         "category": {
             "type": "string",
-            "enum": ["capacity", "geometry", "material", "instrumentation", "electrical", "containment", "stormwater", "civil", "schedule", "cost_model"],
+            "enum": [
+                "capacity",
+                "geometry",
+                "material",
+                "instrumentation",
+                "electrical",
+                "containment",
+                "stormwater",
+                "civil",
+                "schedule",
+                "cost_model",
+            ],
             "description": "Parameter category",
         },
         "description": _nullable_string,
@@ -1867,20 +1924,17 @@ _component_v3_schema = {
             "type": "string",
             "description": "Component type/role using standard industry terminology",
         },
-        "key_attributes": {
-            "type": "array",
-            "description": "Array of key attributes for vector search matching. Include 2-5 most relevant attributes.",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "name": {"type": "string"},
-                    "value": {"type": ["string", "number", "null"]},
-                    "unit": _nullable_string,
-                },
-                "required": ["name"],
-                "additionalProperties": False,
-            },
-            "minItems": 2,
+        "msio_discipline": {
+            "type": "string",
+            "description": "MSIO discipline (e.g., 'Storage', 'Transportation', 'Processing', 'Utilities', 'Safety', 'Environment', 'Other')",
+        },
+        "msio_category": {
+            "type": "string",
+            "description": "MSIO category (e.g., 'Tank', 'Vessel', 'Pump', 'Compressor', 'Valve', 'Instrumentation', 'Control', 'Safety', 'Environment', 'Other')",
+        },
+        "msio_subcategory": {
+            "type": "string",
+            "description": "MSIO subcategory (e.g., 'Tank', 'Vessel', 'Pump', 'Compressor', 'Valve', 'Instrumentation', 'Control', 'Safety', 'Environment', 'Other')",
         },
         "quantity": _nullable_number,
         "relevance_to_objective": {
@@ -1893,6 +1947,91 @@ _component_v3_schema = {
             "maximum": 1.0,
             "description": "Relevance score 0.0-1.0 (1.0 = critical, 0.5 = moderate, 0.0 = minimal). REQUIRED for ranking.",
         },
+        "cost": {
+            "type": ["object", "null"],
+            "description": "CRITICAL: Aggressively extract cost information for the component when available. Cost information is crucial for cost analysis. Extract costs from tables, footnotes, summaries, budgets, estimates, vendor quotes, and historical data. If no cost information is found, set to null but still create the component.",
+            "properties": {
+                "cost_value": {
+                    "type": ["number", "null"],
+                    "description": "Numeric cost value for the component. Include when cost information is available.",
+                },
+                "cost_currency": {
+                    "type": ["string", "null"],
+                    "description": "Currency code for the cost (e.g., 'USD', 'EUR'). Use ISO currency codes. Default to 'USD' if not specified. Include when cost information is available.",
+                },
+                "cost_min": {
+                    "type": ["number", "null"],
+                    "description": "Minimum cost value. Use for cost ranges (e.g., '$50,000 - $100,000'). Default to cost_value if not present.",
+                },
+                "cost_max": {
+                    "type": ["number", "null"],
+                    "description": "Maximum cost value. Use for cost ranges (e.g., '$50,000 - $100,000').",
+                },
+                "cost_unit": {
+                    "type": ["string", "null"],
+                    "description": "Unit of the cost value (e.g., 'EA', 'LS', 'ft', 'gal', 'SY', 'yd³', 'LF'). Include when mentioned in the text.",
+                },
+                "cost_basis": {
+                    "type": ["string", "null"],
+                    "description": "Basis of the cost value (e.g., 'installed', 'material only', 'silt fence', 'liner & basin'). Include when mentioned in the text.",
+                },
+                "cost_basis_year": {
+                    "type": ["number", "null"],
+                    "description": "Basis year for the cost estimate (e.g., 2020, 2024). Include if mentioned in the text.",
+                },
+                "cost_type": {
+                    "type": ["string", "null"],
+                    "enum": [
+                        "CAPEX",
+                        "OPEX",
+                        "Total",
+                        "Other",
+                        None,
+                    ],
+                    "description": "Type of cost: CAPEX (capital expenditure), OPEX (operating expenditure), Total, or Other. Include when cost information is available.",
+                },
+                "annual_op_cost": {
+                    "type": ["number", "null"],
+                    "description": "Annual operating cost if applicable. Include when mentioned in the text.",
+                },
+                "reclamation_cost": {
+                    "type": ["number", "null"],
+                    "description": "Reclamation cost if applicable. Include when mentioned in the text.",
+                },
+                "cost_text": {
+                    "type": ["string", "null"],
+                    "description": "Text where cost information was found. Include when cost information is available.",
+                },
+                "cost_alternates": {
+                    "type": ["array", "null"],
+                    "description": "Array of additional cost ranges when text contains 'or' or '/' or 'OR'. Each entry should have cost_min, cost_max, and cost_unit. Example: [{\"cost_min\": 1000, \"cost_max\": 8000, \"cost_unit\": \"LS\"}]",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "cost_min": {
+                                "type": ["number", "null"],
+                                "description": "Minimum cost value for this alternate range.",
+                            },
+                            "cost_max": {
+                                "type": ["number", "null"],
+                                "description": "Maximum cost value for this alternate range.",
+                            },
+                            "cost_unit": {
+                                "type": ["string", "null"],
+                                "description": "Unit for this alternate range.",
+                            },
+                            "cost_basis": {
+                                "type": ["string", "null"],
+                                "description": "Basis for this alternate range if mentioned.",
+                            },
+                        },
+                        "additionalProperties": False,
+                    },
+                },
+            },
+            "required": ["cost_value", "cost_currency", "cost_unit", "cost_text"],
+            "additionalProperties": False,
+        },
         "decision_levers": {
             "type": "array",
             "description": "REQUIRED: All editable attributes as separate decision levers. Each attribute must be a separate lever.",
@@ -1900,7 +2039,17 @@ _component_v3_schema = {
             "minItems": 1,
         },
     },
-    "required": ["component_id", "role", "key_attributes", "relevance_to_objective", "relevance_score", "decision_levers"],
+    "required": [
+        "component_id",
+        "role",
+        "msio_discipline",
+        "msio_category",
+        "msio_subcategory",
+        "relevance_to_objective",
+        "relevance_score",
+        "decision_levers",
+        "cost",
+    ],
     "additionalProperties": False,
 }
 
@@ -1945,8 +2094,103 @@ _minimal_baseline_v3_schema = {
             },
             "additionalProperties": False,
         },
+        # "operating_conditions": {
+        #     "type": "object",
+        #     "properties": {
+        #         "name": {"type": "string"},
+        #         "value": _nullable_number,
+        #         "unit": _nullable_string,
+        #     },
+        #     "additionalProperties": False,
+        # },
+        # "physical_configuration": {
+        #     "type": "object",
+        #     "properties": {
+        #         "name": {"type": "string"},
+        #         "value": _nullable_number,
+        #         "unit": _nullable_string,
+        #     },
+        #     "additionalProperties": False,
+        # },
+        # "materials_and_construction": {
+        #     "type": "array",
+        #     "items": {
+        #         "type": "object",
+        #         "properties": {
+        #             "component": _nullable_string,
+        #             "material": _nullable_string,
+        #             "notes": _nullable_string,
+        #         },
+        #         "additionalProperties": False,
+        #     },
+        # },
+        # "structural_and_foundation": {
+        #     "type": "object",
+        #     "additionalProperties": True,
+        # },
+        # "controls_and_automation": {
+        #     "type": "object",
+        #     "additionalProperties": True,
+        # },
+        # "power_and_utilities": {
+        #     "type": "object",
+        #     "additionalProperties": True,
+        # },
+        # "safety_access_and_maintenance": {
+        #     "type": "object",
+        #     "additionalProperties": True,
+        # },
+        # "compliance_and_regulatory": {
+        #     "type": "object",
+        #     "properties": {
+        #         "codes_and_standards": {
+        #             "type": "array",
+        #             "items": {"type": "string"},
+        #         },
+        #         "regulatory_requirements": {
+        #             "type": "array",
+        #             "items": {"type": "string"},
+        #         },
+        #         "environmental_or_policy_limits": {
+        #             "type": "array",
+        #             "items": {"type": "string"},
+        #         },
+        #         "notes": _nullable_string,
+        #     },
+        #     "additionalProperties": True,
+        # },
+        # "schedule_and_execution": {
+        #     "type": "object",
+        #     "additionalProperties": True,
+        # },
+        # "open_items": {
+        #     "type": "array",
+        #     "items": {
+        #         "type": "object",
+        #         "properties": {
+        #             "description": _nullable_string,
+        #             "impacted_area": _nullable_string,
+        #         },
+        #         "additionalProperties": False,
+        #     },
+        # },
     },
     "additionalProperties": False,
+    "required": [
+        "project",
+        "system_overview",
+        "performance_metrics",
+        # "operating_conditions",
+        # "physical_configuration",
+        # "materials_and_construction",
+        # "structural_and_foundation",
+        # "controls_and_automation",
+        # "power_and_utilities",
+        # "safety_access_and_maintenance",
+        # "compliance_and_regulatory",
+        # "schedule_and_execution",
+        # "open_items",
+    ],
 }
 
 # V3 Scenario output schema
@@ -2002,11 +2246,12 @@ TOOLS_SCENARIO_ANALYSIS_V3 = [
         "type": "function",
         "function": {
             "name": "submit_scenario_analysis_v3",
-            "description": "Submit the V3 structured scenario analysis JSON focused on components and decision levers. Components are ranked by relevance_score, and all attributes are extracted as separate decision levers.",
+            "description": "Submit the V3 structured scenario analysis JSON focused on components and decision levers. Components are ranked by relevance_score, and all attributes are extracted as separate decision levers. CRITICAL: Aggressively extract cost information for all components - cost information is crucial for cost analysis. Extract costs from tables, footnotes, summaries, budgets, estimates, vendor quotes, and historical data.",
             "parameters": _scenario_output_schema_v3,
         },
     },
 ]
+
 
 def sanitize_for_json(data):
     """Recursively convert sets to lists for JSON serialization."""
@@ -2031,13 +2276,13 @@ def is_valid_json(json_string: str) -> bool:
 def extract_responses_api_data(response: Any) -> Dict[str, Any]:
     """
     Extract data from OpenAI Responses API response object.
-    
+
     Handles both tool_call and output_text content types.
     For output_text, extracts JSON from markdown code blocks if present.
-    
+
     Args:
         response: OpenAI Responses API response object
-    
+
     Returns:
         Dict with:
             - tool_calls: List of tool call objects (if any)
@@ -2049,7 +2294,7 @@ def extract_responses_api_data(response: Any) -> Dict[str, Any]:
         "output_text": None,
         "parsed_json": None,
     }
-    
+
     # Check if this is a responses API response
     if not hasattr(response, "output"):
         # Fallback: might be chat.completions format
@@ -2063,23 +2308,27 @@ def extract_responses_api_data(response: Any) -> Dict[str, Any]:
                         "function": {
                             "name": tc.function.name,
                             "arguments": tc.function.arguments,
-                        }
+                        },
                     }
                     for tc in message.tool_calls
                 ]
         return result
-    
+
     # Process responses API format
     for item in response.output:
         if not hasattr(item, "content"):
             continue
-            
+
         for content_block in item.content:
             if content_block.type == "output_text":
                 # Extract text value
-                text_value = content_block.text.value if hasattr(content_block.text, "value") else str(content_block.text)
+                text_value = (
+                    content_block.text.value
+                    if hasattr(content_block.text, "value")
+                    else str(content_block.text)
+                )
                 result["output_text"] = text_value
-                
+
                 # Try to extract JSON from markdown code blocks
                 json_text = text_value
                 # Remove markdown code block markers if present
@@ -2095,21 +2344,21 @@ def extract_responses_api_data(response: Any) -> Dict[str, Any]:
                     end_idx = json_text.find("```", start_idx)
                     if end_idx != -1:
                         json_text = json_text[start_idx:end_idx].strip()
-                
+
                 # Try to parse as JSON
                 try:
                     result["parsed_json"] = json.loads(json_text)
                 except (json.JSONDecodeError, ValueError):
                     # Not valid JSON, keep as text
                     pass
-                    
+
             elif content_block.type == "tool_call":
                 # Extract tool call information
                 tool_call_data = {
                     "id": getattr(content_block, "id", None),
                     "type": getattr(content_block, "type", "function"),
                 }
-                
+
                 # Extract function name and arguments if available
                 if hasattr(content_block, "function"):
                     func = content_block.function
@@ -2122,9 +2371,9 @@ def extract_responses_api_data(response: Any) -> Dict[str, Any]:
                         "name": getattr(content_block, "name", None),
                         "arguments": getattr(content_block, "arguments", "{}"),
                     }
-                
+
                 result["tool_calls"].append(tool_call_data)
-    
+
     return result
 
 
@@ -2138,7 +2387,7 @@ def call_with_tools(
 ) -> Any:
     """
     Call OpenAI's responses API with custom prompt and tools.
-    
+
     Args:
         report_text: The text content to analyze
         system_prompt: Custom system prompt (default: extraction engine prompt)
@@ -2146,10 +2395,10 @@ def call_with_tools(
         tools: List of tool definitions to use (default: TOOLS)
         model: Model name to use (default: from SETTINGS)
         tool_choice: Tool choice strategy - "auto", "required", or "none" (default: "auto")
-    
+
     Returns:
         OpenAI response object
-    
+
     Example:
         response = call_with_tools(
             report_text="Tank capacity: 10,000 US-gal, diameter: 9.48 ft",
@@ -2158,11 +2407,11 @@ def call_with_tools(
         )
     """
     client = OpenAI(api_key=SETTINGS.openai_api_key)
-    
+
     # Default system prompt
     if system_prompt is None:
         system_prompt = "You are an extraction engine for industrial design reports."
-    
+
     # Default user prompt
     if user_prompt is None:
         user_prompt = (
@@ -2177,15 +2426,15 @@ def call_with_tools(
         if "{report_text}" in user_prompt:
             user_prompt = user_prompt.replace("{report_text}", report_text)
         # Otherwise, user_prompt is already complete and contains the report_text
-    
+
     # Default tools
     if tools is None:
         tools = TOOLS
-    
+
     # Default model
     if model is None:
         model = SETTINGS.llm_model_name or "gpt-5.1-mini"
-    
+
     # Transform tools format for responses API (expects flattened structure)
     # The responses API expects: { "type": "function", "name": "...", "description": "...", "parameters": {...} }
     # But our tools use: { "type": "function", "function": { "name": "...", "description": "...", "parameters": {...} } }
@@ -2203,7 +2452,7 @@ def call_with_tools(
         else:
             # Already in flattened format
             transformed_tools.append(tool)
-    
+
     # Use responses API (if available) or fallback to chat.completions
     try:
         # Try responses API first
@@ -2211,14 +2460,8 @@ def call_with_tools(
             response = client.responses.create(
                 model=model,
                 input=[
-                    {
-                        "role": "system",
-                        "content": system_prompt
-                    },
-                    {
-                        "role": "user",
-                        "content": user_prompt
-                    },
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
                 ],
                 tools=transformed_tools,
                 tool_choice=tool_choice,
@@ -2230,17 +2473,11 @@ def call_with_tools(
         response = client.chat.completions.create(
             model=model,
             messages=[
-                {
-                    "role": "system",
-                    "content": system_prompt
-                },
-                {
-                    "role": "user",
-                    "content": user_prompt
-                },
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
             ],
             tools=tools,  # Use original nested format for chat.completions
             tool_choice=tool_choice,
         )
-    
+
     return response

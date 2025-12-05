@@ -168,10 +168,99 @@ const CostEstimateDetails: React.FC<CostEstimateDetailsProps> = ({
   };
 
   /**
+   * Transform component_costs structure to CostComparisonRow format
+   * Component format: { component_id, component_role, baseline_cost, matched_costs: [{tabular_entity, cost, relevance_score}] }
+   */
+  const transformComponentCosts = (
+    componentCosts: any[]
+  ): CostComparisonRow[] => {
+    if (!componentCosts || !Array.isArray(componentCosts)) {
+      return [];
+    }
+
+    return componentCosts.map((component) => {
+      const componentId = component.component_id || "";
+      const componentRole = component.component_role || "Unknown Component";
+      const baselineCost = component.baseline_cost ?? null;
+      const matchedCosts = component.matched_costs || [];
+
+      // Get currency from first matched cost, default to USD
+      const firstMatch = matchedCosts[0];
+      const currency =
+        firstMatch?.tabular_entity?.properties?.cost?.cost_currency ||
+        firstMatch?.tabular_entity?.properties?.cost_currency ||
+        "USD";
+
+      // Create base_cost_info
+      const baseCostInfo: CostInfo = {
+        value: baselineCost,
+        currency: currency,
+        unit: null,
+        basis:
+          firstMatch?.tabular_entity?.properties?.cost?.cost_basis_year ||
+          firstMatch?.tabular_entity?.properties?.cost_basis_year ||
+          null,
+      };
+
+      // Transform matched_costs to tabular_matches
+      const tabularMatches = matchedCosts.map((match: any) => {
+        const tabularEntity = match.tabular_entity || {};
+        const tabularCost = match.cost ?? null;
+        const relevanceScore = match.relevance_score || 0;
+
+        const tabularId = tabularEntity.id || "";
+        const tabularName = tabularEntity.properties?.name || "Unknown Entity";
+        const tabularType = tabularEntity.type || "Unknown";
+
+        // Get currency from tabular entity cost, default to USD
+        const tabularCostCurrency =
+          tabularEntity.properties?.cost?.cost_currency ||
+          tabularEntity.properties?.cost_currency ||
+          "USD";
+
+        const tabularCostInfo: CostInfo = {
+          value: tabularCost,
+          currency: tabularCostCurrency,
+          unit: null,
+          basis:
+            tabularEntity.properties?.cost?.cost_basis_year ||
+            tabularEntity.properties?.cost_basis_year ||
+            null,
+        };
+
+        return {
+          entity_id: tabularId,
+          entity_name: tabularName,
+          entity_type: tabularType,
+          cost_info: tabularCostInfo,
+          score: relevanceScore,
+        };
+      });
+
+      // Sort tabular matches by score (highest first)
+      tabularMatches.sort((a, b) => b.score - a.score);
+
+      return {
+        entity_id: componentId,
+        entity_name: componentRole,
+        entity_type: "Component",
+        base_cost_info: baseCostInfo,
+        tabular_matches: tabularMatches,
+      };
+    });
+  };
+
+  /**
    * Get cost comparison report data and transform it
+   * Check both cost_comparison_report (old format) and component_costs (new format)
    */
   const rawReport = costEstimate?.metadata?.cost_comparison_report || [];
-  const costComparisonReport = transformCostComparisonReport(rawReport);
+  const componentCosts = costEstimate?.metadata?.component_costs || [];
+  
+  // Transform based on which format is available
+  const costComparisonReport = rawReport.length > 0
+    ? transformCostComparisonReport(rawReport)
+    : transformComponentCosts(componentCosts);
 
   /**
    * Get cost details

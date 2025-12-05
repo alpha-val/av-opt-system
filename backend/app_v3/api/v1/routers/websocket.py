@@ -189,7 +189,7 @@ async def websocket_progress(
     # Subscribe to progress events for this job_id
     publisher.subscribe(job_id, callback)
     _add_connection(job_id, websocket)
-    logger.info(f"WebSocket subscribed to progress events for job_id: {job_id}")
+    # logger.info(f"WebSocket subscribed to progress events for job_id: {job_id}")
     
     try:
         # Keep connection alive and handle incoming messages
@@ -206,7 +206,7 @@ async def websocket_progress(
                     
             except WebSocketDisconnect:
                 # Client disconnected normally
-                logger.info(f"WebSocket client disconnected for job_id: {job_id}")
+                # logger.info(f"WebSocket client disconnected for job_id: {job_id}")
                 break
                 
     except Exception as e:
@@ -218,5 +218,5 @@ async def websocket_progress(
         # Cleanup: unsubscribe and remove connection
         publisher.unsubscribe(job_id)
         _remove_connection(job_id, websocket)
-        logger.info(f"Cleaned up WebSocket connection for job_id: {job_id}")
+        # logger.info(f"Cleaned up WebSocket connection for job_id: {job_id}")
 

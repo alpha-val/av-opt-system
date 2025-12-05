@@ -40,7 +40,7 @@ from .domain.parsing.services import DocumentProcessingService
 from .adapters.mongo.client import ensure_bronze_indexes
 
 # Import routers
-from .api.v1.routers import websocket, files, auth, projects, scenarios, cost_estimates
+from .api.v1.routers import websocket, files, auth, projects, scenarios, cost_estimates, costing_api
 
 # Initialize global instances (will be set during startup)
 progress_publisher: InMemoryProgressPublisher | None = None
@@ -179,6 +179,10 @@ def create_app() -> FastAPI:
     # Register cost estimates router
     app.include_router(cost_estimates.cost_estimates_router)
     logger.info("Cost estimates router registered")
+    
+    # Register costing API router
+    app.include_router(costing_api.costing_router)
+    logger.info("Costing API router registered")
 
     # Simple health check endpoint
     @app.get("/health")

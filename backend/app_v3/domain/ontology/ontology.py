@@ -1387,6 +1387,430 @@ AV_MSIO_ONTOLOGY: Dict[str, Any] = {
 }
 
 
+AV_MSIO_ONTOLOGY_COMPACT: Dict[str, Any] = {
+    "ontology_name": "ALPHA-VAL-MINING-STRUCTURED-INDUSTRIAL-ONTOLOGY",
+    "version": "0.1",
+    "description": "Ontology for classifying industrial equipment, civil works, structural components, piping, instrumentation, control systems, electrical systems, safety/environmental systems, utilities, construction/commissioning activities, and cost elements in mining and heavy industry projects.",
+    "disciplines": [
+        {
+            "name": "Mechanical Equipment",
+            "categories": [
+                {
+                    "name": "Pumps",
+                    "subcategories": [
+                        {
+                            "name": "Centrifugal",
+                            "entity": "Base pump unit",
+                            "notes": "Include datasheet, vendor, tag",
+                        },
+                        {"name": "Positive Displacement", "entity": "Gear"},
+                        {"name": "Positive Displacement", "entity": "Diaphragm"},
+                    ],
+                },
+                {
+                    "name": "Vessels",
+                    "subcategories": [
+                        {"name": "Pressure Vessel", "entity": "Reactors"},
+                        {"name": "Pressure Vessel", "entity": "Separators"},
+                    ],
+                },
+                {
+                    "name": "Tanks",
+                    "subcategories": [
+                        {"name": "Storage Tank", "entity": "Fixed Roof"},
+                        {"name": "Storage Tank", "entity": "Float Roof"},
+                    ],
+                },
+                {
+                    "name": "Heat Exchangers",
+                    "subcategories": [
+                        {"name": "Shell-and-tube", "entity": "Shell-tube unit"}
+                    ],
+                },
+                {
+                    "name": "Compressors/Blowers",
+                    "subcategories": [
+                        {"name": "Centrifugal", "entity": "Compressors"},
+                        {"name": "Turbo", "entity": "Compressors"},
+                    ],
+                },
+                {
+                    "name": "Material Handling",
+                    "subcategories": [
+                        {"name": "Conveyors/Hoists", "entity": "Belt"},
+                        {"name": "Conveyors/Hoists", "entity": "Screw"},
+                    ],
+                },
+                {
+                    "name": "Utilities",
+                    "subcategories": [
+                        {"name": "Cooling Tower", "entity": "Open"},
+                        {"name": "Cooling Tower", "entity": "Closed"},
+                    ],
+                },
+                {
+                    "name": "Specialty",
+                    "subcategories": [
+                        {"name": "Agitators", "entity": "Top Entry"},
+                        {"name": "Agitators", "entity": "Side Entry"},
+                    ],
+                },
+                {
+                    "name": "Process Equipment",
+                    "subcategories": [
+                        {"name": "Grinding Mill", "entity": "Ball"},
+                        {"name": "Grinding Mill", "entity": "Rod"},
+                        {"name": "Grinding Mill", "entity": "Mill"},
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Materials & Consumables",
+            "categories": [
+                {
+                    "name": "Reagents",
+                    "subcategories": [
+                        {"name": "Collectors", "entity": "Reagent"},
+                        {"name": "Frothers", "entity": "Reagent"},
+                        {"name": "Depressants", "entity": "Reagent"},
+                    ],
+                },
+                {
+                    "name": "Bulk Chemicals",
+                    "subcategories": [
+                        {"name": "Acids", "entity": "Chemical"},
+                        {"name": "Bases", "entity": "Chemical"},
+                    ],
+                },
+                {
+                    "name": "Fuels",
+                    "subcategories": [
+                        {"name": "Diesel", "entity": "Fuel"},
+                        {"name": "Natural Gas", "entity": "Fuel"},
+                    ],
+                },
+                {
+                    "name": "Grinding Media",
+                    "subcategories": [{"name": "Steel Balls", "entity": "Media"}],
+                },
+            ],
+        },
+        {
+            "name": "Civil",
+            "categories": [
+                {
+                    "name": "Site Works",
+                    "subcategories": [{"name": "Grading", "entity": "Cut/fill"}],
+                },
+                {
+                    "name": "Access Roads/Paving",
+                    "subcategories": [{"name": "Site roads", "entity": "Pavement"}],
+                },
+                {
+                    "name": "Stormwater",
+                    "subcategories": [
+                        {
+                            "name": "Retention Basins/Channels",
+                            "entity": "Retention/Detention",
+                        }
+                    ],
+                },
+                {
+                    "name": "Utilities - Site",
+                    "subcategories": [
+                        {"name": "Duct banks", "entity": "Electrical ductbank"}
+                    ],
+                },
+                {
+                    "name": "Hydrology",
+                    "subcategories": [
+                        {"name": "Culverts/Drainage", "entity": "Culverts"}
+                    ],
+                },
+                {
+                    "name": "Survey",
+                    "subcategories": [{"name": "Topography", "entity": "Benchmarking"}],
+                },
+            ],
+        },
+        {
+            "name": "Structural",
+            "categories": [
+                {
+                    "name": "Steelwork",
+                    "subcategories": [
+                        {"name": "Platforms/Walkways", "entity": "Access platform"}
+                    ],
+                },
+                {
+                    "name": "Pipe Support",
+                    "subcategories": [
+                        {"name": "Racks & Supports", "entity": "Pipe rack"}
+                    ],
+                },
+                {
+                    "name": "Buildings",
+                    "subcategories": [
+                        {"name": "Enclosures", "entity": "Control room"},
+                        {"name": "Enclosures", "entity": "MCC building"},
+                    ],
+                },
+                {
+                    "name": "Foundations Interface",
+                    "subcategories": [
+                        {"name": "Anchor/Embed Plates", "entity": "Embed plate"}
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Concrete",
+            "categories": [
+                {
+                    "name": "Foundations",
+                    "subcategories": [
+                        {"name": "Footings", "entity": "Spread footings"}
+                    ],
+                },
+                {
+                    "name": "Slabs",
+                    "subcategories": [
+                        {"name": "Slab on grade", "entity": "Equipment plinths"}
+                    ],
+                },
+                {
+                    "name": "Retaining",
+                    "subcategories": [
+                        {"name": "Retaining walls", "entity": "Gravity"},
+                        {"name": "Retaining walls", "entity": "Sheet pile"},
+                    ],
+                },
+                {
+                    "name": "Precast",
+                    "subcategories": [
+                        {"name": "Manholes/Precast", "entity": "Manhole chamber"}
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Piping",
+            "categories": [
+                {
+                    "name": "Process Lines",
+                    "subcategories": [
+                        {"name": "Large Bore", "entity": "Slurry"},
+                        {"name": "Large Bore", "entity": "Main headers"},
+                        {
+                            "name": "Small Bore",
+                            "entity": 'Instrument & Utility lines (<2")',
+                        },
+                    ],
+                },
+                {
+                    "name": "Materials",
+                    "subcategories": [
+                        {"name": "Material selection", "entity": "Carbon steel"},
+                        {"name": "Material selection", "entity": "SS"},
+                        {"name": "Material selection", "entity": "HDPE"},
+                        {"name": "Material selection", "entity": "FRP"},
+                    ],
+                },
+                {
+                    "name": "Insulation",
+                    "subcategories": [
+                        {"name": "Heat tracing", "entity": "Insulation & HT"}
+                    ],
+                },
+                {
+                    "name": "Testing",
+                    "subcategories": [
+                        {"name": "Hydrotest & Pneumatic", "entity": "Pressure testing"}
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Instrumentation",
+            "categories": [
+                {
+                    "name": "Flow / Level",
+                    "subcategories": [
+                        {"name": "Flow meters", "entity": "Coriolis"},
+                        {"name": "Flow meters", "entity": "Ultrasonic"},
+                    ],
+                },
+                {
+                    "name": "Temperature & Pressure",
+                    "subcategories": [
+                        {"name": "Transmitters", "entity": "Temp & Pressure TX"}
+                    ],
+                },
+                {
+                    "name": "Analyzers & Safety",
+                    "subcategories": [
+                        {"name": "Process analyzers", "entity": "Gas detectors"},
+                        {"name": "Process analyzers", "entity": "pH Analyzers"},
+                    ],
+                },
+                {
+                    "name": "Cabling & Termination",
+                    "subcategories": [
+                        {"name": "Junction Boxes", "entity": "Field junctions"}
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Control",
+            "categories": [
+                {
+                    "name": "Control Systems",
+                    "subcategories": [
+                        {"name": "PLC / DCS / SCADA", "entity": "Control platform"}
+                    ],
+                },
+                {
+                    "name": "Interfaces",
+                    "subcategories": [
+                        {"name": "HMI / Historian", "entity": "Operator stations"}
+                    ],
+                },
+                {
+                    "name": "Network & Cyber",
+                    "subcategories": [
+                        {
+                            "name": "Network switches / Firewalls",
+                            "entity": "Industrial network",
+                        }
+                    ],
+                },
+                {
+                    "name": "I/O",
+                    "subcategories": [
+                        {"name": "Remote I/O panels", "entity": "Field I/O"}
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Electrical",
+            "categories": [
+                {
+                    "name": "Distribution",
+                    "subcategories": [
+                        {"name": "Transformers", "entity": "Step-down"},
+                        {"name": "Transformers", "entity": "Step-up"},
+                    ],
+                },
+                {
+                    "name": "Switchgear",
+                    "subcategories": [
+                        {"name": "MCC / SWGR", "entity": "Motor control center"}
+                    ],
+                },
+                {
+                    "name": "Cabling",
+                    "subcategories": [
+                        {"name": "Power & Control cable", "entity": "Tray and routing"}
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Safety/Environment",
+            "categories": [
+                {
+                    "name": "Fire Protection",
+                    "subcategories": [
+                        {"name": "Sprinkler / Hydrants", "entity": "FP systems"}
+                    ],
+                },
+                {
+                    "name": "Containment",
+                    "subcategories": [{"name": "Spill bunding", "entity": "Bunds"}],
+                },
+                {
+                    "name": "Ventilation",
+                    "subcategories": [
+                        {"name": "Fume / Dust extraction", "entity": "Ducting & fans"}
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Utilities",
+            "categories": [
+                {
+                    "name": "Compressed Air",
+                    "subcategories": [
+                        {"name": "Air network", "entity": "Compressors & Piping"}
+                    ],
+                },
+                {
+                    "name": "Cooling Water",
+                    "subcategories": [
+                        {"name": "CW network", "entity": "Pumps & Heat exchangers"}
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Construction/Commissioning",
+            "categories": [
+                {
+                    "name": "QA/QC",
+                    "subcategories": [
+                        {"name": "Inspections & Testing", "entity": "Quality plan"}
+                    ],
+                },
+                {
+                    "name": "Commissioning",
+                    "subcategories": [
+                        {
+                            "name": "Pre-startup Safety Reviews",
+                            "entity": "Commissioning plan",
+                        }
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Cost",
+            "categories": [
+                {
+                    "name": "Capex",
+                    "subcategories": [
+                        {"name": "Direct", "entity": "Direct"},
+                        {"name": "Indirect", "entity": "Indirect"},
+                    ],
+                },
+                {
+                    "name": "Opex",
+                    "subcategories": [{"name": "Operating Costs", "entity": "opex"}],
+                },
+                {
+                    "name": "Contingency",
+                    "subcategories": [{"name": "Contingency", "entity": "Contingency"}],
+                },
+            ],
+        },
+        {
+            "name": "Miscellaneous",
+            "categories": [
+                {
+                    "name": "Outside MSIO",
+                    "subcategories": [
+                        {"name": "Outside MSIO", "entity": "Outside MSIO"}
+                    ],
+                }
+            ],
+        },
+    ],
+}
+
+
 def get_default_ontology() -> Dict[str, Any]:
     """Get default ontology structure."""
     return {

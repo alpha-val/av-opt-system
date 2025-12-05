@@ -728,6 +728,54 @@ export const costEstimateApi = {
 };
 
 /**
+ * Component Cost Estimate API service
+ */
+export const componentCostEstimateApi = {
+  /**
+   * Create a component-based cost estimate from SystemDesign config
+   */
+  create: async (data: {
+    name: string;
+    description?: string;
+    scenario_id: string;
+    components: Array<{
+      component_id: string;
+      lever_values: Record<string, any>;
+      lever_types: Record<string, string>;
+    }>;
+    top_k?: number;
+    cutoff?: number;
+  }): Promise<any> => {
+    const response = await apiClient.post<any>("/api/v1/costing/estimate", data);
+    return response.data;
+  },
+  
+  /**
+   * Get a scenario cost estimate by ID
+   */
+  getById: async (costEstimateId: string): Promise<any> => {
+    const response = await apiClient.get<any>(`/api/v1/costing/estimates/${costEstimateId}`);
+    return response.data;
+  },
+  
+  /**
+   * List all scenario cost estimates, optionally filtered by scenario_id
+   */
+  listAll: async (scenarioId?: string): Promise<any[]> => {
+    const params = scenarioId ? `?scenario_id=${scenarioId}` : '';
+    const response = await apiClient.get<any[]>(`/api/v1/costing/estimates${params}`);
+    return response.data;
+  },
+  
+  /**
+   * Delete a scenario cost estimate
+   */
+  delete: async (costEstimateId: string): Promise<void> => {
+    await apiClient.delete(`/api/v1/costing/estimates/${costEstimateId}`);
+  },
+};
+
+/**
  * Delete all user data
  */
 export const deleteAllUserData = async (): Promise<{

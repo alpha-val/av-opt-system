@@ -4,15 +4,42 @@ import {
   CostEstimateUpdate,
   CostEstimateOut,
 } from '../types/api';
-import { costEstimateApi } from '../services/api';
+import { costEstimateApi, componentCostEstimateApi } from '../services/api';
 
 // Async thunks for cost estimate operations
 export const fetchCostEstimates = createAsyncThunk(
   'costEstimates/fetchCostEstimates',
   async (scenarioId?: string, { rejectWithValue }) => {
     try {
-      const data = await costEstimateApi.listAll(scenarioId);
-      return { costEstimates: data, scenarioId };
+      // Fetch both regular cost estimates and component cost estimates
+      const [regularEstimates, componentEstimates] = await Promise.all([
+        costEstimateApi.listAll(scenarioId).catch(() => []), // Return empty array on error
+        componentCostEstimateApi.listAll(scenarioId).catch(() => []), // Return empty array on error
+      ]);
+      
+      // Convert component cost estimates to CostEstimateOut format for compatibility
+      const normalizedComponentEstimates: CostEstimateOut[] = componentEstimates.map((ce: any) => ({
+        id: ce.id,
+        name: ce.name,
+        description: ce.description || undefined,
+        scenario_id: ce.scenario_id,
+        created_at: ce.created_at,
+        updated_at: ce.updated_at,
+        metadata: {
+          ...ce.metadata,
+          cost_report: ce.cost_report,
+          components_config: ce.components_config,
+          // Mark as component-based for identification
+          _isComponentBased: true,
+        },
+      }));
+      
+      // Combine both types and sort by created_at (newest first)
+      const allEstimates = [...regularEstimates, ...normalizedComponentEstimates].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      
+      return { costEstimates: allEstimates, scenarioId };
     } catch (error) {
       return rejectWithValue(
         error instanceof Error ? error.message : 'Failed to fetch cost estimates'
@@ -25,8 +52,34 @@ export const fetchCostEstimateById = createAsyncThunk(
   'costEstimates/fetchCostEstimateById',
   async (costEstimateId: string, { rejectWithValue }) => {
     try {
-      const data = await costEstimateApi.getById(costEstimateId);
-      return data;
+      // Try regular cost estimate first
+      try {
+        const data = await costEstimateApi.getById(costEstimateId);
+        return data;
+      } catch (regularError) {
+        // If not found, try component cost estimate
+        try {
+          const componentData = await componentCostEstimateApi.getById(costEstimateId);
+          // Convert to CostEstimateOut format
+          return {
+            id: componentData.id,
+            name: componentData.name,
+            description: componentData.description || undefined,
+            scenario_id: componentData.scenario_id,
+            created_at: componentData.created_at,
+            updated_at: componentData.updated_at,
+            metadata: {
+              ...componentData.metadata,
+              cost_report: componentData.cost_report,
+              components_config: componentData.components_config,
+              _isComponentBased: true,
+            },
+          } as CostEstimateOut;
+        } catch (componentError) {
+          // If both fail, throw the original error
+          throw regularError;
+        }
+      }
     } catch (error) {
       return rejectWithValue(
         error instanceof Error ? error.message : 'Failed to fetch cost estimate'
@@ -68,10 +121,32 @@ export const updateCostEstimate = createAsyncThunk(
 
 export const deleteCostEstimate = createAsyncThunk(
   'costEstimates/deleteCostEstimate',
-  async (costEstimateId: string, { rejectWithValue }) => {
+  async (costEstimateId: string, { rejectWithValue, getState }) => {
     try {
-      await costEstimateApi.delete(costEstimateId);
-      return costEstimateId;
+      // Check if it's a component-based cost estimate by looking at state
+      const state = getState() as any;
+      const costEstimate = state.costEstimates.costEstimates.find(
+        (ce: CostEstimateOut) => ce.id === costEstimateId
+      );
+      
+      // Try regular cost estimate first, then component cost estimate
+      try {
+        await costEstimateApi.delete(costEstimateId);
+        return costEstimateId;
+      } catch (regularError: any) {
+        // If 404 or not found, try component cost estimate
+        if (regularError.response?.status === 404 || costEstimate?.metadata?._isComponentBased) {
+          try {
+            await componentCostEstimateApi.delete(costEstimateId);
+            return costEstimateId;
+          } catch (componentError) {
+            // If both fail, throw the original error
+            throw regularError;
+          }
+        } else {
+          throw regularError;
+        }
+      }
     } catch (error) {
       return rejectWithValue(
         error instanceof Error ? error.message : 'Failed to delete cost estimate'
