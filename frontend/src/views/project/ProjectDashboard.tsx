@@ -27,6 +27,7 @@ import {
   CalendarToday as CalendarTodayIcon,
   Update as UpdateIcon,
   Edit as EditIcon,
+  ArrowForward as ArrowForwardIcon,
 } from "@mui/icons-material";
 import {
   fetchProjectById,
@@ -627,8 +628,10 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                     mb: 3,
                     bgcolor: (theme) =>
                       theme.palette.mode === "dark"
-                        ? "rgba(25, 118, 210, 0.08)"
-                        : "rgba(25, 118, 210, 0.04)",
+                        ? theme.palette.background.card || "#2d2d30"
+                        : "#ffffff",
+                    border: "1px solid",
+                    borderColor: "divider",
                   }}
                 >
                   <CardContent>
@@ -637,7 +640,7 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                         sx={{
                           mr: 1.5,
                           fontSize: 24,
-                          color: "primary.main",
+                          color: "text.secondary",
                         }}
                       />
                       <Typography
@@ -718,16 +721,31 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={4}>
                     <Card
+                      onClick={() => setActiveTab(1)}
                       sx={{
                         height: "100%",
                         bgcolor: (theme) =>
                           theme.palette.mode === "dark"
-                            ? "rgba(25, 118, 210, 0.08)"
-                            : "rgba(25, 118, 210, 0.04)",
-                        transition: "transform 0.2s, box-shadow 0.2s",
+                            ? theme.palette.background.card || "#2d2d30"
+                            : "#ffffff",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        transition: "all 0.2s ease-in-out",
+                        cursor: "pointer",
+                        position: "relative",
                         "&:hover": {
                           transform: "translateY(-2px)",
-                          boxShadow: 3,
+                          boxShadow: 2,
+                          bgcolor: (theme) =>
+                            theme.palette.mode === "dark"
+                              ? theme.palette.background.cardHover || "#3c3c3c"
+                              : "#f5f5f5",
+                          "& .click-hint": {
+                            opacity: 1,
+                          },
+                          "& .card-icon": {
+                            transform: "scale(1.05)",
+                          },
                         },
                       }}
                     >
@@ -736,23 +754,37 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                           sx={{
                             display: "flex",
                             alignItems: "center",
+                            justifyContent: "space-between",
                             mb: 2,
                           }}
                         >
-                          <DescriptionIcon
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <DescriptionIcon
+                              className="card-icon"
+                              sx={{
+                                mr: 1.5,
+                                fontSize: 24,
+                                color: "text.secondary",
+                                transition: "transform 0.2s ease-in-out",
+                              }}
+                            />
+                            <Typography
+                              variant="subtitle2"
+                              color="text.secondary"
+                              sx={{ fontWeight: 500 }}
+                            >
+                              Number of Documents
+                            </Typography>
+                          </Box>
+                          <ArrowForwardIcon
+                            className="click-hint"
                             sx={{
-                              mr: 1.5,
-                              fontSize: 24,
-                              color: "primary.main",
+                              fontSize: 18,
+                              color: "text.secondary",
+                              opacity: 0,
+                              transition: "opacity 0.2s ease-in-out",
                             }}
                           />
-                          <Typography
-                            variant="subtitle2"
-                            color="text.secondary"
-                            sx={{ fontWeight: 500 }}
-                          >
-                            Number of Documents
-                          </Typography>
                         </Box>
                         {filesLoading ? (
                           <CircularProgress size={24} />
@@ -773,21 +805,48 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                           {projectFiles?.base_case_files?.length || 0} | Tabular
                           Data: {projectFiles?.tabular_data_files?.length || 0}
                         </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            display: "block",
+                            mt: 1.5,
+                            color: "text.secondary",
+                            fontWeight: 500,
+                            opacity: 0.8,
+                          }}
+                        >
+                          Click to view sources
+                        </Typography>
                       </CardContent>
                     </Card>
                   </Grid>
                   <Grid item xs={12} md={4}>
                     <Card
+                      onClick={() => setActiveTab(3)}
                       sx={{
                         height: "100%",
                         bgcolor: (theme) =>
                           theme.palette.mode === "dark"
-                            ? "rgba(156, 39, 176, 0.08)"
-                            : "rgba(156, 39, 176, 0.04)",
-                        transition: "transform 0.2s, box-shadow 0.2s",
+                            ? theme.palette.background.card || "#2d2d30"
+                            : "#ffffff",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        transition: "all 0.2s ease-in-out",
+                        cursor: "pointer",
+                        position: "relative",
                         "&:hover": {
                           transform: "translateY(-2px)",
-                          boxShadow: 3,
+                          boxShadow: 2,
+                          bgcolor: (theme) =>
+                            theme.palette.mode === "dark"
+                              ? theme.palette.background.cardHover || "#3c3c3c"
+                              : "#f5f5f5",
+                          "& .click-hint": {
+                            opacity: 1,
+                          },
+                          "& .card-icon": {
+                            transform: "scale(1.05)",
+                          },
                         },
                       }}
                     >
@@ -796,23 +855,37 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                           sx={{
                             display: "flex",
                             alignItems: "center",
+                            justifyContent: "space-between",
                             mb: 2,
                           }}
                         >
-                          <FolderSpecialIcon
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <FolderSpecialIcon
+                              className="card-icon"
+                              sx={{
+                                mr: 1.5,
+                                fontSize: 24,
+                                color: "text.secondary",
+                                transition: "transform 0.2s ease-in-out",
+                              }}
+                            />
+                            <Typography
+                              variant="subtitle2"
+                              color="text.secondary"
+                              sx={{ fontWeight: 500 }}
+                            >
+                              Number of Scenarios
+                            </Typography>
+                          </Box>
+                          <ArrowForwardIcon
+                            className="click-hint"
                             sx={{
-                              mr: 1.5,
-                              fontSize: 24,
-                              color: "secondary.main",
+                              fontSize: 18,
+                              color: "text.secondary",
+                              opacity: 0,
+                              transition: "opacity 0.2s ease-in-out",
                             }}
                           />
-                          <Typography
-                            variant="subtitle2"
-                            color="text.secondary"
-                            sx={{ fontWeight: 500 }}
-                          >
-                            Number of Scenarios
-                          </Typography>
                         </Box>
                         {scenariosLoading ? (
                           <CircularProgress size={24} />
@@ -831,6 +904,18 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                         >
                           Total scenarios created for this project
                         </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            display: "block",
+                            mt: 1.5,
+                            color: "text.secondary",
+                            fontWeight: 500,
+                            opacity: 0.8,
+                          }}
+                        >
+                          Click to view scenarios
+                        </Typography>
                       </CardContent>
                     </Card>
                   </Grid>
@@ -840,13 +925,10 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                         height: "100%",
                         bgcolor: (theme) =>
                           theme.palette.mode === "dark"
-                            ? "rgba(0, 150, 136, 0.08)"
-                            : "rgba(0, 150, 136, 0.04)",
-                        transition: "transform 0.2s, box-shadow 0.2s",
-                        "&:hover": {
-                          transform: "translateY(-2px)",
-                          boxShadow: 3,
-                        },
+                            ? theme.palette.background.card || "#2d2d30"
+                            : "#ffffff",
+                        border: "1px solid",
+                        borderColor: "divider",
                       }}
                     >
                       <CardContent>
@@ -861,7 +943,7 @@ This action cannot be undone. Are you sure you want to delete this file?`,
                             sx={{
                               mr: 1.5,
                               fontSize: 24,
-                              color: "success.main",
+                              color: "text.secondary",
                             }}
                           />
                           <Typography

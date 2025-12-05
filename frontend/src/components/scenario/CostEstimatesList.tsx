@@ -207,11 +207,15 @@ const CostEstimatesList: React.FC<CostEstimatesListProps> = ({
                     borderColor: "divider",
                     bgcolor: (theme) =>
                       theme.palette.mode === "dark"
-                        ? "rgba(0, 150, 136, 0.08)"
-                        : "rgba(0, 150, 136, 0.04)",
+                        ? theme.palette.background.card || "#2d2d30"
+                        : "#ffffff",
                     "&:hover": {
                       transform: "translateY(-2px)",
-                      boxShadow: 3,
+                      boxShadow: 2,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? theme.palette.background.cardHover || "#3c3c3c"
+                          : "#f5f5f5",
                     },
                   }}
                   onClick={() => handleCostEstimateClick(costEstimate.id)}

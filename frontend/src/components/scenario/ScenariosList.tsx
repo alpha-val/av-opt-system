@@ -407,12 +407,15 @@ This action cannot be undone. Are you sure you want to delete this scenario?`,
                     borderColor: "divider",
                     bgcolor: (theme) =>
                       theme.palette.mode === "dark"
-                        ? "rgba(25, 118, 210, 0.08)"
-                        : "rgba(156, 39, 176, 0.04)",
+                        ? theme.palette.background.card || "#2d2d30"
+                        : "#ffffff",
                     "&:hover": {
                       transform: "translateY(-2px)",
-                      boxShadow: 3,
-                      // borderColor: "secondary.main",
+                      boxShadow: 2,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? theme.palette.background.cardHover || "#3c3c3c"
+                          : "#f5f5f5",
                     },
                   }}
                   onClick={() => handleScenarioClick(scenario.id)}
